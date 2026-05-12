@@ -80,8 +80,8 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
       {isSignup && turnstileSiteKey ? (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
       ) : null}
-      <div className="mx-auto grid min-h-screen w-full max-w-6xl gap-5 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-        <section className="relative isolate grid min-h-[420px] overflow-hidden rounded-lg bg-slate-950 p-5 text-white shadow-2xl shadow-slate-900/15 sm:min-h-[560px] sm:p-8 lg:min-h-[640px]">
+      <div className="mx-auto grid min-h-screen w-full max-w-5xl gap-4 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <section className="relative isolate grid min-h-[380px] overflow-hidden rounded-lg bg-slate-950 p-5 text-white shadow-2xl shadow-slate-900/15 sm:min-h-[480px] sm:p-7 lg:min-h-[540px]">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(34,197,94,0.24),transparent_28%),radial-gradient(circle_at_86%_8%,rgba(37,99,235,0.22),transparent_30%)]" />
           <div className="absolute inset-x-8 bottom-0 -z-10 h-56 rounded-t-[100%] bg-green-500/10 blur-3xl" />
 
@@ -96,7 +96,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
               <Sparkles size={14} />
               {isSignup ? "Comece agora" : "Bem-vindo de volta"}
             </div>
-            <h1 className="max-w-[11ch] text-4xl font-black leading-none tracking-normal sm:max-w-[10ch] sm:text-7xl">
+            <h1 className="max-w-[11ch] text-3xl font-black leading-none tracking-normal sm:max-w-[10ch] sm:text-5xl">
               {isSignup ? "Crie propostas que vendem." : "Acesse seu painel."}
             </h1>
             <p className="mt-6 max-w-md text-base leading-7 text-slate-300 sm:text-lg">
@@ -112,7 +112,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
               { icon: FileText, label: "PDF" },
               { icon: ShieldCheck, label: "Aceite" },
             ].map(({ icon: Icon, label }) => (
-              <div className="grid min-h-24 content-between rounded-lg border border-white/10 bg-white/[0.08] p-3 text-sm font-black shadow-sm backdrop-blur" key={label}>
+              <div className="grid min-h-16 content-between rounded-lg border border-white/10 bg-white/[0.08] p-3 text-sm font-black shadow-sm backdrop-blur" key={label}>
                 <Icon className="text-green-300" size={21} />
                 <span>{label}</span>
               </div>
@@ -120,12 +120,12 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-900/10 sm:p-7">
-          <div className="mb-7 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
-            <a className={`grid min-h-12 place-items-center rounded-md text-sm font-black transition hover:text-slate-950 ${!isSignup ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200" : "text-slate-500"}`} href="/login">
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-900/10 sm:p-5">
+          <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+            <a className={`grid min-h-10 place-items-center rounded-md text-sm font-black transition hover:text-slate-950 ${!isSignup ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200" : "text-slate-500"}`} href="/login">
               Entrar
             </a>
-            <a className={`grid min-h-12 place-items-center rounded-md text-sm font-black transition hover:text-slate-950 ${isSignup ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200" : "text-slate-500"}`} href="/cadastro">
+            <a className={`grid min-h-10 place-items-center rounded-md text-sm font-black transition hover:text-slate-950 ${isSignup ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200" : "text-slate-500"}`} href="/cadastro">
               Criar conta
             </a>
           </div>
@@ -133,7 +133,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           <form className="grid gap-5" onSubmit={submitAuth}>
             <div className="space-y-1">
               <p className="text-xs font-black uppercase text-blue-700">{isSignup ? "Cadastro" : "Login"}</p>
-              <h2 className="text-3xl font-black leading-tight">{isSignup ? "Crie sua conta gratis" : "Entre no FechaPro"}</h2>
+              <h2 className="text-2xl font-black leading-tight">{isSignup ? "Crie sua conta gratis" : "Entre no FechaPro"}</h2>
               <p className="max-w-xl text-sm leading-6 text-slate-500">
                 {isSignup ? "Leva menos de um minuto para liberar seu painel." : "Continue de onde parou e acompanhe suas propostas."}
               </p>
@@ -168,7 +168,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
               </div>
             ) : null}
 
-            <button className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white shadow-lg shadow-green-700/20 transition hover:bg-green-700 focus-visible:outline focus-visible:outline-3 focus-visible:outline-green-700/25 disabled:cursor-not-allowed disabled:opacity-60" disabled={authLoading} type="submit">
+            <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white shadow-lg shadow-green-700/20 transition hover:bg-green-700 focus-visible:outline focus-visible:outline-3 focus-visible:outline-green-700/25 disabled:cursor-not-allowed disabled:opacity-60" disabled={authLoading} type="submit">
               {authLoading ? <Lock size={18} /> : <ArrowRight size={18} />}
               {authLoading ? "Aguarde..." : isSignup ? "Criar conta e entrar" : "Entrar no FechaPro"}
             </button>
@@ -221,9 +221,9 @@ function AuthField({
         {label}
         {hint ? <span className="text-xs font-bold text-slate-400">{hint}</span> : null}
       </span>
-      <span className="flex min-h-14 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 transition focus-within:border-green-600 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
-        <Icon className="shrink-0 text-slate-500" size={18} />
-        <input className="min-h-12 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400" autoComplete={autoComplete} maxLength={maxLength} minLength={minLength} placeholder={placeholder} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      <span className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 transition focus-within:border-green-600 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
+        <Icon className="shrink-0 text-slate-500" size={16} />
+        <input className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400" autoComplete={autoComplete} maxLength={maxLength} minLength={minLength} placeholder={placeholder} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
       </span>
     </label>
   );
