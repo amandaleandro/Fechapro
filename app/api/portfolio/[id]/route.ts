@@ -12,8 +12,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const category = cleanOptionalString(body.category);
   const imageUrl = cleanOptionalString(body.imageUrl);
 
-  if (!title) return jsonError("Titulo obrigatorio.");
-  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem invalida.");
+  if (!title) return jsonError("Título obrigatório.");
+  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem inválida.");
 
   await prisma.portfolioAsset.updateMany({
     where: {

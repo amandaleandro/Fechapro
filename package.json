@@ -9,7 +9,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
@@ -37,7 +37,6 @@
     "prisma": "^6.19.0",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.9.0",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.6"
   }
 }

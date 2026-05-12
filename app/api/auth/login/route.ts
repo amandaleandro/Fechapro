@@ -20,12 +20,12 @@ export async function POST(request: Request) {
   }
 
   if (!isValidEmail(email)) {
-    return jsonError("Informe um e-mail valido.");
+    return jsonError("Informe um e-mail válido.");
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
-    return jsonError("Credenciais invalidas.", 401);
+    return jsonError("Credenciais inválidas.", 401);
   }
 
   const session = { id: user.id, name: user.name, email: user.email };

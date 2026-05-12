@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Mail } from "lucide-react";
 import { isValidEmail } from "@/lib/validation";
 
@@ -14,7 +15,7 @@ export default function EsqueciSenhaPage() {
     e.preventDefault();
     setError(null);
     if (!email.trim() || !isValidEmail(email.trim())) {
-      setError("Informe um e-mail valido.");
+      setError("Informe um e-mail válido.");
       return;
     }
     setLoading(true);
@@ -26,7 +27,7 @@ export default function EsqueciSenhaPage() {
       });
       setSent(true);
     } catch {
-      setError("Nao foi possivel enviar o e-mail agora. Tente novamente.");
+      setError("Não foi possível enviar o e-mail agora. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -36,9 +37,9 @@ export default function EsqueciSenhaPage() {
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-6 text-slate-950">
       <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg sm:p-8">
         <div className="mb-6">
-          <a href="/" className="text-sm text-slate-500 hover:text-slate-700">
+          <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
             Voltar
-          </a>
+          </Link>
         </div>
 
         <h1 className="mb-2 text-2xl font-bold">Esqueci minha senha</h1>
@@ -48,7 +49,7 @@ export default function EsqueciSenhaPage() {
 
         {sent ? (
           <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-            Se esse e-mail estiver cadastrado, voce recebera as instrucoes em breve.
+            Se esse e-mail estiver cadastrado, você receberá as instruções em breve.
             Verifique sua caixa de entrada e a pasta de spam.
           </div>
         ) : (
@@ -79,7 +80,7 @@ export default function EsqueciSenhaPage() {
               disabled={loading}
               className="min-h-11 w-full rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {loading ? "Enviando..." : "Enviar link de redefinicao"}
+              {loading ? "Enviando..." : "Enviar link de redefinição"}
             </button>
 
             <p className="text-center text-sm text-slate-500">

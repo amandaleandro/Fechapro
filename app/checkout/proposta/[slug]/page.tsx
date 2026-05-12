@@ -36,7 +36,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
                 Revise o pagamento antes de continuar.
               </h1>
               <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-                Voce sera direcionado para o ambiente seguro do Asaas para finalizar por Pix, boleto ou cartao, conforme disponibilidade.
+                Você será direcionado para o ambiente seguro do Asaas para finalizar por Pix, boleto ou cartão, conforme disponibilidade.
               </p>
             </div>
 
@@ -60,7 +60,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
             <p className="text-xs font-black uppercase text-blue-700">Total</p>
             <strong className="mt-1 block text-4xl font-black">{money.format(proposal.price)}</strong>
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-              O link de pagamento sera gerado pelo Asaas e a proposta sera atualizada automaticamente quando o webhook confirmar.
+              O link de pagamento será gerado pelo Asaas e a proposta será atualizada automaticamente quando o webhook confirmar.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
             {["Pix", "Cartao", "Boleto"].map((item) => (
               <div className="flex items-center justify-between rounded-lg border border-black/10 bg-slate-50 px-3 py-2 text-sm font-black" key={item}>
                 <span>{item}</span>
-                <span className="text-green-700">Disponivel</span>
+                <span className="text-green-700">Disponível</span>
               </div>
             ))}
           </div>
@@ -85,7 +85,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
             </form>
           )}
           <p className="text-center text-xs font-bold leading-5 text-slate-500">
-            O FechaPro nao armazena dados de cartao. A finalizacao acontece no Asaas.
+            O FechaPro não armazena dados de cartão. A finalização acontece no Asaas.
           </p>
         </aside>
       </section>

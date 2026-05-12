@@ -28,7 +28,7 @@ export async function PUT(request: Request) {
   }
 
   if (!isValidEmail(email)) {
-    return jsonError("Informe um e-mail valido.");
+    return jsonError("Informe um e-mail válido.");
   }
 
   const user = await prisma.user.findUnique({
@@ -37,12 +37,12 @@ export async function PUT(request: Request) {
   });
 
   if (!user) {
-    return jsonError("Usuario nao encontrado.", 404);
+    return jsonError("Usuário não encontrado.", 404);
   }
 
   if (email !== user.email) {
     const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-    if (existing) return jsonError("Este e-mail ja esta em uso.", 409);
+    if (existing) return jsonError("Este e-mail já está em uso.", 409);
   }
 
   const shouldChangePassword = Boolean(newPassword);

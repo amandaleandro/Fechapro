@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   const name = cleanString(body.name);
   const price = normalizePrice(body.price);
 
-  if (!name) return jsonError("Servico obrigatorio.");
-  if (price === null || price < 0) return jsonError("Informe um valor valido para o servico.");
+  if (!name) return jsonError("Serviço obrigatório.");
+  if (price === null || price < 0) return jsonError("Informe um valor válido para o serviço.");
 
   const item = await prisma.serviceAsset.create({
     data: {

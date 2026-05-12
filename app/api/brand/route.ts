@@ -48,10 +48,10 @@ export async function PUT(request: Request) {
   const email = clean(body.email) || session.email;
   const website = clean(body.website);
 
-  if (logoUrl && !isValidHttpUrl(logoUrl) && !logoUrl.startsWith("/")) return jsonError("URL do logo invalida.");
-  if (whatsapp && !isValidPhone(whatsapp)) return jsonError("WhatsApp invalido.");
-  if (email && !isValidEmail(email)) return jsonError("E-mail comercial invalido.");
-  if (website && !isValidHttpUrl(website)) return jsonError("Site invalido.");
+  if (logoUrl && !isValidHttpUrl(logoUrl) && !logoUrl.startsWith("/")) return jsonError("URL do logo inválida.");
+  if (whatsapp && !isValidPhone(whatsapp)) return jsonError("WhatsApp inválido.");
+  if (email && !isValidEmail(email)) return jsonError("E-mail comercial inválido.");
+  if (website && !isValidHttpUrl(website)) return jsonError("Site inválido.");
 
   const brand = await prisma.brandProfile.upsert({
     where: { userId: session.id },

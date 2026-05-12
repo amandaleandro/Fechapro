@@ -52,14 +52,14 @@ export async function POST(request: Request) {
   const included = cleanStringList(body.included);
 
   if (!clientName || !serviceName || !deadline) {
-    return jsonError("Cliente, servico e prazo sao obrigatorios.");
+    return jsonError("Cliente, serviço e prazo são obrigatórios.");
   }
 
   if (price === null || price <= 0) return jsonError("Informe um valor maior que zero.");
-  if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade invalida.");
+  if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade inválida.");
 
   if (clientEmail && !isValidEmail(clientEmail)) {
-    return jsonError("E-mail do cliente invalido.");
+    return jsonError("E-mail do cliente inválido.");
   }
 
   const subscription = await prisma.planSubscription.upsert({

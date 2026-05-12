@@ -71,7 +71,7 @@ export default async function PublicProposalPage({
   const validUntilLabel = proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar";
   const daysLeft = proposal.validUntil ? getDaysLeft(proposal.validUntil) : null;
   const whatsappUrl = brand?.whatsapp
-    ? `https://wa.me/${onlyDigits(brand.whatsapp)}?text=${encodeURIComponent(`Ola, vi a proposta ${proposal.serviceName} e quero falar sobre ela.`)}`
+    ? `https://wa.me/${onlyDigits(brand.whatsapp)}?text=${encodeURIComponent(`Olá, vi a proposta ${proposal.serviceName} e quero falar sobre ela.`)}`
     : null;
   const acceptHref = hasDecision ? "#status" : "#aceite";
 
@@ -81,27 +81,27 @@ export default async function PublicProposalPage({
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Proposta aceita com sucesso.</strong>
-            <p className="mt-1 text-sm">Obrigado, {query.name || "cliente"}. O profissional ja pode seguir com os proximos passos.</p>
+            <p className="mt-1 text-sm">Obrigado, {query.name || "cliente"}. O profissional já pode seguir com os próximos passos.</p>
           </div>
         ) : null}
 
         {query.declined ? (
           <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-4 text-rose-900 shadow-xl shadow-slate-900/5">
             <strong>Proposta recusada.</strong>
-            <p className="mt-1 text-sm">Obrigado pelo retorno. O profissional recebeu a atualizacao.</p>
+            <p className="mt-1 text-sm">Obrigado pelo retorno. O profissional recebeu a atualização.</p>
           </div>
         ) : null}
 
         {query.payment === "success" ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Pagamento iniciado.</strong>
-            <p className="mt-1 text-sm">Assim que o Asaas confirmar o pagamento, o status sera atualizado automaticamente.</p>
+            <p className="mt-1 text-sm">Assim que o Asaas confirmar o pagamento, o status será atualizado automaticamente.</p>
           </div>
         ) : null}
 
         {query.paymentError ? (
           <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-4 text-rose-900 shadow-xl shadow-slate-900/5">
-            <strong>Nao foi possivel abrir o pagamento.</strong>
+            <strong>Não foi possível abrir o pagamento.</strong>
             <p className="mt-1 text-sm">{query.paymentError}</p>
           </div>
         ) : null}
@@ -137,7 +137,7 @@ export default async function PublicProposalPage({
                   Link interativo
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase" style={{ color: brandAccentColor }}>
-                  PDF disponivel
+                  PDF disponível
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
                   Aceite online
@@ -148,7 +148,7 @@ export default async function PublicProposalPage({
                 Proposta para {proposal.clientName}
               </h1>
               <p className="mt-4 max-w-2xl leading-7 text-white/75">
-                {brand?.bio || "Uma proposta organizada com escopo, investimento, prazo, portfolio e aceite em um unico link."}
+                {brand?.bio || "Uma proposta organizada com escopo, investimento, prazo, portfólio e aceite em um único link."}
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 {!hasDecision ? (
@@ -189,10 +189,10 @@ export default async function PublicProposalPage({
         </header>
 
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-4">
-          <PreviewBox label="Servico" value={proposal.serviceName} />
+          <PreviewBox label="Serviço" value={proposal.serviceName} />
           <PreviewBox label="Prazo" value={proposal.deadline} />
           <PreviewBox label="Pagamento" value={proposal.payment || "A combinar"} />
-          <PreviewBox label="Visualizacoes" value={String(currentViewCount)} />
+          <PreviewBox label="Visualizações" value={String(currentViewCount)} />
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start">
@@ -201,7 +201,7 @@ export default async function PublicProposalPage({
               <p className="text-xs font-black uppercase text-blue-700">Escopo</p>
               <h2 className="mt-1 text-2xl font-black">Itens inclusos</h2>
               <ul className="mt-4 grid gap-3">
-                {(proposal.included.length ? proposal.included : ["Servico conforme combinado."]).map((item, index) => (
+                {(proposal.included.length ? proposal.included : ["Serviço conforme combinado."]).map((item, index) => (
                   <li className="grid grid-cols-[auto_1fr] gap-3 leading-7 text-slate-700" key={`${item}-${index}`}>
                     <span className="mt-1 grid size-6 place-items-center rounded-full text-xs font-black text-white" style={{ background: brandColor }}>
                       OK
@@ -214,7 +214,7 @@ export default async function PublicProposalPage({
 
             {proposal.notes ? (
               <section className="rounded-lg bg-slate-100 p-4">
-                <h2 className="font-black">Observacoes</h2>
+                <h2 className="font-black">Observações</h2>
                 <p className="mt-2 whitespace-pre-line leading-7 text-slate-700">{proposal.notes}</p>
               </section>
             ) : null}
@@ -223,7 +223,7 @@ export default async function PublicProposalPage({
           <aside className="grid gap-4">
             <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Pagamento</p>
-              <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : "Pague com PIX ou cartao"}</h2>
+              <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : "Pague com PIX ou cartão"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
                 {proposal.paymentStatus === "paid"
                   ? "O Asaas confirmou o pagamento desta proposta."
@@ -241,9 +241,9 @@ export default async function PublicProposalPage({
             </section>
 
             <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
-              <p className="text-xs font-black uppercase text-blue-700">Proximos passos</p>
+              <p className="text-xs font-black uppercase text-blue-700">Próximos passos</p>
               <ol className="mt-4 grid gap-3">
-                {["Aceite a proposta pelo formulario abaixo.", "O profissional recebe a confirmacao.", "O projeto segue com briefing, pagamento e execucao combinados."].map((item, index) => (
+                {["Aceite a proposta pelo formulário abaixo.", "O profissional recebe a confirmação.", "O projeto segue com briefing, pagamento e execução combinados."].map((item, index) => (
                   <li className="grid grid-cols-[auto_1fr] gap-3 text-sm font-bold leading-6 text-slate-700" key={item}>
                     <span className="grid size-7 place-items-center rounded-lg text-xs font-black text-white" style={{ background: brandSecondaryColor }}>{index + 1}</span>
                     {item}
@@ -271,7 +271,7 @@ export default async function PublicProposalPage({
         {portfolio.length ? (
           <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Prova visual</p>
-            <h2 className="mt-1 text-2xl font-black">Portfolio relacionado</h2>
+            <h2 className="mt-1 text-2xl font-black">Portfólio relacionado</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {portfolio.map((item) => (
                 <div className="overflow-hidden rounded-lg border border-black/10 bg-white" key={item.id}>
@@ -349,7 +349,7 @@ export default async function PublicProposalPage({
               </button>
             </form>
             <details className="rounded-lg border border-black/10 bg-slate-50 p-4">
-              <summary className="cursor-pointer font-black text-slate-700">Nao vou seguir com esta proposta</summary>
+              <summary className="cursor-pointer font-black text-slate-700">Não vou seguir com esta proposta</summary>
               <form action={`/api/public/proposals/${proposal.publicSlug}/decline`} method="post" className="mt-4 grid gap-3">
                 <textarea
                   className="min-h-24 rounded-lg border border-black/10 bg-white p-3 outline-rose-700"

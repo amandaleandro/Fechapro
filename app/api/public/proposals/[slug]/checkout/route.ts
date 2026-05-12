@@ -10,8 +10,8 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
     include: { user: true },
   });
 
-  if (!proposal) redirect(`/p/${slug}?paymentError=Proposta%20nao%20encontrada`);
-  if (proposal.price <= 0) redirect(`/p/${slug}?paymentError=Valor%20da%20proposta%20invalido`);
+  if (!proposal) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Proposta não encontrada")}`);
+  if (proposal.price <= 0) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Valor da proposta inválido")}`);
   if (proposal.providerCheckoutUrl && proposal.paymentStatus !== "paid") {
     redirect(proposal.providerCheckoutUrl);
   }
@@ -42,7 +42,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
 
     checkoutUrl = checkout.url;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel criar o pagamento.";
+    const message = error instanceof Error ? error.message : "Não foi possível criar o pagamento.";
     redirect(`/p/${slug}?paymentError=${encodeURIComponent(message)}`);
   }
 

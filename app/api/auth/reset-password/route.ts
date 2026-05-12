@@ -16,12 +16,12 @@ export async function POST(request: Request) {
   const password = body.password || "";
 
   if (!token || password.length < 8) {
-    return jsonError("Token e senha com pelo menos 8 caracteres sao obrigatorios.");
+    return jsonError("Token e senha com pelo menos 8 caracteres são obrigatórios.");
   }
 
   const decoded = decodeResetToken(token);
   if (!decoded) {
-    return jsonError("Link invalido ou expirado.", 400);
+    return jsonError("Link inválido ou expirado.", 400);
   }
 
   const user = await prisma.user.findUnique({
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   });
 
   if (!user?.passwordHash || !verifyResetToken(token, user.passwordHash)) {
-    return jsonError("Link invalido ou expirado.", 400);
+    return jsonError("Link inválido ou expirado.", 400);
   }
 
   await prisma.user.update({

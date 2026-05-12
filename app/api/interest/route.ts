@@ -31,11 +31,11 @@ export async function POST(request: Request) {
   }
 
   if (!isValidEmail(email)) {
-    return jsonError("Informe um e-mail valido.");
+    return jsonError("Informe um e-mail válido.");
   }
 
   if (whatsapp && !isValidPhone(whatsapp)) {
-    return jsonError("Informe um WhatsApp valido.");
+    return jsonError("Informe um WhatsApp válido.");
   }
 
   const lead = await prisma.interestLead.upsert({

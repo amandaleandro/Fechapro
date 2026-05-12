@@ -125,9 +125,7 @@ No portfolio, a remocao de fundo fica como opcao manual para evitar danificar fo
 ## Proximos Ajustes Recomendados
 
 - validar fluxo completo do Asaas em ambiente real;
-- adicionar recuperacao de senha;
 - migrar uploads para storage externo em producao;
 - adicionar bloqueios reais por plano;
-- criar emails transacionais para aceite, visualizacao e pagamento;
+- ampliar emails transacionais para aceite, visualizacao e pagamento;
 - melhorar monitoramento e logs para deploy.
-# Fechapro

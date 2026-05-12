@@ -16,11 +16,11 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   });
 
   if (!proposal) {
-    return jsonError("Proposta nao encontrada.", 404);
+    return jsonError("Proposta não encontrada.", 404);
   }
 
   if (!RESENDABLE_STATUSES.includes(proposal.status)) {
-    return jsonError("Esta proposta nao pode ser reenviada.", 400);
+    return jsonError("Esta proposta não pode ser reenviada.", 400);
   }
 
   const updated = await prisma.proposalAsset.update({

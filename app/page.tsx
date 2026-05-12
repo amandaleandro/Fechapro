@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   BarChart3,
   BriefcaseBusiness,
@@ -208,7 +209,7 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
   { id: "dashboard", label: "Painel", icon: LayoutDashboard },
   { id: "proposals", label: "Propostas", icon: FileText },
   { id: "clients", label: "Clientes", icon: Users },
-  { id: "services", label: "Servicos", icon: BriefcaseBusiness },
+  { id: "services", label: "Serviços", icon: BriefcaseBusiness },
   { id: "portfolio", label: "Portfolio", icon: ImageIcon },
   { id: "testimonials", label: "Depoimentos", icon: MessageSquareQuote },
   { id: "brand", label: "Marca", icon: Settings },
@@ -275,42 +276,42 @@ const tourSteps: TourStep[] = [
     view: "dashboard",
     eyebrow: "Comece por aqui",
     title: "Crie propostas em poucos minutos",
-    description: "O painel junta IA, dados do cliente, servico, valor, prazo e preview para voce montar uma proposta profissional sem sair da tela.",
-    checklist: ["Use a IA para organizar o texto", "Escolha cliente e servico cadastrados", "Salve ou gere o PDF quando estiver pronto"],
+    description: "O painel junta IA, dados do cliente, serviço, valor, prazo e preview para você montar uma proposta profissional sem sair da tela.",
+    checklist: ["Use a IA para organizar o texto", "Escolha cliente e serviço cadastrados", "Salve ou gere o PDF quando estiver pronto"],
   },
   {
     view: "proposals",
     eyebrow: "Controle comercial",
     title: "Acompanhe cada proposta enviada",
-    description: "Aqui ficam os links publicos, PDF, status, reenvio, duplicacao e detalhes com linha do tempo para entender o que aconteceu com cada venda.",
-    checklist: ["Abra a proposta online", "Copie o link para WhatsApp ou e-mail", "Use Detalhes para ver visualizacoes, aceite e pagamento"],
+    description: "Aqui ficam os links públicos, PDF, status, reenvio, duplicação e detalhes com linha do tempo para entender o que aconteceu com cada venda.",
+    checklist: ["Abra a proposta online", "Copie o link para WhatsApp ou e-mail", "Use Detalhes para ver visualizações, aceite e pagamento"],
   },
   {
     view: "clients",
     eyebrow: "Base de clientes",
-    title: "Guarde contatos para vender mais rapido",
+    title: "Guarde contatos para vender mais rápido",
     description: "Cadastre clientes com e-mail, telefone e segmento para reaproveitar em novas propostas sem digitar tudo de novo.",
     checklist: ["Cadastre nome e e-mail", "Use segmento para organizar nichos", "Reaproveite clientes no gerador de proposta"],
   },
   {
     view: "services",
-    eyebrow: "Biblioteca de servicos",
-    title: "Monte precos e entregaveis padrao",
-    description: "Servicos cadastrados aceleram a criacao de propostas e deixam valores, prazos e escopo mais consistentes.",
-    checklist: ["Defina preco base", "Informe prazo comum", "Liste o que esta incluso"],
+    eyebrow: "Biblioteca de serviços",
+    title: "Monte preços e entregáveis padrão",
+    description: "Serviços cadastrados aceleram a criação de propostas e deixam valores, prazos e escopo mais consistentes.",
+    checklist: ["Defina preço base", "Informe prazo comum", "Liste o que está incluso"],
   },
   {
     view: "portfolio",
     eyebrow: "Prova visual",
     title: "Mostre trabalhos anteriores",
-    description: "O portfolio ajuda o cliente a confiar antes de discutir preco. As imagens entram na proposta e reforcam seu profissionalismo.",
-    checklist: ["Envie imagens dos melhores trabalhos", "Agrupe por categoria", "Use imagens relacionadas ao servico vendido"],
+    description: "O portfólio ajuda o cliente a confiar antes de discutir preço. As imagens entram na proposta e reforçam seu profissionalismo.",
+    checklist: ["Envie imagens dos melhores trabalhos", "Agrupe por categoria", "Use imagens relacionadas ao serviço vendido"],
   },
   {
     view: "brand",
     eyebrow: "Identidade da empresa",
     title: "Personalize logo, contatos e cores",
-    description: "A marca configurada aparece nas propostas online e no PDF. Isso faz cada orcamento parecer uma apresentacao profissional.",
+    description: "A marca configurada aparece nas propostas online e no PDF. Isso faz cada orçamento parecer uma apresentação profissional.",
     checklist: ["Adicione logo", "Configure WhatsApp e e-mail comercial", "Escolha cores da empresa"],
   },
   {
@@ -326,13 +327,13 @@ const proposalTemplates: ProposalTemplate[] = [
   {
     id: "social-media",
     niche: "Social media",
-    title: "Gestao mensal de Instagram",
-    serviceName: "Gestao de redes sociais",
+    title: "Gestão mensal de Instagram",
+    serviceName: "Gestão de redes sociais",
     price: 1200,
     deadline: "30 dias",
     payment: "Mensal antecipado",
-    included: ["Planejamento editorial", "12 posts feed", "8 stories", "Legenda estrategica", "Relatorio mensal"],
-    notes: "Nao inclui impulsionamento de posts nem verba de midia.",
+    included: ["Planejamento editorial", "12 posts feed", "8 stories", "Legenda estratégica", "Relatório mensal"],
+    notes: "Não inclui impulsionamento de posts nem verba de mídia.",
   },
   {
     id: "designer",
@@ -340,18 +341,18 @@ const proposalTemplates: ProposalTemplate[] = [
     title: "Identidade visual",
     serviceName: "Identidade visual profissional",
     price: 1500,
-    deadline: "10 dias uteis",
+    deadline: "10 dias úteis",
     payment: "50% entrada e 50% entrega",
-    included: ["Logo principal", "Logo secundario", "Paleta de cores", "Tipografia", "Mini manual da marca"],
-    notes: "Inclui ate 2 rodadas de ajustes dentro do escopo aprovado.",
+    included: ["Logo principal", "Logo secundário", "Paleta de cores", "Tipografia", "Mini manual da marca"],
+    notes: "Inclui até 2 rodadas de ajustes dentro do escopo aprovado.",
   },
   {
     id: "fotografo",
     niche: "Fotografia",
     title: "Ensaio profissional",
-    serviceName: "Ensaio fotografico profissional",
+    serviceName: "Ensaio fotográfico profissional",
     price: 900,
-    deadline: "7 dias uteis apos o ensaio",
+    deadline: "7 dias úteis após o ensaio",
     payment: "50% reserva e 50% no dia",
     included: ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online", "Entrega digital"],
     notes: "Deslocamentos fora da cidade podem gerar custo adicional.",
@@ -362,32 +363,32 @@ const proposalTemplates: ProposalTemplate[] = [
     title: "Projeto de interiores",
     serviceName: "Projeto de interiores",
     price: 3500,
-    deadline: "25 dias uteis",
+    deadline: "25 dias úteis",
     payment: "40% entrada, 30% desenvolvimento e 30% entrega",
     included: ["Levantamento de necessidades", "Layout", "Moodboard", "Projeto 3D", "Lista de compras"],
-    notes: "Execucao de obra e acompanhamento presencial podem ser contratados a parte.",
+    notes: "Execução de obra e acompanhamento presencial podem ser contratados à parte.",
   },
   {
     id: "consultor",
     niche: "Consultoria",
-    title: "Consultoria estrategica",
-    serviceName: "Consultoria estrategica personalizada",
+    title: "Consultoria estratégica",
+    serviceName: "Consultoria estratégica personalizada",
     price: 1800,
     deadline: "4 semanas",
-    payment: "Integral no inicio ou 2 parcelas",
-    included: ["Diagnostico", "Plano de acao", "4 encontros online", "Material de apoio", "Suporte por mensagem"],
-    notes: "O resultado depende da execucao das acoes combinadas pelo cliente.",
+    payment: "Integral no início ou 2 parcelas",
+    included: ["Diagnóstico", "Plano de ação", "4 encontros online", "Material de apoio", "Suporte por mensagem"],
+    notes: "O resultado depende da execução das ações combinadas pelo cliente.",
   },
   {
     id: "tecnico",
-    niche: "Servico tecnico",
-    title: "Instalacao e manutencao",
-    serviceName: "Servico tecnico especializado",
+    niche: "Serviço técnico",
+    title: "Instalação e manutenção",
+    serviceName: "Serviço técnico especializado",
     price: 850,
-    deadline: "5 dias uteis",
-    payment: "50% entrada e 50% conclusao",
-    included: ["Visita tecnica", "Diagnostico", "Instalacao ou manutencao", "Teste final", "Garantia de 30 dias"],
-    notes: "Pecas e materiais podem ser cobrados separadamente apos avaliacao.",
+    deadline: "5 dias úteis",
+    payment: "50% entrada e 50% conclusão",
+    included: ["Visita técnica", "Diagnóstico", "Instalação ou manutenção", "Teste final", "Garantia de 30 dias"],
+    notes: "Peças e materiais podem ser cobrados separadamente após avaliação.",
   },
 ];
 
@@ -438,7 +439,7 @@ export default function Home() {
 
   useEffect(() => {
     if (canUseModule(activeView, currentPlan)) return;
-    setNotice(`Modulo disponivel a partir do plano ${requiredPlanLabel(activeView)}.`);
+    setNotice(`Módulo disponível a partir do plano ${requiredPlanLabel(activeView)}.`);
     setActiveView("plans");
   }, [activeView, currentPlan]);
 
@@ -506,7 +507,7 @@ export default function Home() {
         ? " E-mail enviado ao cliente."
         : draft.clientEmail
           ? ""
-          : " Sem e-mail do cliente - proposta nao foi enviada por e-mail.";
+          : " Sem e-mail do cliente - proposta não foi enviada por e-mail.";
       setNotice(`Proposta salva com sucesso.${emailNote}`);
       setActiveView("proposals");
       setBilling((current) =>
@@ -523,7 +524,7 @@ export default function Home() {
       setDraft({ ...blankDraft, validUntil: nextWeekDate() });
       return result;
     } catch (caught) {
-      setNotice(caught instanceof Error ? caught.message : "Nao foi possivel salvar a proposta.");
+      setNotice(caught instanceof Error ? caught.message : "Não foi possível salvar a proposta.");
       return null;
     }
   }
@@ -557,7 +558,7 @@ export default function Home() {
     const testimonial = await apiPost<Testimonial>("/api/testimonials", {
       authorName: "Ana Paula",
       company: "Studio AP",
-      quote: "A proposta ficou clara, bonita e ajudou a aprovar o projeto mais rapido.",
+      quote: "A proposta ficou clara, bonita e ajudou a aprovar o projeto mais rápido.",
     });
     const proposal = await apiPost<Proposal>("/api/proposals", {
         clientName: "Maria Eduarda",
@@ -621,7 +622,7 @@ export default function Home() {
 
   function startTour() {
     if (onboardingIncomplete) {
-      setNotice("Conclua a configuracao inicial para liberar o tour guiado.");
+      setNotice("Conclua a configuração inicial para liberar o tour guiado.");
       return;
     }
     if (!availableTourSteps.length) return;
@@ -643,12 +644,12 @@ export default function Home() {
       <header className="sticky top-0 z-20 border-b border-black/10 bg-slate-100/90 px-4 py-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <img alt="FechaPro" className="mb-3 h-9 w-36 object-contain" src="/brand/logofechapro.png" />
+            <Image alt="FechaPro" className="mb-3 h-9 w-36 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
             <h1 className="max-w-xs text-2xl font-black leading-tight sm:max-w-none sm:text-3xl">
               Sistema de propostas profissionais.
             </h1>
             <p className="mt-1 text-sm font-bold text-slate-500">
-              Ola, {brand?.businessName || session.name}
+              Olá, {brand?.businessName || session.name}
             </p>
           </div>
           <div className="flex shrink-0 gap-2 self-start sm:self-auto">
@@ -695,7 +696,7 @@ export default function Home() {
                 included: service.includes,
                 payment: current.payment || "50% entrada e 50% na entrega",
               }));
-              setNotice("Configuracao concluida. Agora voce ja pode criar sua primeira proposta.");
+              setNotice("Configuração concluída. Agora você já pode criar sua primeira proposta.");
               setActiveView("dashboard");
             }}
           />
@@ -714,10 +715,10 @@ export default function Home() {
                     } ${locked ? "border border-dashed border-slate-200 bg-slate-50/70" : ""} ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
                     key={item.id}
                     type="button"
-                    title={locked ? `Disponivel a partir do plano ${requiredPlanLabel(item.id)}` : item.label}
+                    title={locked ? `Disponível a partir do plano ${requiredPlanLabel(item.id)}` : item.label}
                     onClick={() => {
                       if (locked) {
-                        setNotice(`O modulo ${item.label} esta disponivel a partir do plano ${requiredPlanLabel(item.id)}.`);
+                        setNotice(`O módulo ${item.label} está disponível a partir do plano ${requiredPlanLabel(item.id)}.`);
                         setActiveView("plans");
                         return;
                       }
@@ -849,7 +850,7 @@ export default function Home() {
           onNext={() => {
             if ((tourStepIndex ?? 0) >= availableTourSteps.length - 1) {
               setTourStepIndex(null);
-              setNotice("Tour concluido. Agora voce ja conhece o fluxo principal do FechaPro.");
+              setNotice("Tour concluído. Agora você já conhece o fluxo principal do FechaPro.");
               return;
             }
             moveTour(1);
@@ -956,7 +957,7 @@ function DashboardView({
             Crie uma proposta comercial em minutos.
           </h2>
           <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Use seus cadastros de clientes, servicos, portfolio e depoimentos para montar uma proposta completa.
+            Use seus cadastros de clientes, serviços, portfólio e depoimentos para montar uma proposta completa.
           </p>
         </div>
 
@@ -968,7 +969,7 @@ function DashboardView({
           }}
         >
           <label className="grid gap-2 text-sm font-extrabold text-slate-600" htmlFor="aiPrompt">
-            Rascunho rapido com IA
+            Rascunho rápido com IA
           </label>
           <textarea
             className="min-h-32 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
@@ -1001,7 +1002,7 @@ function DashboardView({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SectionHeading eyebrow="Plano atual" title={`${billing.subscription.plan.toUpperCase()} em uso`} />
             <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
-              {`${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mes`}
+              {`${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês`}
             </span>
           </div>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
@@ -1027,7 +1028,7 @@ function DashboardView({
         </div>
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
           <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
-          <MiniStat label="Visualizacoes" value={String(totalViews)} />
+          <MiniStat label="Visualizações" value={String(totalViews)} />
           <MiniStat label="Vencidas" value={String(expired)} />
         </div>
       </section>
@@ -1084,7 +1085,7 @@ function DashboardView({
               }}
             />
             <SelectField
-              label="Servico"
+              label="Serviço"
               value={draft.serviceName}
               placeholder="Selecione ou digite"
               required
@@ -1092,13 +1093,13 @@ function DashboardView({
               onChange={chooseService}
             />
             <TextField label="Valor" min={1} placeholder="1200" required step="1" type="number" value={draft.price || ""} onChange={(value) => onDraftChange("price", Number(value || 0))} />
-            <TextField label="Prazo" maxLength={80} placeholder="7 dias uteis" required value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
+            <TextField label="Prazo" maxLength={80} placeholder="7 dias úteis" required value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
             <TextField label="Validade" type="date" value={draft.validUntil} onChange={(value) => onDraftChange("validUntil", value)} />
             <TextField label="Pagamento" maxLength={120} placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
           </div>
 
           <TextField
-            label="E-mail do cliente (envio automatico)"
+            label="E-mail do cliente (envio automático)"
             placeholder="cliente@email.com"
             type="email"
             autoComplete="email"
@@ -1123,9 +1124,9 @@ function DashboardView({
           />
 
           <TextAreaField
-            label="Observacoes"
+            label="Observações"
             maxLength={800}
-            placeholder="A proposta inclui ate 2 rodadas de ajustes."
+            placeholder="A proposta inclui até 2 rodadas de ajustes."
             rows={3}
             value={draft.notes}
             onChange={(value) => onDraftChange("notes", value)}
@@ -1163,7 +1164,7 @@ function DashboardView({
             </div>
 
             <dl className="grid gap-3 sm:grid-cols-2">
-              <PreviewItem label="Servico" value={draft.serviceName || "Preencha os dados"} />
+              <PreviewItem label="Serviço" value={draft.serviceName || "Preencha os dados"} />
               <PreviewItem label="Investimento" value={money.format(draft.price)} />
               <PreviewItem label="Prazo" value={draft.deadline || "-"} />
               <PreviewItem label="Pagamento" value={draft.payment || "A combinar"} />
@@ -1294,7 +1295,7 @@ function ProposalsView({
           </button>
         </div>
         <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Aqui ficam os links que voce envia para o cliente. Abra a proposta publica, copie o link, baixe PDF, duplique ou acompanhe o status.
+          Aqui ficam os links que você envia para o cliente. Abra a proposta pública, copie o link, baixe PDF, duplique ou acompanhe o status.
         </p>
       </div>
 
@@ -1363,24 +1364,24 @@ function OnboardingView({
   const [serviceName, setServiceName] = useState("");
   const [price, setPrice] = useState(0);
   const [deadline, setDeadline] = useState("");
-  const [includes, setIncludes] = useState("Briefing inicial\nExecucao do servico\nAjustes combinados\nEntrega final");
+  const [includes, setIncludes] = useState("Briefing inicial\nExecução do serviço\nAjustes combinados\nEntrega final");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const presets = [
-    { name: "Identidade visual", price: 1200, deadline: "7 dias uteis" },
-    { name: "Gestao de redes sociais", price: 1500, deadline: "30 dias" },
-    { name: "Ensaio fotografico", price: 850, deadline: "10 dias uteis" },
+    { name: "Identidade visual", price: 1200, deadline: "7 dias úteis" },
+    { name: "Gestão de redes sociais", price: 1500, deadline: "30 dias" },
+    { name: "Ensaio fotográfico", price: 850, deadline: "10 dias úteis" },
   ];
 
   async function finishOnboarding(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     if (!businessName.trim() || !whatsapp.trim() || !serviceName.trim() || !price || !deadline.trim()) {
-      setError("Preencha marca, WhatsApp, servico, valor e prazo para concluir.");
+      setError("Preencha marca, WhatsApp, serviço, valor e prazo para concluir.");
       return;
     }
     if (!isValidPhone(whatsapp.trim())) {
-      setError("Informe um WhatsApp valido com DDD.");
+      setError("Informe um WhatsApp válido com DDD.");
       return;
     }
     if (!Number.isFinite(price) || price <= 0) {
@@ -1406,7 +1407,7 @@ function OnboardingView({
       });
       onComplete(savedBrand, service);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel concluir a configuracao.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível concluir a configuração.");
     } finally {
       setSaving(false);
     }
@@ -1417,15 +1418,15 @@ function OnboardingView({
       <div className="grid content-center gap-4">
         <p className="text-xs font-black uppercase text-blue-700">Primeiros passos</p>
         <h2 className="max-w-[14ch] text-3xl font-black leading-none sm:max-w-[11ch] sm:text-6xl">
-          Configure o basico para vender melhor.
+          Configure o básico para vender melhor.
         </h2>
         <p className="max-w-xl leading-7 text-slate-600">
-          Em menos de um minuto voce deixa sua marca pronta, cria o primeiro servico e ja cai no painel com a primeira proposta quase montada.
+          Em menos de um minuto você deixa sua marca pronta, cria o primeiro serviço e já cai no painel com a primeira proposta quase montada.
         </p>
         <div className="grid gap-2 sm:grid-cols-3">
           <MiniStat label="Passo 1" value="Marca" />
           <MiniStat label="Passo 2" value="Contato" />
-          <MiniStat label="Passo 3" value="Servico" />
+          <MiniStat label="Passo 3" value="Serviço" />
         </div>
       </div>
 
@@ -1438,7 +1439,7 @@ function OnboardingView({
         <TextField label="Nome comercial" maxLength={80} required value={businessName} onChange={setBusinessName} />
         <TextField label="WhatsApp" autoComplete="tel" maxLength={20} placeholder="5511999999999" required value={whatsapp} onChange={setWhatsapp} />
         <div className="grid gap-2">
-          <span className="text-sm font-extrabold text-slate-600">Modelos rapidos</span>
+          <span className="text-sm font-extrabold text-slate-600">Modelos rápidos</span>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {presets.map((preset) => (
               <button
@@ -1456,12 +1457,12 @@ function OnboardingView({
             ))}
           </div>
         </div>
-        <TextField label="Primeiro servico" maxLength={80} placeholder="Ex: Identidade visual" required value={serviceName} onChange={setServiceName} />
+        <TextField label="Primeiro serviço" maxLength={80} placeholder="Ex: Identidade visual" required value={serviceName} onChange={setServiceName} />
         <TextField label="Valor base" min={1} required step="1" type="number" value={price || ""} onChange={(value) => setPrice(Number(value || 0))} />
-        <TextField label="Prazo padrao" maxLength={80} placeholder="Ex: 7 dias uteis" required value={deadline} onChange={setDeadline} />
+        <TextField label="Prazo padrão" maxLength={80} placeholder="Ex: 7 dias úteis" required value={deadline} onChange={setDeadline} />
         <TextAreaField label="Itens inclusos" maxLength={1200} rows={4} value={includes} onChange={setIncludes} />
         <button className="min-h-12 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
-          {saving ? "Salvando..." : "Concluir configuracao"}
+          {saving ? "Salvando..." : "Concluir configuração"}
         </button>
       </form>
     </section>
@@ -1481,11 +1482,11 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
       return;
     }
     if (form.email.trim() && !isValidEmail(form.email.trim())) {
-      setError("Informe um e-mail valido.");
+      setError("Informe um e-mail válido.");
       return;
     }
     if (form.phone.trim() && !isValidPhone(form.phone.trim())) {
-      setError("Informe um telefone valido.");
+      setError("Informe um telefone válido.");
       return;
     }
     try {
@@ -1499,7 +1500,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
       }
       setForm({ name: "", email: "", phone: "", segment: "" });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o cliente.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar o cliente.");
     }
   }
 
@@ -1512,7 +1513,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
     <CrudShell
       eyebrow="Cadastro"
       title="Clientes"
-      description="Cadastre os clientes que vao receber propostas."
+      description="Cadastre os clientes que vão receber propostas."
       form={
         <form
           className="grid gap-3"
@@ -1569,11 +1570,11 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
     event.preventDefault();
     setError(null);
     if (!form.name.trim()) {
-      setError("Informe o nome do servico.");
+      setError("Informe o nome do serviço.");
       return;
     }
     if (!Number.isFinite(form.price) || form.price < 0) {
-      setError("Informe um valor valido para o servico.");
+      setError("Informe um valor válido para o serviço.");
       return;
     }
     const payload = {
@@ -1597,7 +1598,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
       }
       setForm({ name: "", price: 0, deadline: "", includes: "" });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o servico.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar o serviço.");
     }
   }
 
@@ -1609,19 +1610,19 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
   return (
     <CrudShell
       eyebrow="Cadastro"
-      title="Servicos e precos"
-      description="Monte uma biblioteca para preencher propostas mais rapido."
+      title="Serviços e preços"
+      description="Monte uma biblioteca para preencher propostas mais rápido."
       form={
         <form
           className="grid gap-3"
           onSubmit={saveService}
         >
           {error ? <FormError message={error} /> : null}
-          <TextField label="Servico" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
+          <TextField label="Serviço" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
           <TextField label="Valor base" min={0} required step="1" type="number" value={form.price || ""} onChange={(value) => setForm({ ...form, price: Number(value || 0) })} />
-          <TextField label="Prazo padrao" maxLength={80} value={form.deadline} onChange={(value) => setForm({ ...form, deadline: value })} />
+          <TextField label="Prazo padrão" maxLength={80} value={form.deadline} onChange={(value) => setForm({ ...form, deadline: value })} />
           <TextAreaField label="Itens inclusos" maxLength={1200} value={form.includes} onChange={(value) => setForm({ ...form, includes: value })} />
-          <SubmitButton label={editingId ? "Atualizar servico" : "Salvar servico"} />
+          <SubmitButton label={editingId ? "Atualizar serviço" : "Salvar serviço"} />
           {editingId ? (
             <button
               className="min-h-11 rounded-lg border border-black/10 px-4 font-black"
@@ -1671,11 +1672,11 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
     event.preventDefault();
     setError(null);
     if (!form.title.trim()) {
-      setError("Informe o titulo do item.");
+      setError("Informe o título do item.");
       return;
     }
     if (form.imageUrl.trim() && !isValidHttpUrl(form.imageUrl.trim())) {
-      setError("Informe uma URL de imagem valida comecando com http:// ou https://.");
+      setError("Informe uma URL de imagem válida começando com http:// ou https://.");
       return;
     }
 
@@ -1713,7 +1714,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
       });
 
       if (!response.ok) {
-        throw new Error(await readApiError(response, "Falha ao salvar portfolio."));
+        throw new Error(await readApiError(response, "Falha ao salvar portfólio."));
       }
 
       const item = (await response.json()) as PortfolioItem;
@@ -1727,7 +1728,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
       setFile(null);
       setRemoveBackground(false);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o portfolio.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar o portfólio.");
     } finally {
       setSaving(false);
     }
@@ -1751,7 +1752,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
           onSubmit={savePortfolioItem}
         >
           {error ? <FormError message={error} /> : null}
-          <TextField label="Titulo" maxLength={80} required value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+          <TextField label="Título" maxLength={80} required value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
           <TextField label="Categoria" maxLength={60} value={form.category} onChange={(value) => setForm({ ...form, category: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Imagem
@@ -1866,7 +1867,7 @@ function TestimonialsView({
       }
       setForm({ authorName: "", company: "", quote: "" });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o depoimento.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar o depoimento.");
     }
   }
 
@@ -1933,7 +1934,7 @@ function TemplatesView({ onUseTemplate }: { onUseTemplate: (template: ProposalTe
         <p className="text-xs font-black uppercase text-blue-700">Templates</p>
         <h2 className="text-2xl font-black">Modelos prontos por nicho</h2>
         <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Use um modelo como ponto de partida. Ele preenche servico, valor, prazo, pagamento, itens inclusos e observacoes.
+          Use um modelo como ponto de partida. Ele preenche serviço, valor, prazo, pagamento, itens inclusos e observações.
         </p>
       </div>
 
@@ -2032,14 +2033,14 @@ function PlansView({
         <p className="text-xs font-black uppercase text-blue-700">Assinatura</p>
         <h2 className="text-2xl font-black">Planos do FechaPro</h2>
         <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Escolha um plano e pague online em ambiente seguro. Quando o Asaas confirmar, o plano e ativado automaticamente.
+          Escolha um plano e pague online em ambiente seguro. Quando o Asaas confirmar, o plano é ativado automaticamente.
         </p>
         {paymentError ? (
           <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{paymentError}</p>
         ) : null}
         <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
           Uso atual: {billing.usage.proposalsThisMonth}
-          {`/${billing.usage.proposalLimit} propostas este mes`}
+          {`/${billing.usage.proposalLimit} propostas este mês`}
         </div>
       </div>
 
@@ -2074,10 +2075,10 @@ function PlansView({
                 ) : null}
               </div>
               <p className="text-sm font-bold text-slate-500">
-                {`Ate ${plan.proposalLimit} propostas por mes`}
+                {`Até ${plan.proposalLimit} propostas por mês`}
               </p>
               <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-600">
-                <span className="block font-black uppercase text-slate-500">Modulos liberados</span>
+                <span className="block font-black uppercase text-slate-500">Módulos liberados</span>
                 {availableModuleLabels(plan.code)}
               </div>
               <ul className="list-disc pl-5 leading-7 text-slate-600">
@@ -2119,22 +2120,22 @@ function FinancialSetupCard({
     <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[0.9fr_1.1fr]">
       <div>
         <p className="text-xs font-black uppercase text-blue-700">Financeiro</p>
-        <h2 className="mt-1 text-2xl font-black">Configuracao do Asaas</h2>
+        <h2 className="mt-1 text-2xl font-black">Configuração do Asaas</h2>
         <p className="mt-2 leading-7 text-slate-600">
-          Valide se a cobranca online esta pronta antes de vender planos ou receber pagamentos das propostas.
+          Valide se a cobrança online está pronta antes de vender planos ou receber pagamentos das propostas.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <StatusPill label={ready ? "Asaas conectado" : "Ajuste pendente"} tone={ready ? "success" : "warning"} />
-          <StatusPill label={status?.sandbox ? "Sandbox" : "Producao"} tone={status?.sandbox ? "warning" : "success"} />
+          <StatusPill label={status?.sandbox ? "Sandbox" : "Produção"} tone={status?.sandbox ? "warning" : "success"} />
           <StatusPill label={webhookReady ? "Webhook token ok" : "Webhook sem token"} tone={webhookReady ? "success" : "danger"} />
         </div>
       </div>
 
       <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <DetailLine label="Chave API" value={status?.hasApiKey ? "Configurada" : "Nao configurada"} />
+          <DetailLine label="Chave API" value={status?.hasApiKey ? "Configurada" : "Não configurada"} />
           <DetailLine label="Conexao" value={status ? (status.connection.ok ? `Ok (${status.connection.status})` : status.connection.error || "Falhou") : "Verificando"} />
-          <DetailLine label="Ambiente" value={status?.sandbox ? "Sandbox" : "Producao"} />
+          <DetailLine label="Ambiente" value={status?.sandbox ? "Sandbox" : "Produção"} />
           <DetailLine label="API" value={status?.apiHost || "Aguardando"} />
         </div>
         <div>
@@ -2143,7 +2144,7 @@ function FinancialSetupCard({
             {status?.webhookUrl || "Carregando URL..."}
           </code>
           <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-            No Asaas, envie eventos de cobranca como PAYMENT_RECEIVED, PAYMENT_CONFIRMED, PAYMENT_OVERDUE e PAYMENT_DELETED para esta URL.
+            No Asaas, envie eventos de cobrança como PAYMENT_RECEIVED, PAYMENT_CONFIRMED, PAYMENT_OVERDUE e PAYMENT_DELETED para esta URL.
           </p>
         </div>
         <button
@@ -2199,7 +2200,7 @@ function AccountView({
       return;
     }
     if (!isValidEmail(email.trim())) {
-      setError("Informe um e-mail valido.");
+      setError("Informe um e-mail válido.");
       setSaving(false);
       return;
     }
@@ -2226,7 +2227,7 @@ function AccountView({
       setNewPassword("");
       setMessage("Conta atualizada com sucesso.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel atualizar sua conta.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível atualizar sua conta.");
     } finally {
       setSaving(false);
     }
@@ -2251,13 +2252,13 @@ function AccountView({
       </form>
 
       <aside className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <p className="text-xs font-black uppercase text-blue-700">Seguranca</p>
+        <p className="text-xs font-black uppercase text-blue-700">Segurança</p>
         <h3 className="mt-1 text-xl font-black">Antes de publicar</h3>
         <ul className="mt-3 grid gap-3 text-sm font-bold leading-6 text-slate-600">
-          <li>Use uma senha forte e troque o AUTH_SECRET em producao.</li>
+          <li>Use uma senha forte e troque o AUTH_SECRET em produção.</li>
           <li>Ative Turnstile no cadastro para reduzir abuso.</li>
           <li>Configure Resend para recuperar senha por e-mail.</li>
-          <li>Use storage S3/R2 para imagens em producao.</li>
+          <li>Use storage S3/R2 para imagens em produção.</li>
         </ul>
       </aside>
     </section>
@@ -2303,19 +2304,19 @@ function BrandView({
       return;
     }
     if (form.logoUrl?.trim() && !isValidHttpUrl(form.logoUrl.trim())) {
-      setError("Informe uma URL de logo valida comecando com http:// ou https://.");
+      setError("Informe uma URL de logo válida começando com http:// ou https://.");
       return;
     }
     if (form.whatsapp?.trim() && !isValidPhone(form.whatsapp.trim())) {
-      setError("Informe um WhatsApp valido.");
+      setError("Informe um WhatsApp válido.");
       return;
     }
     if (form.email?.trim() && !isValidEmail(form.email.trim())) {
-      setError("Informe um e-mail comercial valido.");
+      setError("Informe um e-mail comercial válido.");
       return;
     }
     if (form.website?.trim() && !isValidHttpUrl(form.website.trim())) {
-      setError("Informe um site valido comecando com http:// ou https://.");
+      setError("Informe um site válido começando com http:// ou https://.");
       return;
     }
     setSaving(true);
@@ -2339,7 +2340,7 @@ function BrandView({
       setForm(saved);
       setFile(null);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar a marca.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar a marca.");
     } finally {
       setSaving(false);
     }
@@ -2349,10 +2350,10 @@ function BrandView({
     <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
       <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
         <div>
-          <p className="text-xs font-black uppercase text-blue-700">Configuracao</p>
+          <p className="text-xs font-black uppercase text-blue-700">Configuração</p>
           <h2 className="text-2xl font-black">Marca profissional</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Esses dados aparecem na proposta publica, no PDF e no contato por WhatsApp.
+            Esses dados aparecem na proposta pública, no PDF e no contato por WhatsApp.
           </p>
         </div>
 
@@ -2430,10 +2431,10 @@ function BrandView({
           </div>
 
           <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600">
-            <span>WhatsApp: {form.whatsapp || "Nao informado"}</span>
-            <span>Instagram: {form.instagram || "Nao informado"}</span>
-            <span>E-mail: {form.email || "Nao informado"}</span>
-            <span>Site: {form.website || "Nao informado"}</span>
+            <span>WhatsApp: {form.whatsapp || "Não informado"}</span>
+            <span>Instagram: {form.instagram || "Não informado"}</span>
+            <span>E-mail: {form.email || "Não informado"}</span>
+            <span>Site: {form.website || "Não informado"}</span>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
             <ColorSwatch label="Principal" value={form.primaryColor} />
@@ -2690,13 +2691,13 @@ function AuthScreen() {
     />
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="relative isolate overflow-hidden bg-slate-950 text-white">
-        <img className="absolute inset-0 -z-20 h-full w-full object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" />
+        <Image className="absolute inset-0 -z-20 object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" fill priority sizes="100vw" />
         <div className="absolute inset-0 -z-10 bg-slate-950/74" />
         <div className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 py-4 pb-20 sm:min-h-[92vh] sm:px-6 sm:pb-4 lg:px-8">
           <header className="flex items-center justify-between gap-3">
             <a className="inline-flex items-center gap-2 font-black" href="#">
               <span className="grid h-12 w-40 place-items-center rounded-lg bg-white/95 px-3">
-                <img alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" />
+                <Image alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
               </span>
             </a>
             <nav className="hidden items-center gap-6 text-sm font-bold text-white/80 md:flex">
@@ -2731,10 +2732,10 @@ function AuthScreen() {
               <p className="inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
                 Para prestadores que querem parar de perder venda por apresentação fraca
               </p>
-              <h1 className="mt-5 text-4xl font-black leading-none sm:text-6xl lg:text-7xl">
+              <h1 className="mt-5 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Seu orçamento pode estar matando vendas que sua proposta deveria fechar.
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-white/82 sm:text-lg">
+              <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
                 O FechaPro transforma preço, prazo e escopo em uma proposta comercial online que defende seu valor, mostra provas, gera PDF e leva o cliente para o aceite. Para quem quer vender serviço como profissional, não como pedido de orçamento.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -2806,8 +2807,8 @@ function AuthScreen() {
           {benefits.map((benefit) => (
             <article className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={benefit.title}>
               <benefit.icon className="text-green-700" size={24} />
-              <h2 className="mt-4 text-xl font-black">{benefit.title}</h2>
-              <p className="mt-2 leading-7 text-slate-600">{benefit.description}</p>
+              <h2 className="mt-4 text-lg font-black">{benefit.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{benefit.description}</p>
             </article>
           ))}
         </div>
@@ -2817,8 +2818,8 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-rose-700">Onde a venda escapa</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Talvez seu serviço seja bom. O problema é como ele chega na mão do cliente.</h2>
-            <p className="mt-4 leading-7 text-slate-600">
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Talvez seu serviço seja bom. O problema é como ele chega na mão do cliente.</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               Quando a proposta parece improvisada, o cliente compara por preço. Quando ela explica valor, mostra prova e facilita o aceite, a conversa muda.
             </p>
           </div>
@@ -2826,7 +2827,7 @@ function AuthScreen() {
             {dealLeaks.map((item) => (
               <article className="grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-rose-700/15 bg-rose-50 p-5" key={item}>
                 <span className="grid size-9 place-items-center rounded-lg bg-rose-700 font-black text-white">!</span>
-                <p className="self-center font-black leading-7 text-rose-950">{item}</p>
+                <p className="self-center text-sm font-black leading-6 text-rose-950 sm:text-base">{item}</p>
               </article>
             ))}
           </div>
@@ -2837,8 +2838,8 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Simulador de fechamento</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Coloque números no problema: quanto custa deixar proposta esfriar?</h2>
-            <p className="mt-4 leading-7 text-slate-600">
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Coloque números no problema: quanto custa deixar proposta esfriar?</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               Ajuste o volume de propostas, o ticket médio e quantas vendas poderiam ser resgatadas com uma apresentação mais clara, mais forte e mais fácil de aprovar.
             </p>
           </div>
@@ -2877,8 +2878,8 @@ function AuthScreen() {
             <div className="grid gap-3 rounded-lg bg-slate-950 p-5 text-white sm:grid-cols-[1fr_auto] sm:items-center">
               <div>
                 <p className="text-xs font-black uppercase text-green-300">Potencial que hoje pode estar vazando</p>
-                <strong className="mt-2 block text-4xl font-black">{money.format(estimatedMonthlyUpside)}</strong>
-                <p className="mt-2 leading-7 text-white/70">
+                <strong className="mt-2 block text-3xl font-black sm:text-4xl">{money.format(estimatedMonthlyUpside)}</strong>
+                <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
                   Se apenas {Math.min(rescuedDeals, monthlyProposals)} proposta(s) por mês deixarem de morrer no follow-up, esse é o valor que volta para a conversa.
                 </p>
               </div>
@@ -2894,8 +2895,8 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-300">Por que aumenta o desejo</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Sua proposta passa a vender antes da reunião de follow-up.</h2>
-            <p className="mt-4 leading-7 text-white/70">
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua proposta passa a vender antes da reunião de follow-up.</h2>
+            <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
               O cliente entende o que está comprando, percebe profissionalismo, vê motivos para confiar e encontra um caminho claro para aprovar.
             </p>
           </div>
@@ -2908,8 +2909,8 @@ function AuthScreen() {
             ].map((feature) => (
               <article className="rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
                 <feature.icon className="text-green-300" size={24} />
-                <h3 className="mt-4 text-xl font-black">{feature.title}</h3>
-                <p className="mt-2 leading-7 text-white/70">{feature.text}</p>
+                <h3 className="mt-4 text-lg font-black">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-white/70">{feature.text}</p>
               </article>
             ))}
           </div>
@@ -2920,8 +2921,8 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Fluxo de venda</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Monte uma proposta que conduz o cliente até o sim.</h2>
-            <p className="mt-4 leading-7 text-slate-600">
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Monte uma proposta que conduz o cliente até o sim.</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O FechaPro organiza sua venda em uma sequência simples: contexto, valor, prova, condição e aceite.
             </p>
           </div>
@@ -2929,7 +2930,7 @@ function AuthScreen() {
             {steps.map((step, index) => (
               <article className="grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-black/10 bg-white p-5" key={step}>
                 <span className="grid size-10 place-items-center rounded-lg bg-slate-950 font-black text-white">{index + 1}</span>
-                <p className="self-center text-lg font-black leading-7">{step}</p>
+                <p className="self-center text-base font-black leading-6 sm:text-lg sm:leading-7">{step}</p>
               </article>
             ))}
           </div>
@@ -2940,7 +2941,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Para quem vende serviço</p>
-            <h2 className="mt-2 max-w-3xl text-4xl font-black leading-tight">Feito para quem vende algo que não deveria ser julgado só pelo preço.</h2>
+            <h2 className="mt-2 max-w-3xl text-3xl font-black leading-tight sm:text-4xl">Feito para quem vende algo que não deveria ser julgado só pelo preço.</h2>
             <div className="mt-6 flex flex-wrap gap-2">
               {niches.map((niche) => (
                 <span className="rounded-lg border border-black/10 bg-slate-50 px-4 py-3 text-sm font-black" key={niche}>
@@ -2951,10 +2952,10 @@ function AuthScreen() {
           </div>
           <div className="rounded-lg border border-black/10 bg-slate-50 p-5">
             <p className="text-xs font-black uppercase text-blue-700">O que a proposta precisa provar</p>
-            <h3 className="mt-2 text-2xl font-black">O cliente não compra só entrega. Ele compra confiança para escolher você.</h3>
+            <h3 className="mt-2 text-xl font-black sm:text-2xl">O cliente não compra só entrega. Ele compra confiança para escolher você.</h3>
             <ul className="mt-5 grid gap-3">
               {objections.map((item) => (
-                <li className="flex gap-3 font-bold leading-7 text-slate-700" key={item}>
+                <li className="flex gap-3 text-sm font-bold leading-6 text-slate-700 sm:text-base sm:leading-7" key={item}>
                   <CheckCircle2 className="mt-1 shrink-0 text-green-700" size={18} />
                   {item}
                 </li>
@@ -2968,8 +2969,8 @@ function AuthScreen() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase text-green-300">Preço que valida negócio</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Quanto vale parar de perder venda por uma proposta fraca?</h2>
-            <p className="mt-4 leading-7 text-white/70">
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quanto vale parar de perder venda por uma proposta fraca?</h2>
+            <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
               Comece com links profissionais e evolua para site quando quiser transformar sua proposta em uma máquina de captação e fechamento.
             </p>
           </div>
@@ -2982,12 +2983,12 @@ function AuthScreen() {
                   </span>
                 ) : null}
                 <p className="text-sm font-black uppercase text-blue-400">{plan.name}</p>
-                <strong className="mt-3 block text-4xl font-black">{plan.price}</strong>
+                <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
                 <span className={plan.name === "Pro Site" ? "mt-1 block text-slate-600" : "mt-1 block text-white/65"}>/mês</span>
-                <p className={plan.name === "Pro Site" ? "mt-4 leading-7 text-slate-600" : "mt-4 leading-7 text-white/70"}>{plan.detail}</p>
+                <p className={plan.name === "Pro Site" ? "mt-4 text-sm leading-6 text-slate-600" : "mt-4 text-sm leading-6 text-white/70"}>{plan.detail}</p>
                 <ul className="mt-5 grid gap-3">
                   {plan.items.map((item) => (
-                    <li className="flex items-center gap-2 font-bold" key={item}>
+                    <li className="flex items-center gap-2 text-sm font-bold" key={item}>
                       <CheckCircle2 className="shrink-0 text-green-500" size={18} />
                       {item}
                     </li>
@@ -3011,8 +3012,8 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Dúvidas comuns</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Antes de mandar mais um orçamento simples, tire suas dúvidas.</h2>
-            <p className="mt-4 leading-7 text-slate-600">
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Antes de mandar mais um orçamento simples, tire suas dúvidas.</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O FechaPro foi pensado para tirar sua venda do improviso e colocar sua oferta em uma apresentação clara, rastreável e fácil de aceitar.
             </p>
           </div>
@@ -3020,7 +3021,7 @@ function AuthScreen() {
             {faqs.map((faq) => (
               <details className="rounded-lg border border-black/10 bg-slate-50 p-4" key={faq.question}>
                 <summary className="cursor-pointer font-black">{faq.question}</summary>
-                <p className="mt-3 leading-7 text-slate-600">{faq.answer}</p>
+                <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">{faq.answer}</p>
               </details>
             ))}
           </div>
@@ -3031,7 +3032,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-100">Pronto para subir o nível</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Sua próxima proposta pode parecer mais cara, mais clara e mais fácil de aprovar.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua próxima proposta pode parecer mais cara, mais clara e mais fácil de aprovar.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="/cadastro">
             Melhorar meus fechamentos
@@ -3125,7 +3126,7 @@ function GuidedTour({
               Pular tour
             </button>
             <button className="min-h-11 rounded-lg bg-green-600 px-5 font-black text-white" type="button" onClick={onNext}>
-              {isLast ? "Concluir" : "Proximo passo"}
+              {isLast ? "Concluir" : "Próximo passo"}
             </button>
           </div>
         </div>
@@ -3307,7 +3308,7 @@ function PreviewItem({ label, value }: { label: string; value: string }) {
 function PortfolioStrip({ portfolio }: { portfolio: PortfolioItem[] }) {
   const items = portfolio.length ? portfolio.slice(0, 3) : [
     { id: "1", title: "Logo", category: "Design", imageUrl: "" },
-    { id: "2", title: "Social", category: "Conteudo", imageUrl: "" },
+    { id: "2", title: "Social", category: "Conteúdo", imageUrl: "" },
     { id: "3", title: "Web", category: "Site", imageUrl: "" },
   ];
   return (
@@ -3374,19 +3375,19 @@ function ProposalDetailPanel({
         <div className="grid gap-3 sm:grid-cols-4">
           <MiniStat label="Status" value={proposalStatusLabel(proposal.status)} />
           <MiniStat label="Valor" value={money.format(proposal.price)} />
-          <MiniStat label="Visualizacoes" value={String(proposal.viewCount || 0)} />
+          <MiniStat label="Visualizações" value={String(proposal.viewCount || 0)} />
           <MiniStat label="Validade" value={formatDateOnly(proposal.validUntil)} />
         </div>
 
         <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <DetailLine label="Cliente" value={proposal.clientName} />
-            <DetailLine label="E-mail" value={proposal.clientEmail || "Nao informado"} />
+            <DetailLine label="E-mail" value={proposal.clientEmail || "Não informado"} />
             <DetailLine label="Prazo" value={proposal.deadline || "A combinar"} />
             <DetailLine label="Pagamento" value={proposal.payment || "A combinar"} />
           </div>
-          <DetailLine label="Inclui" value={proposal.included.length ? proposal.included.join(", ") : "Itens ainda nao informados"} />
-          <DetailLine label="Observacoes" value={proposal.notes || "Sem observacoes"} />
+          <DetailLine label="Inclui" value={proposal.included.length ? proposal.included.join(", ") : "Itens ainda não informados"} />
+          <DetailLine label="Observações" value={proposal.notes || "Sem observações"} />
         </div>
 
         <div className="grid gap-2 sm:grid-cols-3">
@@ -3428,7 +3429,7 @@ function ProposalDetailPanel({
         </div>
 
         <div className="grid gap-2 rounded-lg border border-black/10 bg-white p-4">
-          <p className="text-xs font-black uppercase text-blue-700">Acoes rapidas</p>
+          <p className="text-xs font-black uppercase text-blue-700">Ações rápidas</p>
           <div className="grid grid-cols-2 gap-2">
             {(Object.keys(statusConfig) as ProposalStatus[]).map((statusKey) => {
               const config = statusConfig[statusKey]!;
@@ -3679,7 +3680,7 @@ function IconButton({
 function parsePrompt(prompt: string): ProposalDraft {
   const valueMatch = prompt.match(/(?:r\$|valor|investimento)\s*(?:de|:)?\s*([\d.,]+)/i);
   const deadlineMatch = prompt.match(/(?:prazo|em)\s*(?:de|:)?\s*([\w\s]+?)(?:,|\.|$)/i);
-  const service = prompt.split(",")[0]?.trim() || "Servico personalizado";
+  const service = prompt.split(",")[0]?.trim() || "Serviço personalizado";
 
   return {
     clientName: "",
@@ -3688,8 +3689,8 @@ function parsePrompt(prompt: string): ProposalDraft {
     deadline: deadlineMatch ? deadlineMatch[1].trim() : "",
     validUntil: nextWeekDate(),
     payment: prompt.toLowerCase().includes("50") ? "50% na entrada e 50% na entrega" : "A combinar",
-    included: ["Diagnostico inicial", "Execucao do servico principal", "Ajustes combinados em proposta", "Entrega final organizada"],
-    notes: "Proposta valida ate a data informada. Alteracoes de escopo podem gerar novo orcamento.",
+    included: ["Diagnóstico inicial", "Execução do serviço principal", "Ajustes combinados em proposta", "Entrega final organizada"],
+    notes: "Proposta válida até a data informada. Alterações de escopo podem gerar novo orçamento.",
   };
 }
 
@@ -3705,16 +3706,16 @@ function todayDate() {
 
 function validateProposalDraft(draft: ProposalDraft) {
   if (!draft.clientName.trim()) return "Informe o nome do cliente.";
-  if (!draft.serviceName.trim()) return "Informe o servico da proposta.";
+  if (!draft.serviceName.trim()) return "Informe o serviço da proposta.";
   if (!Number.isFinite(draft.price) || draft.price <= 0) return "Informe um valor maior que zero.";
   if (!draft.deadline.trim()) return "Informe o prazo da proposta.";
-  if (draft.validUntil && !isValidDateOnly(draft.validUntil)) return "Informe uma data de validade valida.";
-  if (draft.clientEmail?.trim() && !isValidEmail(draft.clientEmail.trim())) return "Informe um e-mail de cliente valido.";
+  if (draft.validUntil && !isValidDateOnly(draft.validUntil)) return "Informe uma data de validade válida.";
+  if (draft.clientEmail?.trim() && !isValidEmail(draft.clientEmail.trim())) return "Informe um e-mail de cliente válido.";
   return null;
 }
 
 function formatDateOnly(value?: string | null) {
-  if (!value) return "Nao informado";
+  if (!value) return "Não informado";
   const date = new Date(`${value}T12:00:00`);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString("pt-BR");
@@ -3754,12 +3755,12 @@ function proposalTimeline(proposal: Proposal) {
     },
     {
       title: "Link pronto para envio",
-      description: proposal.publicSlug ? `/p/${proposal.publicSlug}` : "Link publico ainda nao gerado.",
+      description: proposal.publicSlug ? `/p/${proposal.publicSlug}` : "Link público ainda não gerado.",
       done: Boolean(proposal.publicSlug),
     },
     {
       title: "Cliente visualizou",
-      description: viewed ? `${proposal.viewCount || 1} visualizacao(oes) registrada(s).` : "Aguardando a primeira visualizacao.",
+      description: viewed ? `${proposal.viewCount || 1} visualização(ões) registrada(s).` : "Aguardando a primeira visualização.",
       done: viewed,
     },
     {
@@ -3778,7 +3779,7 @@ function proposalTimeline(proposal: Proposal) {
       title: "Pagamento",
       description: paid
         ? `Pagamento confirmado${proposal.paymentPaidAt ? ` em ${formatDateTime(proposal.paymentPaidAt)}` : ""}.`
-        : "Pagamento ainda nao confirmado.",
+        : "Pagamento ainda não confirmado.",
       done: paid,
     },
   ];

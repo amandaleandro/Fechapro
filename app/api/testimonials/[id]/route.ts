@@ -11,7 +11,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const authorName = cleanString(body.authorName);
   const quote = cleanString(body.quote);
 
-  if (!authorName || !quote) return jsonError("Nome e depoimento sao obrigatorios.");
+  if (!authorName || !quote) return jsonError("Nome e depoimento são obrigatórios.");
 
   await prisma.testimonialAsset.updateMany({
     where: { id, userId: session.id },

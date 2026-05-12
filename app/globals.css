@@ -172,8 +172,8 @@ textarea {
 @media (max-width: 480px) {
   h1,
   h2 {
-    font-size: min(2.25rem, 11vw) !important;
-    line-height: 1.08 !important;
+    font-size: min(1.875rem, 9vw) !important;
+    line-height: 1.15 !important;
   }
 }
 

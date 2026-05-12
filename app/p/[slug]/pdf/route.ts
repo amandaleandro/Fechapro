@@ -146,7 +146,7 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     ellipsis: true,
   });
   doc.fillColor("#CBD5E1").font("Helvetica").fontSize(10).text(
-    data.brandBio || `Preparada por ${data.ownerName} com escopo, investimento, prazo e aceite em um unico documento.`,
+    data.brandBio || `Preparada por ${data.ownerName} com escopo, investimento, prazo e aceite em um único documento.`,
     MARGIN,
     178,
     { width: 315, height: 32, lineGap: 3, ellipsis: true },
@@ -165,10 +165,10 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
 
 function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   doc.y = 258;
-  sectionTitle(doc, "Resumo da proposta", "Informacoes principais");
+  sectionTitle(doc, "Resumo da proposta", "Informações principais");
 
   const items: Array<[string, string]> = [
-    ["Servico", data.serviceName],
+    ["Serviço", data.serviceName],
     ["Prazo", data.deadline],
     ["Pagamento", data.payment],
     ["Validade", data.validUntil],
@@ -194,9 +194,9 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
 
 function drawScope(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   ensureSpace(doc, 145);
-  sectionTitle(doc, "Escopo incluso", "Entregaveis");
+  sectionTitle(doc, "Escopo incluso", "Entregáveis");
 
-  const items = data.included.length ? data.included : ["Servico conforme combinado."];
+  const items = data.included.length ? data.included : ["Serviço conforme combinado."];
   items.forEach((item) => {
     ensureSpace(doc, 28);
     const y = doc.y + 2;
@@ -213,7 +213,7 @@ function drawScope(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
 function drawNotes(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   if (!data.notes) return;
   ensureSpace(doc, 105);
-  sectionTitle(doc, "Observacoes", "Condicoes");
+  sectionTitle(doc, "Observações", "Condições");
   const height = Math.max(68, doc.heightOfString(data.notes, { width: CONTENT_WIDTH - 28, lineGap: 4 }) + 28);
   ensureSpace(doc, height + 8);
   doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 10).fill("#F8FAFC");
@@ -227,7 +227,7 @@ function drawNotes(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
 async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   if (!data.portfolio.length) return;
   ensureSpace(doc, 200);
-  sectionTitle(doc, "Portfolio relacionado", "Prova visual");
+  sectionTitle(doc, "Portfólio relacionado", "Prova visual");
 
   const cardWidth = (CONTENT_WIDTH - 18) / 2;
   const cardHeight = 125;
@@ -244,7 +244,7 @@ async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
       doc.image(image, x + 10, y + 10, { fit: [cardWidth - 20, 72], align: "center", valign: "center" });
     } else {
       doc.roundedRect(x + 10, y + 10, cardWidth - 20, 72, 8).fill("#E0F2FE");
-      doc.fillColor(data.brandColor).font("Helvetica-Bold").fontSize(12).text(item.category || "Portfolio", x + 10, y + 40, {
+      doc.fillColor(data.brandColor).font("Helvetica-Bold").fontSize(12).text(item.category || "Portfólio", x + 10, y + 40, {
         align: "center",
         width: cardWidth - 20,
       });
@@ -291,7 +291,7 @@ function drawDecision(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text("STATUS DA PROPOSTA", MARGIN + 18, y + 18);
   doc.fillColor("#FFFFFF").fontSize(18).text(labelStatus(data.status), MARGIN + 18, y + 34);
 
-  let detail = "Para aceitar, acesse o link da proposta e confirme pelo botao de aceite.";
+  let detail = "Para aceitar, acesse o link da proposta e confirme pelo botão de aceite.";
   if (data.status === "accepted") {
     detail = `Aceita por ${data.acceptedBy || data.clientName}${data.acceptedAt ? ` em ${data.acceptedAt}` : ""}.`;
   }

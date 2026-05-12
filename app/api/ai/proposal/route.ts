@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         {
           role: "system",
           content:
-            "Voce e especialista em propostas comerciais para prestadores de servico no Brasil. Responda somente JSON valido.",
+            "Você é especialista em propostas comerciais para prestadores de serviço no Brasil. Responda somente JSON válido.",
         },
         {
           role: "user",
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
 function buildFallbackProposal(prompt: string) {
   const valueMatch = prompt.match(/(?:r\$|valor|investimento)\s*(?:de|:)?\s*([\d.,]+)/i);
   const deadlineMatch = prompt.match(/(?:prazo|em)\s*(?:de|:)?\s*([\w\s]+?)(?:,|\.|$)/i);
-  const service = prompt.split(",")[0]?.trim() || "Servico personalizado";
+  const service = prompt.split(",")[0]?.trim() || "Serviço personalizado";
 
   return {
     clientName: "",
@@ -117,9 +117,9 @@ function buildFallbackProposal(prompt: string) {
     price: valueMatch ? Number(valueMatch[1].replace(/\./g, "").replace(",", ".")) : 0,
     deadline: deadlineMatch ? deadlineMatch[1].trim() : "",
     payment: prompt.toLowerCase().includes("50") ? "50% na entrada e 50% na entrega" : "A combinar",
-    included: ["Diagnostico inicial", "Execucao do servico principal", "Ajustes combinados em proposta", "Entrega final organizada"],
-    notes: "Proposta valida ate a data informada. Alteracoes de escopo podem gerar novo orcamento.",
+    included: ["Diagnóstico inicial", "Execução do serviço principal", "Ajustes combinados em proposta", "Entrega final organizada"],
+    notes: "Proposta válida até a data informada. Alterações de escopo podem gerar novo orçamento.",
     upsell: "Considere oferecer um pacote complementar para aumentar o valor do contrato.",
-    sendMessage: "Segue uma proposta profissional para avaliacao. Fico a disposicao para ajustar qualquer detalhe.",
+    sendMessage: "Segue uma proposta profissional para avaliação. Fico à disposição para ajustar qualquer detalhe.",
   };
 }

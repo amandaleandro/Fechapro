@@ -37,7 +37,7 @@ export async function PUT(request: Request) {
   const body = (await request.json()) as { plan?: PlanCode };
 
   if (!body.plan || !plans[body.plan]) {
-    return jsonError("Plano invalido.");
+    return jsonError("Plano inválido.");
   }
 
   const subscription = await prisma.planSubscription.upsert({

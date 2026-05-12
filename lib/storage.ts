@@ -2,8 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-const localUploadDir =
-  process.env.UPLOAD_DIR || path.join(/* turbopackIgnore: true */ process.cwd(), "uploads");
+const localUploadDir = process.env.UPLOAD_DIR || "uploads";
 
 function s3Client() {
   const endpoint = process.env.S3_ENDPOINT;

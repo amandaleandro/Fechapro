@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as { plan?: PlanCode };
 
   if (!body.plan || !plans[body.plan]) {
-    return jsonError("Plano invalido.");
+    return jsonError("Plano inválido.");
   }
 
   const plan = plans[body.plan];
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: checkout.url });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nao foi possivel criar o pagamento.";
+    const message = error instanceof Error ? error.message : "Não foi possível criar o pagamento.";
     return jsonError(message, 502);
   }
 }

@@ -18,9 +18,9 @@ export async function POST(request: Request) {
   const phone = cleanOptionalString(body.phone);
   const segment = cleanOptionalString(body.segment);
 
-  if (!name) return jsonError("Nome obrigatorio.");
-  if (email && !isValidEmail(email)) return jsonError("E-mail invalido.");
-  if (phone && !isValidPhone(phone)) return jsonError("Telefone invalido.");
+  if (!name) return jsonError("Nome obrigatório.");
+  if (email && !isValidEmail(email)) return jsonError("E-mail inválido.");
+  if (phone && !isValidPhone(phone)) return jsonError("Telefone inválido.");
 
   const item = await prisma.clientAsset.create({
     data: {

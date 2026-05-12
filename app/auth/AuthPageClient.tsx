@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { ArrowRight, Check, FileText, Link2, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
@@ -44,7 +46,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
     }
 
     if (!isValidEmail(email.trim())) {
-      setAuthError("Informe um e-mail valido.");
+      setAuthError("Informe um e-mail válido.");
       return;
     }
 
@@ -54,7 +56,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
     }
 
     if (isSignup && turnstileSiteKey && !turnstileToken) {
-      setAuthError("Confirme a protecao anti-bot para criar a conta.");
+      setAuthError("Confirme a proteção anti-bot para criar a conta.");
       return;
     }
 
@@ -69,7 +71,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
       router.push("/");
       router.refresh();
     } catch (caught) {
-      setAuthError(caught instanceof Error ? caught.message : "Nao foi possivel entrar agora.");
+      setAuthError(caught instanceof Error ? caught.message : "Não foi possível entrar agora.");
     } finally {
       setAuthLoading(false);
     }
@@ -85,11 +87,11 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(34,197,94,0.24),transparent_28%),radial-gradient(circle_at_86%_8%,rgba(37,99,235,0.22),transparent_30%)]" />
           <div className="absolute inset-x-8 bottom-0 -z-10 h-56 rounded-t-[100%] bg-green-500/10 blur-3xl" />
 
-          <a className="inline-flex w-fit items-center gap-2 font-black" href="/">
+          <Link className="inline-flex w-fit items-center gap-2 font-black" href="/">
             <span className="grid h-12 w-40 place-items-center rounded-lg bg-white px-3 shadow-lg shadow-black/20">
-              <img alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" />
+              <Image alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
             </span>
-          </a>
+          </Link>
 
           <div className="self-center">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase text-green-200 shadow-sm">
@@ -101,8 +103,8 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             </h1>
             <p className="mt-6 max-w-md text-base leading-7 text-slate-300 sm:text-lg">
               {isSignup
-                ? "Cadastre-se para montar propostas com portfolio, PDF, status e botao de aceite."
-                : "Entre para gerenciar clientes, servicos, portfolio, depoimentos e propostas."}
+                ? "Cadastre-se para montar propostas com portfólio, PDF, status e botão de aceite."
+                : "Entre para gerenciar clientes, serviços, portfólio, depoimentos e propostas."}
             </p>
           </div>
 
@@ -133,7 +135,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           <form className="grid gap-5" onSubmit={submitAuth}>
             <div className="space-y-1">
               <p className="text-xs font-black uppercase text-blue-700">{isSignup ? "Cadastro" : "Login"}</p>
-              <h2 className="text-2xl font-black leading-tight">{isSignup ? "Crie sua conta gratis" : "Entre no FechaPro"}</h2>
+              <h2 className="text-2xl font-black leading-tight">{isSignup ? "Crie sua conta grátis" : "Entre no FechaPro"}</h2>
               <p className="max-w-xl text-sm leading-6 text-slate-500">
                 {isSignup ? "Leva menos de um minuto para liberar seu painel." : "Continue de onde parou e acompanhe suas propostas."}
               </p>
@@ -148,7 +150,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             <div className="grid gap-4">
               {isSignup ? <AuthField autoComplete="name" icon={User} label="Nome" maxLength={80} placeholder="Seu nome completo" required value={name} onChange={setName} /> : null}
               <AuthField autoComplete="email" icon={Mail} label="E-mail" placeholder="voce@email.com" required type="email" value={email} onChange={setEmail} />
-              <AuthField autoComplete={isSignup ? "new-password" : "current-password"} icon={Lock} label="Senha" hint={isSignup ? "Minimo de 8 caracteres." : undefined} minLength={isSignup ? 8 : undefined} placeholder="Sua senha" required type="password" value={password} onChange={setPassword} />
+              <AuthField autoComplete={isSignup ? "new-password" : "current-password"} icon={Lock} label="Senha" hint={isSignup ? "Mínimo de 8 caracteres." : undefined} minLength={isSignup ? 8 : undefined} placeholder="Sua senha" required type="password" value={password} onChange={setPassword} />
             </div>
 
             {isSignup && turnstileSiteKey ? (
@@ -246,7 +248,7 @@ async function apiPost(url: string, body: unknown) {
   });
 
   if (!response.ok) {
-    throw new Error(await readApiError(response, "Nao foi possivel continuar."));
+    throw new Error(await readApiError(response, "Não foi possível continuar."));
   }
 
   return response.json();

@@ -7,7 +7,7 @@ const ASAAS_BASE =
 
 function apiKey() {
   const key = process.env.ASAAS_API_KEY?.trim();
-  if (!key) throw new Error("ASAAS_API_KEY nao configurada.");
+  if (!key) throw new Error("ASAAS_API_KEY não configurada.");
   return key;
 }
 
@@ -54,7 +54,7 @@ export async function checkAsaasConnection() {
       ok: false,
       status: null,
       totalCount: null,
-      error: "ASAAS_API_KEY nao configurada.",
+      error: "ASAAS_API_KEY não configurada.",
     };
   }
 
@@ -71,14 +71,14 @@ export async function checkAsaasConnection() {
       ok: res.ok,
       status: res.status,
       totalCount: typeof data?.totalCount === "number" ? data.totalCount : null,
-      error: res.ok ? null : data?.errors?.[0]?.description || "Nao foi possivel conectar ao Asaas.",
+      error: res.ok ? null : data?.errors?.[0]?.description || "Não foi possível conectar ao Asaas.",
     };
   } catch (error) {
     return {
       ok: false,
       status: null,
       totalCount: null,
-      error: error instanceof Error ? error.message : "Nao foi possivel conectar ao Asaas.",
+      error: error instanceof Error ? error.message : "Não foi possível conectar ao Asaas.",
     };
   }
 }
@@ -116,8 +116,8 @@ export async function createPlanCheckout(input: {
   return request<AsaasPaymentLink>("POST", "/paymentLinks", {
     name: `FechaPro ${plan.name}`,
     description: hasSetup
-      ? `${plan.name}: implantacao inicial. Manutencao depois: ${plan.maintenancePrice}. Limite de ${plan.proposalLimit} propostas por mes.`
-      : `${plan.name} do FechaPro com limite de ${plan.proposalLimit} propostas por mes.`,
+      ? `${plan.name}: implantação inicial. Manutenção depois: ${plan.maintenancePrice}. Limite de ${plan.proposalLimit} propostas por mês.`
+      : `${plan.name} do FechaPro com limite de ${plan.proposalLimit} propostas por mês.`,
     value: plan.priceCents / 100,
     billingType: "UNDEFINED",
     chargeType: hasSetup ? "DETACHED" : "RECURRENT",
@@ -132,6 +132,6 @@ export async function createPlanCheckout(input: {
 
 export function verifyAsaasWebhook(token: string) {
   const expected = process.env.ASAAS_WEBHOOK_TOKEN?.trim();
-  if (!expected) throw new Error("ASAAS_WEBHOOK_TOKEN nao configurado.");
-  if (token !== expected) throw new Error("Token do webhook invalido.");
+  if (!expected) throw new Error("ASAAS_WEBHOOK_TOKEN não configurado.");
+  if (token !== expected) throw new Error("Token do webhook inválido.");
 }

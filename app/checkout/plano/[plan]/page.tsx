@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PlanCheckoutClient } from "@/app/checkout/plano/[plan]/PlanCheckoutClient";
 import { getSession } from "@/lib/session";
@@ -20,23 +21,23 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
         <article className="overflow-hidden rounded-lg bg-white shadow-xl shadow-slate-900/10">
           <div className="h-2 bg-green-600" />
           <div className="grid gap-5 p-5 sm:p-7">
-            <a className="text-sm font-black text-slate-500" href="/">
+            <Link className="text-sm font-black text-slate-500" href="/">
               Voltar para o painel
-            </a>
+            </Link>
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Checkout de assinatura</p>
               <h1 className="mt-2 max-w-2xl text-4xl font-black leading-tight">
                 Confirme o plano {plan.name}.
               </h1>
               <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-                Revise os beneficios antes de abrir o pagamento no Asaas. A assinatura fica ativa quando o webhook confirmar a cobranca.
+                Revise os benefícios antes de abrir o pagamento no Asaas. A assinatura fica ativa quando o webhook confirmar a cobrança.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <CheckoutMetric label="Plano" value={plan.name} />
-              <CheckoutMetric label={plan.maintenancePrice ? "Primeiro mes" : "Valor mensal"} value={plan.price} />
-              <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mes`} />
+              <CheckoutMetric label={plan.maintenancePrice ? "Primeiro mês" : "Valor mensal"} value={plan.price} />
+              <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mês`} />
             </div>
 
             <div className="rounded-lg border border-black/10 bg-slate-50 p-4">
@@ -59,20 +60,20 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
             <strong className="mt-1 block text-4xl font-black">{plan.price}</strong>
             {plan.maintenancePrice ? (
               <p className="mt-2 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
-                Depois: {plan.maintenancePrice} para manutencao do site e acesso ao FechaPro.
+                Depois: {plan.maintenancePrice} para manutenção do site e acesso ao FechaPro.
               </p>
             ) : null}
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
               {plan.maintenancePrice
-                ? "Este checkout cobra a implantacao inicial. A manutencao mensal e cobrada depois em valor reduzido."
-                : "Cobranca recorrente mensal por link seguro do Asaas."}
+                ? "Este checkout cobra a implantação inicial. A manutenção mensal é cobrada depois em valor reduzido."
+                : "Cobrança recorrente mensal por link seguro do Asaas."}
             </p>
           </div>
 
           {active ? (
-            <a className="grid min-h-12 place-items-center rounded-lg border border-green-600 px-5 text-center font-black text-green-800" href="/">
+            <Link className="grid min-h-12 place-items-center rounded-lg border border-green-600 px-5 text-center font-black text-green-800" href="/">
               Plano atual
-            </a>
+            </Link>
           ) : (
             <PlanCheckoutClient plan={plan.code} />
           )}

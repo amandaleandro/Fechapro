@@ -22,16 +22,16 @@ export async function POST(request: Request) {
   }
 
   if (!isValidEmail(email)) {
-    return jsonError("Informe um e-mail valido.");
+    return jsonError("Informe um e-mail válido.");
   }
 
   if (!(await verifyTurnstile(body.turnstileToken || null))) {
-    return jsonError("Nao foi possivel validar a protecao anti-bot.", 400);
+    return jsonError("Não foi possível validar a proteção anti-bot.", 400);
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return jsonError("E-mail ja cadastrado.", 409);
+    return jsonError("E-mail já cadastrado.", 409);
   }
 
   const user = await prisma.user.create({

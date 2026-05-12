@@ -11,8 +11,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const name = cleanString(body.name);
   const price = normalizePrice(body.price);
 
-  if (!name) return jsonError("Servico obrigatorio.");
-  if (price === null || price < 0) return jsonError("Informe um valor valido para o servico.");
+  if (!name) return jsonError("Serviço obrigatório.");
+  if (price === null || price < 0) return jsonError("Informe um valor válido para o serviço.");
 
   await prisma.serviceAsset.updateMany({
     where: { id, userId: session.id },

@@ -18,14 +18,14 @@ export async function sendPasswordResetEmail(to: string, token: string) {
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#111">Redefinir sua senha</h2>
       <p style="color:#444;line-height:1.6">
-        Recebemos uma solicitacao para redefinir a senha da sua conta FechaPro.
-        Clique no botao abaixo para criar uma nova senha. O link expira em <strong>1 hora</strong>.
+        Recebemos uma solicitação para redefinir a senha da sua conta FechaPro.
+        Clique no botão abaixo para criar uma nova senha. O link expira em <strong>1 hora</strong>.
       </p>
       <a href="${link}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#106b5b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">
         Redefinir senha
       </a>
       <p style="color:#888;font-size:13px">
-        Se voce nao solicitou a redefinicao, ignore este e-mail.
+        Se você não solicitou a redefinição, ignore este e-mail.
       </p>
     </div>
     `
@@ -40,20 +40,20 @@ export async function sendProposalSentToClientEmail(clientEmail: string, clientN
 
   await sendEmail(
     clientEmail,
-    `${ownerName} enviou uma proposta para voce - FechaPro`,
+    `${ownerName} enviou uma proposta para você - FechaPro`,
     `
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px">
-      <h2 style="margin:0 0 16px;color:#111">Voce recebeu uma proposta!</h2>
+      <h2 style="margin:0 0 16px;color:#111">Você recebeu uma proposta!</h2>
       <p style="color:#444;line-height:1.6">
-        Ola, <strong>${safeClientName}</strong>!
-        <strong>${safeOwnerName}</strong> preparou uma proposta de <strong>${safeServiceName}</strong> especialmente para voce.
-        Clique no botao abaixo para visualizar, aceitar ou recusar.
+        Olá, <strong>${safeClientName}</strong>!
+        <strong>${safeOwnerName}</strong> preparou uma proposta de <strong>${safeServiceName}</strong> especialmente para você.
+        Clique no botão abaixo para visualizar, aceitar ou recusar.
       </p>
       <a href="${link}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#106b5b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">
         Ver proposta
       </a>
       <p style="color:#888;font-size:13px">
-        Este e-mail foi enviado porque voce recebeu uma proposta comercial via FechaPro.
+        Este e-mail foi enviado porque você recebeu uma proposta comercial via FechaPro.
       </p>
     </div>
     `
@@ -73,9 +73,9 @@ export async function sendProposalViewedEmail(ownerEmail: string, ownerName: str
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#111">Proposta visualizada!</h2>
       <p style="color:#444;line-height:1.6">
-        Ola, <strong>${safeOwnerName}</strong>!
+        Olá, <strong>${safeOwnerName}</strong>!
         <strong>${safeClientName}</strong> acabou de abrir sua proposta de <strong>${safeServiceName}</strong>.
-        Agora e uma boa hora para um contato.
+        Agora é uma boa hora para um contato.
       </p>
       <a href="${link}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#106b5b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">
         Ver proposta
@@ -98,7 +98,7 @@ export async function sendProposalAcceptedEmail(ownerEmail: string, ownerName: s
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#111">Proposta aceita!</h2>
       <p style="color:#444;line-height:1.6">
-        Ola, <strong>${safeOwnerName}</strong>!
+        Olá, <strong>${safeOwnerName}</strong>!
         <strong>${safeClientName}</strong> aceitou sua proposta de <strong>${safeServiceName}</strong>.
       </p>
       <a href="${link}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#106b5b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">
@@ -122,12 +122,12 @@ export async function sendProposalDeclinedEmail(ownerEmail: string, ownerName: s
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#111">Proposta recusada</h2>
       <p style="color:#444;line-height:1.6">
-        Ola, <strong>${safeOwnerName}</strong>!
+        Olá, <strong>${safeOwnerName}</strong>!
         <strong>${safeClientName}</strong> recusou sua proposta de <strong>${safeServiceName}</strong>.
       </p>
       ${safeReason ? `<p style="color:#444;line-height:1.6"><strong>Motivo:</strong> ${safeReason}</p>` : ""}
       <p style="color:#888;font-size:13px">
-        Voce pode revisar a proposta e enviar uma nova versao pelo FechaPro.
+        Você pode revisar a proposta e enviar uma nova versão pelo FechaPro.
       </p>
     </div>
     `

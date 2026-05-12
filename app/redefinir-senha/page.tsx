@@ -25,7 +25,7 @@ function RedefinirSenhaForm() {
     }
 
     if (password !== confirm) {
-      setError("As senhas nao coincidem.");
+      setError("As senhas não coincidem.");
       return;
     }
 
@@ -38,13 +38,13 @@ function RedefinirSenhaForm() {
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Nao foi possivel redefinir a senha.");
+        setError(data.error ?? "Não foi possível redefinir a senha.");
         return;
       }
       setDone(true);
       setTimeout(() => router.push("/login"), 2000);
     } catch {
-      setError("Nao foi possivel redefinir a senha agora. Tente novamente.");
+      setError("Não foi possível redefinir a senha agora. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ function RedefinirSenhaForm() {
   if (!token) {
     return (
       <p className="text-sm text-red-600">
-        Link invalido. Solicite um novo link de redefinicao de senha.
+        Link inválido. Solicite um novo link de redefinição de senha.
       </p>
     );
   }
@@ -71,7 +71,7 @@ function RedefinirSenhaForm() {
       <PasswordField
         id="password"
         label="Nova senha"
-        placeholder="Minimo 8 caracteres"
+        placeholder="Mínimo 8 caracteres"
         value={password}
         onChange={setPassword}
       />

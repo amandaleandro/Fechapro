@@ -12,7 +12,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   });
 
   if (!source) {
-    return jsonError("Proposta nao encontrada.", 404);
+    return jsonError("Proposta não encontrada.", 404);
   }
 
   const copy = await prisma.proposalAsset.create({

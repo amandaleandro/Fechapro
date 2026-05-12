@@ -19,11 +19,11 @@ export function PlanCheckoutClient({ plan }: { plan: PlanCode }) {
       });
       const data = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
       if (!response.ok || !data?.url) {
-        throw new Error(data?.error || "Nao foi possivel abrir o pagamento.");
+        throw new Error(data?.error || "Não foi possível abrir o pagamento.");
       }
       window.location.href = data.url;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel abrir o pagamento.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível abrir o pagamento.");
       setLoading(false);
     }
   }
@@ -45,7 +45,7 @@ export function PlanCheckoutClient({ plan }: { plan: PlanCode }) {
         {loading ? "Abrindo Asaas..." : "Continuar para pagamento"}
       </button>
       <div className="grid gap-2 text-sm font-bold leading-6 text-slate-600">
-        {["Link seguro gerado pelo Asaas", "Plano ativado automaticamente apos confirmacao", "Sem armazenamento de cartao no FechaPro"].map((item) => (
+        {["Link seguro gerado pelo Asaas", "Plano ativado automaticamente após confirmação", "Sem armazenamento de cartão no FechaPro"].map((item) => (
           <span className="inline-flex items-center gap-2" key={item}>
             <CheckCircle2 className="text-green-600" size={16} />
             {item}

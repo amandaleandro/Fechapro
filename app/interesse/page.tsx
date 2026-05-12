@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, CheckCircle2, Mail, MessageCircle, Sparkles, User, Wrench } from "lucide-react";
 import { isValidEmail, isValidPhone } from "@/lib/validation";
 
@@ -49,12 +51,12 @@ export default function InterestPage() {
     }
 
     if (!isValidEmail(form.email.trim())) {
-      setError("Informe um e-mail valido.");
+      setError("Informe um e-mail válido.");
       return;
     }
 
     if (form.whatsapp.trim() && !isValidPhone(form.whatsapp.trim())) {
-      setError("Informe um WhatsApp valido com DDD.");
+      setError("Informe um WhatsApp válido com DDD.");
       return;
     }
 
@@ -73,7 +75,7 @@ export default function InterestPage() {
       setSent(true);
       setForm(initialForm);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel enviar agora.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível enviar agora.");
     } finally {
       setLoading(false);
     }
@@ -83,9 +85,9 @@ export default function InterestPage() {
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
-          <a className="grid h-12 w-40 place-items-center rounded-lg bg-slate-950 px-3" href="/">
-            <img alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" />
-          </a>
+          <Link className="grid h-12 w-40 place-items-center rounded-lg bg-slate-950 px-3" href="/">
+            <Image alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
+          </Link>
           <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 text-sm font-black" href="/cadastro">
             Criar conta
             <ArrowRight size={16} />
@@ -100,10 +102,10 @@ export default function InterestPage() {
               Lista de interesse
             </p>
             <h1 className="mt-5 text-4xl font-black leading-tight sm:text-6xl">
-              Quer usar o FechaPro no seu negocio?
+              Quer usar o FechaPro no seu negócio?
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-              Deixe seus dados para receber prioridade em novidades, testes e condicoes de entrada. Ideal para prestadores que querem propostas mais bonitas, organizadas e faceis de aceitar.
+              Deixe seus dados para receber prioridade em novidades, testes e condições de entrada. Ideal para prestadores que querem propostas mais bonitas, organizadas e fáceis de aceitar.
             </p>
           </div>
 
@@ -140,7 +142,7 @@ export default function InterestPage() {
             <form className="grid gap-4" onSubmit={submitInterest}>
               <div>
                 <p className="text-xs font-black uppercase text-blue-700">Cadastro de interesse</p>
-                <h2 className="text-2xl font-black leading-tight">Conte um pouco sobre voce</h2>
+                <h2 className="text-2xl font-black leading-tight">Conte um pouco sobre você</h2>
               </div>
 
               {error ? (
@@ -154,7 +156,7 @@ export default function InterestPage() {
               <FormField autoComplete="tel" icon={MessageCircle} label="WhatsApp" maxLength={20} value={form.whatsapp} onChange={(value) => updateField("whatsapp", value)} />
 
               <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-                Tipo de negocio
+                Tipo de negócio
                 <input
                   className="min-h-12 rounded-lg border border-black/10 bg-slate-50 px-3 text-slate-900 outline-green-700"
                   maxLength={80}
@@ -171,7 +173,7 @@ export default function InterestPage() {
                   value={form.mainNeed}
                   onChange={(event) => updateField("mainNeed", event.target.value)}
                 >
-                  <option value="">Selecione uma opcao</option>
+                  <option value="">Selecione uma opção</option>
                   {needs.map((need) => (
                     <option key={need} value={need}>
                       {need}
@@ -185,7 +187,7 @@ export default function InterestPage() {
                 <textarea
                   className="min-h-28 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
                   maxLength={600}
-                  placeholder="Conte o que voce gostaria de resolver com o FechaPro."
+                  placeholder="Conte o que você gostaria de resolver com o FechaPro."
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
                 />
@@ -246,8 +248,8 @@ function FormField({
 async function readApiError(response: Response) {
   try {
     const data = (await response.json()) as { error?: string; message?: string };
-    return data.error || data.message || "Nao foi possivel enviar agora.";
+    return data.error || data.message || "Não foi possível enviar agora.";
   } catch {
-    return "Nao foi possivel enviar agora.";
+    return "Não foi possível enviar agora.";
   }
 }

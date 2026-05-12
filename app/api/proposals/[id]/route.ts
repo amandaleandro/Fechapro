@@ -12,7 +12,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const body = (await request.json()) as { status?: string };
 
   if (body.status !== undefined && !ALLOWED_STATUSES.includes(body.status as AllowedStatus)) {
-    return jsonError("Status invalido.");
+    return jsonError("Status inválido.");
   }
 
   await prisma.proposalAsset.updateMany({

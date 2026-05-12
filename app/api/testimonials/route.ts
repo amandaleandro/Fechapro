@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const authorName = cleanString(body.authorName);
   const quote = cleanString(body.quote);
 
-  if (!authorName || !quote) return jsonError("Nome e depoimento sao obrigatorios.");
+  if (!authorName || !quote) return jsonError("Nome e depoimento são obrigatórios.");
 
   const item = await prisma.testimonialAsset.create({
     data: {

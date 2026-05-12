@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   try {
     verifyAsaasWebhook(token);
   } catch {
-    return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+    return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 
   const payload = (await request.json()) as AsaasWebhookPayload;
