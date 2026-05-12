@@ -90,7 +90,7 @@ export default async function PublicProposalPage({
         {query.payment === "success" ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Pagamento iniciado.</strong>
-            <p className="mt-1 text-sm">Assim que a AbacatePay confirmar o pagamento, o status sera atualizado automaticamente.</p>
+            <p className="mt-1 text-sm">Assim que o Asaas confirmar o pagamento, o status sera atualizado automaticamente.</p>
           </div>
         ) : null}
 
@@ -221,19 +221,17 @@ export default async function PublicProposalPage({
               <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : "Pague com PIX ou cartao"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
                 {proposal.paymentStatus === "paid"
-                  ? "A AbacatePay confirmou o pagamento desta proposta."
-                  : "Finalize o pagamento em ambiente seguro pela AbacatePay."}
+                  ? "O Asaas confirmou o pagamento desta proposta."
+                  : "Finalize o pagamento em ambiente seguro via Asaas."}
               </p>
-              {proposal.paymentStatus === "paid" && proposal.abacatePayReceiptUrl ? (
-                <a className="mt-4 grid min-h-11 place-items-center rounded-lg px-5 text-center font-black text-white" href={proposal.abacatePayReceiptUrl} style={{ background: brandColor }} target="_blank">
+              {proposal.paymentStatus === "paid" && proposal.providerReceiptUrl ? (
+                <a className="mt-4 grid min-h-11 place-items-center rounded-lg px-5 text-center font-black text-white" href={proposal.providerReceiptUrl} style={{ background: brandColor }} target="_blank">
                   Ver comprovante
                 </a>
               ) : (
-                <form action={`/api/public/proposals/${proposal.publicSlug}/checkout`} method="post">
-                  <button className="mt-4 min-h-12 w-full rounded-lg px-5 font-black text-white" style={{ background: brandColor }} type="submit">
-                    Pagar agora
-                  </button>
-                </form>
+                <a className="mt-4 grid min-h-12 w-full place-items-center rounded-lg px-5 text-center font-black text-white" href={`/checkout/proposta/${proposal.publicSlug}`} style={{ background: brandColor }}>
+                  Pagar agora
+                </a>
               )}
             </section>
 

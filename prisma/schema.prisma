@@ -23,13 +23,17 @@ model User {
 }
 
 model PlanSubscription {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  plan      PlanCode @default(start)
-  status    String   @default("active")
-  startedAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  plan                   PlanCode @default(start)
+  status                 String   @default("active")
+  provider               String?
+  providerCustomerId     String?
+  providerSubscriptionId String?
+  providerCheckoutId     String?
+  startedAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model BrandProfile {
@@ -108,6 +112,10 @@ model ProposalAsset {
   publicSlug            String         @unique
   viewCount             Int            @default(0)
   paymentStatus         String         @default("not_started")
+  paymentProvider       String?
+  providerCheckoutId    String?
+  providerCheckoutUrl   String?
+  providerReceiptUrl    String?
   abacatePayProductId   String?
   abacatePayCheckoutId  String?
   abacatePayCheckoutUrl String?
@@ -125,6 +133,19 @@ model ProposalAsset {
   user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model InterestLead {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  whatsapp     String?
+  businessType String?
+  mainNeed     String?
+  message      String?
+  source       String   @default("interest_page")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 enum ProposalStatus {
   draft
   sent
@@ -139,4 +160,5 @@ enum PlanCode {
   pro
   plus
   premium
+  premium_site
 }

@@ -1,4 +1,4 @@
-export type PlanCode = "start" | "pro" | "plus" | "premium";
+export type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
 
 export const plans: Record<
   PlanCode,
@@ -7,6 +7,8 @@ export const plans: Record<
     name: string;
     price: string;
     priceCents: number;
+    maintenancePrice?: string;
+    maintenancePriceCents?: number;
     proposalLimit: number;
     features: string[];
   }
@@ -14,34 +16,46 @@ export const plans: Record<
   start: {
     code: "start",
     name: "Start",
-    price: "R$ 49,90/mes",
-    priceCents: 4990,
+    price: "R$ 49/mes",
+    priceCents: 4900,
     proposalLimit: 20,
-    features: ["Ate 20 propostas por mes", "Portfolio", "PDF", "Link publico"],
+    features: ["Orcamentos simples", "Link para enviar ao cliente", "Modelos basicos", "Ate 20 propostas por mes"],
   },
   pro: {
     code: "pro",
-    name: "Pro",
+    name: "Essencial",
     price: "R$ 97/mes",
     priceCents: 9700,
-    proposalLimit: 60,
-    features: ["Ate 60 propostas por mes", "Aceite da proposta", "Status de visualizacao", "Marca personalizada"],
+    proposalLimit: 50,
+    features: ["Ate 50 propostas por mes", "Orcamentos personalizados", "Cadastro de servicos", "Identidade basica", "Link profissional"],
   },
   plus: {
     code: "plus",
-    name: "Plus",
+    name: "Profissional",
     price: "R$ 147/mes",
     priceCents: 14700,
-    proposalLimit: 150,
-    features: ["Ate 150 propostas por mes", "Templates por nicho", "IA para propostas", "Historico de visualizacoes"],
+    proposalLimit: 120,
+    features: ["Ate 120 propostas por mes", "Portfolio dentro do FechaPro", "Modelos de proposta", "Pagina de apresentacao", "Suporte inicial"],
   },
   premium: {
     code: "premium",
-    name: "Premium",
-    price: "R$ 247/mes",
-    priceCents: 24700,
-    proposalLimit: 400,
-    features: ["Ate 400 propostas por mes", "Tudo do Plus", "Base para equipe", "Dominio personalizado"],
+    name: "Pro Site",
+    price: "R$ 497 primeiro mes",
+    priceCents: 49700,
+    maintenancePrice: "R$ 197/mes depois",
+    maintenancePriceCents: 19700,
+    proposalLimit: 300,
+    features: ["Ate 300 propostas por mes", "Tudo do Profissional", "Criacao de site one page", "Inicio, servicos, sobre, portfolio e contato", "Botao para orcamento"],
+  },
+  premium_site: {
+    code: "premium_site",
+    name: "Premium Site",
+    price: "R$ 997 primeiro mes",
+    priceCents: 99700,
+    maintenancePrice: "R$ 297/mes depois",
+    maintenancePriceCents: 29700,
+    proposalLimit: 600,
+    features: ["Ate 600 propostas por mes", "Tudo do Pro Site", "Site completo simples", "Copy e textos do site", "Cadastro inicial de servicos", "Treinamento rapido"],
   },
 };
 

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { createAbacateCheckout, createAbacateProduct } from "@/lib/abacatepay";
 import { jsonError } from "@/lib/api";
 import { plans, type PlanCode } from "@/lib/plans";
 import { requireSession } from "@/lib/session";
+import { createPlanCheckout } from "@/lib/asaas";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   const session = await requireSession();
@@ -14,26 +15,30 @@ export async function POST(request: Request) {
 
   const plan = plans[body.plan];
   const origin = new URL(request.url).origin;
-  const productExternalId = `fechapro-plan-${plan.code}`;
-  const checkoutExternalId = `fechapro-plan-${session.id}-${plan.code}-${Date.now()}`;
 
   try {
-    const product = await createAbacateProduct({
-      description: `${plan.name} do FechaPro com limite de ${plan.proposalLimit} propostas por mes.`,
-      externalId: productExternalId,
-      name: `FechaPro ${plan.name}`,
-      price: plan.priceCents,
+    const checkout = await createPlanCheckout({
+      origin,
+      plan: plan.code,
+      userEmail: session.email,
+      userId: session.id,
     });
 
-    const checkout = await createAbacateCheckout({
-      completionUrl: `${origin}/?payment=success&plan=${plan.code}`,
-      externalId: checkoutExternalId,
-      metadata: {
-        plan: plan.code,
+    await prisma.planSubscription.upsert({
+      where: { userId: session.id },
+      create: {
         userId: session.id,
+        plan: body.plan,
+        provider: "asaas",
+        providerCheckoutId: checkout.id,
+        status: "pending",
       },
-      productId: product.id,
-      returnUrl: `${origin}/`,
+      update: {
+        plan: body.plan,
+        provider: "asaas",
+        providerCheckoutId: checkout.id,
+        status: "pending",
+      },
     });
 
     return NextResponse.json({ url: checkout.url });
