@@ -701,7 +701,7 @@ export default function Home() {
           />
         ) : (
           <>
-            <nav className="grid grid-cols-2 gap-2 rounded-lg border border-black/10 bg-white p-2 shadow-xl shadow-slate-900/10 sm:grid-cols-4 lg:grid-cols-10">
+            <nav className="flex gap-1 overflow-x-auto rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeView === item.id;
@@ -709,7 +709,7 @@ export default function Home() {
                 const tourFocus = currentTourStep?.view === item.id;
                 return (
                   <button
-                    className={`inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-lg px-2 text-xs font-black sm:px-3 sm:text-sm ${
+                    className={`flex min-w-[52px] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-black leading-none ${
                       active ? "bg-green-600 text-white" : locked ? "text-slate-400" : "text-slate-600"
                     } ${locked ? "border border-dashed border-slate-200 bg-slate-50/70" : ""} ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
                     key={item.id}
@@ -724,9 +724,9 @@ export default function Home() {
                       setActiveView(item.id);
                     }}
                   >
-                    <Icon size={18} />
-                    {item.label}
-                    {locked ? <LockKeyhole size={14} /> : null}
+                    <Icon size={16} />
+                    <span className="mt-0.5 whitespace-nowrap">{item.label}</span>
+                    {locked ? <LockKeyhole size={10} /> : null}
                   </button>
                 );
               })}
