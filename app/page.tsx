@@ -19,6 +19,7 @@ import {
   LogOut,
   MessageSquareQuote,
   Moon,
+  Palette,
   CreditCard,
   Plus,
   RotateCcw,
@@ -26,6 +27,7 @@ import {
   Send,
   Sparkles,
   Sun,
+  HelpCircle,
   ThumbsDown,
   Trash2,
   UserCircle,
@@ -33,8 +35,8 @@ import {
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 
-type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "templates" | "plans" | "account";
-type ProposalStatus = "sent" | "viewed" | "accepted" | "declined" | "expired";
+type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "account";
+type ProposalStatus = "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
 
 type Client = {
   id: string;
@@ -42,6 +44,9 @@ type Client = {
   email: string | null;
   phone: string | null;
   segment: string | null;
+  interestService?: string | null;
+  status?: string | null;
+  notes?: string | null;
 };
 
 type ServiceItem = {
@@ -66,6 +71,21 @@ type Testimonial = {
   quote: string;
 };
 
+type MarketingArt = {
+  id: string;
+  title: string;
+  format: string;
+  objective: string;
+  serviceName: string | null;
+  audience: string | null;
+  callToAction: string | null;
+  prompt: string;
+  imageUrl: string;
+  referenceImageUrl: string | null;
+  source: "openai" | "fallback";
+  createdAt: string;
+};
+
 type Proposal = {
   id: string;
   clientName: string;
@@ -80,6 +100,7 @@ type Proposal = {
   status: ProposalStatus;
   publicSlug?: string;
   viewCount?: number;
+  whatsappClickCount?: number;
   updatedAt?: string;
   paymentStatus?: string;
   paymentMethod?: string | null;
@@ -119,6 +140,7 @@ type BillingPlan = {
   maintenancePrice?: string;
   maintenancePriceCents?: number;
   proposalLimit: number;
+  artLimit: number;
   features: string[];
 };
 
@@ -131,6 +153,8 @@ type BillingState = {
   usage: {
     proposalsThisMonth: number;
     proposalLimit: number;
+    artsThisMonth: number;
+    artLimit: number;
   };
 };
 
@@ -199,10 +223,13 @@ const statusConfig: Partial<Record<
   ProposalStatus,
   { label: string; icon: React.ElementType; className: string }
 >> = {
+  draft: { label: "Rascunho", icon: FileText, className: "bg-slate-700 text-white" },
   sent: { label: "Enviado", icon: Send, className: "bg-amber-500 text-white" },
   viewed: { label: "Visualizado", icon: Eye, className: "bg-sky-600 text-white" },
+  awaiting_response: { label: "Aguardando", icon: HelpCircle, className: "bg-indigo-600 text-white" },
   accepted: { label: "Aceito", icon: CheckCircle2, className: "bg-green-700 text-white" },
   declined: { label: "Recusado", icon: ThumbsDown, className: "bg-rose-700 text-white" },
+  expired: { label: "Expirado", icon: RotateCcw, className: "bg-orange-600 text-white" },
 };
 
 const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }> = [
@@ -213,6 +240,7 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
   { id: "portfolio", label: "Portfolio", icon: ImageIcon },
   { id: "testimonials", label: "Depoimentos", icon: MessageSquareQuote },
   { id: "brand", label: "Marca", icon: Settings },
+  { id: "arts", label: "Artes IA", icon: Palette },
   { id: "templates", label: "Templates", icon: Layers3 },
   { id: "plans", label: "Planos", icon: CreditCard },
   { id: "account", label: "Conta", icon: UserCircle },
@@ -239,6 +267,7 @@ const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
   brand: "pro",
   portfolio: "plus",
   testimonials: "plus",
+  arts: "pro",
   templates: "plus",
 };
 
@@ -248,6 +277,7 @@ const commercialModuleIds: ActiveView[] = [
   "clients",
   "services",
   "brand",
+  "arts",
   "portfolio",
   "testimonials",
   "templates",
@@ -390,7 +420,112 @@ const proposalTemplates: ProposalTemplate[] = [
     included: ["Visita técnica", "Diagnóstico", "Instalação ou manutenção", "Teste final", "Garantia de 30 dias"],
     notes: "Peças e materiais podem ser cobrados separadamente após avaliação.",
   },
+  {
+    id: "manicure",
+    niche: "Manicure",
+    title: "Pacote de unhas",
+    serviceName: "Manicure e alongamento",
+    price: 160,
+    deadline: "Atendimento em 2 horas",
+    payment: "R$ 50 de sinal e restante no atendimento",
+    included: ["Cutilagem", "Esmaltacao", "Alongamento ou manutencao", "Finalizacao hidratante", "Garantia de 7 dias"],
+    notes: "Materiais especiais, nail art e deslocamento podem alterar o valor final.",
+  },
+  {
+    id: "eletricista",
+    niche: "Eletricista",
+    title: "Instalacao residencial",
+    serviceName: "Instalacao e revisao eletrica",
+    price: 450,
+    deadline: "1 dia util apos aprovacao",
+    payment: "30% para reservar e 70% na conclusao",
+    included: ["Visita tecnica", "Diagnostico", "Instalacao ou reparo", "Teste de seguranca", "Garantia de 30 dias"],
+    notes: "Materiais eletricos sao cobrados separadamente apos avaliacao.",
+  },
+  {
+    id: "pedreiro",
+    niche: "Pedreiro",
+    title: "Reparo e acabamento",
+    serviceName: "Servico de alvenaria e acabamento",
+    price: 1200,
+    deadline: "5 dias uteis",
+    payment: "40% entrada e 60% na entrega",
+    included: ["Avaliacao do local", "Preparacao da area", "Execucao do reparo", "Acabamento", "Limpeza basica"],
+    notes: "Nao inclui compra de materiais, cacamba ou alteracoes de escopo.",
+  },
+  {
+    id: "diarista",
+    niche: "Diarista",
+    title: "Limpeza residencial",
+    serviceName: "Diarista para limpeza completa",
+    price: 220,
+    deadline: "1 diaria",
+    payment: "Pagamento no dia do atendimento",
+    included: ["Limpeza de quartos e sala", "Banheiros", "Cozinha", "Area de servico", "Organizacao leve"],
+    notes: "Nao inclui limpeza pesada pos-obra nem produtos especificos.",
+  },
+  {
+    id: "esteticista",
+    niche: "Esteticista",
+    title: "Protocolo estetico",
+    serviceName: "Protocolo estetico personalizado",
+    price: 350,
+    deadline: "Sessao de 60 a 90 minutos",
+    payment: "50% para agendar e 50% no atendimento",
+    included: ["Avaliacao inicial", "Higienizacao", "Procedimento principal", "Orientacoes de cuidado", "Acompanhamento por mensagem"],
+    notes: "Resultado pode variar conforme rotina de cuidados e numero de sessoes.",
+  },
+  {
+    id: "personal",
+    niche: "Personal trainer",
+    title: "Plano mensal de treino",
+    serviceName: "Acompanhamento personal trainer",
+    price: 700,
+    deadline: "4 semanas",
+    payment: "Mensal antecipado",
+    included: ["Avaliacao fisica", "Plano de treino", "8 aulas presenciais ou online", "Ajustes semanais", "Suporte por WhatsApp"],
+    notes: "Nao inclui academia, equipamentos ou avaliacao medica.",
+  },
+  {
+    id: "assistencia",
+    niche: "Assistencia tecnica",
+    title: "Diagnostico e reparo",
+    serviceName: "Assistencia tecnica especializada",
+    price: 300,
+    deadline: "3 dias uteis apos diagnostico",
+    payment: "Diagnostico na entrada e saldo na retirada",
+    included: ["Diagnostico", "Orcamento de pecas", "Mao de obra", "Testes finais", "Garantia do reparo"],
+    notes: "Pecas sao cobradas separadamente e dependem de disponibilidade.",
+  },
 ];
+
+const marketingArtBriefs = [
+  {
+    id: "sell_service",
+    label: "Vender serviço",
+    objective: "Divulgar um servico profissional destacando beneficio, confianca, atendimento rapido e pedido de orcamento pelo WhatsApp.",
+    callToAction: "Peca seu orcamento",
+  },
+  {
+    id: "promotion",
+    label: "Promocao",
+    objective: "Divulgar uma promocao com oferta clara, senso de oportunidade, beneficio principal e chamada direta para comprar ou chamar no WhatsApp.",
+    callToAction: "Quero aproveitar",
+  },
+  {
+    id: "open_slots",
+    label: "Agenda aberta",
+    objective: "Avisar que a agenda esta aberta, mostrar o principal resultado do servico e incentivar a pessoa a reservar um horario.",
+    callToAction: "Reservar horario",
+  },
+  {
+    id: "online_presence",
+    label: "Presenca online",
+    objective: "Divulgar criacao de site ou presenca online mostrando que o negocio fica mais profissional, facil de encontrar e pronto para receber orcamentos.",
+    callToAction: "Quero meu site",
+  },
+];
+
 
 export default function Home() {
   const [session, setSession] = useState<{ name: string; email: string } | null>(null);
@@ -405,6 +540,7 @@ export default function Home() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [marketingArts, setMarketingArts] = useState<MarketingArt[]>([]);
   const [brand, setBrand] = useState<BrandProfile | null>(null);
   const [billing, setBilling] = useState<BillingState | null>(null);
   const [tourStepIndex, setTourStepIndex] = useState<number | null>(null);
@@ -449,7 +585,7 @@ export default function Home() {
   }, [availableTourSteps.length, tourStepIndex]);
 
   async function loadDashboardData() {
-    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData] = await Promise.all([
+    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData, marketingArtsData] = await Promise.all([
       apiGet<BrandProfile>("/api/brand"),
       apiGet<BillingState>("/api/billing/plan"),
       apiGet<Client[]>("/api/clients"),
@@ -457,6 +593,7 @@ export default function Home() {
       apiGet<PortfolioItem[]>("/api/portfolio"),
       apiGet<Testimonial[]>("/api/testimonials"),
       apiGet<Proposal[]>("/api/proposals"),
+      apiGet<MarketingArt[]>("/api/marketing-arts"),
     ]);
 
     setBrand(brandData);
@@ -466,12 +603,13 @@ export default function Home() {
     setPortfolio(portfolioData);
     setTestimonials(testimonialsData);
     setProposals(proposalsData);
+    setMarketingArts(marketingArtsData);
   }
 
   const openValue = useMemo(
     () =>
       proposals
-        .filter((proposal) => proposal.status !== "accepted" && proposal.status !== "declined")
+        .filter((proposal) => !["draft", "accepted", "declined", "expired"].includes(proposal.status))
         .reduce((sum, proposal) => sum + proposal.price, 0),
     [proposals],
   );
@@ -618,6 +756,39 @@ export default function Home() {
     const url = `${window.location.origin}/p/${slug}`;
     navigator.clipboard.writeText(url);
     setNotice("Link da proposta copiado.");
+  }
+
+  async function createMarketingArt(payload: {
+    title: string;
+    format: string;
+    objective: string;
+    serviceName: string;
+    audience: string;
+    callToAction: string;
+    referenceImageUrl: string | null;
+    useImageAsBackground: boolean;
+  }) {
+    const item = await apiPost<MarketingArt>("/api/marketing-arts", payload);
+    setMarketingArts((current) => [item, ...current]);
+    setBilling((current) =>
+      current
+        ? {
+            ...current,
+            usage: {
+              ...current.usage,
+              artsThisMonth: current.usage.artsThisMonth + 1,
+            },
+          }
+        : current,
+    );
+    setNotice(item.source === "openai" ? "Arte gerada com IA e salva na galeria." : "Arte criada em modo reserva e salva na galeria.");
+    return item;
+  }
+
+  async function removeMarketingArt(id: string) {
+    await apiDelete(`/api/marketing-arts/${id}`);
+    setMarketingArts((current) => current.filter((item) => item.id !== id));
+    setNotice("Arte removida.");
   }
 
   function startTour() {
@@ -817,6 +988,31 @@ export default function Home() {
             {activeView === "brand" ? (
               <BrandView brand={brand} session={session} onChange={setBrand} />
             ) : null}
+            {activeView === "arts" ? (
+              <MarketingArtsView
+                arts={marketingArts}
+                billing={billing}
+                brand={
+                  brand || {
+                    businessName: session.name,
+                    logoUrl: null,
+                    primaryColor: "#22C55E",
+                    secondaryColor: "#0F172A",
+                    accentColor: "#2563EB",
+                    whatsapp: null,
+                    instagram: null,
+                    email: session.email,
+                    website: null,
+                    bio: null,
+                  }
+                }
+                notice={notice}
+                onCreate={createMarketingArt}
+                onNotice={setNotice}
+                onRemove={removeMarketingArt}
+                services={services}
+              />
+            ) : null}
             {activeView === "templates" ? (
               <TemplatesView
                 onUseTemplate={(template) => {
@@ -918,12 +1114,18 @@ function DashboardView({
   const acceptedValue = proposals
     .filter((proposal) => proposal.status === "accepted")
     .reduce((sum, proposal) => sum + proposal.price, 0);
+  const sentValue = proposals
+    .filter((proposal) => proposal.status !== "draft")
+    .reduce((sum, proposal) => sum + proposal.price, 0);
   const viewed = proposals.filter((proposal) => proposal.status === "viewed").length;
+  const awaitingResponse = proposals.filter((proposal) => proposal.status === "awaiting_response").length;
   const declined = proposals.filter((proposal) => proposal.status === "declined").length;
-  const sent = proposals.filter((proposal) => proposal.status === "sent").length;
+  const sent = proposals.filter((proposal) => proposal.status !== "draft").length;
   const totalViews = proposals.reduce((sum, proposal) => sum + (proposal.viewCount || 0), 0);
+  const whatsappClicks = proposals.reduce((sum, proposal) => sum + (proposal.whatsappClickCount || 0), 0);
   const acceptanceRate = proposals.length ? Math.round((accepted / proposals.length) * 100) : 0;
   const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
+  const followUps = proposals.filter((proposal) => ["sent", "viewed", "awaiting_response"].includes(proposal.status) && daysSince(proposal.updatedAt || proposal.createdAt) >= 2).slice(0, 3);
 
   function chooseService(serviceName: string) {
     const service = services.find((item) => item.name === serviceName);
@@ -991,10 +1193,16 @@ function DashboardView({
       </section>
 
       <section className="grid gap-3 sm:grid-cols-4">
-        <Metric label="Clientes" value={String(clients.length)} />
-        <Metric label="Propostas" value={String(proposals.length)} />
-        <Metric label="Taxa de aceite" value={`${acceptanceRate}%`} />
+        <Metric label="Clientes visualizaram o link" value={String(totalViews)} />
+        <Metric label="Clicaram no WhatsApp" value={String(whatsappClicks)} />
+        <Metric label="Orcamentos enviados" value={String(sent)} />
+        <Metric label="Orcamentos aprovados" value={String(accepted)} />
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <Metric label="Valor total enviado" value={money.format(sentValue)} />
         <Metric label="Valor em aberto" value={money.format(openValue)} />
+        <Metric label="Taxa de aceite" value={`${acceptanceRate}%`} />
       </section>
 
       {billing ? (
@@ -1003,6 +1211,9 @@ function DashboardView({
             <SectionHeading eyebrow="Plano atual" title={`${billing.subscription.plan.toUpperCase()} em uso`} />
             <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
               {`${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês`}
+            </span>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
+              {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes IA`}
             </span>
           </div>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
@@ -1019,9 +1230,10 @@ function DashboardView({
       <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1fr_0.8fr]">
         <div>
           <SectionHeading eyebrow="Indicadores" title="Funil comercial" />
-          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+          <div className="mt-4 grid gap-3 sm:grid-cols-5">
             <FunnelStep label="Enviadas" value={sent} tone="bg-amber-500" />
             <FunnelStep label="Visualizadas" value={viewed} tone="bg-sky-600" />
+            <FunnelStep label="Aguardando" value={awaitingResponse} tone="bg-indigo-600" />
             <FunnelStep label="Aceitas" value={accepted} tone="bg-green-700" />
             <FunnelStep label="Recusadas" value={declined} tone="bg-rose-700" />
           </div>
@@ -1029,8 +1241,59 @@ function DashboardView({
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
           <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
           <MiniStat label="Visualizações" value={String(totalViews)} />
+          <MiniStat label="Cliques WhatsApp" value={String(whatsappClicks)} />
           <MiniStat label="Vencidas" value={String(expired)} />
         </div>
+      </section>
+
+      {followUps.length ? (
+        <section className="grid gap-3 rounded-lg border border-amber-700/20 bg-amber-50 p-4 shadow-xl shadow-slate-900/10">
+          <SectionHeading eyebrow="Follow-up" title="Oportunidades para retomar hoje" />
+          {followUps.map((proposal) => {
+            const message = `Oi, tudo bem? Passando para saber se conseguiu olhar o orcamento de ${proposal.serviceName} que te enviei. Posso tirar alguma duvida?`;
+            return (
+              <div className="grid gap-3 rounded-lg border border-amber-700/20 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center" key={proposal.id}>
+                <div>
+                  <strong>{proposal.clientName}</strong>
+                  <p className="text-sm font-bold leading-6 text-slate-600">
+                    Proposta enviada ha {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}
+                  </p>
+                </div>
+                <button
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-black text-white"
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(message);
+                    onNotice("Mensagem de follow-up copiada.");
+                  }}
+                >
+                  <Copy size={15} />
+                  Copiar mensagem
+                </button>
+              </div>
+            );
+          })}
+        </section>
+      ) : null}
+
+      <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <SectionHeading eyebrow="Indicacoes" title="Ganhe crescimento com seus clientes" />
+          <p className="mt-2 leading-7 text-slate-600">
+            Compartilhe o FechaPro com outro profissional. Quando o programa de indicacao estiver ativo, essa area vira o controle de meses gratis e descontos.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black text-slate-800"
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText("Conhece o FechaPro? Estou usando para enviar propostas profissionais e acompanhar aceite dos clientes.");
+            onNotice("Mensagem de indicacao copiada.");
+          }}
+        >
+          <Copy size={16} />
+          Copiar convite
+        </button>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
@@ -1135,6 +1398,9 @@ function DashboardView({
           <div className="flex flex-wrap gap-3">
             <button className="min-h-11 flex-1 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
               Salvar proposta
+            </button>
+            <button className="min-h-11 flex-1 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
+              Salvar rascunho
             </button>
             <button className="min-h-11 flex-1 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onSeed}>
               Carregar exemplos
@@ -1270,8 +1536,9 @@ function ProposalsView({
   const acceptedValue = proposals
     .filter((proposal) => proposal.status === "accepted")
     .reduce((sum, proposal) => sum + proposal.price, 0);
-  const sent = proposals.filter((proposal) => proposal.status === "sent").length;
+  const sent = proposals.filter((proposal) => proposal.status !== "draft").length;
   const viewed = proposals.filter((proposal) => proposal.status === "viewed").length;
+  const awaitingResponse = proposals.filter((proposal) => proposal.status === "awaiting_response").length;
   const accepted = proposals.filter((proposal) => proposal.status === "accepted").length;
   const declined = proposals.filter((proposal) => proposal.status === "declined").length;
 
@@ -1299,10 +1566,11 @@ function ProposalsView({
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-6">
         <Metric label="Total" value={String(proposals.length)} />
         <Metric label="Enviadas" value={String(sent)} />
         <Metric label="Visualizadas" value={String(viewed)} />
+        <Metric label="Aguardando" value={String(awaitingResponse)} />
         <Metric label="Aceitas" value={String(accepted)} />
         <Metric label="Valor aceito" value={money.format(acceptedValue)} />
       </div>
@@ -1470,9 +1738,10 @@ function OnboardingView({
 }
 
 function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (items: Client[]) => void }) {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", segment: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", segment: "", interestService: "", status: "lead", notes: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const resetForm = () => setForm({ name: "", email: "", phone: "", segment: "", interestService: "", status: "lead", notes: "" });
 
   async function saveClient(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1498,7 +1767,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
         const item = await apiPost<Client>("/api/clients", form);
         onChange([item, ...clients]);
       }
-      setForm({ name: "", email: "", phone: "", segment: "" });
+      resetForm();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível salvar o cliente.");
     }
@@ -1512,8 +1781,8 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
   return (
     <CrudShell
       eyebrow="Cadastro"
-      title="Clientes"
-      description="Cadastre os clientes que vão receber propostas."
+      title="CRM simples"
+      description="Salve contatos, interesse, status e observacoes para retomar conversas e recuperar oportunidades."
       form={
         <form
           className="grid gap-3"
@@ -1524,6 +1793,22 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
           <TextField label="E-mail" autoComplete="email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
           <TextField label="Telefone" autoComplete="tel" maxLength={20} value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
           <TextField label="Segmento" maxLength={60} placeholder="Moda, estetica, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
+          <TextField label="Servico de interesse" maxLength={90} placeholder="Identidade visual, limpeza, manutencao..." value={form.interestService} onChange={(value) => setForm({ ...form, interestService: value })} />
+          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+            Status
+            <select
+              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+              value={form.status}
+              onChange={(event) => setForm({ ...form, status: event.target.value })}
+            >
+              <option value="lead">Lead</option>
+              <option value="proposal_sent">Orcamento enviado</option>
+              <option value="waiting">Aguardando resposta</option>
+              <option value="won">Fechado</option>
+              <option value="lost">Perdido</option>
+            </select>
+          </label>
+          <TextAreaField label="Observacoes" maxLength={500} rows={3} placeholder="Preferencias, historico e proximo passo." value={form.notes} onChange={(value) => setForm({ ...form, notes: value })} />
           <SubmitButton label={editingId ? "Atualizar cliente" : "Salvar cliente"} />
           {editingId ? (
             <button
@@ -1531,7 +1816,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
               type="button"
               onClick={() => {
                 setEditingId(null);
-                setForm({ name: "", email: "", phone: "", segment: "" });
+                resetForm();
               }}
             >
               Cancelar edicao
@@ -1544,7 +1829,8 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
         <ListCard
           key={client.id}
           title={client.name}
-          subtitle={[client.email, client.phone, client.segment].filter(Boolean).join(" | ")}
+          subtitle={[clientStatusLabel(client.status), client.email, client.phone, client.segment].filter(Boolean).join(" | ")}
+          detail={[client.interestService ? `Interesse: ${client.interestService}` : "", client.notes || ""].filter(Boolean).join(" - ")}
           onEdit={() => {
             setEditingId(client.id);
             setForm({
@@ -1552,6 +1838,9 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
               email: client.email || "",
               phone: client.phone || "",
               segment: client.segment || "",
+              interestService: client.interestService || "",
+              status: client.status || "lead",
+              notes: client.notes || "",
             });
           }}
           onRemove={() => removeClient(client.id)}
@@ -1559,6 +1848,17 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
       ))}
     </CrudShell>
   );
+}
+
+function clientStatusLabel(status?: string | null) {
+  const labels: Record<string, string> = {
+    lead: "Lead",
+    proposal_sent: "Orcamento enviado",
+    waiting: "Aguardando resposta",
+    won: "Fechado",
+    lost: "Perdido",
+  };
+  return labels[status || "lead"] || "Lead";
 }
 
 function ServicesView({ services, onChange }: { services: ServiceItem[]; onChange: (items: ServiceItem[]) => void }) {
@@ -1975,6 +2275,278 @@ function TemplatesView({ onUseTemplate }: { onUseTemplate: (template: ProposalTe
   );
 }
 
+function MarketingArtsView({
+  arts,
+  billing,
+  brand,
+  notice,
+  onCreate,
+  onNotice,
+  onRemove,
+  services,
+}: {
+  arts: MarketingArt[];
+  billing: BillingState | null;
+  brand: BrandProfile;
+  notice: string | null;
+  onCreate: (payload: {
+    title: string;
+    format: string;
+    objective: string;
+    serviceName: string;
+    audience: string;
+    callToAction: string;
+    referenceImageUrl: string | null;
+    useImageAsBackground: boolean;
+  }) => Promise<MarketingArt>;
+  onNotice: (message: string | null) => void;
+  onRemove: (id: string) => void;
+  services: ServiceItem[];
+}) {
+  const [form, setForm] = useState({
+    title: "",
+    format: "instagram_post",
+    objective: "",
+    serviceName: "",
+    audience: "",
+    callToAction: "Peca seu orcamento",
+    useImageAsBackground: false,
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const used = billing?.usage.artsThisMonth ?? 0;
+  const limit = billing?.usage.artLimit ?? 0;
+  const remaining = Math.max(0, limit - used);
+
+  async function generateArt(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (!form.objective.trim()) {
+      setError("Informe o objetivo da arte.");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      let referenceImageUrl: string | null = form.useImageAsBackground ? null : brand.logoUrl || null;
+      if (file) {
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+        const uploadResponse = await fetch("/api/uploads", {
+          method: "POST",
+          body: uploadData,
+        });
+        if (!uploadResponse.ok) throw new Error("Falha ao enviar imagem de referencia.");
+        const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
+        referenceImageUrl = uploadResult.imageUrl;
+      }
+
+      await onCreate({
+        ...form,
+        title: form.title || form.objective.slice(0, 60),
+        referenceImageUrl,
+      });
+      setForm({
+        title: "",
+        format: form.format,
+        objective: "",
+        serviceName: "",
+        audience: "",
+        callToAction: "Peca seu orcamento",
+        useImageAsBackground: form.useImageAsBackground,
+      });
+      setFile(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel gerar a arte.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+      <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
+        {notice ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold text-green-800">
+            <span>{notice}</span>
+            <button className="font-black" type="button" onClick={() => onNotice(null)}>
+              Fechar
+            </button>
+          </div>
+        ) : null}
+
+        <div>
+          <p className="text-xs font-black uppercase text-blue-700">Artes IA</p>
+          <h2 className="text-2xl font-black">Gerador de divulgacao</h2>
+          <p className="mt-2 leading-7 text-slate-600">
+            Gere posts, stories e status usando as informacoes da marca, servicos cadastrados e uma imagem de referencia.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-black text-slate-700">
+          Uso atual: {used}/{limit} artes este mes
+          <div className="mt-3 h-3 overflow-hidden rounded-full bg-white">
+            <div
+              className="h-full rounded-full bg-green-600"
+              style={{ width: limit ? `${Math.min(100, Math.round((used / limit) * 100))}%` : "0%" }}
+            />
+          </div>
+          <p className="mt-2 text-xs font-bold text-slate-500">
+            {limit ? `${remaining} credito(s) restantes neste ciclo.` : "Disponivel a partir do plano Essencial ou pacote de artes."}
+          </p>
+        </div>
+
+        <form className="grid gap-3" onSubmit={generateArt}>
+          {error ? <FormError message={error} /> : null}
+          <TextField label="Titulo interno" maxLength={80} placeholder="Promocao de maio" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+            Formato
+            <select
+              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+              value={form.format}
+              onChange={(event) => setForm({ ...form, format: event.target.value })}
+            >
+              <option value="instagram_post">Post quadrado</option>
+              <option value="instagram_story">Story</option>
+              <option value="whatsapp_status">Status WhatsApp</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+            Objetivo pronto
+            <select
+              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+              defaultValue=""
+              onChange={(event) => {
+                const brief = marketingArtBriefs.find((item) => item.id === event.target.value);
+                if (!brief) return;
+                setForm({
+                  ...form,
+                  objective: brief.objective,
+                  callToAction: brief.callToAction,
+                });
+                event.target.value = "";
+              }}
+            >
+              <option value="">Escolha um objetivo para vender melhor</option>
+              {marketingArtBriefs.map((brief) => (
+                <option key={brief.id} value={brief.id}>
+                  {brief.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <SelectField
+            label="Servico"
+            options={services.map((service) => service.name)}
+            placeholder="Selecione ou digite"
+            value={form.serviceName}
+            onChange={(value) => setForm({ ...form, serviceName: value })}
+          />
+          <TextAreaField
+            label="Objetivo da arte"
+            maxLength={400}
+            placeholder="Ex: Quero divulgar criacao de sites para pequenos negocios e receber pedidos no WhatsApp"
+            required
+            rows={4}
+            value={form.objective}
+            onChange={(value) => setForm({ ...form, objective: value })}
+          />
+          <TextField label="Publico-alvo" maxLength={120} placeholder="Condominios, lojas, noivas..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
+          <TextField label="Chamada" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
+          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+            Logo ou imagem de referencia
+            <input
+              accept="image/*"
+              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+              type="file"
+              onChange={(event) => setFile(event.target.files?.[0] || null)}
+            />
+            <span className="text-xs font-bold text-slate-500">
+              Se nao enviar nada, o FechaPro usa a logo salva na marca quando existir.
+            </span>
+          </label>
+          <label className="flex items-start gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-600">
+            <input
+              className="mt-1"
+              type="checkbox"
+              checked={form.useImageAsBackground}
+              onChange={(event) => setForm({ ...form, useImageAsBackground: event.target.checked })}
+            />
+            Usar a imagem enviada como fundo e colocar os textos por cima
+          </label>
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={creating || limit === 0 || remaining <= 0} type="submit">
+            <Sparkles size={18} />
+            {creating ? "Gerando arte..." : "Gerar arte"}
+          </button>
+        </form>
+      </aside>
+
+      <div className="grid gap-4">
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SectionHeading eyebrow="Galeria" title="Artes geradas" />
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black uppercase text-blue-700">
+              {brand.businessName}
+            </span>
+          </div>
+          {arts.length ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {arts.map((art) => (
+                <article className="overflow-hidden rounded-lg border border-black/10 bg-white" key={art.id}>
+                  <a href={art.imageUrl} target="_blank" rel="noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      alt={art.title}
+                      className={`${art.format === "instagram_post" ? "aspect-square" : "aspect-[9/16]"} w-full bg-slate-100 object-cover`}
+                      src={art.imageUrl}
+                    />
+                  </a>
+                  <div className="grid gap-3 p-4">
+                    <div>
+                      <h3 className="font-black">{art.title}</h3>
+                      <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
+                        {art.serviceName || "Divulgacao"} | {art.source === "openai" ? "OpenAI" : "Reserva"}
+                      </p>
+                    </div>
+                    <p className="line-clamp-2 text-sm leading-6 text-slate-600">{art.objective}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700" href={art.imageUrl} target="_blank" rel="noreferrer">
+                        <FileDown size={15} />
+                        Baixar
+                      </a>
+                      <button
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-700/20 px-3 text-sm font-black text-rose-700"
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm("Remover esta arte?")) onRemove(art.id);
+                        }}
+                      >
+                        <Trash2 size={15} />
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="grid min-h-64 place-items-center rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+              <div>
+                <Palette className="mx-auto text-blue-700" size={32} />
+                <p className="mt-3 font-black">Nenhuma arte gerada ainda.</p>
+                <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
+                  Preencha o objetivo, escolha o formato e gere a primeira peca de divulgacao.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+    </section>
+  );
+}
+
 function PlansView({
   billing,
   notice,
@@ -2041,6 +2613,9 @@ function PlansView({
         <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
           Uso atual: {billing.usage.proposalsThisMonth}
           {`/${billing.usage.proposalLimit} propostas este mês`}
+          <span className="mt-1 block">
+            Artes IA: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mes
+          </span>
         </div>
       </div>
 
@@ -2076,6 +2651,7 @@ function PlansView({
               </div>
               <p className="text-sm font-bold text-slate-500">
                 {`Até ${plan.proposalLimit} propostas por mês`}
+                <span className="mt-1 block">{`${plan.artLimit} artes de divulgacao por mes`}</span>
               </p>
               <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-600">
                 <span className="block font-black uppercase text-slate-500">Módulos liberados</span>
@@ -3731,10 +4307,19 @@ function formatDateTime(value?: string | null) {
   });
 }
 
+function daysSince(value?: string | null) {
+  if (!value) return 0;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+}
+
 function proposalStatusLabel(status: ProposalStatus) {
   const labels: Record<ProposalStatus, string> = {
+    draft: "Rascunho",
     sent: "Enviada",
     viewed: "Visualizada",
+    awaiting_response: "Aguardando resposta",
     accepted: "Aceita",
     declined: "Recusada",
     expired: "Expirada",
@@ -3743,7 +4328,7 @@ function proposalStatusLabel(status: ProposalStatus) {
 }
 
 function proposalTimeline(proposal: Proposal) {
-  const viewed = Number(proposal.viewCount || 0) > 0 || ["viewed", "accepted", "declined"].includes(proposal.status);
+  const viewed = Number(proposal.viewCount || 0) > 0 || ["viewed", "awaiting_response", "accepted", "declined"].includes(proposal.status);
   const paid = proposal.paymentStatus === "paid" || proposal.paymentStatus === "PAID";
   const expired = proposal.status === "expired";
 
@@ -3770,7 +4355,9 @@ function proposalTimeline(proposal: Proposal) {
           ? `Aceita por ${proposal.acceptedBy || proposal.clientName}${proposal.acceptedAt ? ` em ${formatDateTime(proposal.acceptedAt)}` : ""}.`
           : proposal.status === "declined"
             ? `Recusada${proposal.declinedReason ? `: ${proposal.declinedReason}` : "."}`
-            : expired
+            : proposal.status === "awaiting_response"
+              ? "Cliente clicou no WhatsApp para tirar dÃºvida ou negociar."
+              : expired
               ? `Expirada em ${formatDateOnly(proposal.validUntil)}.`
               : "Ainda aguardando aceite ou recusa.",
       done: ["accepted", "declined", "expired"].includes(proposal.status),

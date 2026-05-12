@@ -78,11 +78,26 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
               Ver proposta
             </a>
           ) : (
-            <form action={`/api/public/proposals/${proposal.publicSlug}/checkout`} method="post">
-              <button className="min-h-12 w-full rounded-lg px-5 font-black text-white" style={{ background: brandColor }} type="submit">
-                Continuar para pagamento
-              </button>
-            </form>
+            <div className="grid gap-2">
+              <form action={`/api/public/proposals/${proposal.publicSlug}/checkout`} method="post">
+                <input name="paymentMode" type="hidden" value="signal_30" />
+                <button className="min-h-11 w-full rounded-lg border border-black/10 px-5 font-black text-slate-800" type="submit">
+                  Pagar 30% para reservar
+                </button>
+              </form>
+              <form action={`/api/public/proposals/${proposal.publicSlug}/checkout`} method="post">
+                <input name="paymentMode" type="hidden" value="signal_50" />
+                <button className="min-h-11 w-full rounded-lg border border-black/10 px-5 font-black text-slate-800" type="submit">
+                  Pagar 50% de entrada
+                </button>
+              </form>
+              <form action={`/api/public/proposals/${proposal.publicSlug}/checkout`} method="post">
+                <input name="paymentMode" type="hidden" value="full" />
+                <button className="min-h-12 w-full rounded-lg px-5 font-black text-white" style={{ background: brandColor }} type="submit">
+                  Pagar valor total
+                </button>
+              </form>
+            </div>
           )}
           <p className="text-center text-xs font-bold leading-5 text-slate-500">
             O FechaPro não armazena dados de cartão. A finalização acontece no Asaas.

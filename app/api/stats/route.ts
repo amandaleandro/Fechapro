@@ -39,8 +39,10 @@ export async function GET() {
     const acceptedValue = values.accepted ?? 0;
     return {
       total,
+      draft: counts.draft ?? 0,
       sent: counts.sent ?? 0,
       viewed: counts.viewed ?? 0,
+      awaitingResponse: counts.awaiting_response ?? 0,
       accepted,
       declined: counts.declined ?? 0,
       expired: counts.expired ?? 0,

@@ -403,6 +403,7 @@ function labelStatus(status: string) {
     draft: "Rascunho",
     expired: "Proposta expirada",
     sent: "Proposta enviada",
+    awaiting_response: "Aguardando resposta",
     viewed: "Proposta visualizada",
   };
   return labels[status] || status;

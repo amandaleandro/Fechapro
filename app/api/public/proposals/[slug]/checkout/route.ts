@@ -12,7 +12,15 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
 
   if (!proposal) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Proposta não encontrada")}`);
   if (proposal.price <= 0) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Valor da proposta inválido")}`);
-  if (proposal.providerCheckoutUrl && proposal.paymentStatus !== "paid") {
+  const formData = await request.formData().catch(() => null);
+  const paymentMode = String(formData?.get("paymentMode") || "full");
+  const amountCents = paymentMode === "signal_30"
+    ? Math.max(100, Math.round(proposal.price * 0.3))
+    : paymentMode === "signal_50"
+      ? Math.max(100, Math.round(proposal.price * 0.5))
+      : proposal.price;
+
+  if (proposal.providerCheckoutUrl && proposal.paymentStatus !== "paid" && proposal.paymentMethod === paymentMode) {
     redirect(proposal.providerCheckoutUrl);
   }
 
@@ -20,7 +28,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
 
   try {
     const checkout = await createProposalCheckout({
-      amountCents: proposal.price,
+      amountCents,
       clientEmail: proposal.clientEmail,
       clientName: proposal.clientName,
       origin,
@@ -35,6 +43,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
         providerCheckoutId: checkout.id,
         providerCheckoutUrl: checkout.url,
         providerReceiptUrl: null,
+        paymentMethod: paymentMode,
         paymentStatus: "open",
         paymentUpdatedAt: new Date(),
       },

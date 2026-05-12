@@ -3,7 +3,7 @@ import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
-const ALLOWED_STATUSES = ["sent", "viewed", "accepted", "declined", "expired"] as const;
+const ALLOWED_STATUSES = ["draft", "sent", "viewed", "awaiting_response", "accepted", "declined", "expired"] as const;
 type AllowedStatus = typeof ALLOWED_STATUSES[number];
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {

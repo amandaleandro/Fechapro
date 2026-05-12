@@ -21,6 +21,15 @@ export async function GET() {
       },
     },
   });
+  const artsThisMonth = await prisma.marketingArtAsset.count({
+    where: {
+      userId: session.id,
+      createdAt: {
+        gte: start,
+        lt: end,
+      },
+    },
+  });
 
   return NextResponse.json({
     subscription,
@@ -28,6 +37,8 @@ export async function GET() {
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
+      artsThisMonth,
+      artLimit: plans[subscription.plan].artLimit,
     },
   });
 }
@@ -55,6 +66,15 @@ export async function PUT(request: Request) {
       },
     },
   });
+  const artsThisMonth = await prisma.marketingArtAsset.count({
+    where: {
+      userId: session.id,
+      createdAt: {
+        gte: start,
+        lt: end,
+      },
+    },
+  });
 
   return NextResponse.json({
     subscription,
@@ -62,6 +82,8 @@ export async function PUT(request: Request) {
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
+      artsThisMonth,
+      artLimit: plans[subscription.plan].artLimit,
     },
   });
 }

@@ -16,7 +16,7 @@ export default async function PublicProposalPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ accepted?: string; declined?: string; name?: string; payment?: string; paymentError?: string }>;
+  searchParams: Promise<{ accepted?: string; declined?: string; error?: string; name?: string; payment?: string; paymentError?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -49,7 +49,7 @@ export default async function PublicProposalPage({
     );
   }
 
-  const [portfolio, testimonials] = await Promise.all([
+  const [portfolio, testimonials, services] = await Promise.all([
     prisma.portfolioAsset.findMany({
       where: { userId: proposal.userId },
       orderBy: { createdAt: "desc" },
@@ -59,6 +59,11 @@ export default async function PublicProposalPage({
       where: { userId: proposal.userId },
       orderBy: { createdAt: "desc" },
       take: 3,
+    }),
+    prisma.serviceAsset.findMany({
+      where: { userId: proposal.userId },
+      orderBy: { createdAt: "desc" },
+      take: 4,
     }),
   ]);
   const brand = proposal.user.brandProfile;
@@ -71,7 +76,7 @@ export default async function PublicProposalPage({
   const validUntilLabel = proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar";
   const daysLeft = proposal.validUntil ? getDaysLeft(proposal.validUntil) : null;
   const whatsappUrl = brand?.whatsapp
-    ? `https://wa.me/${onlyDigits(brand.whatsapp)}?text=${encodeURIComponent(`Olá, vi a proposta ${proposal.serviceName} e quero falar sobre ela.`)}`
+    ? `/api/public/proposals/${proposal.publicSlug}/whatsapp?intent=contact`
     : null;
   const acceptHref = hasDecision ? "#status" : "#aceite";
 
@@ -103,6 +108,13 @@ export default async function PublicProposalPage({
           <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-4 text-rose-900 shadow-xl shadow-slate-900/5">
             <strong>Não foi possível abrir o pagamento.</strong>
             <p className="mt-1 text-sm">{query.paymentError}</p>
+          </div>
+        ) : null}
+
+        {query.error === "whatsapp" ? (
+          <div className="rounded-lg border border-amber-700/20 bg-amber-50 p-4 text-amber-900 shadow-xl shadow-slate-900/5">
+            <strong>WhatsApp indisponivel.</strong>
+            <p className="mt-1 text-sm">O profissional ainda nao configurou um numero de WhatsApp para esta proposta.</p>
           </div>
         ) : null}
 
@@ -141,6 +153,9 @@ export default async function PublicProposalPage({
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
                   Aceite online
+                </span>
+                <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
+                  Atendimento em ate 24h
                 </span>
               </div>
 
@@ -188,11 +203,12 @@ export default async function PublicProposalPage({
           </div>
         </header>
 
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-4">
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-5">
           <PreviewBox label="Serviço" value={proposal.serviceName} />
           <PreviewBox label="Prazo" value={proposal.deadline} />
           <PreviewBox label="Pagamento" value={proposal.payment || "A combinar"} />
           <PreviewBox label="Visualizações" value={String(currentViewCount)} />
+          <PreviewBox label="Cliques WhatsApp" value={String(proposal.whatsappClickCount)} />
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start">
@@ -293,6 +309,23 @@ export default async function PublicProposalPage({
           </section>
         ) : null}
 
+        {services.length ? (
+          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            <p className="text-xs font-black uppercase text-blue-700">Servicos</p>
+            <h2 className="mt-1 text-2xl font-black">Outras formas de contratar</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {services.map((service) => (
+                <div className="rounded-lg border border-black/10 bg-slate-50 p-4" key={service.id}>
+                  <strong className="block">{service.name}</strong>
+                  <span className="mt-1 block text-sm font-bold text-slate-500">
+                    A partir de {money.format(service.price)} {service.deadline ? `- ${service.deadline}` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {testimonials.length ? (
           <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Prova social</p>
@@ -311,12 +344,41 @@ export default async function PublicProposalPage({
           </section>
         ) : null}
 
+        <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+          <p className="text-xs font-black uppercase text-blue-700">FAQ</p>
+          <h2 className="mt-1 text-2xl font-black">Perguntas frequentes</h2>
+          <div className="mt-4 grid gap-3">
+            {[
+              ["Como aprovo?", "Use o aceite digital nesta pagina para registrar nome, e-mail, data e hora."],
+              ["Posso tirar duvidas?", "Sim. Use o botao de WhatsApp para conversar antes de aprovar."],
+              ["O que acontece depois?", "O profissional recebe a confirmacao e combina os proximos passos do servico."],
+            ].map(([question, answer]) => (
+              <details className="rounded-lg border border-black/10 bg-slate-50 p-4" key={question}>
+                <summary className="cursor-pointer font-black">{question}</summary>
+                <p className="mt-2 leading-7 text-slate-600">{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
         <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="status">
           <div className="grid gap-3 sm:grid-cols-3">
             <PreviewBox label="Status" value={expired ? "Vencida" : labelStatus(currentStatus)} />
             <PreviewBox label="Pagamento" value={proposal.paymentStatus === "paid" ? "Confirmado" : "Pendente"} />
             <PreviewBox label="Formato" value="Online + PDF" />
           </div>
+          {currentStatus === "accepted" ? (
+            <div className="mt-4 rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-900">
+              <strong>Comprovante de aceite registrado.</strong>
+              <p className="mt-1 text-sm font-bold">
+                Aceito por {proposal.acceptedBy || proposal.clientName}
+                {proposal.acceptedAt ? ` em ${proposal.acceptedAt.toLocaleString("pt-BR")}` : ""}.
+              </p>
+              <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg px-4 font-black text-white" href={`/p/${proposal.publicSlug}/pdf`} style={{ background: brandColor }}>
+                Baixar comprovante em PDF
+              </a>
+            </div>
+          ) : null}
         </section>
 
         {!hasDecision ? (
@@ -348,6 +410,16 @@ export default async function PublicProposalPage({
                 Aceitar proposta
               </button>
             </form>
+            {whatsappUrl ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black text-slate-800" href={`/api/public/proposals/${proposal.publicSlug}/whatsapp?intent=doubt`} target="_blank">
+                  Tenho uma duvida
+                </a>
+                <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black text-slate-800" href={`/api/public/proposals/${proposal.publicSlug}/whatsapp?intent=negotiate`} target="_blank">
+                  Quero negociar
+                </a>
+              </div>
+            ) : null}
             <details className="rounded-lg border border-black/10 bg-slate-50 p-4">
               <summary className="cursor-pointer font-black text-slate-700">Não vou seguir com esta proposta</summary>
               <form action={`/api/public/proposals/${proposal.publicSlug}/decline`} method="post" className="mt-4 grid gap-3">
@@ -399,6 +471,7 @@ function statusColor(status: string, expired: boolean) {
   if (expired) return "#b7791f";
   const colors: Record<string, string> = {
     accepted: "#22C55E",
+    awaiting_response: "#4f46e5",
     declined: "#a83b3b",
     sent: "#b7791f",
     viewed: "#2563eb",
@@ -426,11 +499,8 @@ function labelStatus(status: string) {
     draft: "Rascunho",
     expired: "Expirada",
     sent: "Enviada",
+    awaiting_response: "Aguardando resposta",
     viewed: "Visualizada",
   };
   return labels[status] || status;
-}
-
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, "");
 }

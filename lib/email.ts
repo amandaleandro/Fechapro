@@ -134,6 +134,31 @@ export async function sendProposalDeclinedEmail(ownerEmail: string, ownerName: s
   );
 }
 
+export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerName: string, clientName: string, serviceName: string, intent: string, slug: string) {
+  const link = `${APP_URL}/p/${slug}`;
+  const safeOwnerName = escapeHtml(ownerName);
+  const safeClientName = escapeHtml(clientName);
+  const safeServiceName = escapeHtml(serviceName);
+  const intentLabel = intent === "negotiate" ? "quer negociar" : intent === "doubt" ? "tem uma dÃºvida" : "clicou no WhatsApp";
+
+  await sendEmail(
+    ownerEmail,
+    `${clientName} chamou no WhatsApp - FechaPro`,
+    `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px">
+      <h2 style="margin:0 0 16px;color:#111">Cliente chamou no WhatsApp</h2>
+      <p style="color:#444;line-height:1.6">
+        OlÃ¡, <strong>${safeOwnerName}</strong>!
+        <strong>${safeClientName}</strong> ${intentLabel} na proposta de <strong>${safeServiceName}</strong>.
+      </p>
+      <a href="${link}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#106b5b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">
+        Ver proposta
+      </a>
+    </div>
+    `
+  );
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")

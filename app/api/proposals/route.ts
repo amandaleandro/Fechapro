@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     payment?: string;
     included?: string[];
     notes?: string;
-    status?: "sent" | "viewed" | "accepted" | "declined";
+    status?: "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
   };
 
   const clientName = cleanString(body.clientName);

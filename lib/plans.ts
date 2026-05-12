@@ -10,6 +10,7 @@ export const plans: Record<
     maintenancePrice?: string;
     maintenancePriceCents?: number;
     proposalLimit: number;
+    artLimit: number;
     features: string[];
   }
 > = {
@@ -19,6 +20,7 @@ export const plans: Record<
     price: "R$ 49/mês",
     priceCents: 4900,
     proposalLimit: 20,
+    artLimit: 0,
     features: ["Orçamentos simples", "Link para enviar ao cliente", "Modelos básicos", "Até 20 propostas por mês"],
   },
   pro: {
@@ -27,7 +29,8 @@ export const plans: Record<
     price: "R$ 97/mês",
     priceCents: 9700,
     proposalLimit: 50,
-    features: ["Até 50 propostas por mês", "Orçamentos personalizados", "Cadastro de serviços", "Identidade básica", "Link profissional"],
+    artLimit: 10,
+    features: ["Até 50 propostas por mês", "10 artes de divulgação por mês", "Orçamentos personalizados", "Cadastro de serviços", "Identidade básica", "Link profissional"],
   },
   plus: {
     code: "plus",
@@ -35,7 +38,8 @@ export const plans: Record<
     price: "R$ 147/mês",
     priceCents: 14700,
     proposalLimit: 120,
-    features: ["Até 120 propostas por mês", "Portfólio dentro do FechaPro", "Modelos de proposta", "Página de apresentação", "Suporte inicial"],
+    artLimit: 30,
+    features: ["Até 120 propostas por mês", "30 artes de divulgação por mês", "Portfólio dentro do FechaPro", "Modelos de proposta", "Página de apresentação", "Suporte inicial"],
   },
   premium: {
     code: "premium",
@@ -45,7 +49,8 @@ export const plans: Record<
     maintenancePrice: "R$ 197/mês depois",
     maintenancePriceCents: 19700,
     proposalLimit: 300,
-    features: ["Até 300 propostas por mês", "Tudo do Profissional", "Criação de site one page", "Início, serviços, sobre, portfólio e contato", "Botão para orçamento"],
+    artLimit: 60,
+    features: ["Até 300 propostas por mês", "60 artes de divulgação por mês", "Tudo do Profissional", "Criação de site one page", "Início, serviços, sobre, portfólio e contato", "Botão para orçamento"],
   },
   premium_site: {
     code: "premium_site",
@@ -55,7 +60,8 @@ export const plans: Record<
     maintenancePrice: "R$ 297/mês depois",
     maintenancePriceCents: 29700,
     proposalLimit: 600,
-    features: ["Até 600 propostas por mês", "Tudo do Pro Site", "Site completo simples", "Copy e textos do site", "Cadastro inicial de serviços", "Treinamento rápido"],
+    artLimit: 100,
+    features: ["Até 600 propostas por mês", "100 artes de divulgação por mês", "Tudo do Pro Site", "Site completo simples", "Copy e textos do site", "Cadastro inicial de serviços", "Treinamento rápido"],
   },
 };
 

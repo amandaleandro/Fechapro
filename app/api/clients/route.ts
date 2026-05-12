@@ -12,11 +12,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await requireSession();
-  const body = (await request.json()) as { name?: string; email?: string; phone?: string; segment?: string };
+  const body = (await request.json()) as { interestService?: string; name?: string; email?: string; notes?: string; phone?: string; segment?: string; status?: string };
   const name = cleanString(body.name);
   const email = cleanOptionalString(body.email);
   const phone = cleanOptionalString(body.phone);
   const segment = cleanOptionalString(body.segment);
+  const interestService = cleanOptionalString(body.interestService);
+  const status = cleanOptionalString(body.status) || "lead";
+  const notes = cleanOptionalString(body.notes);
 
   if (!name) return jsonError("Nome obrigatório.");
   if (email && !isValidEmail(email)) return jsonError("E-mail inválido.");
@@ -29,6 +32,9 @@ export async function POST(request: Request) {
       email,
       phone,
       segment,
+      interestService,
+      status,
+      notes,
     },
   });
   return NextResponse.json(item, { status: 201 });

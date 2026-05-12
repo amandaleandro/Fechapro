@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendProposalDeclinedEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
 
-const DECLINABLE_STATUSES = ["sent", "viewed"];
+const DECLINABLE_STATUSES = ["sent", "viewed", "awaiting_response"];
 
 export async function POST(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
