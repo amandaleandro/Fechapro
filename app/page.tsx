@@ -2370,6 +2370,40 @@ function CrudShell({
   );
 }
 
+function LandingRange({
+  label,
+  max,
+  min,
+  onChange,
+  step,
+  value,
+  valueLabel,
+}: {
+  label: string;
+  max: number;
+  min: number;
+  onChange: (value: number) => void;
+  step: number;
+  value: number;
+  valueLabel: string;
+}) {
+  return (
+    <label className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+      <span className="text-sm font-black text-slate-700">{label}</span>
+      <strong className="text-2xl font-black text-slate-950">{valueLabel}</strong>
+      <input
+        className="accent-green-600"
+        max={max}
+        min={min}
+        step={step}
+        type="range"
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </label>
+  );
+}
+
 function AuthScreen() {
   const benefits = [
     {
@@ -2899,40 +2933,6 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
       <strong className="block text-lg font-black">{value}</strong>
       <span className="text-xs font-bold text-white/70">{label}</span>
     </article>
-  );
-}
-
-function LandingRange({
-  label,
-  max,
-  min,
-  onChange,
-  step,
-  value,
-  valueLabel,
-}: {
-  label: string;
-  max: number;
-  min: number;
-  onChange: (value: number) => void;
-  step: number;
-  value: number;
-  valueLabel: string;
-}) {
-  return (
-    <label className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
-      <span className="text-sm font-black text-slate-700">{label}</span>
-      <strong className="text-2xl font-black text-slate-950">{valueLabel}</strong>
-      <input
-        className="accent-green-600"
-        max={max}
-        min={min}
-        step={step}
-        type="range"
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </label>
   );
 }
 
