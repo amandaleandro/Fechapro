@@ -422,31 +422,37 @@ async function createCleanFallbackArt(input: {
   const subtitleLines = wrapTitle(input.salesCopy.subheadline, isStory ? 34 : 30).slice(0, 2);
   const contact = input.whatsapp || "Fale conosco";
   const useBackground = Boolean(input.useImageAsBackground && input.referenceImageUrl);
-  const titleTop = isStory ? 520 : 330;
+  const panelX = useBackground ? (isStory ? 74 : 62) : 0;
+  const panelY = useBackground ? (isStory ? 86 : 58) : 0;
+  const panelWidth = useBackground ? dimensions.width - panelX * 2 : 0;
+  const panelHeight = useBackground ? (isStory ? dimensions.height - 172 : dimensions.height - 132) : 0;
+  const contentX = useBackground ? panelX + (isStory ? 58 : 50) : margin;
+  const contentMaxWidth = useBackground ? panelWidth - (isStory ? 116 : 100) : dimensions.width - margin * 2;
+  const titleTop = useBackground ? panelY + (isStory ? 330 : 270) : isStory ? 520 : 330;
   const titleSize = isStory ? 88 : 74;
   const titleLineHeight = isStory ? 98 : 82;
   const subtitleTop = titleTop + titleLines.length * titleLineHeight + (isStory ? 42 : 34);
   const ctaHeight = isStory ? 112 : 88;
-  const ctaY = isStory ? dimensions.height - 270 : dimensions.height - 188;
-  const footerY = isStory ? dimensions.height - 72 : dimensions.height - 56;
+  const ctaY = useBackground ? panelY + panelHeight - (isStory ? 190 : 162) : isStory ? dimensions.height - 270 : dimensions.height - 188;
+  const footerY = useBackground ? panelY + panelHeight - (isStory ? 54 : 42) : isStory ? dimensions.height - 72 : dimensions.height - 56;
   const textColor = useBackground ? "#ffffff" : darkColor;
   const mutedColor = useBackground ? "#e8eefc" : "#475569";
-  const logoY = isStory ? 94 : 72;
+  const logoY = useBackground ? panelY + (isStory ? 52 : 46) : isStory ? 94 : 72;
 
   const titleSvg = titleLines
     .map((line, index) => {
       const fill = useBackground ? "#ffffff" : index === 1 ? accentColor : darkColor;
-      return `<text x="${margin}" y="${titleTop + index * titleLineHeight}" fill="${fill}" font-family="Arial, sans-serif" font-size="${titleSize}" font-weight="900">${escapeXml(line)}</text>`;
+      return `<text x="${contentX}" y="${titleTop + index * titleLineHeight}" fill="${fill}" font-family="Arial, sans-serif" font-size="${titleSize}" font-weight="900">${escapeXml(line)}</text>`;
     })
     .join("");
   const subtitleSvg = subtitleLines
     .map((line, index) => {
-      return `<text x="${margin}" y="${subtitleTop + index * (isStory ? 44 : 38)}" fill="${mutedColor}" font-family="Arial, sans-serif" font-size="${isStory ? 34 : 28}" font-weight="700">${escapeXml(line)}</text>`;
+      return `<text x="${contentX}" y="${subtitleTop + index * (isStory ? 44 : 38)}" fill="${mutedColor}" font-family="Arial, sans-serif" font-size="${isStory ? 34 : 28}" font-weight="700">${escapeXml(line)}</text>`;
     })
     .join("");
   const price = extractPrice(input.objective);
   const priceSvg = price
-    ? `<text x="${margin}" y="${subtitleTop + subtitleLines.length * (isStory ? 44 : 38) + (isStory ? 104 : 78)}" fill="${textColor}" font-family="Arial, sans-serif" font-size="${isStory ? 92 : 70}" font-weight="900">${escapeXml(price)}</text>`
+    ? `<text x="${contentX}" y="${subtitleTop + subtitleLines.length * (isStory ? 44 : 38) + (isStory ? 104 : 78)}" fill="${textColor}" font-family="Arial, sans-serif" font-size="${isStory ? 92 : 70}" font-weight="900">${escapeXml(price)}</text>`
     : "";
 
   const benefitTop = price ? subtitleTop + subtitleLines.length * (isStory ? 44 : 38) + (isStory ? 136 : 104) : subtitleTop + subtitleLines.length * (isStory ? 44 : 38) + (isStory ? 70 : 54);
@@ -454,9 +460,9 @@ async function createCleanFallbackArt(input: {
     const y = benefitTop + index * (isStory ? 54 : 44);
     return `
       <g>
-        <circle cx="${margin + 14}" cy="${y - 10}" r="${isStory ? 14 : 11}" fill="${useBackground ? "#ffffff" : "#dcfce7"}" opacity="${useBackground ? 0.92 : 1}"/>
-        <path d="M ${margin + 7} ${y - 10} l 5 6 l 10 -12" fill="none" stroke="${brandColor}" stroke-width="${isStory ? 5 : 4}" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="${margin + (isStory ? 44 : 36)}" y="${y}" fill="${textColor}" font-family="Arial, sans-serif" font-size="${isStory ? 30 : 24}" font-weight="800">${escapeXml(truncate(benefit, isStory ? 42 : 36))}</text>
+        <circle cx="${contentX + 14}" cy="${y - 10}" r="${isStory ? 14 : 11}" fill="${useBackground ? "#ffffff" : "#dcfce7"}" opacity="${useBackground ? 0.92 : 1}"/>
+        <path d="M ${contentX + 7} ${y - 10} l 5 6 l 10 -12" fill="none" stroke="${brandColor}" stroke-width="${isStory ? 5 : 4}" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="${contentX + (isStory ? 44 : 36)}" y="${y}" fill="${textColor}" font-family="Arial, sans-serif" font-size="${isStory ? 30 : 24}" font-weight="800">${escapeXml(truncate(benefit, isStory ? 42 : 34))}</text>
       </g>
     `;
   }).join("");
@@ -485,6 +491,14 @@ async function createCleanFallbackArt(input: {
       ${useBackground ? '<rect width="100%" height="100%" fill="url(#photoShade)"/>' : '<rect width="100%" height="100%" fill="url(#cleanBg)"/>'}
       ${
         useBackground
+          ? `
+            <rect x="${panelX}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="${isStory ? 42 : 34}" fill="#020617" opacity="0.78"/>
+            <rect x="${panelX}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="${isStory ? 42 : 34}" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+          `
+          : ""
+      }
+      ${
+        useBackground
           ? ""
           : `
             <circle cx="${dimensions.width - 78}" cy="${isStory ? 86 : 70}" r="${isStory ? 210 : 160}" fill="${accentColor}" opacity="0.92"/>
@@ -493,23 +507,23 @@ async function createCleanFallbackArt(input: {
             <g opacity="0.28" fill="#bfdbfe">${dotPattern(dimensions.width - (isStory ? 430 : 330), isStory ? 190 : 140, isStory ? 260 : 210)}</g>
           `
       }
-      <g transform="translate(${margin} ${logoY})">
+      <g transform="translate(${contentX} ${logoY})">
         <text x="0" y="${isStory ? 70 : 58}" fill="${useBackground ? "#ffffff" : accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 96 : 78}" font-weight="900">${escapeXml(input.brandName.trim().charAt(0).toUpperCase() || "F")}</text>
         <path d="M 3 ${isStory ? 86 : 72} H ${isStory ? 86 : 70}" stroke="${brandColor}" stroke-width="5"/>
         <text x="0" y="${isStory ? 122 : 102}" fill="${textColor}" font-family="Arial, sans-serif" font-size="${isStory ? 25 : 20}" font-weight="800">${escapeXml(input.brandName.slice(0, 36))}</text>
       </g>
-      <rect x="${margin}" y="${titleTop - (isStory ? 128 : 104)}" width="${isStory ? 300 : 248}" height="${isStory ? 58 : 48}" rx="${isStory ? 29 : 24}" fill="${useBackground ? "#ffffff" : "#e8f8ef"}" opacity="${useBackground ? 0.18 : 1}"/>
-      <text x="${margin + 28}" y="${titleTop - (isStory ? 90 : 72)}" fill="${useBackground ? "#ffffff" : brandColor}" font-family="Arial, sans-serif" font-size="${isStory ? 28 : 23}" font-weight="900">${escapeXml(input.salesCopy.badge)}</text>
+      <rect x="${contentX}" y="${titleTop - (isStory ? 128 : 104)}" width="${isStory ? 300 : 248}" height="${isStory ? 58 : 48}" rx="${isStory ? 29 : 24}" fill="${useBackground ? "#ffffff" : "#e8f8ef"}" opacity="${useBackground ? 0.18 : 1}"/>
+      <text x="${contentX + 28}" y="${titleTop - (isStory ? 90 : 72)}" fill="${useBackground ? "#ffffff" : brandColor}" font-family="Arial, sans-serif" font-size="${isStory ? 28 : 23}" font-weight="900">${escapeXml(input.salesCopy.badge)}</text>
       ${titleSvg}
       ${subtitleSvg}
       ${priceSvg}
       ${benefitsSvg}
       <g filter="url(#softShadow)">
-        <rect x="${margin}" y="${ctaY}" width="${dimensions.width - margin * 2}" height="${ctaHeight}" rx="${ctaHeight / 2}" fill="url(#greenCta)"/>
+        <rect x="${contentX}" y="${ctaY}" width="${contentMaxWidth}" height="${ctaHeight}" rx="${ctaHeight / 2}" fill="url(#greenCta)"/>
       </g>
-      <text x="${dimensions.width / 2}" y="${ctaY + (isStory ? 70 : 56)}" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 42 : 34}" font-weight="900">${escapeXml(truncate(input.salesCopy.cta, isStory ? 34 : 26))}</text>
-      <text x="${margin}" y="${footerY - (isStory ? 42 : 34)}" fill="${mutedColor}" font-family="Arial, sans-serif" font-size="${isStory ? 24 : 19}" font-weight="800">${escapeXml(truncate(input.salesCopy.proof, isStory ? 48 : 44))}</text>
-      <text x="${margin}" y="${footerY}" fill="${textColor}" font-family="Arial, sans-serif" font-size="${isStory ? 25 : 20}" font-weight="800" opacity="${useBackground ? 0.92 : 0.76}">${escapeXml(contact)}</text>
+      <text x="${contentX + contentMaxWidth / 2}" y="${ctaY + (isStory ? 70 : 56)}" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 42 : 34}" font-weight="900">${escapeXml(truncate(input.salesCopy.cta, isStory ? 34 : 26))}</text>
+      <text x="${contentX}" y="${ctaY - (isStory ? 48 : 36)}" fill="${mutedColor}" font-family="Arial, sans-serif" font-size="${isStory ? 24 : 19}" font-weight="800">${escapeXml(truncate(input.salesCopy.proof, isStory ? 48 : 42))}</text>
+      <text x="${contentX}" y="${footerY}" fill="${textColor}" font-family="Arial, sans-serif" font-size="${isStory ? 25 : 20}" font-weight="800" opacity="${useBackground ? 0.92 : 0.76}">${escapeXml(contact)}</text>
     </svg>
   `;
 
@@ -520,6 +534,8 @@ async function createCleanFallbackArt(input: {
       const background = await sharp(reference.bytes)
         .rotate()
         .resize(dimensions.width, dimensions.height, { fit: "cover" })
+        .blur(isStory ? 4 : 3)
+        .modulate({ brightness: 0.72, saturation: 0.86 })
         .png()
         .toBuffer();
       bytes = await sharp(background)
