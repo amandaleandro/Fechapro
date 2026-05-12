@@ -74,8 +74,8 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
       {isSignup && turnstileSiteKey ? (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
       ) : null}
-      <div className="mx-auto grid min-h-screen w-full max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-        <section className="relative isolate grid min-h-[560px] overflow-hidden rounded-lg bg-slate-950 p-5 text-white shadow-2xl shadow-slate-900/15 sm:p-8 lg:min-h-[640px]">
+      <div className="mx-auto grid min-h-screen w-full max-w-6xl gap-5 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <section className="relative isolate grid min-h-[420px] overflow-hidden rounded-lg bg-slate-950 p-5 text-white shadow-2xl shadow-slate-900/15 sm:min-h-[560px] sm:p-8 lg:min-h-[640px]">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(34,197,94,0.24),transparent_28%),radial-gradient(circle_at_86%_8%,rgba(37,99,235,0.22),transparent_30%)]" />
           <div className="absolute inset-x-8 bottom-0 -z-10 h-56 rounded-t-[100%] bg-green-500/10 blur-3xl" />
 
@@ -90,7 +90,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
               <Sparkles size={14} />
               {isSignup ? "Comece agora" : "Bem-vindo de volta"}
             </div>
-            <h1 className="max-w-[10ch] text-5xl font-black leading-none tracking-normal sm:text-7xl">
+            <h1 className="max-w-[11ch] text-4xl font-black leading-none tracking-normal sm:max-w-[10ch] sm:text-7xl">
               {isSignup ? "Crie propostas que vendem." : "Acesse seu painel."}
             </h1>
             <p className="mt-6 max-w-md text-base leading-7 text-slate-300 sm:text-lg">
@@ -100,7 +100,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 text-center sm:text-left">
             {[
               { icon: Link2, label: "Link" },
               { icon: FileText, label: "PDF" },
