@@ -2410,6 +2410,44 @@ function AuthScreen() {
     "Envie um link que conduz o cliente para visualizar, baixar PDF e aceitar.",
   ];
   const niches = ["Social media", "Designer", "Fotógrafo", "Arquiteto", "Consultor", "Técnico de ar-condicionado", "Marceneiro", "Gestor de tráfego", "Estética", "Eventos"];
+  const landingExamples = [
+    {
+      niche: "Designer",
+      client: "Maria Eduarda",
+      service: "Identidade visual premium",
+      price: 1200,
+      deadline: "7 dias úteis",
+      proof: "Portfolio, paleta, tipografia e depoimento antes do aceite",
+      included: ["Logo principal", "Paleta de cores", "Tipografia", "Modelos de posts"],
+    },
+    {
+      niche: "Social media",
+      client: "Clínica Aura",
+      service: "Gestão mensal de Instagram",
+      price: 1800,
+      deadline: "30 dias",
+      proof: "Calendário, exemplos de posts e clareza do que entra no pacote",
+      included: ["Planejamento", "12 posts", "8 stories", "Relatório mensal"],
+    },
+    {
+      niche: "Fotógrafo",
+      client: "Studio Serena",
+      service: "Ensaio profissional de marca",
+      price: 950,
+      deadline: "5 dias úteis",
+      proof: "Galeria, estilo de edição e condições de entrega no mesmo link",
+      included: ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online"],
+    },
+    {
+      niche: "Consultor",
+      client: "Loja Vértice",
+      service: "Consultoria estratégica",
+      price: 2500,
+      deadline: "4 semanas",
+      proof: "Diagnóstico, plano de ação e próximos passos sem conversa solta",
+      included: ["Diagnóstico", "4 encontros", "Plano de ação", "Suporte por mensagem"],
+    },
+  ];
   const plans = [
     { name: "Start", price: "R$ 49", detail: "Para nunca mais mandar preço solto.", items: ["20 propostas por mês", "Link profissional", "PDF automático"] },
     { name: "Essencial", price: "R$ 97", detail: "Para vender com marca e parecer mais premium.", items: ["50 propostas por mês", "Serviços cadastrados", "Identidade básica"] },
@@ -2444,6 +2482,12 @@ function AuthScreen() {
     },
   ];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
+  const [activeExampleIndex, setActiveExampleIndex] = useState(0);
+  const [monthlyProposals, setMonthlyProposals] = useState(12);
+  const [averageTicket, setAverageTicket] = useState(1200);
+  const [rescuedDeals, setRescuedDeals] = useState(2);
+  const activeExample = landingExamples[activeExampleIndex];
+  const estimatedMonthlyUpside = averageTicket * Math.min(rescuedDeals, monthlyProposals);
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -2562,16 +2606,33 @@ function AuthScreen() {
               </div>
               <div className="rounded-lg bg-white p-4 text-slate-950">
                 <p className="text-xs font-black uppercase text-blue-700">De orçamento comum para proposta premium</p>
-                <h2 className="mt-1 text-xl font-black">Identidade visual para Maria Eduarda</h2>
+                <h2 className="mt-1 text-xl font-black">{activeExample.service}</h2>
                 <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600">
-                  <span>Investimento: R$ 1.200</span>
-                  <span>Prazo: 7 dias úteis</span>
-                  <span>Inclui: logo, paleta, tipografia e modelos de posts</span>
-                  <span>Prova: portfólio e depoimentos antes do aceite</span>
+                  <span>Cliente: {activeExample.client}</span>
+                  <span>Investimento: {money.format(activeExample.price)}</span>
+                  <span>Prazo: {activeExample.deadline}</span>
+                  <span>Inclui: {activeExample.included.join(", ")}</span>
+                  <span>Prova: {activeExample.proof}</span>
                 </div>
                 <button className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-green-600 font-black text-white" type="button">
                   Aceitar proposta
                 </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {landingExamples.map((example, index) => (
+                  <button
+                    className={`min-h-10 rounded-lg border px-2 text-xs font-black ${
+                      activeExampleIndex === index
+                        ? "border-green-300 bg-green-300 text-slate-950"
+                        : "border-white/20 bg-white/10 text-white"
+                    }`}
+                    key={example.niche}
+                    type="button"
+                    onClick={() => setActiveExampleIndex(index)}
+                  >
+                    {example.niche}
+                  </button>
+                ))}
               </div>
               <div className="rounded-lg border border-white/15 bg-slate-950/60 p-4">
                 <p className="text-xs font-black uppercase text-green-200">O efeito que você quer causar</p>
@@ -2612,6 +2673,63 @@ function AuthScreen() {
                 <p className="self-center font-black leading-7 text-rose-950">{item}</p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-100">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-xs font-black uppercase text-blue-700">Simulador de fechamento</p>
+            <h2 className="mt-2 text-4xl font-black leading-tight">Coloque números no problema: quanto custa deixar proposta esfriar?</h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              Ajuste o volume de propostas, o ticket médio e quantas vendas poderiam ser resgatadas com uma apresentação mais clara, mais forte e mais fácil de aprovar.
+            </p>
+          </div>
+
+          <div className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <LandingRange
+                label="Propostas por mês"
+                max={60}
+                min={1}
+                step={1}
+                value={monthlyProposals}
+                valueLabel={`${monthlyProposals}`}
+                onChange={setMonthlyProposals}
+              />
+              <LandingRange
+                label="Ticket médio"
+                max={10000}
+                min={300}
+                step={100}
+                value={averageTicket}
+                valueLabel={money.format(averageTicket)}
+                onChange={setAverageTicket}
+              />
+              <LandingRange
+                label="Vendas recuperadas"
+                max={Math.max(1, Math.min(monthlyProposals, 10))}
+                min={1}
+                step={1}
+                value={Math.min(rescuedDeals, monthlyProposals)}
+                valueLabel={`${Math.min(rescuedDeals, monthlyProposals)}/mês`}
+                onChange={setRescuedDeals}
+              />
+            </div>
+
+            <div className="grid gap-3 rounded-lg bg-slate-950 p-5 text-white sm:grid-cols-[1fr_auto] sm:items-center">
+              <div>
+                <p className="text-xs font-black uppercase text-green-300">Potencial que hoje pode estar vazando</p>
+                <strong className="mt-2 block text-4xl font-black">{money.format(estimatedMonthlyUpside)}</strong>
+                <p className="mt-2 leading-7 text-white/70">
+                  Se apenas {Math.min(rescuedDeals, monthlyProposals)} proposta(s) por mês deixarem de morrer no follow-up, esse é o valor que volta para a conversa.
+                </p>
+              </div>
+              <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="/cadastro">
+                Quero testar na prática
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -2781,6 +2899,40 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
       <strong className="block text-lg font-black">{value}</strong>
       <span className="text-xs font-bold text-white/70">{label}</span>
     </article>
+  );
+}
+
+function LandingRange({
+  label,
+  max,
+  min,
+  onChange,
+  step,
+  value,
+  valueLabel,
+}: {
+  label: string;
+  max: number;
+  min: number;
+  onChange: (value: number) => void;
+  step: number;
+  value: number;
+  valueLabel: string;
+}) {
+  return (
+    <label className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+      <span className="text-sm font-black text-slate-700">{label}</span>
+      <strong className="text-2xl font-black text-slate-950">{valueLabel}</strong>
+      <input
+        className="accent-green-600"
+        max={max}
+        min={min}
+        step={step}
+        type="range"
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </label>
   );
 }
 
