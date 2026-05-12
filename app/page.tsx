@@ -30,6 +30,7 @@ import {
   UserCircle,
   Users,
 } from "lucide-react";
+import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "templates" | "plans" | "account";
 type ProposalStatus = "sent" | "viewed" | "accepted" | "declined" | "expired";
@@ -487,36 +488,44 @@ export default function Home() {
   }
 
   async function saveProposal(status: ProposalStatus = "sent") {
-    if (!draft.clientName || !draft.serviceName || !draft.price || !draft.deadline) {
-      setNotice("Preencha cliente, servico, valor e prazo antes de gerar a proposta.");
+    const validationError = validateProposalDraft(draft);
+    if (validationError) {
+      setNotice(validationError);
       return null;
     }
-    const result = await apiPost<Proposal & { clientEmailSent?: boolean }>("/api/proposals", {
-      ...draft,
-      payment: draft.payment || "A combinar",
-      status,
-    });
-    setProposals((current) => [result, ...current]);
-    const emailNote = result.clientEmailSent
-      ? " E-mail enviado ao cliente."
-      : draft.clientEmail
-        ? ""
-        : " Sem e-mail do cliente - proposta nao foi enviada por e-mail.";
-    setNotice(`Proposta salva com sucesso.${emailNote}`);
-    setActiveView("proposals");
-    setBilling((current) =>
-      current
-        ? {
-            ...current,
-            usage: {
-              ...current.usage,
-              proposalsThisMonth: current.usage.proposalsThisMonth + 1,
-            },
-          }
-        : current,
-    );
-    setDraft({ ...blankDraft, validUntil: nextWeekDate() });
-    return result;
+
+    try {
+      const result = await apiPost<Proposal & { clientEmailSent?: boolean }>("/api/proposals", {
+        ...draft,
+        clientEmail: draft.clientEmail?.trim() || "",
+        payment: draft.payment || "A combinar",
+        status,
+      });
+      setProposals((current) => [result, ...current]);
+      const emailNote = result.clientEmailSent
+        ? " E-mail enviado ao cliente."
+        : draft.clientEmail
+          ? ""
+          : " Sem e-mail do cliente - proposta nao foi enviada por e-mail.";
+      setNotice(`Proposta salva com sucesso.${emailNote}`);
+      setActiveView("proposals");
+      setBilling((current) =>
+        current
+          ? {
+              ...current,
+              usage: {
+                ...current.usage,
+                proposalsThisMonth: current.usage.proposalsThisMonth + 1,
+              },
+            }
+          : current,
+      );
+      setDraft({ ...blankDraft, validUntil: nextWeekDate() });
+      return result;
+    } catch (caught) {
+      setNotice(caught instanceof Error ? caught.message : "Nao foi possivel salvar a proposta.");
+      return null;
+    }
   }
 
   async function saveProposalAndOpenPdf() {
@@ -1066,6 +1075,7 @@ function DashboardView({
               label="Cliente"
               value={draft.clientName}
               placeholder="Selecione ou digite"
+              required
               options={clients.map((client) => client.name)}
               onChange={(value) => {
                 onDraftChange("clientName", value);
@@ -1077,25 +1087,28 @@ function DashboardView({
               label="Servico"
               value={draft.serviceName}
               placeholder="Selecione ou digite"
+              required
               options={services.map((service) => service.name)}
               onChange={chooseService}
             />
-            <TextField label="Valor" placeholder="1200" type="number" value={draft.price || ""} onChange={(value) => onDraftChange("price", Number(value || 0))} />
-            <TextField label="Prazo" placeholder="7 dias uteis" value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
+            <TextField label="Valor" min={1} placeholder="1200" required step="1" type="number" value={draft.price || ""} onChange={(value) => onDraftChange("price", Number(value || 0))} />
+            <TextField label="Prazo" maxLength={80} placeholder="7 dias uteis" required value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
             <TextField label="Validade" type="date" value={draft.validUntil} onChange={(value) => onDraftChange("validUntil", value)} />
-            <TextField label="Pagamento" placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
+            <TextField label="Pagamento" maxLength={120} placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
           </div>
 
           <TextField
             label="E-mail do cliente (envio automatico)"
             placeholder="cliente@email.com"
             type="email"
+            autoComplete="email"
             value={draft.clientEmail ?? ""}
             onChange={(value) => onDraftChange("clientEmail", value)}
           />
 
           <TextAreaField
             label="Itens inclusos"
+            maxLength={1200}
             placeholder={"Logo\nPaleta de cores\n5 modelos de posts"}
             value={draft.included.join("\n")}
             onChange={(value) =>
@@ -1111,6 +1124,7 @@ function DashboardView({
 
           <TextAreaField
             label="Observacoes"
+            maxLength={800}
             placeholder="A proposta inclui ate 2 rodadas de ajustes."
             rows={3}
             value={draft.notes}
@@ -1365,6 +1379,14 @@ function OnboardingView({
       setError("Preencha marca, WhatsApp, servico, valor e prazo para concluir.");
       return;
     }
+    if (!isValidPhone(whatsapp.trim())) {
+      setError("Informe um WhatsApp valido com DDD.");
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      setError("Informe um valor base maior que zero.");
+      return;
+    }
     setSaving(true);
     try {
       const savedBrand = await apiPut<BrandProfile>("/api/brand", {
@@ -1413,8 +1435,8 @@ function OnboardingView({
             {error}
           </div>
         ) : null}
-        <TextField label="Nome comercial" value={businessName} onChange={setBusinessName} />
-        <TextField label="WhatsApp" placeholder="5511999999999" value={whatsapp} onChange={setWhatsapp} />
+        <TextField label="Nome comercial" maxLength={80} required value={businessName} onChange={setBusinessName} />
+        <TextField label="WhatsApp" autoComplete="tel" maxLength={20} placeholder="5511999999999" required value={whatsapp} onChange={setWhatsapp} />
         <div className="grid gap-2">
           <span className="text-sm font-extrabold text-slate-600">Modelos rapidos</span>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1434,10 +1456,10 @@ function OnboardingView({
             ))}
           </div>
         </div>
-        <TextField label="Primeiro servico" placeholder="Ex: Identidade visual" value={serviceName} onChange={setServiceName} />
-        <TextField label="Valor base" type="number" value={price || ""} onChange={(value) => setPrice(Number(value || 0))} />
-        <TextField label="Prazo padrao" placeholder="Ex: 7 dias uteis" value={deadline} onChange={setDeadline} />
-        <TextAreaField label="Itens inclusos" rows={4} value={includes} onChange={setIncludes} />
+        <TextField label="Primeiro servico" maxLength={80} placeholder="Ex: Identidade visual" required value={serviceName} onChange={setServiceName} />
+        <TextField label="Valor base" min={1} required step="1" type="number" value={price || ""} onChange={(value) => setPrice(Number(value || 0))} />
+        <TextField label="Prazo padrao" maxLength={80} placeholder="Ex: 7 dias uteis" required value={deadline} onChange={setDeadline} />
+        <TextAreaField label="Itens inclusos" maxLength={1200} rows={4} value={includes} onChange={setIncludes} />
         <button className="min-h-12 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
           {saving ? "Salvando..." : "Concluir configuracao"}
         </button>
@@ -1449,19 +1471,36 @@ function OnboardingView({
 function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (items: Client[]) => void }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", segment: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function saveClient(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.name.trim()) return;
-    if (editingId) {
-      const item = await apiPatch<Client>(`/api/clients/${editingId}`, form);
-      onChange(clients.map((client) => (client.id === editingId ? item : client)));
-      setEditingId(null);
-    } else {
-      const item = await apiPost<Client>("/api/clients", form);
-      onChange([item, ...clients]);
+    setError(null);
+    if (!form.name.trim()) {
+      setError("Informe o nome do cliente.");
+      return;
     }
-    setForm({ name: "", email: "", phone: "", segment: "" });
+    if (form.email.trim() && !isValidEmail(form.email.trim())) {
+      setError("Informe um e-mail valido.");
+      return;
+    }
+    if (form.phone.trim() && !isValidPhone(form.phone.trim())) {
+      setError("Informe um telefone valido.");
+      return;
+    }
+    try {
+      if (editingId) {
+        const item = await apiPatch<Client>(`/api/clients/${editingId}`, form);
+        onChange(clients.map((client) => (client.id === editingId ? item : client)));
+        setEditingId(null);
+      } else {
+        const item = await apiPost<Client>("/api/clients", form);
+        onChange([item, ...clients]);
+      }
+      setForm({ name: "", email: "", phone: "", segment: "" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o cliente.");
+    }
   }
 
   async function removeClient(id: string) {
@@ -1479,10 +1518,11 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
           className="grid gap-3"
           onSubmit={saveClient}
         >
-          <TextField label="Nome" value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
-          <TextField label="E-mail" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
-          <TextField label="Telefone" value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
-          <TextField label="Segmento" placeholder="Moda, estetica, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
+          {error ? <FormError message={error} /> : null}
+          <TextField label="Nome" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
+          <TextField label="E-mail" autoComplete="email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
+          <TextField label="Telefone" autoComplete="tel" maxLength={20} value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
+          <TextField label="Segmento" maxLength={60} placeholder="Moda, estetica, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
           <SubmitButton label={editingId ? "Atualizar cliente" : "Salvar cliente"} />
           {editingId ? (
             <button
@@ -1523,10 +1563,19 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
 function ServicesView({ services, onChange }: { services: ServiceItem[]; onChange: (items: ServiceItem[]) => void }) {
   const [form, setForm] = useState({ name: "", price: 0, deadline: "", includes: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function saveService(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.name.trim()) return;
+    setError(null);
+    if (!form.name.trim()) {
+      setError("Informe o nome do servico.");
+      return;
+    }
+    if (!Number.isFinite(form.price) || form.price < 0) {
+      setError("Informe um valor valido para o servico.");
+      return;
+    }
     const payload = {
       name: form.name,
       price: form.price,
@@ -1537,15 +1586,19 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
         .filter(Boolean),
     };
 
-    if (editingId) {
-      const item = await apiPatch<ServiceItem>(`/api/services/${editingId}`, payload);
-      onChange(services.map((service) => (service.id === editingId ? item : service)));
-      setEditingId(null);
-    } else {
-      const item = await apiPost<ServiceItem>("/api/services", payload);
-      onChange([item, ...services]);
+    try {
+      if (editingId) {
+        const item = await apiPatch<ServiceItem>(`/api/services/${editingId}`, payload);
+        onChange(services.map((service) => (service.id === editingId ? item : service)));
+        setEditingId(null);
+      } else {
+        const item = await apiPost<ServiceItem>("/api/services", payload);
+        onChange([item, ...services]);
+      }
+      setForm({ name: "", price: 0, deadline: "", includes: "" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o servico.");
     }
-    setForm({ name: "", price: 0, deadline: "", includes: "" });
   }
 
   async function removeService(id: string) {
@@ -1563,10 +1616,11 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
           className="grid gap-3"
           onSubmit={saveService}
         >
-          <TextField label="Servico" value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
-          <TextField label="Valor base" type="number" value={form.price || ""} onChange={(value) => setForm({ ...form, price: Number(value || 0) })} />
-          <TextField label="Prazo padrao" value={form.deadline} onChange={(value) => setForm({ ...form, deadline: value })} />
-          <TextAreaField label="Itens inclusos" value={form.includes} onChange={(value) => setForm({ ...form, includes: value })} />
+          {error ? <FormError message={error} /> : null}
+          <TextField label="Servico" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
+          <TextField label="Valor base" min={0} required step="1" type="number" value={form.price || ""} onChange={(value) => setForm({ ...form, price: Number(value || 0) })} />
+          <TextField label="Prazo padrao" maxLength={80} value={form.deadline} onChange={(value) => setForm({ ...form, deadline: value })} />
+          <TextAreaField label="Itens inclusos" maxLength={1200} value={form.includes} onChange={(value) => setForm({ ...form, includes: value })} />
           <SubmitButton label={editingId ? "Atualizar servico" : "Salvar servico"} />
           {editingId ? (
             <button
@@ -1611,10 +1665,19 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
   const [removeBackground, setRemoveBackground] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function savePortfolioItem(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.title.trim()) return;
+    setError(null);
+    if (!form.title.trim()) {
+      setError("Informe o titulo do item.");
+      return;
+    }
+    if (form.imageUrl.trim() && !isValidHttpUrl(form.imageUrl.trim())) {
+      setError("Informe uma URL de imagem valida comecando com http:// ou https://.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -1650,7 +1713,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
       });
 
       if (!response.ok) {
-        throw new Error("Falha ao salvar portfolio.");
+        throw new Error(await readApiError(response, "Falha ao salvar portfolio."));
       }
 
       const item = (await response.json()) as PortfolioItem;
@@ -1663,6 +1726,8 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
       setForm({ title: "", category: "", imageUrl: "" });
       setFile(null);
       setRemoveBackground(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o portfolio.");
     } finally {
       setSaving(false);
     }
@@ -1685,8 +1750,9 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
           className="grid gap-3"
           onSubmit={savePortfolioItem}
         >
-          <TextField label="Titulo" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
-          <TextField label="Categoria" value={form.category} onChange={(value) => setForm({ ...form, category: value })} />
+          {error ? <FormError message={error} /> : null}
+          <TextField label="Titulo" maxLength={80} required value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+          <TextField label="Categoria" maxLength={60} value={form.category} onChange={(value) => setForm({ ...form, category: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Imagem
             <input
@@ -1705,7 +1771,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
             />
             Remover fundo claro desta imagem
           </label>
-          <TextField label="URL da imagem" placeholder="Opcional: https://..." value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
+          <TextField label="URL da imagem" placeholder="Opcional: https://..." type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
           <SubmitButton label={saving ? "Salvando..." : editingId ? "Atualizar item" : "Salvar item"} />
           {editingId ? (
             <button
@@ -1780,19 +1846,28 @@ function TestimonialsView({
 }) {
   const [form, setForm] = useState({ authorName: "", company: "", quote: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function saveTestimonial(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.authorName.trim() || !form.quote.trim()) return;
-    if (editingId) {
-      const item = await apiPatch<Testimonial>(`/api/testimonials/${editingId}`, form);
-      onChange(testimonials.map((entry) => (entry.id === editingId ? item : entry)));
-      setEditingId(null);
-    } else {
-      const item = await apiPost<Testimonial>("/api/testimonials", form);
-      onChange([item, ...testimonials]);
+    setError(null);
+    if (!form.authorName.trim() || !form.quote.trim()) {
+      setError("Informe nome do cliente e depoimento.");
+      return;
     }
-    setForm({ authorName: "", company: "", quote: "" });
+    try {
+      if (editingId) {
+        const item = await apiPatch<Testimonial>(`/api/testimonials/${editingId}`, form);
+        onChange(testimonials.map((entry) => (entry.id === editingId ? item : entry)));
+        setEditingId(null);
+      } else {
+        const item = await apiPost<Testimonial>("/api/testimonials", form);
+        onChange([item, ...testimonials]);
+      }
+      setForm({ authorName: "", company: "", quote: "" });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar o depoimento.");
+    }
   }
 
   async function removeTestimonial(id: string) {
@@ -1810,9 +1885,10 @@ function TestimonialsView({
           className="grid gap-3"
           onSubmit={saveTestimonial}
         >
-          <TextField label="Nome do cliente" value={form.authorName} onChange={(value) => setForm({ ...form, authorName: value })} />
-          <TextField label="Empresa" value={form.company} onChange={(value) => setForm({ ...form, company: value })} />
-          <TextAreaField label="Depoimento" rows={4} value={form.quote} onChange={(value) => setForm({ ...form, quote: value })} />
+          {error ? <FormError message={error} /> : null}
+          <TextField label="Nome do cliente" maxLength={80} required value={form.authorName} onChange={(value) => setForm({ ...form, authorName: value })} />
+          <TextField label="Empresa" maxLength={80} value={form.company} onChange={(value) => setForm({ ...form, company: value })} />
+          <TextAreaField label="Depoimento" maxLength={500} required rows={4} value={form.quote} onChange={(value) => setForm({ ...form, quote: value })} />
           <SubmitButton label={editingId ? "Atualizar depoimento" : "Salvar depoimento"} />
           {editingId ? (
             <button
@@ -2117,6 +2193,27 @@ function AccountView({
     setMessage(null);
     setError(null);
 
+    if (!name.trim() || !email.trim()) {
+      setError("Informe nome e e-mail.");
+      setSaving(false);
+      return;
+    }
+    if (!isValidEmail(email.trim())) {
+      setError("Informe um e-mail valido.");
+      setSaving(false);
+      return;
+    }
+    if (newPassword && newPassword.length < 8) {
+      setError("A nova senha precisa ter pelo menos 8 caracteres.");
+      setSaving(false);
+      return;
+    }
+    if (newPassword && !currentPassword) {
+      setError("Informe a senha atual para trocar a senha.");
+      setSaving(false);
+      return;
+    }
+
     try {
       const updated = await apiPut<{ name: string; email: string }>("/api/account", {
         name,
@@ -2143,10 +2240,10 @@ function AccountView({
         {message ? <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold text-green-900">{message}</div> : null}
         {error ? <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-3 text-sm font-bold text-rose-900">{error}</div> : null}
 
-        <TextField label="Nome" value={name} onChange={setName} />
-        <TextField label="E-mail" type="email" value={email} onChange={setEmail} />
-        <TextField label="Senha atual" type="password" value={currentPassword} onChange={setCurrentPassword} />
-        <TextField label="Nova senha" type="password" value={newPassword} onChange={setNewPassword} />
+        <TextField label="Nome" autoComplete="name" maxLength={80} required value={name} onChange={setName} />
+        <TextField label="E-mail" autoComplete="email" required type="email" value={email} onChange={setEmail} />
+        <TextField label="Senha atual" autoComplete="current-password" type="password" value={currentPassword} onChange={setCurrentPassword} />
+        <TextField label="Nova senha" autoComplete="new-password" minLength={8} type="password" value={newPassword} onChange={setNewPassword} />
 
         <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
           {saving ? "Salvando..." : "Salvar conta"}
@@ -2192,6 +2289,7 @@ function BrandView({
   );
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (brand) setForm(brand);
@@ -2199,6 +2297,27 @@ function BrandView({
 
   async function saveBrand(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
+    if (!form.businessName.trim()) {
+      setError("Informe o nome comercial.");
+      return;
+    }
+    if (form.logoUrl?.trim() && !isValidHttpUrl(form.logoUrl.trim())) {
+      setError("Informe uma URL de logo valida comecando com http:// ou https://.");
+      return;
+    }
+    if (form.whatsapp?.trim() && !isValidPhone(form.whatsapp.trim())) {
+      setError("Informe um WhatsApp valido.");
+      return;
+    }
+    if (form.email?.trim() && !isValidEmail(form.email.trim())) {
+      setError("Informe um e-mail comercial valido.");
+      return;
+    }
+    if (form.website?.trim() && !isValidHttpUrl(form.website.trim())) {
+      setError("Informe um site valido comecando com http:// ou https://.");
+      return;
+    }
     setSaving(true);
     try {
       let logoUrl = form.logoUrl;
@@ -2219,6 +2338,8 @@ function BrandView({
       onChange(saved);
       setForm(saved);
       setFile(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel salvar a marca.");
     } finally {
       setSaving(false);
     }
@@ -2236,7 +2357,8 @@ function BrandView({
         </div>
 
         <form className="grid gap-3" onSubmit={saveBrand}>
-          <TextField label="Nome comercial" value={form.businessName} onChange={(value) => setForm({ ...form, businessName: value })} />
+          {error ? <FormError message={error} /> : null}
+          <TextField label="Nome comercial" maxLength={80} required value={form.businessName} onChange={(value) => setForm({ ...form, businessName: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Logo
             <input
@@ -2249,7 +2371,7 @@ function BrandView({
               O FechaPro remove automaticamente fundo branco ou claro do logo.
             </span>
           </label>
-          <TextField label="URL do logo" placeholder="Opcional: https://..." value={form.logoUrl || ""} onChange={(value) => setForm({ ...form, logoUrl: value })} />
+          <TextField label="URL do logo" placeholder="Opcional: https://..." type="url" value={form.logoUrl || ""} onChange={(value) => setForm({ ...form, logoUrl: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Cor principal
             <input
@@ -2279,11 +2401,11 @@ function BrandView({
               />
             </label>
           </div>
-          <TextField label="WhatsApp" placeholder="5511999999999" value={form.whatsapp || ""} onChange={(value) => setForm({ ...form, whatsapp: value })} />
-          <TextField label="Instagram" placeholder="@seuperfil" value={form.instagram || ""} onChange={(value) => setForm({ ...form, instagram: value })} />
-          <TextField label="E-mail comercial" type="email" value={form.email || ""} onChange={(value) => setForm({ ...form, email: value })} />
-          <TextField label="Site" placeholder="https://..." value={form.website || ""} onChange={(value) => setForm({ ...form, website: value })} />
-          <TextAreaField label="Bio curta" rows={3} value={form.bio || ""} onChange={(value) => setForm({ ...form, bio: value })} />
+          <TextField label="WhatsApp" autoComplete="tel" maxLength={20} placeholder="5511999999999" value={form.whatsapp || ""} onChange={(value) => setForm({ ...form, whatsapp: value })} />
+          <TextField label="Instagram" maxLength={60} placeholder="@seuperfil" value={form.instagram || ""} onChange={(value) => setForm({ ...form, instagram: value })} />
+          <TextField label="E-mail comercial" autoComplete="email" type="email" value={form.email || ""} onChange={(value) => setForm({ ...form, email: value })} />
+          <TextField label="Site" placeholder="https://..." type="url" value={form.website || ""} onChange={(value) => setForm({ ...form, website: value })} />
+          <TextAreaField label="Bio curta" maxLength={500} rows={3} value={form.bio || ""} onChange={(value) => setForm({ ...form, bio: value })} />
           <SubmitButton label={saving ? "Salvando..." : "Salvar marca"} />
         </form>
       </aside>
@@ -3050,15 +3172,31 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
 }
 
 function TextField({
+  autoComplete,
   label,
+  max,
+  maxLength,
+  min,
+  minLength,
   onChange,
+  pattern,
   placeholder,
+  required = false,
+  step,
   type = "text",
   value,
 }: {
+  autoComplete?: string;
   label: string;
+  max?: number | string;
+  maxLength?: number;
+  min?: number | string;
+  minLength?: number;
   onChange: (value: string) => void;
+  pattern?: string;
   placeholder?: string;
+  required?: boolean;
+  step?: number | string;
   type?: string;
   value: string | number;
 }) {
@@ -3067,7 +3205,15 @@ function TextField({
       {label}
       <input
         className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+        autoComplete={autoComplete}
+        max={max}
+        maxLength={maxLength}
+        min={min}
+        minLength={minLength}
+        pattern={pattern}
         placeholder={placeholder}
+        required={required}
+        step={step}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -3081,12 +3227,14 @@ function SelectField({
   onChange,
   options,
   placeholder,
+  required = false,
   value,
 }: {
   label: string;
   onChange: (value: string) => void;
   options: string[];
   placeholder: string;
+  required?: boolean;
   value: string;
 }) {
   const uniqueOptions = Array.from(new Set(options.filter(Boolean)));
@@ -3098,6 +3246,7 @@ function SelectField({
         className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
         list={`${label}-options`}
         placeholder={placeholder}
+        required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -3112,14 +3261,20 @@ function SelectField({
 
 function TextAreaField({
   label,
+  maxLength,
+  minLength,
   onChange,
   placeholder,
+  required = false,
   rows = 5,
   value,
 }: {
   label: string;
+  maxLength?: number;
+  minLength?: number;
   onChange: (value: string) => void;
   placeholder?: string;
+  required?: boolean;
   rows?: number;
   value: string;
 }) {
@@ -3128,7 +3283,10 @@ function TextAreaField({
       {label}
       <textarea
         className="rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+        maxLength={maxLength}
+        minLength={minLength}
         placeholder={placeholder}
+        required={required}
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -3488,6 +3646,14 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
+function FormError({ message }: { message: string }) {
+  return (
+    <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-3 text-sm font-bold text-rose-900">
+      {message}
+    </div>
+  );
+}
+
 function IconButton({
   icon: Icon,
   label,
@@ -3535,6 +3701,16 @@ function nextWeekDate() {
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function validateProposalDraft(draft: ProposalDraft) {
+  if (!draft.clientName.trim()) return "Informe o nome do cliente.";
+  if (!draft.serviceName.trim()) return "Informe o servico da proposta.";
+  if (!Number.isFinite(draft.price) || draft.price <= 0) return "Informe um valor maior que zero.";
+  if (!draft.deadline.trim()) return "Informe o prazo da proposta.";
+  if (draft.validUntil && !isValidDateOnly(draft.validUntil)) return "Informe uma data de validade valida.";
+  if (draft.clientEmail?.trim() && !isValidEmail(draft.clientEmail.trim())) return "Informe um e-mail de cliente valido.";
+  return null;
 }
 
 function formatDateOnly(value?: string | null) {

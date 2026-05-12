@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, setSession } from "@/lib/session";
 import { getClientIp, rateLimit, rateLimitError } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from "@/lib/validation";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -22,7 +21,7 @@ export async function POST(request: Request) {
     return jsonError("Informe nome, e-mail e senha com pelo menos 8 caracteres.");
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  if (!isValidEmail(email)) {
     return jsonError("Informe um e-mail valido.");
   }
 

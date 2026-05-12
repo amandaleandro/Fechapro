@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { getClientIp, rateLimit, rateLimitError } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { cleanOptionalString, isValidEmail, isValidPhone } from "@/lib/validation";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -22,17 +21,21 @@ export async function POST(request: Request) {
 
   const name = body.name?.trim();
   const email = body.email?.trim().toLowerCase();
-  const whatsapp = cleanOptional(body.whatsapp);
-  const businessType = cleanOptional(body.businessType);
-  const mainNeed = cleanOptional(body.mainNeed);
-  const message = cleanOptional(body.message);
+  const whatsapp = cleanOptionalString(body.whatsapp);
+  const businessType = cleanOptionalString(body.businessType);
+  const mainNeed = cleanOptionalString(body.mainNeed);
+  const message = cleanOptionalString(body.message);
 
   if (!name || !email) {
     return jsonError("Informe nome e e-mail para registrar o interesse.");
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  if (!isValidEmail(email)) {
     return jsonError("Informe um e-mail valido.");
+  }
+
+  if (whatsapp && !isValidPhone(whatsapp)) {
+    return jsonError("Informe um WhatsApp valido.");
   }
 
   const lead = await prisma.interestLead.upsert({
@@ -55,9 +58,4 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
-}
-
-function cleanOptional(value?: string) {
-  const trimmed = value?.trim();
-  return trimmed || null;
 }

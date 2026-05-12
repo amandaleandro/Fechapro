@@ -119,6 +119,7 @@ function PasswordField({
         <input
           id={id}
           type="password"
+          autoComplete={id === "password" ? "new-password" : "new-password"}
           required
           minLength={id === "password" ? 8 : undefined}
           value={value}

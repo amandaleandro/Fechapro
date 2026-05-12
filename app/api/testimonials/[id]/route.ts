@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { cleanOptionalString, cleanString } from "@/lib/validation";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
   const { id } = await context.params;
   const body = (await request.json()) as { authorName?: string; company?: string | null; quote?: string };
+  const authorName = cleanString(body.authorName);
+  const quote = cleanString(body.quote);
+
+  if (!authorName || !quote) return jsonError("Nome e depoimento sao obrigatorios.");
 
   await prisma.testimonialAsset.updateMany({
     where: { id, userId: session.id },
     data: {
-      authorName: body.authorName?.trim(),
-      company: body.company?.trim() || null,
-      quote: body.quote?.trim(),
+      authorName,
+      company: cleanOptionalString(body.company),
+      quote,
     },
   });
 

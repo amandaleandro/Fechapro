@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Mail } from "lucide-react";
+import { isValidEmail } from "@/lib/validation";
 
 export default function EsqueciSenhaPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +13,10 @@ export default function EsqueciSenhaPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!email.trim() || !isValidEmail(email.trim())) {
+      setError("Informe um e-mail valido.");
+      return;
+    }
     setLoading(true);
     try {
       await fetch("/api/auth/forgot-password", {
@@ -57,6 +62,7 @@ export default function EsqueciSenhaPage() {
                 <input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

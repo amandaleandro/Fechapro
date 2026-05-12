@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { ArrowRight, Check, FileText, Link2, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
+import { isValidEmail } from "@/lib/validation";
 
 type AuthMode = "login" | "signup";
 
@@ -39,6 +40,11 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
 
     if (!email.trim() || !password) {
       setAuthError("Informe e-mail e senha para continuar.");
+      return;
+    }
+
+    if (!isValidEmail(email.trim())) {
+      setAuthError("Informe um e-mail valido.");
       return;
     }
 
@@ -140,9 +146,9 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             ) : null}
 
             <div className="grid gap-4">
-              {isSignup ? <AuthField icon={User} label="Nome" placeholder="Seu nome completo" value={name} onChange={setName} /> : null}
-              <AuthField icon={Mail} label="E-mail" placeholder="voce@email.com" type="email" value={email} onChange={setEmail} />
-              <AuthField icon={Lock} label="Senha" hint={isSignup ? "Minimo de 8 caracteres." : undefined} placeholder="Sua senha" type="password" value={password} onChange={setPassword} />
+              {isSignup ? <AuthField autoComplete="name" icon={User} label="Nome" maxLength={80} placeholder="Seu nome completo" required value={name} onChange={setName} /> : null}
+              <AuthField autoComplete="email" icon={Mail} label="E-mail" placeholder="voce@email.com" required type="email" value={email} onChange={setEmail} />
+              <AuthField autoComplete={isSignup ? "new-password" : "current-password"} icon={Lock} label="Senha" hint={isSignup ? "Minimo de 8 caracteres." : undefined} minLength={isSignup ? 8 : undefined} placeholder="Sua senha" required type="password" value={password} onChange={setPassword} />
             </div>
 
             {isSignup && turnstileSiteKey ? (
@@ -185,19 +191,27 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
 }
 
 function AuthField({
+  autoComplete,
   icon: Icon,
   label,
   hint,
+  maxLength,
+  minLength,
   onChange,
   placeholder,
+  required = false,
   type = "text",
   value,
 }: {
+  autoComplete?: string;
   icon: React.ElementType;
   label: string;
   hint?: string;
+  maxLength?: number;
+  minLength?: number;
   onChange: (value: string) => void;
   placeholder?: string;
+  required?: boolean;
   type?: string;
   value: string;
 }) {
@@ -209,7 +223,7 @@ function AuthField({
       </span>
       <span className="flex min-h-14 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 transition focus-within:border-green-600 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
         <Icon className="shrink-0 text-slate-500" size={18} />
-        <input className="min-h-12 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400" placeholder={placeholder} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+        <input className="min-h-12 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400" autoComplete={autoComplete} maxLength={maxLength} minLength={minLength} placeholder={placeholder} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
       </span>
     </label>
   );

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { cleanOptionalString, cleanString, isValidEmail, isValidPhone } from "@/lib/validation";
 
 export async function GET() {
   const session = await requireSession();
@@ -12,14 +13,22 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await requireSession();
   const body = (await request.json()) as { name?: string; email?: string; phone?: string; segment?: string };
-  if (!body.name?.trim()) return jsonError("Nome obrigatorio.");
+  const name = cleanString(body.name);
+  const email = cleanOptionalString(body.email);
+  const phone = cleanOptionalString(body.phone);
+  const segment = cleanOptionalString(body.segment);
+
+  if (!name) return jsonError("Nome obrigatorio.");
+  if (email && !isValidEmail(email)) return jsonError("E-mail invalido.");
+  if (phone && !isValidPhone(phone)) return jsonError("Telefone invalido.");
+
   const item = await prisma.clientAsset.create({
     data: {
       userId: session.id,
-      name: body.name.trim(),
-      email: body.email?.trim() || null,
-      phone: body.phone?.trim() || null,
-      segment: body.segment?.trim() || null,
+      name,
+      email,
+      phone,
+      segment,
     },
   });
   return NextResponse.json(item, { status: 201 });

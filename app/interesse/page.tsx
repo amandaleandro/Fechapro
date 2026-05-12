@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, CheckCircle2, Mail, MessageCircle, Sparkles, User, Wrench } from "lucide-react";
+import { isValidEmail, isValidPhone } from "@/lib/validation";
 
 type LeadForm = {
   businessType: string;
@@ -44,6 +45,16 @@ export default function InterestPage() {
 
     if (!form.name.trim() || !form.email.trim()) {
       setError("Informe nome e e-mail para registrar seu interesse.");
+      return;
+    }
+
+    if (!isValidEmail(form.email.trim())) {
+      setError("Informe um e-mail valido.");
+      return;
+    }
+
+    if (form.whatsapp.trim() && !isValidPhone(form.whatsapp.trim())) {
+      setError("Informe um WhatsApp valido com DDD.");
       return;
     }
 
@@ -138,14 +149,15 @@ export default function InterestPage() {
                 </div>
               ) : null}
 
-              <FormField icon={User} label="Nome" value={form.name} onChange={(value) => updateField("name", value)} />
-              <FormField icon={Mail} label="E-mail" type="email" value={form.email} onChange={(value) => updateField("email", value)} />
-              <FormField icon={MessageCircle} label="WhatsApp" value={form.whatsapp} onChange={(value) => updateField("whatsapp", value)} />
+              <FormField autoComplete="name" icon={User} label="Nome" maxLength={80} required value={form.name} onChange={(value) => updateField("name", value)} />
+              <FormField autoComplete="email" icon={Mail} label="E-mail" required type="email" value={form.email} onChange={(value) => updateField("email", value)} />
+              <FormField autoComplete="tel" icon={MessageCircle} label="WhatsApp" maxLength={20} value={form.whatsapp} onChange={(value) => updateField("whatsapp", value)} />
 
               <label className="grid gap-2 text-sm font-extrabold text-slate-600">
                 Tipo de negocio
                 <input
                   className="min-h-12 rounded-lg border border-black/10 bg-slate-50 px-3 text-slate-900 outline-green-700"
+                  maxLength={80}
                   placeholder="Ex: designer, social media, arquitetura"
                   value={form.businessType}
                   onChange={(event) => updateField("businessType", event.target.value)}
@@ -172,6 +184,7 @@ export default function InterestPage() {
                 Mensagem
                 <textarea
                   className="min-h-28 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+                  maxLength={600}
                   placeholder="Conte o que voce gostaria de resolver com o FechaPro."
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
@@ -201,15 +214,21 @@ function InfoPill({ icon: Icon, label, value }: { icon: React.ElementType; label
 }
 
 function FormField({
+  autoComplete,
   icon: Icon,
   label,
+  maxLength,
   onChange,
+  required = false,
   type = "text",
   value,
 }: {
+  autoComplete?: string;
   icon: React.ElementType;
   label: string;
+  maxLength?: number;
   onChange: (value: string) => void;
+  required?: boolean;
   type?: string;
   value: string;
 }) {
@@ -218,7 +237,7 @@ function FormField({
       {label}
       <span className="flex min-h-12 items-center gap-3 rounded-lg border border-black/10 bg-slate-50 px-3 focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
         <Icon className="shrink-0 text-slate-500" size={18} />
-        <input className="min-h-11 flex-1 bg-transparent text-slate-900 outline-none" type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+        <input className="min-h-11 flex-1 bg-transparent text-slate-900 outline-none" autoComplete={autoComplete} maxLength={maxLength} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
       </span>
     </label>
   );

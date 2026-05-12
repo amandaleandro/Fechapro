@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { cleanOptionalString, cleanString, HEX_COLOR_REGEX, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 
 export async function GET() {
   const session = await requireSession();
@@ -39,31 +41,43 @@ export async function PUT(request: Request) {
     bio?: string | null;
   };
 
+  const businessName = cleanString(body.businessName) || session.name;
+  const logoUrl = clean(body.logoUrl);
+  const whatsapp = clean(body.whatsapp);
+  const instagram = clean(body.instagram);
+  const email = clean(body.email) || session.email;
+  const website = clean(body.website);
+
+  if (logoUrl && !isValidHttpUrl(logoUrl) && !logoUrl.startsWith("/")) return jsonError("URL do logo invalida.");
+  if (whatsapp && !isValidPhone(whatsapp)) return jsonError("WhatsApp invalido.");
+  if (email && !isValidEmail(email)) return jsonError("E-mail comercial invalido.");
+  if (website && !isValidHttpUrl(website)) return jsonError("Site invalido.");
+
   const brand = await prisma.brandProfile.upsert({
     where: { userId: session.id },
     create: {
       userId: session.id,
-      businessName: body.businessName?.trim() || session.name,
-      logoUrl: clean(body.logoUrl),
+      businessName,
+      logoUrl,
       primaryColor: normalizeColor(body.primaryColor),
       secondaryColor: normalizeColor(body.secondaryColor, "#0F172A"),
       accentColor: normalizeColor(body.accentColor, "#2563EB"),
-      whatsapp: clean(body.whatsapp),
-      instagram: clean(body.instagram),
-      email: clean(body.email) || session.email,
-      website: clean(body.website),
+      whatsapp,
+      instagram,
+      email,
+      website,
       bio: clean(body.bio),
     },
     update: {
-      businessName: body.businessName?.trim() || session.name,
-      logoUrl: clean(body.logoUrl),
+      businessName,
+      logoUrl,
       primaryColor: normalizeColor(body.primaryColor),
       secondaryColor: normalizeColor(body.secondaryColor, "#0F172A"),
       accentColor: normalizeColor(body.accentColor, "#2563EB"),
-      whatsapp: clean(body.whatsapp),
-      instagram: clean(body.instagram),
-      email: clean(body.email) || session.email,
-      website: clean(body.website),
+      whatsapp,
+      instagram,
+      email,
+      website,
       bio: clean(body.bio),
     },
   });
@@ -72,10 +86,9 @@ export async function PUT(request: Request) {
 }
 
 function clean(value?: string | null) {
-  const cleaned = value?.trim();
-  return cleaned || null;
+  return cleanOptionalString(value);
 }
 
 function normalizeColor(value?: string, fallback = "#106b5b") {
-  return /^#[0-9a-fA-F]{6}$/.test(value || "") ? value! : fallback;
+  return HEX_COLOR_REGEX.test(value || "") ? value! : fallback;
 }

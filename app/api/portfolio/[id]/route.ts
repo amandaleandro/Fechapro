@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { cleanOptionalString, cleanString, isValidHttpUrl } from "@/lib/validation";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
   const { id } = await context.params;
   const body = (await request.json()) as { title?: string; category?: string | null; imageUrl?: string | null };
+  const title = cleanString(body.title);
+  const category = cleanOptionalString(body.category);
+  const imageUrl = cleanOptionalString(body.imageUrl);
+
+  if (!title) return jsonError("Titulo obrigatorio.");
+  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem invalida.");
 
   await prisma.portfolioAsset.updateMany({
     where: {
@@ -13,9 +21,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       userId: session.id,
     },
     data: {
-      title: body.title?.trim(),
-      category: body.category?.trim() || null,
-      imageUrl: body.imageUrl?.trim() || null,
+      title,
+      category,
+      imageUrl,
     },
   });
 

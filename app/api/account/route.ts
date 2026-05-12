@@ -3,8 +3,7 @@ import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, requireSession, setSession, verifyPassword } from "@/lib/session";
 import { getClientIp, rateLimit, rateLimitError } from "@/lib/rate-limit";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from "@/lib/validation";
 
 export async function PUT(request: Request) {
   const session = await requireSession();
@@ -28,7 +27,7 @@ export async function PUT(request: Request) {
     return jsonError("Informe nome e e-mail.");
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  if (!isValidEmail(email)) {
     return jsonError("Informe um e-mail valido.");
   }
 

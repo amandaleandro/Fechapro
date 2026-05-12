@@ -4,6 +4,7 @@ import { sendProposalSentToClientEmail } from "@/lib/email";
 import { currentMonthRange, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { cleanOptionalString, cleanString, cleanStringList, isValidDateOnly, isValidEmail, normalizePrice } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,15 +41,24 @@ export async function POST(request: Request) {
     status?: "sent" | "viewed" | "accepted" | "declined";
   };
 
-  if (!body.clientName?.trim() || !body.serviceName?.trim() || !body.deadline?.trim()) {
+  const clientName = cleanString(body.clientName);
+  const serviceName = cleanString(body.serviceName);
+  const deadline = cleanString(body.deadline);
+  const price = normalizePrice(body.price);
+  const validUntil = cleanOptionalString(body.validUntil);
+  const clientEmail = cleanOptionalString(body.clientEmail);
+  const payment = cleanOptionalString(body.payment);
+  const notes = cleanOptionalString(body.notes);
+  const included = cleanStringList(body.included);
+
+  if (!clientName || !serviceName || !deadline) {
     return jsonError("Cliente, servico e prazo sao obrigatorios.");
   }
 
-  const price = Number(body.price ?? 0);
-  if (price < 0) return jsonError("O valor nao pode ser negativo.");
+  if (price === null || price <= 0) return jsonError("Informe um valor maior que zero.");
+  if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade invalida.");
 
-  const clientEmail = body.clientEmail?.trim() || null;
-  if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
+  if (clientEmail && !isValidEmail(clientEmail)) {
     return jsonError("E-mail do cliente invalido.");
   }
 
@@ -76,17 +86,17 @@ export async function POST(request: Request) {
   const item = await prisma.proposalAsset.create({
     data: {
       userId: session.id,
-      clientName: body.clientName.trim(),
+      clientName,
       clientEmail,
-      serviceName: body.serviceName.trim(),
+      serviceName,
       price,
-      deadline: body.deadline.trim(),
-      validUntil: body.validUntil || null,
-      payment: body.payment?.trim() || null,
-      included: body.included || [],
-      notes: body.notes?.trim() || null,
+      deadline,
+      validUntil,
+      payment,
+      included,
+      notes,
       status: body.status || "sent",
-      publicSlug: slugify(`${body.clientName}-${body.serviceName}`),
+      publicSlug: slugify(`${clientName}-${serviceName}`),
     },
     include: { user: { select: { name: true } } },
   });
