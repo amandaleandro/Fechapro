@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { currentMonthRange } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const session = await requireSession();
 
@@ -47,8 +50,11 @@ export async function GET() {
     };
   }
 
-  return NextResponse.json({
-    allTime: sumByStatus(allTime),
-    thisMonth: sumByStatus(thisMonth),
-  });
+  return NextResponse.json(
+    {
+      allTime: sumByStatus(allTime),
+      thisMonth: sumByStatus(thisMonth),
+    },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

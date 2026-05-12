@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { sendProposalViewedEmail } from "@/lib/email";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const money = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -25,12 +28,14 @@ export default async function PublicProposalPage({
   if (!proposal) notFound();
 
   const isFirstView = proposal.status === "sent";
+  const currentStatus = isFirstView ? "viewed" : proposal.status;
+  const currentViewCount = proposal.viewCount + 1;
 
   await prisma.proposalAsset.update({
     where: { id: proposal.id },
     data: {
       viewCount: { increment: 1 },
-      status: isFirstView ? "viewed" : proposal.status,
+      status: currentStatus,
     },
   });
 
@@ -62,7 +67,7 @@ export default async function PublicProposalPage({
   const brandSecondaryColor = brand?.secondaryColor || "#0F172A";
   const brandAccentColor = brand?.accentColor || "#2563EB";
   const expired = Boolean(proposal.validUntil && proposal.validUntil < new Date().toISOString().slice(0, 10));
-  const hasDecision = expired || proposal.status === "accepted" || proposal.status === "declined";
+  const hasDecision = expired || currentStatus === "accepted" || currentStatus === "declined";
   const validUntilLabel = proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar";
   const daysLeft = proposal.validUntil ? getDaysLeft(proposal.validUntil) : null;
   const whatsappUrl = brand?.whatsapp
@@ -159,8 +164,8 @@ export default async function PublicProposalPage({
 
             <aside className="grid content-between gap-4 rounded-lg bg-white p-4 text-slate-950">
               <div>
-                <span className="inline-flex rounded-lg px-3 py-1 text-xs font-black uppercase text-white" style={{ background: statusColor(proposal.status, expired) }}>
-                  {expired ? "Vencida" : labelStatus(proposal.status)}
+                <span className="inline-flex rounded-lg px-3 py-1 text-xs font-black uppercase text-white" style={{ background: statusColor(currentStatus, expired) }}>
+                  {expired ? "Vencida" : labelStatus(currentStatus)}
                 </span>
                 <p className="mt-5 text-sm font-black uppercase text-slate-500">Investimento</p>
                 <strong className="mt-1 block text-4xl font-black">{money.format(proposal.price)}</strong>
@@ -187,7 +192,7 @@ export default async function PublicProposalPage({
           <PreviewBox label="Servico" value={proposal.serviceName} />
           <PreviewBox label="Prazo" value={proposal.deadline} />
           <PreviewBox label="Pagamento" value={proposal.payment || "A combinar"} />
-          <PreviewBox label="Visualizacoes" value={String(proposal.viewCount + 1)} />
+          <PreviewBox label="Visualizacoes" value={String(currentViewCount)} />
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start">
@@ -196,8 +201,8 @@ export default async function PublicProposalPage({
               <p className="text-xs font-black uppercase text-blue-700">Escopo</p>
               <h2 className="mt-1 text-2xl font-black">Itens inclusos</h2>
               <ul className="mt-4 grid gap-3">
-                {(proposal.included.length ? proposal.included : ["Servico conforme combinado."]).map((item) => (
-                  <li className="grid grid-cols-[auto_1fr] gap-3 leading-7 text-slate-700" key={item}>
+                {(proposal.included.length ? proposal.included : ["Servico conforme combinado."]).map((item, index) => (
+                  <li className="grid grid-cols-[auto_1fr] gap-3 leading-7 text-slate-700" key={`${item}-${index}`}>
                     <span className="mt-1 grid size-6 place-items-center rounded-full text-xs font-black text-white" style={{ background: brandColor }}>
                       OK
                     </span>
@@ -308,7 +313,7 @@ export default async function PublicProposalPage({
 
         <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="status">
           <div className="grid gap-3 sm:grid-cols-3">
-            <PreviewBox label="Status" value={expired ? "Vencida" : labelStatus(proposal.status)} />
+            <PreviewBox label="Status" value={expired ? "Vencida" : labelStatus(currentStatus)} />
             <PreviewBox label="Pagamento" value={proposal.paymentStatus === "paid" ? "Confirmado" : "Pendente"} />
             <PreviewBox label="Formato" value="Online + PDF" />
           </div>

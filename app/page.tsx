@@ -1158,8 +1158,8 @@ function DashboardView({
             <div>
               <h3 className="font-black">Inclui</h3>
               <ul className="mt-2 list-disc pl-5 text-slate-600">
-                {includedItems.map((item) => (
-                  <li key={item}>{item}</li>
+                {includedItems.map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
                 ))}
               </ul>
             </div>
@@ -1878,8 +1878,8 @@ function TemplatesView({ onUseTemplate }: { onUseTemplate: (template: ProposalTe
             </div>
 
             <ul className="list-disc pl-5 leading-7 text-slate-600">
-              {template.included.slice(0, 4).map((item) => (
-                <li key={item}>{item}</li>
+              {template.included.slice(0, 4).map((item, index) => (
+                <li key={`${template.id}-${item}-${index}`}>{item}</li>
               ))}
             </ul>
 
@@ -2374,63 +2374,73 @@ function AuthScreen() {
   const benefits = [
     {
       icon: Send,
-      title: "Proposta comercial em minutos",
-      description: "Transforme briefing, preco, prazo e entregaveis em um link de proposta comercial online pronto para enviar.",
+      title: "Pare de parecer barato",
+      description: "Troque o orçamento seco por uma proposta com contexto, valor percebido e próximo passo claro para o cliente aceitar.",
     },
     {
       icon: FolderKanban,
-      title: "Prova de valor antes do preco",
-      description: "Mostre portfolio, depoimentos e identidade da marca na mesma pagina em que o cliente decide comprar.",
+      title: "Mostre por que custa isso",
+      description: "Portfólio, depoimentos, escopo e condições aparecem antes do cliente reduzir tudo a uma comparação de preço.",
     },
     {
       icon: CheckCircle2,
-      title: "Aceite, PDF e status",
-      description: "O cliente visualiza, baixa PDF e aceita a proposta no link. Voce acompanha o que foi enviado, visto e aprovado.",
+      title: "Tire o sim do improviso",
+      description: "O cliente visualiza, baixa PDF e aceita no link. Você acompanha o que foi enviado, visto e aprovado.",
     },
   ];
   const salesProof = [
-    { value: "3 min", label: "para montar uma proposta completa" },
-    { value: "1 link", label: "com escopo, preco, portfolio e aceite" },
-    { value: "PDF", label: "automatico para cliente salvar ou imprimir" },
+    { value: "Mais valor", label: "antes de falar sobre preço" },
+    { value: "Menos atrito", label: "para o cliente aprovar" },
+    { value: "1 link", label: "com tudo que vende seu serviço" },
+  ];
+  const dealLeaks = [
+    "Você explica tudo pelo WhatsApp, mas o cliente só lembra do preço.",
+    "Seu PDF parece mais simples do que a qualidade real do seu trabalho.",
+    "O cliente pede desconto porque não entendeu tudo que está incluso.",
+    "Você envia proposta e fica sem saber se a pessoa abriu, leu ou esqueceu.",
   ];
   const objections = [
-    "Nao dependa de texto solto no WhatsApp para explicar valor.",
-    "Nao perca venda porque o cliente recebeu um orcamento simples demais.",
-    "Nao refaca PDF do zero sempre que mudar preco, prazo ou escopo.",
+    "Seu trabalho ganha uma apresentação que sustenta preço.",
+    "O cliente recebe clareza para decidir sem ficar perguntando o básico.",
+    "Cada proposta vira uma experiência de compra, não apenas uma tabela.",
   ];
   const steps = [
-    "Cadastre cliente, servico, investimento, prazo e condicoes de pagamento.",
-    "Inclua logo, cores, portfolio, depoimentos e itens que estao no escopo.",
-    "Envie o link profissional com PDF, visualizacoes e botao de aceite.",
+    "Monte a proposta com cliente, serviço, investimento, prazo e condições.",
+    "Adicione as provas que aumentam confiança: marca, portfólio, depoimentos e escopo.",
+    "Envie um link que conduz o cliente para visualizar, baixar PDF e aceitar.",
   ];
-  const niches = ["Social media", "Designer", "Fotografo", "Arquiteto", "Consultor", "Tecnico de ar-condicionado", "Marceneiro", "Gestor de trafego", "Estetica", "Eventos"];
+  const niches = ["Social media", "Designer", "Fotógrafo", "Arquiteto", "Consultor", "Técnico de ar-condicionado", "Marceneiro", "Gestor de tráfego", "Estética", "Eventos"];
   const plans = [
-    { name: "Start", price: "R$ 49", detail: "Para parar de enviar orcamento improvisado.", items: ["20 propostas por mes", "Link profissional", "PDF automatico"] },
-    { name: "Essencial", price: "R$ 97", detail: "Para vender com marca, padrao e organizacao.", items: ["50 propostas por mes", "Servicos cadastrados", "Identidade basica"] },
-    { name: "Profissional", price: "R$ 147", detail: "Para propostas com portfolio e prova social.", items: ["120 propostas por mes", "Portfolio no FechaPro", "Depoimentos na proposta"] },
-    { name: "Pro Site", price: "R$ 497", detail: "Primeiro mes. Depois R$ 197/mes manutencao.", items: ["300 propostas por mes", "Site one page", "Inicio, servicos, sobre e contato"] },
-    { name: "Premium Site", price: "R$ 997", detail: "Primeiro mes. Depois R$ 297/mes manutencao.", items: ["600 propostas por mes", "Site completo simples", "Copy, cadastro inicial e treinamento"] },
+    { name: "Start", price: "R$ 49", detail: "Para nunca mais mandar preço solto.", items: ["20 propostas por mês", "Link profissional", "PDF automático"] },
+    { name: "Essencial", price: "R$ 97", detail: "Para vender com marca e parecer mais premium.", items: ["50 propostas por mês", "Serviços cadastrados", "Identidade básica"] },
+    { name: "Profissional", price: "R$ 147", detail: "Para defender valor com portfólio e prova social.", items: ["120 propostas por mês", "Portfólio no FechaPro", "Depoimentos na proposta"] },
+    { name: "Pro Site", price: "R$ 497", detail: "Primeiro mês. Depois R$ 197/mês manutenção.", items: ["300 propostas por mês", "Site one page", "Proposta + presença online"] },
+    { name: "Premium Site", price: "R$ 997", detail: "Primeiro mês. Depois R$ 297/mês manutenção.", items: ["600 propostas por mês", "Site completo simples", "Copy, cadastro inicial e treinamento"] },
   ];
   const faqs = [
     {
       question: "O FechaPro substitui meu PDF manual de proposta comercial?",
-      answer: "Sim. Voce cria a proposta no painel, envia um link profissional e o cliente tambem pode baixar o PDF.",
+      answer: "Sim. Você cria a proposta no painel, envia um link profissional e o cliente também pode baixar o PDF. A diferença é que a proposta online também mostra portfólio, depoimentos, aceite e status.",
     },
     {
-      question: "Serve para prestador de servico local?",
-      answer: "Serve. O foco e qualquer profissional que precisa vender servico com escopo, valor, prazo, portfolio e aceite de forma organizada.",
+      question: "Isso ajuda mesmo a fechar mais?",
+      answer: "Ajuda a remover atritos que costumam derrubar fechamento: proposta confusa, pouca prova, preço sem contexto, falta de próximo passo e follow-up no escuro.",
     },
     {
-      question: "Preciso configurar pagamento agora?",
-      answer: "Nao. O FechaPro ja organiza proposta, aceite, portfolio e PDF. A cobranca pode ser ativada com Asaas quando voce quiser vender com pagamento online.",
+      question: "Serve para prestador de serviço local?",
+      answer: "Serve. O foco é qualquer profissional que precisa vender serviço com escopo, valor, prazo, portfólio e aceite de forma organizada.",
     },
     {
       question: "Consigo usar pelo celular?",
-      answer: "Sim. A proposta e enviada por link, abre no navegador e funciona bem para clientes que recebem tudo pelo WhatsApp.",
+      answer: "Sim. A proposta é enviada por link, abre no navegador e funciona bem para clientes que recebem tudo pelo WhatsApp.",
     },
     {
-      question: "Para quais servicos a proposta online funciona melhor?",
-      answer: "Funciona muito bem para design, social media, fotografia, arquitetura, consultoria, servicos tecnicos, estetica, eventos e qualquer venda que precise explicar valor antes do preco.",
+      question: "Preciso configurar pagamento agora?",
+      answer: "Não. O FechaPro já organiza proposta, aceite, portfólio e PDF. A cobrança pode ser ativada com Asaas quando você quiser vender com pagamento online.",
+    },
+    {
+      question: "Para quais serviços a proposta online funciona melhor?",
+      answer: "Funciona muito bem para design, social media, fotografia, arquitetura, consultoria, serviços técnicos, estética, eventos e qualquer venda que precise explicar valor antes do preço.",
     },
   ];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
@@ -2444,7 +2454,7 @@ function AuthScreen() {
         operatingSystem: "Web",
         url: siteUrl,
         image: `${siteUrl}/landing/hero-proposta.png`,
-        description: "Software para criar propostas comerciais online com portfolio, PDF, aceite do cliente e cobranca.",
+        description: "Software para transformar orçamentos simples em propostas comerciais online com portfólio, PDF, aceite do cliente e cobrança.",
         offers: plans.map((plan) => ({
           "@type": "Offer",
           name: plan.name,
@@ -2503,12 +2513,12 @@ function AuthScreen() {
                 Tenho interesse
               </a>
               <a href="/cadastro">
-                Comecar
+                Começar
               </a>
             </nav>
             <div className="flex items-center gap-2">
               <a className="hidden min-h-10 items-center justify-center rounded-lg bg-green-500 px-4 text-sm font-black text-slate-950 sm:inline-flex" href="/cadastro">
-                Criar conta gratis
+                Criar conta grátis
               </a>
               <a className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/25 px-4 text-sm font-black text-white" href="/login">
                 Entrar
@@ -2519,18 +2529,18 @@ function AuthScreen() {
           <div className="grid flex-1 content-end gap-8 pb-8 pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="max-w-3xl">
               <p className="inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
-                Gerador de proposta comercial para prestadores de servico
+                Para prestadores que querem parar de perder venda por apresentação fraca
               </p>
               <h1 className="mt-5 text-5xl font-black leading-none sm:text-6xl lg:text-7xl">
-                Propostas comerciais online que ajudam seu cliente a dizer sim.
+                Seu orçamento pode estar matando vendas que sua proposta deveria fechar.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-white/82 sm:text-lg">
-                O FechaPro cria uma pagina de proposta com valor, prazo, escopo, portfolio, depoimentos, PDF e botao de aceite. Voce vende servico com mais clareza, autoridade e velocidade.
+                O FechaPro transforma preço, prazo e escopo em uma proposta comercial online que defende seu valor, mostra provas, gera PDF e leva o cliente para o aceite. Para quem quer vender serviço como profissional, não como pedido de orçamento.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="/cadastro">
                   <Sparkles size={18} />
-                  Criar minha proposta gratis
+                  Quero melhorar meus fechamentos
                 </a>
                 <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" type="button" onClick={() => goToSection("planos")}>
                   Ver planos
@@ -2540,7 +2550,7 @@ function AuthScreen() {
                 </a>
               </div>
               <p className="mt-4 text-sm font-bold text-white/70">
-                Ideal para quem vende pelo WhatsApp, Instagram, indicacao ou reuniao online.
+                Se você vende pelo WhatsApp, Instagram, indicação ou reunião online, sua proposta precisa vender antes do cliente pedir desconto.
               </p>
             </div>
 
@@ -2551,21 +2561,22 @@ function AuthScreen() {
                 ))}
               </div>
               <div className="rounded-lg bg-white p-4 text-slate-950">
-                <p className="text-xs font-black uppercase text-blue-700">Exemplo de proposta</p>
+                <p className="text-xs font-black uppercase text-blue-700">De orçamento comum para proposta premium</p>
                 <h2 className="mt-1 text-xl font-black">Identidade visual para Maria Eduarda</h2>
                 <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600">
                   <span>Investimento: R$ 1.200</span>
-                  <span>Prazo: 7 dias uteis</span>
-                  <span>Pagamento: 50% entrada e 50% entrega</span>
+                  <span>Prazo: 7 dias úteis</span>
+                  <span>Inclui: logo, paleta, tipografia e modelos de posts</span>
+                  <span>Prova: portfólio e depoimentos antes do aceite</span>
                 </div>
                 <button className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-green-600 font-black text-white" type="button">
                   Aceitar proposta
                 </button>
               </div>
               <div className="rounded-lg border border-white/15 bg-slate-950/60 p-4">
-                <p className="text-xs font-black uppercase text-green-200">Antes de falar preco</p>
+                <p className="text-xs font-black uppercase text-green-200">O efeito que você quer causar</p>
                 <p className="mt-2 text-sm font-bold leading-6 text-white/80">
-                  A proposta mostra o que esta incluso, por que vale o investimento e qual e o proximo passo.
+                  "Agora entendi por que custa isso. Faz sentido. Como eu aprovo?"
                 </p>
               </div>
             </div>
@@ -2585,21 +2596,41 @@ function AuthScreen() {
         </div>
       </section>
 
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
+          <div>
+            <p className="text-xs font-black uppercase text-rose-700">Onde a venda escapa</p>
+            <h2 className="mt-2 text-4xl font-black leading-tight">Talvez seu serviço seja bom. O problema é como ele chega na mão do cliente.</h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              Quando a proposta parece improvisada, o cliente compara por preço. Quando ela explica valor, mostra prova e facilita o aceite, a conversa muda.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {dealLeaks.map((item) => (
+              <article className="grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-rose-700/15 bg-rose-50 p-5" key={item}>
+                <span className="grid size-9 place-items-center rounded-lg bg-rose-700 font-black text-white">!</span>
+                <p className="self-center font-black leading-7 text-rose-950">{item}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-slate-950 text-white" id="recursos">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-green-300">Por que vende melhor</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Sua proposta deixa de ser preco solto e vira uma apresentacao de compra.</h2>
+            <p className="text-xs font-black uppercase text-green-300">Por que aumenta o desejo</p>
+            <h2 className="mt-2 text-4xl font-black leading-tight">Sua proposta passa a vender antes da reunião de follow-up.</h2>
             <p className="mt-4 leading-7 text-white/70">
-              O cliente entende escopo, ve provas, recebe um caminho claro para aceitar e nao precisa garimpar informacoes em mensagens antigas.
+              O cliente entende o que está comprando, percebe profissionalismo, vê motivos para confiar e encontra um caminho claro para aprovar.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: FileText, title: "Escopo claro", text: "Itens inclusos, observacoes, validade, prazo e pagamento no mesmo lugar." },
-              { icon: ImageIcon, title: "Portfolio e depoimentos", text: "Prova visual e social para justificar valor antes da decisao." },
-              { icon: Eye, title: "Status da proposta", text: "Acompanhe propostas enviadas, visualizadas, aceitas ou recusadas." },
-              { icon: CreditCard, title: "Pronto para cobranca", text: "Estrutura preparada para pagamento online quando seu processo pedir." },
+              { icon: FileText, title: "Valor explicado", text: "Escopo, entregáveis, validade, prazo e pagamento organizados para reduzir dúvida e desconto." },
+              { icon: ImageIcon, title: "Prova antes da decisão", text: "Portfólio e depoimentos entram no momento exato em que o cliente avalia se vale pagar." },
+              { icon: Eye, title: "Follow-up com contexto", text: "Você sabe se a proposta foi visualizada e acompanha o status sem depender de achismo." },
+              { icon: CreditCard, title: "Aceite sem fricção", text: "O cliente tem um caminho simples para aprovar, salvar o PDF e seguir para o pagamento." },
             ].map((feature) => (
               <article className="rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
                 <feature.icon className="text-green-300" size={24} />
@@ -2615,9 +2646,9 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Fluxo de venda</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Do briefing ao aceite em um unico lugar.</h2>
+            <h2 className="mt-2 text-4xl font-black leading-tight">Monte uma proposta que conduz o cliente até o sim.</h2>
             <p className="mt-4 leading-7 text-slate-600">
-              O FechaPro foi pensado para quem vende servico e precisa parecer profissional desde o primeiro envio.
+              O FechaPro organiza sua venda em uma sequência simples: contexto, valor, prova, condição e aceite.
             </p>
           </div>
           <div className="grid gap-3">
@@ -2634,8 +2665,8 @@ function AuthScreen() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-blue-700">Para quem vende servico</p>
-            <h2 className="mt-2 max-w-3xl text-4xl font-black leading-tight">Feito para nichos que precisam explicar valor, prazo e resultado.</h2>
+            <p className="text-xs font-black uppercase text-blue-700">Para quem vende serviço</p>
+            <h2 className="mt-2 max-w-3xl text-4xl font-black leading-tight">Feito para quem vende algo que não deveria ser julgado só pelo preço.</h2>
             <div className="mt-6 flex flex-wrap gap-2">
               {niches.map((niche) => (
                 <span className="rounded-lg border border-black/10 bg-slate-50 px-4 py-3 text-sm font-black" key={niche}>
@@ -2645,8 +2676,8 @@ function AuthScreen() {
             </div>
           </div>
           <div className="rounded-lg border border-black/10 bg-slate-50 p-5">
-            <p className="text-xs font-black uppercase text-blue-700">O que a landing precisa provar</p>
-            <h3 className="mt-2 text-2xl font-black">O cliente nao compra so o preco. Ele compra seguranca.</h3>
+            <p className="text-xs font-black uppercase text-blue-700">O que a proposta precisa provar</p>
+            <h3 className="mt-2 text-2xl font-black">O cliente não compra só entrega. Ele compra confiança para escolher você.</h3>
             <ul className="mt-5 grid gap-3">
               {objections.map((item) => (
                 <li className="flex gap-3 font-bold leading-7 text-slate-700" key={item}>
@@ -2662,10 +2693,10 @@ function AuthScreen() {
       <section className="bg-slate-950 text-white" id="planos">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase text-green-300">Preco que valida negocio</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Planos para sair do improviso e vender com presenca profissional.</h2>
+            <p className="text-xs font-black uppercase text-green-300">Preço que valida negócio</p>
+            <h2 className="mt-2 text-4xl font-black leading-tight">Quanto vale parar de perder venda por uma proposta fraca?</h2>
             <p className="mt-4 leading-7 text-white/70">
-              Comece pequeno, valide com clientes reais e evolua para site quando quiser transformar a proposta em uma maquina de captacao.
+              Comece com links profissionais e evolua para site quando quiser transformar sua proposta em uma máquina de captação e fechamento.
             </p>
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -2678,7 +2709,7 @@ function AuthScreen() {
                 ) : null}
                 <p className="text-sm font-black uppercase text-blue-400">{plan.name}</p>
                 <strong className="mt-3 block text-4xl font-black">{plan.price}</strong>
-                <span className={plan.name === "Pro Site" ? "mt-1 block text-slate-600" : "mt-1 block text-white/65"}>/mes</span>
+                <span className={plan.name === "Pro Site" ? "mt-1 block text-slate-600" : "mt-1 block text-white/65"}>/mês</span>
                 <p className={plan.name === "Pro Site" ? "mt-4 leading-7 text-slate-600" : "mt-4 leading-7 text-white/70"}>{plan.detail}</p>
                 <ul className="mt-5 grid gap-3">
                   {plan.items.map((item) => (
@@ -2694,7 +2725,7 @@ function AuthScreen() {
                   }`}
                   href="/cadastro"
                 >
-                  Comecar agora
+                  Começar agora
                 </a>
               </article>
             ))}
@@ -2705,10 +2736,10 @@ function AuthScreen() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-blue-700">Duvidas comuns</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Menos improviso, mais proposta pronta para fechar.</h2>
+            <p className="text-xs font-black uppercase text-blue-700">Dúvidas comuns</p>
+            <h2 className="mt-2 text-4xl font-black leading-tight">Antes de mandar mais um orçamento simples, tire suas dúvidas.</h2>
             <p className="mt-4 leading-7 text-slate-600">
-              O FechaPro foi pensado para tirar o orcamento do direct e colocar sua venda em uma apresentacao clara, rastreavel e facil de aceitar.
+              O FechaPro foi pensado para tirar sua venda do improviso e colocar sua oferta em uma apresentação clara, rastreável e fácil de aceitar.
             </p>
           </div>
           <div className="grid gap-3">
@@ -2725,18 +2756,18 @@ function AuthScreen() {
       <section className="bg-green-600 text-white">
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-green-100">Pronto para vender melhor</p>
-            <h2 className="mt-2 text-4xl font-black leading-tight">Crie uma proposta comercial que parece tao profissional quanto seu servico.</h2>
+            <p className="text-xs font-black uppercase text-green-100">Pronto para subir o nível</p>
+            <h2 className="mt-2 text-4xl font-black leading-tight">Sua próxima proposta pode parecer mais cara, mais clara e mais fácil de aprovar.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="/cadastro">
-            Criar conta gratis
+            Melhorar meus fechamentos
           </a>
         </div>
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
         <a className="grid min-h-12 w-full place-items-center rounded-lg bg-green-600 px-4 text-center font-black text-white" href="/cadastro">
-          Criar proposta gratis
+          Criar proposta grátis
         </a>
       </div>
     </main>
@@ -2906,6 +2937,8 @@ function SelectField({
   placeholder: string;
   value: string;
 }) {
+  const uniqueOptions = Array.from(new Set(options.filter(Boolean)));
+
   return (
     <label className="grid gap-2 text-sm font-extrabold text-slate-600">
       {label}
@@ -2917,7 +2950,7 @@ function SelectField({
         onChange={(event) => onChange(event.target.value)}
       />
       <datalist id={`${label}-options`}>
-        {options.map((option) => (
+        {uniqueOptions.map((option) => (
           <option key={option} value={option} />
         ))}
       </datalist>

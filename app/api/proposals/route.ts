@@ -5,6 +5,9 @@ import { currentMonthRange, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const session = await requireSession();
 
@@ -19,7 +22,7 @@ export async function GET() {
   });
 
   const items = await prisma.proposalAsset.findMany({ where: { userId: session.id }, orderBy: { createdAt: "desc" } });
-  return NextResponse.json(items);
+  return NextResponse.json(items, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request) {

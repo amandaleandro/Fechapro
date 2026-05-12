@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { sendProposalAcceptedEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -39,6 +40,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
       acceptedAt: new Date(),
     },
   });
+  revalidatePath(`/p/${slug}`);
 
   if (proposal.user.email) {
     await sendProposalAcceptedEmail(

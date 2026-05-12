@@ -4,18 +4,18 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br"),
   title: {
-    default: "FechaPro | Propostas comerciais online para fechar servicos",
+    default: "FechaPro | Propostas comerciais online para fechar mais serviços",
     template: "%s | FechaPro",
   },
-  description: "Crie propostas comerciais online com portfolio, PDF, aceite do cliente e cobranca. Feito para prestadores de servico venderem com mais profissionalismo.",
+  description: "Pare de enviar orçamentos simples que derrubam seu valor. Crie propostas comerciais online com portfólio, PDF, aceite e cobrança para fechar mais serviços.",
   keywords: [
     "proposta comercial online",
     "gerador de proposta comercial",
-    "orcamento online",
-    "proposta de servico",
+    "orçamento online",
+    "proposta de serviço",
     "proposta comercial com aceite",
-    "software para prestador de servico",
-    "portfolio para proposta",
+    "software para prestador de serviço",
+    "portfólio para proposta",
   ],
   applicationName: "FechaPro",
   authors: [{ name: "FechaPro" }],
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "FechaPro | Propostas comerciais online para fechar servicos",
-    description: "Monte propostas com valor, prazo, portfolio, depoimentos, PDF e botao de aceite em um link profissional.",
+    title: "FechaPro | Propostas comerciais online para fechar mais serviços",
+    description: "Transforme orçamentos improvisados em propostas profissionais com valor, prazo, portfólio, depoimentos, PDF e botão de aceite.",
     url: "/",
     siteName: "FechaPro",
     locale: "pt_BR",
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FechaPro | Propostas comerciais online",
-    description: "Crie links profissionais de proposta com PDF, portfolio e aceite do cliente.",
+    title: "FechaPro | Propostas comerciais online para fechar mais",
+    description: "Pare de vender serviço com orçamento simples. Envie uma proposta profissional com PDF, portfólio e aceite.",
     images: ["/landing/hero-proposta.png"],
   },
   robots: {
