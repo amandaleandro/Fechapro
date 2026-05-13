@@ -1,0 +1,17 @@
+
+> fechapro@0.1.0 dev
+> next dev -p 3003
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3003
+- Network:       http://172.21.64.1:3003
+- Environments: .env
+✓ Ready in 832ms
+Creating turbopack project {
+  dir: 'C:\\Users\\amandalscarmo\\Documents\\FechaPro',
+  testMode: true
+}
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /checkout/cadastro/start 200 in 2.6s (next.js: 2.2s, application-code: 416ms)

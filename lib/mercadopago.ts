@@ -30,6 +30,14 @@ interface MercadoPagoPreference {
   sandbox_init_point?: string;
 }
 
+interface MercadoPagoPreapproval {
+  id: string;
+  init_point?: string;
+  status: string;
+  external_reference?: string;
+  payer_email?: string;
+ }
+
 export interface MercadoPagoPayment {
   id: number;
   status: string;
@@ -40,6 +48,13 @@ export interface MercadoPagoPayment {
   transaction_details?: {
     external_resource_url?: string;
   };
+}
+
+export interface MercadoPagoSubscription {
+  id: string;
+  status: string;
+  external_reference?: string;
+  payer_email?: string;
 }
 
 export function mercadoPagoEnvironment() {
@@ -89,10 +104,14 @@ function preferenceUrl(preference: MercadoPagoPreference) {
 }
 
 function notificationUrl(origin: string) {
-  const url = new URL("/api/webhooks/mercadopago", origin);
+  const url = new URL("/api/webhooks/mercadopago", publicOrigin(origin));
   const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
   if (secret) url.searchParams.set("secret", secret);
   return url.toString();
+}
+
+function publicOrigin(origin: string) {
+  return process.env.APP_URL?.trim().replace(/\/$/, "") || origin;
 }
 
 async function createPreference(input: {
@@ -158,18 +177,67 @@ export async function createPlanCheckout(input: {
   userId: string;
 }) {
   const plan = plans[input.plan];
-  const hasSetup = Boolean(plan.maintenancePriceCents);
-  return createPreference({
-    amountCents: plan.priceCents,
-    description: hasSetup
-      ? `${plan.name}: implantacao inicial. Manutencao depois: ${plan.maintenancePrice}. Limite de ${plan.proposalLimit} propostas por mes.`
-      : `${plan.name} do FechaPro com limite de ${plan.proposalLimit} propostas por mes.`,
+  return createSubscriptionCheckout({
+    amountCents: recurringAmountCents(input.plan),
+    backPath: `/?payment=success&plan=${plan.code}`,
     externalReference: `subscription:${input.userId}:${plan.code}`,
     origin: input.origin,
     payerEmail: input.userEmail,
-    successPath: `/?payment=success&plan=${plan.code}`,
-    title: `FechaPro ${plan.name}`,
+    reason: `FechaPro ${plan.name}`,
   });
+}
+
+export async function createSignupPlanCheckout(input: {
+  checkoutId: string;
+  email: string;
+  origin: string;
+  plan: PlanCode;
+}) {
+  const plan = plans[input.plan];
+  return createSubscriptionCheckout({
+    amountCents: recurringAmountCents(input.plan),
+    backPath: `/cadastro?checkout=${input.checkoutId}&plan=${plan.code}&payment=success`,
+    externalReference: `signup_plan:${input.checkoutId}`,
+    origin: input.origin,
+    payerEmail: input.email,
+    reason: `FechaPro ${plan.name}`,
+  });
+}
+
+async function createSubscriptionCheckout(input: {
+  amountCents: number;
+  backPath: string;
+  externalReference: string;
+  origin: string;
+  payerEmail: string;
+  reason: string;
+}) {
+  const subscription = await request<MercadoPagoPreapproval>("POST", "/preapproval", {
+    reason: input.reason,
+    external_reference: input.externalReference,
+    payer_email: input.payerEmail,
+    auto_recurring: {
+      frequency: 1,
+      frequency_type: "months",
+      transaction_amount: input.amountCents / 100,
+      currency_id: "BRL",
+    },
+    back_url: `${publicOrigin(input.origin)}${input.backPath}`,
+    status: "pending",
+  });
+
+  if (!subscription.init_point) throw new Error("Mercado Pago nao retornou URL de assinatura.");
+  return {
+    externalReference: input.externalReference,
+    id: subscription.id,
+    status: subscription.status,
+    url: subscription.init_point,
+  };
+}
+
+function recurringAmountCents(planCode: PlanCode) {
+  const plan = plans[planCode];
+  return plan.maintenancePriceCents || plan.priceCents;
 }
 
 export async function createArtPackCheckout(input: {
@@ -193,6 +261,10 @@ export async function createArtPackCheckout(input: {
 
 export async function getMercadoPagoPayment(paymentId: string | number) {
   return request<MercadoPagoPayment>("GET", `/v1/payments/${paymentId}`);
+}
+
+export async function getMercadoPagoSubscription(preapprovalId: string) {
+  return request<MercadoPagoSubscription>("GET", `/preapproval/${preapprovalId}`);
 }
 
 export function verifyMercadoPagoWebhook(url: string) {

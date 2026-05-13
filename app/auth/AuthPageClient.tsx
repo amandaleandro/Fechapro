@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
-import { ArrowRight, Check, FileText, Link2, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
+import { ArrowRight, Check, CreditCard, FileText, Link2, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
 import { isValidEmail } from "@/lib/validation";
 
 type AuthMode = "login" | "signup";
 
 export function AuthPageClient({ mode }: { mode: AuthMode }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,6 +20,8 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const isSignup = mode === "signup";
+  const checkoutId = isSignup ? searchParams.get("checkout") || "" : "";
+  const plan = isSignup ? searchParams.get("plan") || "" : "";
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
     setAuthLoading(true);
     try {
       await apiPost(mode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
+        checkoutId,
         name: name.trim(),
         email: email.trim(),
         password,
@@ -132,12 +136,30 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             </a>
           </div>
 
+          {isSignup && !checkoutId ? (
+            <div className="grid gap-5">
+              <div className="space-y-1">
+                <p className="text-xs font-black uppercase text-blue-700">Plano obrigatório</p>
+                <h2 className="text-2xl font-black leading-tight">Pague um plano para criar sua conta</h2>
+                <p className="max-w-xl text-sm leading-6 text-slate-500">
+                  O acesso ao FechaPro e liberado somente depois da confirmacao do pagamento pelo Mercado Pago.
+                </p>
+              </div>
+              <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white shadow-lg shadow-green-700/20 transition hover:bg-green-700" href="/#planos">
+                <CreditCard size={18} />
+                Escolher plano
+              </Link>
+              <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold leading-6 text-green-900">
+                Depois do pagamento, voce volta para esta tela para finalizar nome, e-mail e senha.
+              </div>
+            </div>
+          ) : (
           <form className="grid gap-5" onSubmit={submitAuth}>
             <div className="space-y-1">
               <p className="text-xs font-black uppercase text-blue-700">{isSignup ? "Cadastro" : "Login"}</p>
               <h2 className="text-2xl font-black leading-tight">{isSignup ? "Crie sua conta e escolha seu plano" : "Entre no FechaPro"}</h2>
               <p className="max-w-xl text-sm leading-6 text-slate-500">
-                {isSignup ? "Leva menos de um minuto para liberar seu painel." : "Continue de onde parou e acompanhe suas propostas."}
+                {isSignup ? `Pagamento ${plan ? `do plano ${plan}` : "do plano"} confirmado? Finalize seu cadastro para liberar o painel.` : "Continue de onde parou e acompanhe suas propostas."}
               </p>
             </div>
 
@@ -186,6 +208,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
               </span>
             </div>
           </form>
+          )}
         </section>
       </div>
     </main>

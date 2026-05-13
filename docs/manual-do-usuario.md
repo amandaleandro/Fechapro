@@ -19,14 +19,14 @@ O FechaPro e um sistema para transformar orcamentos simples em propostas comerci
 1. Acesse o endereco do FechaPro enviado pela equipe.
 2. Clique em **Entrar** caso ja tenha conta.
 3. Informe seu e-mail e senha.
-4. Se ainda nao tiver conta, clique em **Criar conta** e preencha seus dados.
+4. Se ainda nao tiver conta, escolha um plano, autorize a assinatura recorrente pelo Mercado Pago e depois preencha o cadastro.
 5. Se esquecer a senha, use a opcao **Esqueci minha senha** na tela de login.
 
 Depois de entrar, voce sera levado ao painel principal.
 
 ## 3. Primeiro acesso
 
-No primeiro uso, o sistema pode pedir algumas informacoes iniciais para preparar sua conta:
+No primeiro uso, o sistema libera o painel somente depois que a assinatura do plano for autorizada no Mercado Pago. Em seguida, pode pedir algumas informacoes iniciais para preparar sua conta:
 
 1. Informe o **nome comercial** da sua empresa ou marca.
 2. Informe o **WhatsApp** que sera usado nas propostas.

@@ -3508,6 +3508,7 @@ function AuthScreen() {
   ];
   const plans = [
     {
+      code: "start",
       name: "Start",
       price: "R$ 49",
       priceSuffix: "/mês",
@@ -3517,6 +3518,7 @@ function AuthScreen() {
       items: ["20 propostas por mês", "Link profissional", "PDF automático", "Propostas com visual profissional", "Sem artes de divulgação", "Sem site incluso"],
     },
     {
+      code: "pro",
       name: "Essencial",
       price: "R$ 97",
       priceSuffix: "/mês",
@@ -3526,6 +3528,7 @@ function AuthScreen() {
       items: ["50 propostas por mês", "Serviços cadastrados", "Identidade básica", "Link profissional", "PDF automático", "Sem artes de divulgação"],
     },
     {
+      code: "plus",
       name: "Profissional",
       price: "R$ 147",
       priceSuffix: "/mês",
@@ -3536,6 +3539,7 @@ function AuthScreen() {
       items: ["120 propostas por mês", "5 artes de divulgação por mês", "Portfólio no FechaPro", "Depoimentos na proposta", "Identidade básica", "Link profissional", "PDF automático"],
     },
     {
+      code: "premium",
       name: "Pro Site",
       price: "R$ 497",
       priceSuffix: "implantação",
@@ -3548,6 +3552,7 @@ function AuthScreen() {
       items: ["300 propostas por mês", "10 artes de divulgação por mês", "Site one page", "Portfólio", "Proposta + presença online", "Cadastro inicial", "Configuração assistida", "Treinamento rápido", "Link profissional", "PDF automático"],
     },
     {
+      code: "premium_site",
       name: "Premium Site",
       price: "R$ 997",
       priceSuffix: "implantação",
@@ -3696,13 +3701,13 @@ function AuthScreen() {
               <a href="/interesse">
                 Tenho interesse
               </a>
-              <a href="/cadastro">
+              <a href="#planos">
                 Começar
               </a>
             </nav>
             <div className="flex items-center gap-2">
-              <a className="hidden min-h-10 items-center justify-center rounded-lg bg-green-500 px-4 text-sm font-black text-slate-950 sm:inline-flex" href="/cadastro">
-                Criar conta
+              <a className="hidden min-h-10 items-center justify-center rounded-lg bg-green-500 px-4 text-sm font-black text-slate-950 sm:inline-flex" href="#planos">
+                Escolher plano
               </a>
               <a className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/25 px-4 text-sm font-black text-white" href="/login">
                 Entrar
@@ -3731,7 +3736,7 @@ function AuthScreen() {
                 <a className="min-h-11 rounded-lg px-3 py-3" href="/interesse">
                   Tenho interesse
                 </a>
-                <a className="min-h-11 rounded-lg bg-green-500 px-3 py-3 text-slate-950" href="/cadastro">
+                <a className="min-h-11 rounded-lg bg-green-500 px-3 py-3 text-slate-950" href="#planos">
                   Começar
                 </a>
               </nav>
@@ -3757,7 +3762,7 @@ function AuthScreen() {
                 Tenha propostas profissionais, portfólio, PDF automático e uma presença online pronta para fechar mais serviços.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="/cadastro">
+                <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
                   Quero começar agora
                 </a>
@@ -3899,7 +3904,7 @@ function AuthScreen() {
                   Se apenas {clampedRescuedDeals} proposta(s) por mês deixarem de morrer no follow-up, esse é o valor que volta para a conversa.
                 </p>
               </div>
-              <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="/cadastro">
+              <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                 Quero testar na prática
               </a>
             </div>
@@ -4054,7 +4059,7 @@ function AuthScreen() {
                   className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
                     plan.name === "Premium Site" ? "bg-white text-slate-950" : "bg-green-600 text-white"
                   }`}
-                  href="/cadastro"
+                  href={`/checkout/cadastro/${plan.code}`}
                 >
                   {plan.cta}
                 </a>
@@ -4090,7 +4095,7 @@ function AuthScreen() {
                       </li>
                     ))}
                   </ul>
-                  <a className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-4 font-black text-slate-950" href="/cadastro">
+                  <a className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-4 font-black text-slate-950" href={`/checkout/cadastro/${plan.code}`}>
                     {plan.cta}
                   </a>
                 </article>
@@ -4154,14 +4159,14 @@ function AuthScreen() {
             <p className="text-xs font-black uppercase text-green-100">Pronto para subir o nível</p>
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua próxima proposta pode parecer mais valiosa, mais clara e mais fácil de aprovar.</h2>
           </div>
-          <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="/cadastro">
+          <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="#planos">
             Melhorar meus fechamentos
           </a>
         </div>
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
-        <a className="grid min-h-12 w-full place-items-center rounded-lg bg-green-600 px-4 text-center font-black text-white" href="/cadastro">
+        <a className="grid min-h-12 w-full place-items-center rounded-lg bg-green-600 px-4 text-center font-black text-white" href="#planos">
           Começar com um plano
         </a>
       </div>

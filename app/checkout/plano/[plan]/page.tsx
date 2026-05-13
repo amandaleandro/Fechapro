@@ -14,6 +14,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
   const { plan: rawPlan } = await params;
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
+  const recurringPrice = plan.maintenancePrice?.replace("Depois ", "") || plan.price;
   const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id } });
   const active = subscription?.plan === plan.code && subscription.status === "active" && subscription.provider === "mercadopago";
 
@@ -58,7 +59,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
-                <CheckoutMetric label={plan.maintenancePrice ? "Implantacao" : "Valor mensal"} value={plan.price} />
+                <CheckoutMetric label="Mensalidade recorrente" value={recurringPrice} />
                 <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mes`} />
               </div>
 
@@ -84,17 +85,17 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
           <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">{plan.maintenancePrice ? "Implantacao" : "Total mensal"}</p>
-              <strong className="mt-1 block text-3xl font-black sm:text-4xl">{plan.price}</strong>
+              <p className="text-xs font-black uppercase text-blue-700">Assinatura mensal</p>
+              <strong className="mt-1 block text-3xl font-black sm:text-4xl">{recurringPrice}</strong>
               {plan.maintenancePrice ? (
                 <p className="mt-2 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
-                  {plan.maintenancePrice} para manutencao do site e acesso ao FechaPro.
+                  Implantacao combinada a parte: {plan.price}.
                 </p>
               ) : null}
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
                 {plan.maintenancePrice
-                  ? "Este checkout cobra a implantacao inicial. A manutencao mensal e combinada depois em valor reduzido."
-                  : "Pagamento mensal em ambiente seguro do Mercado Pago."}
+                  ? "Este checkout autoriza a assinatura recorrente de manutencao e acesso ao FechaPro."
+                  : "Assinatura mensal em ambiente seguro do Mercado Pago."}
               </p>
             </div>
 

@@ -40,6 +40,20 @@ model PlanSubscription {
   user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model SignupPayment {
+  id                 String   @id @default(cuid())
+  plan               PlanCode
+  email              String?
+  status             String   @default("pending")
+  provider           String   @default("mercadopago")
+  providerCheckoutId String?  @unique
+  paidAt             DateTime?
+  claimedAt          DateTime?
+  userId             String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
 model BrandProfile {
   id             String   @id @default(cuid())
   userId         String   @unique

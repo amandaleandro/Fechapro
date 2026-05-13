@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMercadoPagoPayment, verifyMercadoPagoWebhook } from "@/lib/mercadopago";
+import { getMercadoPagoPayment, getMercadoPagoSubscription, verifyMercadoPagoWebhook } from "@/lib/mercadopago";
 import { prisma } from "@/lib/prisma";
 import { sendProposalPushNotification } from "@/lib/push";
 
@@ -19,14 +19,77 @@ export async function POST(request: Request) {
   }
 
   const payload = (await request.json().catch(() => null)) as MercadoPagoWebhookPayload | null;
-  const paymentId = payload?.data?.id;
+  const eventId = payload?.data?.id;
   const type = payload?.type || payload?.action;
 
-  if (!paymentId || (type && !String(type).includes("payment"))) {
+  if (!eventId) {
     return NextResponse.json({ received: true });
   }
 
-  const payment = await getMercadoPagoPayment(paymentId);
+  if (type && String(type).includes("preapproval")) {
+    const subscription = await getMercadoPagoSubscription(eventId);
+    const reference = subscription.external_reference || "";
+    const active = subscription.status === "authorized";
+    const pending = subscription.status === "pending";
+    const inactive = ["cancelled", "canceled", "paused"].includes(subscription.status);
+
+    if (reference.startsWith("subscription:")) {
+      const [, userId] = reference.split(":");
+      const plan = reference.split(":")[2];
+      const current = await prisma.planSubscription.findUnique({ where: { userId } });
+      if (!current) return NextResponse.json({ received: true });
+
+      if (active) {
+        await prisma.planSubscription.update({
+          where: { id: current.id },
+          data: { provider: "mercadopago", providerSubscriptionId: subscription.id, status: "active" },
+        });
+      } else if (pending) {
+        await prisma.planSubscription.update({
+          where: { id: current.id },
+          data: { providerSubscriptionId: subscription.id, status: "pending" },
+        });
+      } else if (inactive) {
+        await prisma.planSubscription.update({
+          where: { id: current.id },
+          data: { status: "canceled" },
+        });
+      }
+      return NextResponse.json({ received: true, plan });
+    }
+
+    if (reference.startsWith("signup_plan:")) {
+      const checkoutId = reference.replace("signup_plan:", "");
+      const signupPayment = await prisma.signupPayment.findUnique({ where: { id: checkoutId } });
+      if (!signupPayment) return NextResponse.json({ received: true });
+
+      if (active) {
+        await prisma.signupPayment.update({
+          where: { id: signupPayment.id },
+          data: { paidAt: new Date(), providerCheckoutId: subscription.id, status: "paid" },
+        });
+      } else if (pending) {
+        await prisma.signupPayment.update({
+          where: { id: signupPayment.id },
+          data: { providerCheckoutId: subscription.id, status: "pending" },
+        });
+      } else if (inactive) {
+        await prisma.signupPayment.update({
+          where: { id: signupPayment.id },
+          data: { status: "canceled" },
+        });
+      }
+      return NextResponse.json({ received: true });
+    }
+
+    return NextResponse.json({ received: true });
+  }
+
+  if (type && !String(type).includes("payment")) {
+    return NextResponse.json({ received: true });
+  }
+
+  const payment = await getMercadoPagoPayment(eventId);
   const reference = payment.external_reference || "";
   const paid = payment.status === "approved";
   const pending = payment.status === "pending" || payment.status === "in_process";
@@ -82,6 +145,30 @@ export async function POST(request: Request) {
     } else if (failed) {
       await prisma.planSubscription.update({
         where: { id: subscription.id },
+        data: { status: "canceled" },
+      });
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  if (reference.startsWith("signup_plan:")) {
+    const checkoutId = reference.replace("signup_plan:", "");
+    const signupPayment = await prisma.signupPayment.findUnique({ where: { id: checkoutId } });
+    if (!signupPayment) return NextResponse.json({ received: true });
+
+    if (paid) {
+      await prisma.signupPayment.update({
+        where: { id: signupPayment.id },
+        data: { paidAt: new Date(), status: "paid" },
+      });
+    } else if (pending) {
+      await prisma.signupPayment.update({
+        where: { id: signupPayment.id },
+        data: { status: "pending" },
+      });
+    } else if (failed) {
+      await prisma.signupPayment.update({
+        where: { id: signupPayment.id },
         data: { status: "canceled" },
       });
     }
