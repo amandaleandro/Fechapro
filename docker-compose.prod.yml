@@ -12,10 +12,73 @@ services:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
       UPLOAD_DIR: /app/uploads
-    ports:
-      - "${APP_PORT:-3000}:3000"
+    expose:
+      - "3000"
     volumes:
       - fechapro_uploads:/app/uploads
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: fechapro-nginx
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN}
+    command: >
+      sh -c "mkdir -p /etc/letsencrypt/live/$$DOMAIN &&
+      if [ ! -f /etc/letsencrypt/live/$$DOMAIN/fullchain.pem ]; then
+        openssl req -x509 -nodes -newkey rsa:2048 -days 1
+          -keyout /etc/letsencrypt/live/$$DOMAIN/privkey.pem
+          -out /etc/letsencrypt/live/$$DOMAIN/fullchain.pem
+          -subj '/CN=localhost';
+      fi &&
+      nginx -g 'daemon off;'"
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - fechapro_certbot_www:/var/www/certbot
+      - fechapro_letsencrypt:/etc/letsencrypt
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: fechapro-certbot
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN}
+      SSL_EMAIL: ${SSL_EMAIL:?set SSL_EMAIL}
+    entrypoint: sh
+    command: >
+      -c "rm -rf /etc/letsencrypt/live/$$DOMAIN
+      /etc/letsencrypt/archive/$$DOMAIN
+      /etc/letsencrypt/renewal/$$DOMAIN.conf &&
+      certbot certonly --webroot
+      --webroot-path /var/www/certbot
+      --email $$SSL_EMAIL
+      --agree-tos
+      --no-eff-email
+      --force-renewal
+      -d $$DOMAIN"
+    volumes:
+      - fechapro_certbot_www:/var/www/certbot
+      - fechapro_letsencrypt:/etc/letsencrypt
+    profiles:
+      - ssl
+
+  certbot-renew:
+    image: certbot/certbot:latest
+    container_name: fechapro-certbot-renew
+    entrypoint: sh
+    command: >
+      -c "while :; do
+      certbot renew --webroot --webroot-path /var/www/certbot --quiet;
+      sleep 12h;
+      done"
+    volumes:
+      - fechapro_certbot_www:/var/www/certbot
+      - fechapro_letsencrypt:/etc/letsencrypt
     restart: unless-stopped
 
   migrate:
@@ -50,3 +113,5 @@ services:
 volumes:
   fechapro_postgres_data:
   fechapro_uploads:
+  fechapro_certbot_www:
+  fechapro_letsencrypt:

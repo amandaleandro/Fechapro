@@ -85,18 +85,20 @@ A esteira de deploy fica em `.github/workflows/deploy-vps.yml`. A cada push na b
 - builda a imagem de migracao do Prisma;
 - publica as duas no GitHub Container Registry;
 - entra na VPS por SSH;
+- copia `docker-compose.prod.yml` e `nginx/` para a VPS;
 - puxa as imagens novas;
 - roda `prisma db push`;
-- reinicia o app com `docker compose`.
+- reinicia app, Nginx e renovacao de SSL com `docker compose`.
 
 ### Preparar A VPS
 
 Instale Docker e Docker Compose na VPS, crie uma pasta para o projeto e coloque nela estes arquivos:
 
 ```text
-docker-compose.prod.yml
 .env.production
 ```
+
+O workflow copia `docker-compose.prod.yml` e `nginx/` automaticamente para essa pasta.
 
 Exemplo de `.env.production`:
 
@@ -106,7 +108,10 @@ POSTGRES_USER=fechapro
 POSTGRES_PASSWORD=troque_esta_senha
 AUTH_SECRET=troque_este_secret
 APP_URL=https://seu-dominio.com
-APP_PORT=3000
+DOMAIN=seu-dominio.com
+SSL_EMAIL=voce@seu-dominio.com
+HTTP_PORT=80
+HTTPS_PORT=443
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.4-mini
 ASAAS_API_KEY=
@@ -135,6 +140,18 @@ APP_IMAGE=ghcr.io/seu-usuario-ou-org/fechapro:latest \
 MIGRATOR_IMAGE=ghcr.io/seu-usuario-ou-org/fechapro:migrator-latest \
 docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 ```
+
+Para emitir o SSL pela primeira vez, garanta que o DNS do dominio aponta para a VPS e que as portas `80` e `443` estao liberadas. Depois rode:
+
+```bash
+APP_IMAGE=ghcr.io/seu-usuario-ou-org/fechapro:latest \
+MIGRATOR_IMAGE=ghcr.io/seu-usuario-ou-org/fechapro:migrator-latest \
+docker compose --env-file .env.production -f docker-compose.prod.yml --profile ssl run --rm certbot
+
+docker exec fechapro-nginx nginx -s reload
+```
+
+O servico `certbot-renew` fica ativo e tenta renovar o certificado automaticamente a cada 12 horas.
 
 ### Secrets Do GitHub
 

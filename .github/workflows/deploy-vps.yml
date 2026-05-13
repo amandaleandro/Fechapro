@@ -92,12 +92,25 @@ jobs:
     needs: build
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Prepare image names
         id: images
         run: |
           REPOSITORY_LC="$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
           echo "app_image=$REGISTRY/$REPOSITORY_LC:latest" >> "$GITHUB_OUTPUT"
           echo "migrator_image=$REGISTRY/$REPOSITORY_LC:migrator-latest" >> "$GITHUB_OUTPUT"
+
+      - name: Upload deploy files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "docker-compose.prod.yml,nginx"
+          target: ${{ secrets.VPS_APP_DIR }}
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -119,4 +132,5 @@ jobs:
             APP_IMAGE="$APP_IMAGE" MIGRATOR_IMAGE="$MIGRATOR_IMAGE" docker compose --env-file .env.production -f docker-compose.prod.yml pull
             APP_IMAGE="$APP_IMAGE" MIGRATOR_IMAGE="$MIGRATOR_IMAGE" docker compose --env-file .env.production -f docker-compose.prod.yml --profile tools run --rm migrate
             APP_IMAGE="$APP_IMAGE" MIGRATOR_IMAGE="$MIGRATOR_IMAGE" docker compose --env-file .env.production -f docker-compose.prod.yml up -d --remove-orphans
+            docker exec fechapro-nginx nginx -s reload || true
             docker image prune -f
