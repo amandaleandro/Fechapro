@@ -1,7 +1,6 @@
 # Manual do Usuario - FechaPro
 
 Este manual explica como usar o FechaPro no dia a dia para cadastrar sua marca, organizar clientes e servicos, criar propostas profissionais, enviar links para clientes, acompanhar respostas e gerar artes de divulgacao.
-
 ## 1. O que e o FechaPro
 
 O FechaPro e um sistema para transformar orcamentos simples em propostas comerciais completas. Com ele voce pode:
@@ -47,7 +46,7 @@ O menu lateral organiza as principais areas do sistema:
 - **Portfolio:** imagens de trabalhos anteriores.
 - **Depoimentos:** comentarios de clientes para reforcar confianca.
 - **Marca:** logo, cores, WhatsApp, Instagram, e-mail, site e bio.
-- **Artes IA:** gerador de artes e textos para divulgacao.
+- **Artes IA:** solicitacao de artes para o agente preparar e enviar para aprovacao.
 - **Templates:** modelos prontos de proposta por nicho.
 - **Planos:** plano atual, limites, pacotes extras e status de pagamento.
 - **Conta:** nome, e-mail e troca de senha.
@@ -235,23 +234,23 @@ No **Painel**, voce acompanha indicadores como:
 
 Use esses dados para saber quais clientes precisam de follow-up.
 
-## 16. Solicitar artes com IA
+## 16. Solicitar artes ao agente
 
-Acesse **Artes IA** para solicitar materiais de divulgacao.
+Acesse **Artes IA** para solicitar materiais de divulgacao que serao construidos por um agente.
 
 Preencha:
 
 - **Nome para salvar:** nome interno da arte.
-- **Formato:** post, story, status ou todos os formatos disponiveis.
+- **Formato solicitado:** post, story, status ou todos os formatos disponiveis.
 - **Servico ou produto:** o que voce quer divulgar.
-- **Escreva do seu jeito:** pedido livre, como uma promocao, servico, produto, cardapio ou agenda aberta.
+- **Briefing para o agente:** pedido livre, como uma promocao, servico, produto, cardapio ou agenda aberta.
 - **Cidade ou publico:** publico-alvo ou local.
 - **Botao da arte:** chamada para acao, como "Peca seu orcamento" ou "Fazer pedido".
-- **Logo, produto ou foto:** imagem de referencia, quando houver.
+- **Referencias para o agente:** logo, produto, foto ou imagem de referencia, quando houver.
 
-Depois clique em **Solicitar arte** ou **Solicitar artes**, conforme os formatos escolhidos.
+Depois clique em **Enviar solicitacao** ou **Enviar solicitacoes**, conforme os formatos escolhidos.
 
-A equipe prepara a arte e envia o arquivo dentro do sistema para sua aprovacao. Enquanto isso, o pedido aparece como **Solicitada** ou **Em preparo**.
+Um agente prepara a arte e envia o arquivo dentro do sistema para sua aprovacao. Enquanto isso, o pedido aparece como **Solicitada** ou **Em preparo**.
 
 Quando a equipe anexar a arte, ela aparece como **Aguardando aprovacao**. Revise a imagem e clique em **Aprovar** se estiver tudo certo.
 

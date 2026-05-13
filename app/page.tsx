@@ -357,7 +357,7 @@ const tourSteps: TourStep[] = [
     eyebrow: "Pronto para vender",
     title: "Escolha o plano e valide com clientes reais",
     description: "Quando o financeiro estiver configurado, esta tela vira o caminho para assinatura e limite de uso por plano.",
-    checklist: ["Revise limite do plano atual", "Teste checkout em ambiente seguro", "Configure o Asaas antes de vender"],
+    checklist: ["Revise limite do plano atual", "Teste checkout em ambiente seguro", "Configure o Mercado Pago antes de vender"],
   },
 ];
 
@@ -574,7 +574,7 @@ export default function Home() {
   const hasPaidAccess = Boolean(
     billing &&
       ["active", "trial"].includes(billing.subscription.status) &&
-      ["asaas", "admin"].includes(billing.subscription.provider || ""),
+      ["mercadopago", "admin"].includes(billing.subscription.provider || ""),
   );
   const currentPlan = billing?.subscription.plan || "start";
   const availableTourSteps = useMemo(
@@ -642,8 +642,8 @@ export default function Home() {
     setTestimonials(testimonialsData);
     setProposals(proposalsData);
     setMarketingArts(marketingArtsData);
-    if (billingData.subscription.status !== "active" || billingData.subscription.provider !== "asaas") {
-      setNotice("Escolha um plano e conclua o pagamento pelo Asaas para liberar a criação de propostas.");
+    if (billingData.subscription.status !== "active" || billingData.subscription.provider !== "mercadopago") {
+      setNotice("Escolha um plano e conclua o pagamento pelo Mercado Pago para liberar a criação de propostas.");
       setActiveView("plans");
     }
   }
@@ -824,7 +824,7 @@ export default function Home() {
           }
         : current,
     );
-    setNotice("Pedido de arte enviado. A equipe vai preparar a arte e anexar para sua aprovacao.");
+    setNotice("Solicitacao enviada. Um agente vai construir a arte e anexar para sua aprovacao.");
     return item;
   }
 
@@ -868,8 +868,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]" data-theme={dark ? "dark" : "light"}>
-      <header className="sticky top-0 z-20 border-b border-black/10 bg-slate-100/90 px-4 py-4 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <header className="sticky top-0 z-20 border-b border-black/10 bg-slate-100/90 px-4 py-3 backdrop-blur sm:py-4">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <Image alt="FechaPro" className="mb-3 h-9 w-36 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
             <h1 className="max-w-xs text-2xl font-black leading-tight sm:max-w-none sm:text-3xl">
@@ -879,7 +879,7 @@ export default function Home() {
               Olá, {brand?.businessName || session.name}
             </p>
           </div>
-          <div className="flex shrink-0 gap-2 self-start sm:self-auto">
+          <div className="flex w-full shrink-0 flex-wrap gap-2 self-start sm:w-auto sm:self-auto">
             <IconButton label="Ver novidades" icon={Megaphone} onClick={() => setShowUpdatesModal(true)} />
             <IconButton label="Iniciar tour guiado" icon={Sparkles} onClick={startTour} />
             <IconButton label={dark ? "Usar tema claro" : "Usar tema escuro"} icon={dark ? Sun : Moon} onClick={() => setDark((current) => !current)} />
@@ -930,7 +930,7 @@ export default function Home() {
           />
         ) : (
           <>
-            <nav className="grid grid-cols-4 gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/10 sm:flex sm:overflow-x-auto sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
+            <nav className="grid grid-cols-3 gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/10 min-[430px]:grid-cols-4 sm:flex sm:overflow-x-auto sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeView === item.id;
@@ -1278,7 +1278,7 @@ function DashboardView({
   const hasPaidAccess = Boolean(
     billing &&
       ["active", "trial"].includes(billing.subscription.status) &&
-      ["asaas", "admin"].includes(billing.subscription.provider || ""),
+      ["mercadopago", "admin"].includes(billing.subscription.provider || ""),
   );
 
   function chooseService(serviceName: string) {
@@ -1366,7 +1366,7 @@ function DashboardView({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `${billing.subscription.plan.toUpperCase()} em uso` : "Pagamento pendente"} />
             <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
-              {hasPaidAccess ? `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês` : "Pague pelo Asaas para criar propostas"}
+              {hasPaidAccess ? `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês` : "Pague pelo Mercado Pago para criar propostas"}
             </span>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
               {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes IA`}
@@ -1551,14 +1551,14 @@ function DashboardView({
             onChange={(value) => onDraftChange("notes", value)}
           />
 
-          <div className="flex flex-wrap gap-3">
-            <button className="min-h-11 flex-1 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
               Salvar proposta
             </button>
-            <button className="min-h-11 flex-1 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
+            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
               Salvar rascunho
             </button>
-            <button className="min-h-11 flex-1 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onSeed}>
+            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onSeed}>
               Carregar exemplos
             </button>
           </div>
@@ -2563,9 +2563,9 @@ function MarketingArtsView({
 
         <div>
           <p className="text-xs font-black uppercase text-blue-700">Artes IA</p>
-          <h2 className="text-2xl font-black">Solicitar artes</h2>
+          <h2 className="text-2xl font-black">Solicitar arte ao agente</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Envie o briefing da arte. A equipe prepara, anexa para aprovacao e libera o download depois do seu ok.
+            Preencha o briefing para um agente construir a arte. Depois ele anexa a imagem pronta para sua aprovacao.
           </p>
         </div>
 
@@ -2586,7 +2586,7 @@ function MarketingArtsView({
           {error ? <FormError message={error} /> : null}
           <TextField label="Nome para salvar" maxLength={80} placeholder="Promocao de hoje" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            O que você quer criar?
+            Formato solicitado
             <select
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
               value={form.format}
@@ -2599,7 +2599,7 @@ function MarketingArtsView({
             </select>
           </label>
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            O que você quer divulgar?
+            Tipo de arte
             <select
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
               value={selectedBriefId}
@@ -2635,9 +2635,9 @@ function MarketingArtsView({
             onChange={(value) => setForm({ ...form, serviceName: value })}
           />
           <TextAreaField
-            label="Escreva do seu jeito"
+            label="Briefing para o agente"
             maxLength={400}
-            placeholder="Ex: Quero divulgar marmita grande com suco por R$ 22 hoje em Uberlandia. Pedido pelo WhatsApp."
+            placeholder="Ex: Quero uma arte para divulgar marmita grande com suco por R$ 22 hoje em Uberlandia. Pedido pelo WhatsApp."
             required
             rows={4}
             value={form.objective}
@@ -2646,7 +2646,7 @@ function MarketingArtsView({
           <TextField label="Cidade ou público" maxLength={120} placeholder="Uberlândia, noivas, lojas, moradores do bairro..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
           <TextField label="Botão da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Logo, produto ou foto
+            Referencias para o agente
             <input
               accept="image/*"
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
@@ -2693,7 +2693,7 @@ function MarketingArtsView({
           ) : null}
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={creating || limit === 0 || remaining < formatsToGenerate.length} type="submit">
             <Sparkles size={18} />
-            {creating ? "Enviando..." : formatsToGenerate.length > 1 ? "Solicitar artes" : "Solicitar arte"}
+            {creating ? "Enviando..." : formatsToGenerate.length > 1 ? "Enviar solicitacoes" : "Enviar solicitacao"}
           </button>
         </form>
       </aside>
@@ -2894,13 +2894,13 @@ function PlansView({
         <p className="text-xs font-black uppercase text-blue-700">Assinatura</p>
         <h2 className="text-2xl font-black">Planos do FechaPro</h2>
         <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Escolha um plano e pague online em ambiente seguro. O acesso para criar propostas é liberado quando o Asaas confirmar o pagamento.
+          Escolha um plano e pague online em ambiente seguro. O acesso para criar propostas é liberado quando o Mercado Pago confirmar o pagamento.
         </p>
         {paymentError ? (
           <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{paymentError}</p>
         ) : null}
         <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
-          Status: {billing.subscription.status === "active" && billing.subscription.provider === "asaas" ? "ativo" : "aguardando pagamento"}
+          Status: {billing.subscription.status === "active" && billing.subscription.provider === "mercadopago" ? "ativo" : "aguardando pagamento"}
           <span className="mt-1 block">
             Uso atual: {billing.usage.proposalsThisMonth}
             {`/${billing.usage.proposalLimit} propostas este mês`}
@@ -2916,7 +2916,7 @@ function PlansView({
 
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-5">
         {billing.plans.map((plan) => {
-          const active = billing.subscription.plan === plan.code && billing.subscription.status === "active" && billing.subscription.provider === "asaas";
+          const active = billing.subscription.plan === plan.code && billing.subscription.status === "active" && billing.subscription.provider === "mercadopago";
           const recommended = plan.code === "plus";
           return (
             <article
@@ -3615,7 +3615,9 @@ function AuthScreen() {
   const [rescuedDeals, setRescuedDeals] = useState(2);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const activeExample = landingExamples[activeExampleIndex];
-  const estimatedMonthlyUpside = averageTicket * Math.min(rescuedDeals, monthlyProposals);
+  const rescuedDealLimit = Math.max(1, Math.min(monthlyProposals, 10));
+  const clampedRescuedDeals = Math.min(rescuedDeals, rescuedDealLimit);
+  const estimatedMonthlyUpside = averageTicket * clampedRescuedDeals;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -3653,6 +3655,15 @@ function AuthScreen() {
     setMobileMenuOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.history.replaceState(null, "", window.location.pathname);
+  }
+
+  function updateMonthlyProposals(value: number) {
+    setMonthlyProposals(value);
+    setRescuedDeals((current) => Math.min(current, Math.max(1, Math.min(value, 10))));
+  }
+
+  function updateRescuedDeals(value: number) {
+    setRescuedDeals(Math.min(value, rescuedDealLimit));
   }
 
   return (
@@ -3858,7 +3869,7 @@ function AuthScreen() {
                 step={1}
                 value={monthlyProposals}
                 valueLabel={`${monthlyProposals}`}
-                onChange={setMonthlyProposals}
+                onChange={updateMonthlyProposals}
               />
               <LandingRange
                 label="Ticket médio"
@@ -3871,12 +3882,12 @@ function AuthScreen() {
               />
               <LandingRange
                 label="Vendas recuperadas"
-                max={Math.max(1, Math.min(monthlyProposals, 10))}
+                max={rescuedDealLimit}
                 min={1}
                 step={1}
-                value={Math.min(rescuedDeals, monthlyProposals)}
-                valueLabel={`${Math.min(rescuedDeals, monthlyProposals)}/mês`}
-                onChange={setRescuedDeals}
+                value={clampedRescuedDeals}
+                valueLabel={`${clampedRescuedDeals}/mês`}
+                onChange={updateRescuedDeals}
               />
             </div>
 
@@ -3885,7 +3896,7 @@ function AuthScreen() {
                 <p className="text-xs font-black uppercase text-green-300">Potencial que hoje pode estar vazando</p>
                 <strong className="mt-2 block text-3xl font-black sm:text-4xl">{money.format(estimatedMonthlyUpside)}</strong>
                 <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-                  Se apenas {Math.min(rescuedDeals, monthlyProposals)} proposta(s) por mês deixarem de morrer no follow-up, esse é o valor que volta para a conversa.
+                  Se apenas {clampedRescuedDeals} proposta(s) por mês deixarem de morrer no follow-up, esse é o valor que volta para a conversa.
                 </p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="/cadastro">
@@ -4193,7 +4204,7 @@ function ProductUpdatesModal({
     {
       icon: CreditCard,
       title: "Planos e cobranca",
-      description: "Assinatura pelo Asaas e limites por plano ja estao conectados ao painel.",
+      description: "Assinatura pelo Mercado Pago e limites por plano ja estao conectados ao painel.",
       tag: "Ativo",
     },
   ];

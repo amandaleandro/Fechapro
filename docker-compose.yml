@@ -12,9 +12,9 @@ services:
       AUTH_SECRET: fechapro_local_secret_change_in_prod
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-mini}
-      ASAAS_API_KEY: ${ASAAS_API_KEY:-}
-      ASAAS_WEBHOOK_TOKEN: ${ASAAS_WEBHOOK_TOKEN:-}
-      ASAAS_SANDBOX: ${ASAAS_SANDBOX:-false}
+      MERCADO_PAGO_ACCESS_TOKEN: ${MERCADO_PAGO_ACCESS_TOKEN:-}
+      MERCADO_PAGO_WEBHOOK_SECRET: ${MERCADO_PAGO_WEBHOOK_SECRET:-}
+      MERCADO_PAGO_SANDBOX: ${MERCADO_PAGO_SANDBOX:-false}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-FechaPro <noreply@fechapro.app>}
       APP_URL: ${APP_URL:-http://localhost:3000}

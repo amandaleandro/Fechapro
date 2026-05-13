@@ -55,8 +55,8 @@ export async function PUT(request: Request) {
 
   const subscription = await prisma.planSubscription.upsert({
     where: { userId: session.id },
-    create: { userId: session.id, plan: body.plan, status: "pending", provider: "asaas" },
-    update: { plan: body.plan, status: "pending", provider: "asaas" },
+    create: { userId: session.id, plan: body.plan, status: "pending", provider: "mercadopago" },
+    update: { plan: body.plan, status: "pending", provider: "mercadopago" },
   });
   const { start, end } = currentMonthRange();
   const usedThisMonth = await prisma.proposalAsset.count({

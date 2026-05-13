@@ -206,7 +206,7 @@ export default function AdminPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Artes solicitadas</p>
-              <h2 className="text-2xl font-black">Upload para aprovacao</h2>
+              <h2 className="text-2xl font-black">Upload do agente para aprovacao</h2>
             </div>
             <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadArts}>
               <RefreshCcw size={15} />
@@ -407,7 +407,7 @@ function AdminArtCard({
       </label>
       <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving || !file} type="button" onClick={() => file && onUpload(item, file, caption, whatsappMessage)}>
         <Upload size={15} />
-        {saving ? "Enviando..." : "Enviar para aprovacao"}
+        {saving ? "Enviando..." : "Enviar arte para aprovacao"}
       </button>
     </article>
   );

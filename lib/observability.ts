@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
-import { asaasEnvironment, checkAsaasConnection } from "@/lib/asaas";
+import { checkMercadoPagoConnection, mercadoPagoEnvironment } from "@/lib/mercadopago";
 
 type CheckStatus = "ok" | "degraded" | "down";
 
@@ -43,10 +43,10 @@ export function isAuthorizedHealthRequest(request: Request) {
 }
 
 export async function getHealthReport(): Promise<HealthReport> {
-  const [database, asaas] = await Promise.all([checkDatabase(), checkAsaas()]);
+  const [database, mercadopago] = await Promise.all([checkDatabase(), checkMercadoPago()]);
   const services = {
     database,
-    asaas,
+    mercadopago,
     email: checkEmail(),
     storage: checkStorage(),
     sentry: checkSentry(),
@@ -81,22 +81,22 @@ async function checkDatabase(): Promise<ServiceCheck> {
   }
 }
 
-async function checkAsaas(): Promise<ServiceCheck> {
-  const config = asaasEnvironment();
+async function checkMercadoPago(): Promise<ServiceCheck> {
+  const config = mercadoPagoEnvironment();
 
-  if (!config.hasApiKey) {
+  if (!config.hasAccessToken) {
     return {
       status: "degraded",
-      message: "ASAAS_API_KEY não configurada.",
+      message: "MERCADO_PAGO_ACCESS_TOKEN nao configurado.",
       meta: {
         sandbox: config.sandbox,
-        hasWebhookToken: config.hasWebhookToken,
+        hasWebhookSecret: config.hasWebhookSecret,
       },
     };
   }
 
   const started = Date.now();
-  const connection = await checkAsaasConnection();
+  const connection = await checkMercadoPagoConnection();
 
   return {
     status: connection.ok ? "ok" : "down",
@@ -104,7 +104,7 @@ async function checkAsaas(): Promise<ServiceCheck> {
     message: connection.error || undefined,
     meta: {
       sandbox: config.sandbox,
-      hasWebhookToken: config.hasWebhookToken,
+      hasWebhookSecret: config.hasWebhookSecret,
       httpStatus: connection.status,
     },
   };

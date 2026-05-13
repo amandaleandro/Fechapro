@@ -91,7 +91,7 @@ export default async function PublicProposalPage({
   const acceptHref = hasDecision ? "#status" : "#aceite";
 
   return (
-    <main className="min-h-screen bg-slate-100 pb-20 text-slate-900">
+    <main className="mobile-safe-bottom min-h-screen bg-slate-100 pb-20 text-slate-900">
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
@@ -110,7 +110,7 @@ export default async function PublicProposalPage({
         {query.payment === "success" ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Pagamento iniciado.</strong>
-            <p className="mt-1 text-sm">Assim que o Asaas confirmar o pagamento, o status será atualizado automaticamente.</p>
+            <p className="mt-1 text-sm">Assim que o Mercado Pago confirmar o pagamento, o status será atualizado automaticamente.</p>
           </div>
         ) : null}
 
@@ -169,7 +169,7 @@ export default async function PublicProposalPage({
                 </span>
               </div>
 
-              <h1 className="mt-5 max-w-2xl text-4xl font-black leading-none sm:text-6xl">
+              <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-6xl">
                 Proposta para {proposal.clientName}
               </h1>
               <p className="mt-4 max-w-2xl leading-7 text-white/75">
@@ -193,7 +193,7 @@ export default async function PublicProposalPage({
                   {expired ? "Vencida" : labelStatus(currentStatus)}
                 </span>
                 <p className="mt-5 text-sm font-black uppercase text-slate-500">Investimento</p>
-                <strong className="mt-1 block text-4xl font-black">{money.format(proposal.price)}</strong>
+                <strong className="mt-1 block text-3xl font-black sm:text-4xl">{money.format(proposal.price)}</strong>
                 <p className="mt-3 text-sm font-bold text-slate-600">
                   Validade: {validUntilLabel}
                   {daysLeft !== null && daysLeft >= 0 ? ` (${daysLeft === 0 ? "vence hoje" : `${daysLeft} dias`})` : ""}
@@ -252,8 +252,8 @@ export default async function PublicProposalPage({
               <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : "Pague com PIX ou cartão"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
                 {proposal.paymentStatus === "paid"
-                  ? "O Asaas confirmou o pagamento desta proposta."
-                  : "Finalize o pagamento em ambiente seguro via Asaas."}
+                  ? "O Mercado Pago confirmou o pagamento desta proposta."
+                  : "Finalize o pagamento em ambiente seguro via Mercado Pago."}
               </p>
               {proposal.paymentStatus === "paid" && proposal.providerReceiptUrl ? (
                 <a className="mt-4 grid min-h-11 place-items-center rounded-lg px-5 text-center font-black text-white" href={proposal.providerReceiptUrl} style={{ background: brandColor }} target="_blank">

@@ -2,7 +2,7 @@ import { type PlanCode, plans } from "@/lib/plans";
 
 export const blockedSubscriptionStatuses = new Set(["blocked", "pending", "paused", "canceled"]);
 export const usableSubscriptionStatuses = new Set(["active", "trial"]);
-export const trustedSubscriptionProviders = new Set(["asaas", "admin"]);
+export const trustedSubscriptionProviders = new Set(["mercadopago", "admin"]);
 
 export type SubscriptionAccessInput = {
   plan: PlanCode;

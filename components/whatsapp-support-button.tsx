@@ -17,7 +17,7 @@ export function WhatsAppSupportButton() {
       rel="noopener noreferrer"
       aria-label="Suporte via WhatsApp"
       title="Suporte via WhatsApp"
-      className="fixed bottom-6 right-6 z-50 flex min-h-12 items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:ring-offset-2"
+      className="fixed bottom-20 right-4 z-50 flex min-h-12 items-center gap-2 rounded-full bg-[#25D366] px-3 py-3 shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:ring-offset-2 sm:bottom-6 sm:right-6 sm:px-4"
     >
       <WhatsAppIcon />
       <span className="hidden text-sm font-semibold text-white sm:inline">Suporte</span>

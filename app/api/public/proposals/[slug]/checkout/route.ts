@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { createProposalCheckout } from "@/lib/asaas";
+import { createProposalCheckout } from "@/lib/mercadopago";
 
 export async function POST(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
@@ -39,7 +39,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
     await prisma.proposalAsset.update({
       where: { id: proposal.id },
       data: {
-        paymentProvider: "asaas",
+        paymentProvider: "mercadopago",
         providerCheckoutId: checkout.id,
         providerCheckoutUrl: checkout.url,
         providerReceiptUrl: null,

@@ -40,10 +40,16 @@ RUN adduser --system --uid 1001 nextjs
 RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
 RUN mkdir -p /ROOT/node_modules/pdfkit/js/data
 
-COPY --from=builder /app/public ./public
+# Copiar arquivos necessarios para rodar o Next em producao
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/node_modules/pdfkit/js/data /ROOT/node_modules/pdfkit/js/data
+
+# Corrigir permissao das pastas que o app le em runtime
+RUN chmod -R a+rX /app/public
+RUN chmod -R a+rX /app/prisma
 
 USER nextjs
 

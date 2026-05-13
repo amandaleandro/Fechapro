@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { artPacks, plans, type ArtPackCode, type PlanCode } from "@/lib/plans";
 import { requireSession } from "@/lib/session";
-import { createArtPackCheckout, createPlanCheckout } from "@/lib/asaas";
+import { createArtPackCheckout, createPlanCheckout } from "@/lib/mercadopago";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
@@ -28,8 +28,8 @@ export async function POST(request: Request) {
           userId: session.id,
           pack: body.artPack,
           credits: artPacks[body.artPack].credits,
-          provider: "asaas",
-          providerCheckoutId: checkout.id,
+          provider: "mercadopago",
+          providerCheckoutId: checkout.externalReference,
           status: "pending",
         },
       });
@@ -70,13 +70,13 @@ export async function POST(request: Request) {
       create: {
         userId: session.id,
         plan: body.plan,
-        provider: "asaas",
+        provider: "mercadopago",
         providerCheckoutId: checkout.id,
         status: "pending",
       },
       update: {
         plan: body.plan,
-        provider: "asaas",
+        provider: "mercadopago",
         providerCheckoutId: checkout.id,
         status: "pending",
       },
