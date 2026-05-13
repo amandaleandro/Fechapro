@@ -117,8 +117,13 @@ OPENAI_MODEL=gpt-5.4-mini
 ASAAS_API_KEY=
 ASAAS_WEBHOOK_TOKEN=
 ASAAS_SANDBOX=false
+SMTP_HOST=smtp.kinghost.net
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=seu-email@seu-dominio.com
+SMTP_PASSWORD=
 RESEND_API_KEY=
-EMAIL_FROM=FechaPro <noreply@seu-dominio.com>
+EMAIL_FROM=FechaPro <seu-email@seu-dominio.com>
 S3_BUCKET=
 S3_REGION=auto
 S3_ACCESS_KEY_ID=
@@ -211,11 +216,37 @@ POSTGRES_DB="fechapro"
 POSTGRES_USER="fechapro"
 POSTGRES_PASSWORD="fechapro_dev_password"
 UPLOAD_DIR="/app/uploads"
+SMTP_HOST="smtp.kinghost.net"
+SMTP_PORT="465"
+SMTP_SECURE="true"
+SMTP_USER="seu-email@seudominio.com.br"
+SMTP_PASSWORD=""
+EMAIL_FROM="FechaPro <seu-email@seudominio.com.br>"
+RESEND_API_KEY=""
+APP_URL="http://localhost:3000"
 NEXT_PUBLIC_WHATSAPP_NUMBER="11999998888"
 NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE="Olá! Preciso de ajuda com o FechaPro."
 ```
 
 Nunca coloque chaves reais em arquivos versionados.
+
+## Email
+
+O envio de notificacoes usa SMTP autenticado. Para KingHost, configure no `.env` local ou `.env.production` da VPS:
+
+```env
+SMTP_HOST="smtp.kinghost.net"
+SMTP_PORT="465"
+SMTP_SECURE="true"
+SMTP_USER="seu-email@seudominio.com.br"
+SMTP_PASSWORD="senha-do-email"
+EMAIL_FROM="FechaPro <seu-email@seudominio.com.br>"
+APP_URL="https://seudominio.com"
+```
+
+Se o app estiver hospedado fora da infraestrutura KingHost e o envio falhar, habilite SMTP internacional no painel da KingHost e troque `SMTP_HOST` para `smtpi.kinghost.net`.
+
+Com `SMTP_HOST`, `SMTP_USER` ou `SMTP_PASSWORD` vazios, o sistema tenta usar Resend se `RESEND_API_KEY` estiver configurada. Se nenhum provedor estiver configurado, o sistema continua funcionando, mas os emails ficam desativados. Hoje o FechaPro envia email para recuperacao de senha, proposta enviada ao cliente, primeira visualizacao da proposta, aceite, recusa e clique de interesse via WhatsApp.
 
 ## Suporte Via WhatsApp
 

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { sendProposalViewedEmail } from "@/lib/email";
+import { sendProposalPushNotification } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -47,6 +48,15 @@ export default async function PublicProposalPage({
       proposal.serviceName,
       proposal.publicSlug
     );
+  }
+
+  if (isFirstView) {
+    await sendProposalPushNotification(proposal.userId, {
+      title: "Proposta visualizada",
+      body: `${proposal.clientName} abriu a proposta de ${proposal.serviceName}.`,
+      slug: proposal.publicSlug,
+      tag: `proposal-${proposal.publicSlug}-viewed`,
+    });
   }
 
   const [portfolio, testimonials, services] = await Promise.all([

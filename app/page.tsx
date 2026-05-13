@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   BarChart3,
+  Bell,
   BriefcaseBusiness,
   CheckCircle2,
   Eye,
@@ -176,20 +177,6 @@ type BillingState = {
     artLimit: number;
     artCreditBalance: number;
   };
-};
-
-type AsaasStatus = {
-  apiHost: string;
-  connection: {
-    error: string | null;
-    ok: boolean;
-    status: number | null;
-    totalCount: number | null;
-  };
-  hasApiKey: boolean;
-  hasWebhookToken: boolean;
-  sandbox: boolean;
-  webhookUrl: string;
 };
 
 type ProposalTemplate = {
@@ -837,8 +824,14 @@ export default function Home() {
           }
         : current,
     );
-    setNotice(item.source === "openai" ? "Arte gerada com IA e salva na galeria." : "Arte criada em modo reserva e salva na galeria.");
+    setNotice("Pedido de arte enviado. A equipe vai preparar a arte e anexar para sua aprovacao.");
     return item;
+  }
+
+  async function approveMarketingArt(id: string) {
+    const item = await apiPatch<MarketingArt>(`/api/marketing-arts/${id}`, { action: "approve" });
+    setMarketingArts((current) => current.map((art) => (art.id === id ? item : art)));
+    setNotice("Arte aprovada. Download liberado.");
   }
 
   async function removeMarketingArt(id: string) {
@@ -1073,6 +1066,7 @@ export default function Home() {
                 notice={notice}
                 onCreate={createMarketingArt}
                 onNotice={setNotice}
+                onApprove={approveMarketingArt}
                 onRemove={removeMarketingArt}
                 services={services}
               />
@@ -1134,6 +1128,84 @@ export default function Home() {
       ) : null}
     </main>
   );
+}
+
+function PushNotificationPanel({ onNotice }: { onNotice: (message: string | null) => void }) {
+  const [supported, setSupported] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const canUsePush = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    setSupported(canUsePush);
+    if (canUsePush) setPermission(Notification.permission);
+  }, []);
+
+  async function enablePush() {
+    if (!supported || loading) return;
+    setLoading(true);
+
+    try {
+      const permissionResult = await Notification.requestPermission();
+      setPermission(permissionResult);
+      if (permissionResult !== "granted") {
+        onNotice("Notificacoes bloqueadas no navegador. Ative a permissao para receber alertas.");
+        return;
+      }
+
+      const keyResponse = await apiGet<{ enabled: boolean; publicKey: string }>("/api/push/vapid-key");
+      if (!keyResponse.enabled || !keyResponse.publicKey) {
+        onNotice("Configure NEXT_PUBLIC_VAPID_PUBLIC_KEY e VAPID_PRIVATE_KEY para ativar push.");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const existing = await registration.pushManager.getSubscription();
+      const subscription =
+        existing ||
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(keyResponse.publicKey),
+        }));
+
+      await apiPost("/api/push/subscriptions", { subscription: subscription.toJSON() });
+      onNotice("Notificacoes push ativadas para propostas visualizadas, aceitas, recusadas e pagas.");
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : "Nao foi possivel ativar notificacoes push.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!supported) return null;
+
+  return (
+    <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+      <div>
+        <p className="text-xs font-black uppercase text-blue-700">Notificacoes</p>
+        <h2 className="mt-1 text-lg font-black">Alertas push de propostas</h2>
+        <p className="mt-1 text-sm font-bold text-slate-500">
+          Receba aviso quando uma proposta for visualizada, aceita, recusada ou paga.
+        </p>
+      </div>
+      <button
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={loading || permission === "granted"}
+        type="button"
+        onClick={enablePush}
+      >
+        <Bell size={18} />
+        {permission === "granted" ? "Push ativado" : loading ? "Ativando..." : "Ativar push"}
+      </button>
+    </section>
+  );
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
 function DashboardView({
@@ -1231,6 +1303,8 @@ function DashboardView({
           </button>
         </div>
       ) : null}
+
+      <PushNotificationPanel onNotice={onNotice} />
 
       <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[1fr_0.85fr] sm:items-end sm:p-6">
         <div>
@@ -2362,6 +2436,7 @@ function MarketingArtsView({
   billing,
   brand,
   notice,
+  onApprove,
   onCreate,
   onNotice,
   onRemove,
@@ -2382,6 +2457,7 @@ function MarketingArtsView({
     referenceImageUrls?: string[] | null;
     useImageAsBackground: boolean;
   }) => Promise<MarketingArt>;
+  onApprove: (id: string) => Promise<void>;
   onNotice: (message: string | null) => void;
   onRemove: (id: string) => void;
   services: ServiceItem[];
@@ -2405,7 +2481,7 @@ function MarketingArtsView({
   const remaining = Math.max(0, limit - used);
   const formatsToGenerate = form.format === "all" ? ["instagram_post", "instagram_story", "whatsapp_status"] : [form.format];
 
-  async function generateArt(event: React.FormEvent<HTMLFormElement>) {
+  async function requestArt(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     if (!form.objective.trim()) {
@@ -2413,7 +2489,7 @@ function MarketingArtsView({
       return;
     }
     if (remaining < formatsToGenerate.length) {
-      setError(`Voce precisa de ${formatsToGenerate.length} credito(s) para gerar essa opcao.`);
+      setError(`Voce precisa de ${formatsToGenerate.length} credito(s) para solicitar essa opcao.`);
       return;
     }
 
@@ -2467,7 +2543,7 @@ function MarketingArtsView({
       setFiles([]);
       setBackgroundFileIndex(0);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel gerar a arte.");
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel solicitar a arte.");
     } finally {
       setCreating(false);
     }
@@ -2487,9 +2563,9 @@ function MarketingArtsView({
 
         <div>
           <p className="text-xs font-black uppercase text-blue-700">Artes IA</p>
-          <h2 className="text-2xl font-black">Gerador de divulgação</h2>
+          <h2 className="text-2xl font-black">Solicitar artes</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Escreva do seu jeito. O FechaPro cria o texto, monta a arte e entrega pronta para postar.
+            Envie o briefing da arte. A equipe prepara, anexa para aprovacao e libera o download depois do seu ok.
           </p>
         </div>
 
@@ -2506,7 +2582,7 @@ function MarketingArtsView({
           </p>
         </div>
 
-        <form className="grid gap-3" onSubmit={generateArt}>
+        <form className="grid gap-3" onSubmit={requestArt}>
           {error ? <FormError message={error} /> : null}
           <TextField label="Nome para salvar" maxLength={80} placeholder="Promocao de hoje" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
@@ -2617,7 +2693,7 @@ function MarketingArtsView({
           ) : null}
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={creating || limit === 0 || remaining < formatsToGenerate.length} type="submit">
             <Sparkles size={18} />
-            {creating ? "Gerando..." : formatsToGenerate.length > 1 ? "Gerar artes prontas" : "Gerar arte pronta"}
+            {creating ? "Enviando..." : formatsToGenerate.length > 1 ? "Solicitar artes" : "Solicitar arte"}
           </button>
         </form>
       </aside>
@@ -2625,7 +2701,7 @@ function MarketingArtsView({
       <div className="grid gap-4">
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <SectionHeading eyebrow="Galeria" title="Artes geradas" />
+            <SectionHeading eyebrow="Acompanhamento" title="Pedidos de arte" />
             <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black uppercase text-blue-700">
               {brand.businessName}
             </span>
@@ -2634,19 +2710,33 @@ function MarketingArtsView({
             <div className="grid gap-3 sm:grid-cols-2">
               {arts.map((art) => (
                 <article className="overflow-hidden rounded-lg border border-black/10 bg-white" key={art.id}>
-                  <a href={art.imageUrl} target="_blank" rel="noreferrer">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      alt={art.title}
-                      className={`${art.format === "instagram_post" ? "aspect-square" : "aspect-[9/16]"} w-full bg-slate-100 object-cover`}
-                      src={art.imageUrl}
-                    />
-                  </a>
+                  {art.imageUrl ? (
+                    <a href={art.imageUrl} target="_blank" rel="noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        alt={art.title}
+                        className={`${art.format === "instagram_post" ? "aspect-square" : "aspect-[9/16]"} w-full bg-slate-100 object-cover`}
+                        src={art.imageUrl}
+                      />
+                    </a>
+                  ) : (
+                    <div className={`${art.format === "instagram_post" ? "aspect-square" : "aspect-[9/16]"} grid w-full place-items-center bg-slate-100 p-6 text-center`}>
+                      <div>
+                        <ImageIcon className="mx-auto text-blue-700" size={34} />
+                        <p className="mt-3 text-sm font-black text-slate-700">Aguardando upload da equipe</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid gap-3 p-4">
                     <div>
-                      <h3 className="font-black">{art.title}</h3>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-black">{art.title}</h3>
+                        <span className={`rounded-full px-2 py-1 text-[11px] font-black uppercase ${marketingArtStatusClass(art)}`}>
+                          {marketingArtStatusLabel(art)}
+                        </span>
+                      </div>
                       <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
-                        {art.serviceName || "Divulgacao"} | Arte pronta
+                        {art.serviceName || "Divulgacao"} | {art.format.replace("_", " ")}
                       </p>
                     </div>
                     <p className="line-clamp-2 text-sm leading-6 text-slate-600">{art.objective}</p>
@@ -2677,10 +2767,21 @@ function MarketingArtsView({
                       </div>
                     ) : null}
                     <div className="grid grid-cols-2 gap-2">
-                      <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700" href={art.imageUrl} target="_blank" rel="noreferrer">
-                        <FileDown size={15} />
-                        Baixar
-                      </a>
+                      {marketingArtCanDownload(art) ? (
+                        <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700" href={art.imageUrl} target="_blank" rel="noreferrer">
+                          <FileDown size={15} />
+                          Baixar
+                        </a>
+                      ) : art.source === "uploaded" && art.imageUrl ? (
+                        <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white" type="button" onClick={() => onApprove(art.id)}>
+                          <CheckCircle2 size={15} />
+                          Aprovar
+                        </button>
+                      ) : (
+                        <span className="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-100 px-3 text-sm font-black text-slate-500">
+                          Em preparo
+                        </span>
+                      )}
                       <button
                         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-700/20 px-3 text-sm font-black text-rose-700"
                         type="button"
@@ -2700,7 +2801,7 @@ function MarketingArtsView({
             <div className="grid min-h-64 place-items-center rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
               <div>
                 <Palette className="mx-auto text-blue-700" size={32} />
-                <p className="mt-3 font-black">Nenhuma arte gerada ainda.</p>
+                <p className="mt-3 font-black">Nenhum pedido de arte ainda.</p>
                 <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
                   Preencha o objetivo, escolha o formato e gere a primeira peça de divulgação.
                 </p>
@@ -2713,6 +2814,24 @@ function MarketingArtsView({
   );
 }
 
+function marketingArtStatusLabel(art: MarketingArt) {
+  if (marketingArtCanDownload(art)) return "Aprovada";
+  if (art.source === "uploaded") return "Aguardando aprovacao";
+  if (art.source === "requested") return "Solicitada";
+  return "Em preparo";
+}
+
+function marketingArtStatusClass(art: MarketingArt) {
+  if (marketingArtCanDownload(art)) return "bg-green-50 text-green-700";
+  if (art.source === "uploaded") return "bg-blue-50 text-blue-700";
+  if (art.source === "requested") return "bg-amber-50 text-amber-700";
+  return "bg-slate-100 text-slate-600";
+}
+
+function marketingArtCanDownload(art: MarketingArt) {
+  return Boolean(art.imageUrl && (art.source === "approved" || !["requested", "uploaded"].includes(art.source)));
+}
+
 function PlansView({
   billing,
   notice,
@@ -2722,26 +2841,9 @@ function PlansView({
   notice: string | null;
   onNotice: (message: string | null) => void;
 }) {
-  const [asaasStatus, setAsaasStatus] = useState<AsaasStatus | null>(null);
-  const [checkingAsaas, setCheckingAsaas] = useState(false);
   const [payingPlan, setPayingPlan] = useState<PlanCode | null>(null);
   const [payingArtPack, setPayingArtPack] = useState<ArtPackCode | null>(null);
   const [paymentError, setPaymentError] = useState("");
-
-  useEffect(() => {
-    refreshAsaasStatus();
-  }, []);
-
-  async function refreshAsaasStatus() {
-    setCheckingAsaas(true);
-    try {
-      setAsaasStatus(await apiGet<AsaasStatus>("/api/billing/asaas/status"));
-    } catch {
-      setAsaasStatus(null);
-    } finally {
-      setCheckingAsaas(false);
-    }
-  }
 
   function payPlan(plan: PlanCode) {
     setPaymentError("");
@@ -2811,12 +2913,6 @@ function PlansView({
           </span>
         </div>
       </div>
-
-      <FinancialSetupCard
-        checking={checkingAsaas}
-        status={asaasStatus}
-        onRefresh={refreshAsaasStatus}
-      />
 
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-5">
         {billing.plans.map((plan) => {
@@ -2907,75 +3003,6 @@ function PlansView({
         </div>
       </div>
     </section>
-  );
-}
-
-function FinancialSetupCard({
-  checking,
-  onRefresh,
-  status,
-}: {
-  checking: boolean;
-  onRefresh: () => void;
-  status: AsaasStatus | null;
-}) {
-  const ready = Boolean(status?.hasApiKey && status.hasWebhookToken && status.connection.ok);
-  const webhookReady = Boolean(status?.hasWebhookToken);
-
-  return (
-    <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[0.9fr_1.1fr]">
-      <div>
-        <p className="text-xs font-black uppercase text-blue-700">Financeiro</p>
-        <h2 className="mt-1 text-2xl font-black">Configuração do Asaas</h2>
-        <p className="mt-2 leading-7 text-slate-600">
-          Valide se a cobrança online está pronta antes de vender planos ou receber pagamentos das propostas.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <StatusPill label={ready ? "Asaas conectado" : "Ajuste pendente"} tone={ready ? "success" : "warning"} />
-          <StatusPill label={status?.sandbox ? "Sandbox" : "Produção"} tone={status?.sandbox ? "warning" : "success"} />
-          <StatusPill label={webhookReady ? "Webhook token ok" : "Webhook sem token"} tone={webhookReady ? "success" : "danger"} />
-        </div>
-      </div>
-
-      <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <DetailLine label="Chave API" value={status?.hasApiKey ? "Configurada" : "Não configurada"} />
-          <DetailLine label="Conexao" value={status ? (status.connection.ok ? `Ok (${status.connection.status})` : status.connection.error || "Falhou") : "Verificando"} />
-          <DetailLine label="Ambiente" value={status?.sandbox ? "Sandbox" : "Produção"} />
-          <DetailLine label="API" value={status?.apiHost || "Aguardando"} />
-        </div>
-        <div>
-          <p className="text-xs font-black uppercase text-slate-500">Webhook para cadastrar no Asaas</p>
-          <code className="mt-2 block overflow-x-auto rounded-lg border border-black/10 bg-white p-3 text-sm font-bold text-slate-700">
-            {status?.webhookUrl || "Carregando URL..."}
-          </code>
-          <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-            No Asaas, envie eventos de cobrança como PAYMENT_RECEIVED, PAYMENT_CONFIRMED, PAYMENT_OVERDUE e PAYMENT_DELETED para esta URL.
-          </p>
-        </div>
-        <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black"
-          type="button"
-          onClick={onRefresh}
-        >
-          <RotateCcw size={16} />
-          {checking ? "Verificando..." : "Testar conexão"}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function StatusPill({ label, tone }: { label: string; tone: "danger" | "success" | "warning" }) {
-  const classes = {
-    danger: "border-rose-700/20 bg-rose-50 text-rose-800",
-    success: "border-green-700/20 bg-green-50 text-green-800",
-    warning: "border-amber-700/20 bg-amber-50 text-amber-900",
-  };
-  return (
-    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase ${classes[tone]}`}>
-      {label}
-    </span>
   );
 }
 
@@ -3484,65 +3511,101 @@ function AuthScreen() {
       name: "Start",
       price: "R$ 49",
       priceSuffix: "/mês",
+      group: "simple",
+      cta: "Começar simples",
       detail: "Para quem quer começar a enviar propostas profissionais.",
-      items: ["20 propostas por mês", "Artes de divulgação não inclusas", "Link profissional", "PDF automático"],
+      items: ["20 propostas por mês", "Link profissional", "PDF automático", "Propostas com visual profissional", "Sem artes de divulgação", "Sem site incluso"],
     },
     {
       name: "Essencial",
       price: "R$ 97",
       priceSuffix: "/mês",
-      detail: "Para prestadores que querem organizar propostas, serviços e divulgação.",
-      items: ["50 propostas por mês", "Artes de divulgação não inclusas", "Serviços cadastrados", "Identidade básica"],
+      group: "simple",
+      cta: "Organizar minhas propostas",
+      detail: "Para prestadores que querem organizar propostas, serviços e melhorar a apresentação.",
+      items: ["50 propostas por mês", "Serviços cadastrados", "Identidade básica", "Link profissional", "PDF automático", "Sem artes de divulgação"],
     },
     {
       name: "Profissional",
       price: "R$ 147",
       priceSuffix: "/mês",
-      badge: "Mais escolhido",
-      detail: "Para quem vende com frequência e quer mais propostas, artes e portfólio.",
-      items: ["120 propostas por mês", "5 artes de divulgação por mês", "Portfólio no FechaPro", "Depoimentos na proposta"],
+      badge: "Melhor custo-benefício",
+      group: "featured",
+      cta: "Quero vender melhor",
+      detail: "Para quem vende com frequência e quer propostas, portfólio e artes mensais.",
+      items: ["120 propostas por mês", "5 artes de divulgação por mês", "Portfólio no FechaPro", "Depoimentos na proposta", "Identidade básica", "Link profissional", "PDF automático"],
     },
     {
       name: "Pro Site",
       price: "R$ 497",
       priceSuffix: "implantação",
-      badge: "Ideal para site pronto",
-      detail: "Depois R$ 197/mês. Para quem quer o FechaPro + site one page pronto.",
-      items: ["300 propostas por mês", "10 artes de divulgação por mês", "Site one page", "Proposta + presença online"],
+      promoPrice: "+ R$ 97/mês por 6 meses",
+      afterPrice: "Depois R$ 197/mês",
+      badge: "Mais vendido",
+      group: "featured",
+      cta: "Quero meu site pronto",
+      detail: "Para quem quer o FechaPro completo + uma página profissional pronta para vender melhor.",
+      items: ["300 propostas por mês", "10 artes de divulgação por mês", "Site one page", "Portfólio", "Proposta + presença online", "Cadastro inicial", "Configuração assistida", "Treinamento rápido", "Link profissional", "PDF automático"],
     },
     {
       name: "Premium Site",
       price: "R$ 997",
       priceSuffix: "implantação",
+      promoPrice: "+ R$ 197/mês por 6 meses",
+      afterPrice: "Depois R$ 297/mês",
       badge: "Mais completo",
-      detail: "Depois R$ 297/mês. Para quem quer site completo simples + copy + cadastro inicial + treinamento.",
-      items: ["600 propostas por mês", "15 artes de divulgação por mês", "Site completo simples", "Copy, cadastro inicial e treinamento"],
+      group: "featured",
+      cta: "Quero estrutura completa",
+      detail: "Para quem quer uma presença digital mais completa, com site, copy e acompanhamento inicial.",
+      items: ["600 propostas por mês", "15 artes de divulgação por mês", "Site completo simples", "Copy do site", "Cadastro inicial", "Treinamento", "Suporte prioritário", "Portfólio", "Depoimentos", "Link profissional", "PDF automático"],
     },
+  ];
+  const featuredPlans = plans.filter((plan) => plan.group === "featured");
+  const simplePlans = plans.filter((plan) => plan.group === "simple");
+  const practicalValue = [
+    { icon: FileText, title: "Proposta mais bonita", text: "Envie uma apresentação profissional em vez de um orçamento solto no WhatsApp." },
+    { icon: FileDown, title: "PDF automático", text: "Seu cliente pode baixar e visualizar sua proposta com mais confiança." },
+    { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre seus serviços, fotos e provas de que você entrega um bom trabalho." },
+    { icon: Megaphone, title: "Artes para divulgar", text: "Tenha materiais prontos para postar e chamar mais atenção, conforme o plano." },
+    { icon: LayoutDashboard, title: "Site pronto", text: "Nos planos com site, você recebe uma página profissional para divulgar seu negócio." },
+  ];
+  const comparisonRows = [
+    ["Propostas por mês", "20", "50", "120", "300", "600"],
+    ["PDF automático", "Sim", "Sim", "Sim", "Sim", "Sim"],
+    ["Link profissional", "Sim", "Sim", "Sim", "Sim", "Sim"],
+    ["Serviços cadastrados", "Não", "Sim", "Sim", "Sim", "Sim"],
+    ["Portfólio", "Não", "Não", "Sim", "Sim", "Sim"],
+    ["Depoimentos", "Não", "Não", "Sim", "Sim", "Sim"],
+    ["Artes mensais", "Não", "Não", "5", "10", "15"],
+    ["Site incluso", "Não", "Não", "Não", "One page", "Completo simples"],
+    ["Copy do site", "Não", "Não", "Não", "Não", "Sim"],
+    ["Treinamento", "Não", "Não", "Não", "Sim", "Sim"],
+    ["Suporte prioritário", "Não", "Não", "Não", "Não", "Sim"],
   ];
   const faqs = [
     {
-      question: "O FechaPro substitui meu PDF manual de proposta comercial?",
-      answer: "Sim. Você cria a proposta no painel, envia um link profissional e o cliente também pode baixar o PDF. A diferença é que a proposta online também mostra portfólio, depoimentos, aceite e status.",
+      question: "Preciso saber criar site?",
+      answer: "Não. Nos planos Pro Site e Premium Site, a equipe do FechaPro configura a estrutura inicial para você.",
     },
     {
-      question: "Isso ajuda mesmo a fechar mais?",
-      answer: "Ajuda a remover atritos que costumam derrubar fechamento: proposta confusa, pouca prova, preço sem contexto, falta de próximo passo e follow-up no escuro.",
+      question: "Posso cancelar?",
+      answer: "Sim, você pode cancelar conforme as condições do plano contratado.",
     },
     {
-      question: "Serve para prestador de serviço local?",
-      answer: "Serve. O foco é qualquer profissional que precisa vender serviço com escopo, valor, prazo, portfólio e aceite de forma organizada.",
+      question: "As artes são feitas por vocês?",
+      answer: "Sim. Nos planos Profissional, Pro Site e Premium Site, você recebe artes de divulgação mensais conforme o limite do plano.",
     },
     {
-      question: "Consigo usar pelo celular?",
-      answer: "Sim. A proposta é enviada por link, abre no navegador e funciona bem para clientes que recebem tudo pelo WhatsApp.",
+      question: "O site está incluso em todos os planos?",
+      answer: "Não. O site está incluso apenas nos planos Pro Site e Premium Site.",
     },
     {
-      question: "Preciso configurar pagamento agora?",
-      answer: "Não. O FechaPro já organiza proposta, aceite, portfólio e PDF. A cobrança pode ser ativada com Asaas quando você quiser vender com pagamento online.",
+      question: "O valor promocional é para sempre?",
+      answer: "Não. A mensalidade promocional dos planos com site vale por 6 meses. Depois volta para o valor normal do plano.",
     },
     {
-      question: "Para quais serviços a proposta online funciona melhor?",
-      answer: "Funciona muito bem para design, social media, fotografia, arquitetura, consultoria, serviços técnicos, estética, eventos e qualquer venda que precise explicar valor antes do preço.",
+      question: "O FechaPro substitui meu orçamento manual?",
+      answer: "Sim. Você cria uma proposta com link, PDF automático, portfólio, depoimentos e aceite, em vez de enviar só uma mensagem solta com preço.",
     },
   ];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
@@ -3600,7 +3663,7 @@ function AuthScreen() {
     />
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="relative isolate overflow-hidden bg-slate-950 text-white">
-        <Image className="absolute inset-0 -z-20 object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" fill priority sizes="100vw" />
+        <Image className="motion-hero-pan absolute inset-0 -z-20 object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" fill priority sizes="100vw" />
         <div className="absolute inset-0 -z-10 bg-slate-950/74" />
         <div className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 py-4 pb-20 sm:min-h-[92vh] sm:px-6 sm:pb-4 lg:px-8">
           <header className="relative flex items-center justify-between gap-3">
@@ -3667,18 +3730,25 @@ function AuthScreen() {
           <div className="grid flex-1 content-end gap-6 pb-6 pt-12 sm:gap-8 sm:pb-8 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="max-w-3xl">
               <p className="inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
-                Para prestadores que querem parar de perder venda por apresentação fraca
+                Campanha de lançamento até 03/06
               </p>
               <h1 className="mt-5 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Seu orçamento pode estar matando vendas que sua proposta deveria fechar.
+                Crie propostas profissionais e apresente melhor o seu serviço em minutos.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                O FechaPro transforma preço, prazo e escopo em uma proposta comercial online que defende seu valor, mostra provas, gera PDF e leva o cliente para o aceite. Para quem quer vender serviço como profissional, não como pedido de orçamento.
+                Com o FechaPro, você envia propostas com PDF automático, link profissional, portfólio, artes de divulgação e, nos planos com site, uma página pronta para vender mais.
+              </p>
+              <div className="motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
+                <p className="text-sm font-black text-green-100">Planos com site a partir de R$497 de implantação + mensalidade promocional por 6 meses.</p>
+                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Pro Site: R$497 + R$97/mês por 6 meses. Premium Site: R$997 + R$197/mês por 6 meses.</p>
+              </div>
+              <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-white/80">
+                Tenha propostas profissionais, portfólio, PDF automático e uma presença online pronta para fechar mais serviços.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="/cadastro">
                   <Sparkles size={18} />
-                  Quero melhorar meus fechamentos
+                  Quero começar agora
                 </a>
                 <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" type="button" onClick={() => goToSection("planos")}>
                   Ver planos
@@ -3687,18 +3757,15 @@ function AuthScreen() {
                   Tenho interesse
                 </a>
               </div>
-              <p className="mt-4 text-sm font-bold text-white/70">
-                Se você vende pelo WhatsApp, Instagram, indicação ou reunião online, sua proposta precisa vender antes do cliente pedir desconto.
-              </p>
             </div>
 
-            <div className="grid gap-3 rounded-lg border border-white/15 bg-white/10 p-3 backdrop-blur sm:p-4">
+            <div className="motion-float-slow grid gap-3 rounded-lg border border-white/15 bg-white/10 p-3 backdrop-blur sm:p-4">
               <div className="grid gap-2 sm:grid-cols-3">
                 {salesProof.map((metric) => (
                   <LandingMetric key={metric.value} value={metric.value} label={metric.label} />
                 ))}
               </div>
-              <div className="rounded-lg bg-white p-4 text-slate-950">
+              <div className="motion-lift rounded-lg bg-white p-4 text-slate-950">
                 <p className="text-xs font-black uppercase text-blue-700">De orçamento comum para proposta premium</p>
                 <h2 className="mt-1 text-xl font-black">{activeExample.service}</h2>
                 <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600">
@@ -3742,7 +3809,7 @@ function AuthScreen() {
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:grid-cols-3 sm:px-6 lg:px-8">
           {benefits.map((benefit) => (
-            <article className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={benefit.title}>
+            <article className="motion-lift rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={benefit.title}>
               <benefit.icon className="text-green-700" size={24} />
               <h2 className="mt-4 text-lg font-black">{benefit.title}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">{benefit.description}</p>
@@ -3755,15 +3822,16 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-rose-700">Onde a venda escapa</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Talvez seu serviço seja bom. O problema é como ele chega na mão do cliente.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Seu serviço é bom, mas sua apresentação ainda parece improvisada?</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Quando a proposta parece improvisada, o cliente compara por preço. Quando ela explica valor, mostra prova e facilita o aceite, a conversa muda.
+              Muitos prestadores perdem clientes porque ainda enviam orçamento no WhatsApp de qualquer jeito, sem portfólio, sem PDF, sem identidade e sem uma página profissional.
+              Com o FechaPro, você passa mais confiança desde o primeiro contato.
             </p>
           </div>
           <div className="grid gap-3">
             {dealLeaks.map((item) => (
               <article className="grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-rose-700/15 bg-rose-50 p-5" key={item}>
-                <span className="grid size-9 place-items-center rounded-lg bg-rose-700 font-black text-white">!</span>
+                <span className="motion-float-soft grid size-9 place-items-center rounded-lg bg-rose-700 font-black text-white">!</span>
                 <p className="self-center text-sm font-black leading-6 text-rose-950 sm:text-base">{item}</p>
               </article>
             ))}
@@ -3831,20 +3899,20 @@ function AuthScreen() {
       <section className="bg-slate-950 text-white" id="recursos">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-green-300">Por que aumenta o desejo</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua proposta passa a vender antes da reunião de follow-up.</h2>
+            <p className="text-xs font-black uppercase text-green-300">O que o FechaPro entrega</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua venda ganha proposta, prova, PDF e presença online.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
               O cliente entende o que está comprando, percebe profissionalismo, vê motivos para confiar e encontra um caminho claro para aprovar.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: FileText, title: "Valor explicado", text: "Escopo, entregáveis, validade, prazo e pagamento organizados para reduzir dúvida e desconto." },
-              { icon: ImageIcon, title: "Prova antes da decisão", text: "Portfólio e depoimentos entram no momento exato em que o cliente avalia se vale pagar." },
-              { icon: Eye, title: "Follow-up com contexto", text: "Você sabe se a proposta foi visualizada e acompanha o status sem depender de achismo." },
-              { icon: CreditCard, title: "Aceite sem fricção", text: "O cliente tem um caminho simples para aprovar, salvar o PDF e seguir para o pagamento." },
+              { icon: FileText, title: "Propostas profissionais com link", text: "Organize valor, prazo, escopo, observações e aceite em uma página profissional para enviar ao cliente." },
+              { icon: FileDown, title: "PDF automático", text: "O cliente pode visualizar online e baixar uma versão em PDF com mais confiança." },
+              { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre trabalhos anteriores e provas sociais dentro da própria proposta." },
+              { icon: Megaphone, title: "Artes e site nos planos certos", text: "Tenha artes de divulgação e, nos planos Pro Site e Premium Site, uma presença online pronta." },
             ].map((feature) => (
-              <article className="rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
+              <article className="motion-lift rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
                 <feature.icon className="text-green-300" size={24} />
                 <h3 className="mt-4 text-lg font-black">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-white/70">{feature.text}</p>
@@ -3866,7 +3934,7 @@ function AuthScreen() {
           <div className="grid gap-3">
             {steps.map((step, index) => (
               <article className="grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-black/10 bg-white p-5" key={step}>
-                <span className="grid size-10 place-items-center rounded-lg bg-slate-950 font-black text-white">{index + 1}</span>
+                <span className={`motion-float-soft grid size-10 place-items-center rounded-lg bg-slate-950 font-black text-white motion-delay-${Math.min(index, 3)}`}>{index + 1}</span>
                 <p className="self-center text-base font-black leading-6 sm:text-lg sm:leading-7">{step}</p>
               </article>
             ))}
@@ -3902,30 +3970,67 @@ function AuthScreen() {
         </div>
       </section>
 
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase text-blue-700">O que você recebe na prática</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Menos orçamento improvisado. Mais apresentação pronta para vender.</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+              O FechaPro junta proposta, PDF, provas, divulgação e site nos planos certos para sua venda parecer mais profissional desde o primeiro contato.
+            </p>
+          </div>
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {practicalValue.map((item) => (
+              <article className="motion-lift rounded-lg border border-black/10 bg-slate-50 p-5" key={item.title}>
+                <item.icon className="text-green-700" size={24} />
+                <h3 className="mt-4 text-lg font-black">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-slate-950 text-white" id="planos">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase text-green-300">Preço que valida negócio</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quanto vale parar de perder venda por uma proposta fraca?</h2>
+            <p className="text-xs font-black uppercase text-green-300">Escolha como quer começar</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Planos para proposta profissional, artes e presença online pronta.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Escolha o plano ideal para criar propostas profissionais, divulgar seus serviços e vender com mais confiança.
-            </p>
-            <p className="mt-3 text-sm font-bold leading-6 text-green-100 sm:text-base">
-              Disponível a partir do plano Profissional e pacote de artes.
+              A recomendação é começar pelos planos que mais ajudam a vender melhor: Profissional, Pro Site ou Premium Site.
             </p>
           </div>
-          <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {plans.map((plan) => (
-              <article className={`relative flex h-full flex-col rounded-lg border p-5 ${plan.name === "Profissional" ? "border-green-400 bg-white text-slate-950" : "border-white/15 bg-white/8"}`} key={plan.name}>
+
+          <div className="motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
+            <p className="text-xs font-black uppercase text-green-200">Condição especial até 03/06</p>
+            <h3 className="mt-2 text-2xl font-black">Feche um plano com site e garanta mensalidade promocional por 6 meses.</h3>
+            <div className="mt-4 grid gap-3 text-sm font-bold leading-6 text-white/82 md:grid-cols-2">
+              <p><strong className="text-white">Pro Site:</strong> R$497 de implantação + R$97/mês por 6 meses.</p>
+              <p><strong className="text-white">Premium Site:</strong> R$997 de implantação + R$197/mês por 6 meses.</p>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-white/65">Depois do período promocional, os planos voltam para o valor normal.</p>
+          </div>
+
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            {featuredPlans.map((plan) => (
+              <article className={`motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
+                plan.name === "Pro Site"
+                  ? "motion-pulse-soft border-green-300 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.03]"
+                  : plan.name === "Profissional"
+                    ? "border-green-400 bg-white text-slate-950"
+                    : "border-white/15 bg-white/8"
+              }`} key={plan.name}>
                 {plan.badge ? (
                   <span className="absolute right-4 top-0 -translate-y-1/2 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
                     {plan.badge}
                   </span>
                 ) : null}
-                <p className="text-sm font-black uppercase text-blue-400">{plan.name}</p>
+                <p className={`text-sm font-black uppercase ${plan.name === "Premium Site" ? "text-green-300" : "text-blue-700"}`}>{plan.name}</p>
                 <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
-                <span className={plan.name === "Profissional" ? "mt-1 block text-slate-600" : "mt-1 block text-white/65"}>{plan.priceSuffix}</span>
-                <p className={plan.name === "Profissional" ? "mt-4 min-h-24 text-sm leading-6 text-slate-600" : "mt-4 min-h-24 text-sm leading-6 text-white/70"}>{plan.detail}</p>
+                <span className={plan.name === "Premium Site" ? "mt-1 block text-white/65" : "mt-1 block text-slate-600"}>{plan.priceSuffix}</span>
+                {plan.promoPrice ? <strong className={plan.name === "Premium Site" ? "mt-3 block text-xl text-white" : "mt-3 block text-xl text-slate-950"}>{plan.promoPrice}</strong> : null}
+                {plan.afterPrice ? <span className={plan.name === "Premium Site" ? "mt-1 block text-sm font-bold text-white/65" : "mt-1 block text-sm font-bold text-slate-500"}>{plan.afterPrice}</span> : null}
+                <p className={plan.name === "Premium Site" ? "mt-4 min-h-24 text-sm leading-6 text-white/70" : "mt-4 min-h-24 text-sm leading-6 text-slate-600"}>{plan.detail}</p>
                 <ul className="mt-5 grid gap-3">
                   {plan.items.map((item) => (
                     <li className="flex items-center gap-2 text-sm font-bold" key={item}>
@@ -3936,18 +4041,79 @@ function AuthScreen() {
                 </ul>
                 <a
                   className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.name === "Profissional" ? "bg-green-600 text-white" : "bg-white text-slate-950"
+                    plan.name === "Premium Site" ? "bg-white text-slate-950" : "bg-green-600 text-white"
                   }`}
                   href="/cadastro"
                 >
-                  Começar agora
+                  {plan.cta}
                 </a>
               </article>
             ))}
           </div>
-          <p className="mt-6 rounded-lg border border-white/15 bg-white/8 p-4 text-sm font-bold leading-6 text-white/78">
-            Todos os planos incluem acesso ao painel, propostas profissionais, cadastro de clientes e link para enviar ao cliente.
-          </p>
+
+          <div className="mt-8 rounded-lg border border-white/15 bg-white/8 p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase text-white/55">Para começar simples</p>
+                <h3 className="mt-1 text-2xl font-black">Quer algo menor? Temos planos a partir de R$49/mês.</h3>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {simplePlans.map((plan) => (
+                <article className="motion-lift rounded-lg border border-white/15 bg-slate-950/45 p-5" key={plan.name}>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase text-green-300">{plan.name}</p>
+                      <p className="mt-2 text-sm leading-6 text-white/70">{plan.detail}</p>
+                    </div>
+                    <div className="shrink-0 sm:text-right">
+                      <strong className="block text-2xl font-black">{plan.price}</strong>
+                      <span className="text-sm font-bold text-white/60">{plan.priceSuffix}</span>
+                    </div>
+                  </div>
+                  <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {plan.items.slice(0, 4).map((item) => (
+                      <li className="flex items-center gap-2 text-sm font-bold text-white/82" key={item}>
+                        <CheckCircle2 className="shrink-0 text-green-400" size={17} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <a className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-4 font-black text-slate-950" href="/cadastro">
+                    {plan.cta}
+                  </a>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-8 overflow-x-auto rounded-lg border border-white/15 bg-white text-slate-950">
+            <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+              <thead className="bg-slate-100">
+                <tr>
+                  {["Recurso", "Start", "Essencial", "Profissional", "Pro Site", "Premium"].map((heading) => (
+                    <th className="border-b border-black/10 px-4 py-3 font-black" key={heading}>{heading}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row) => (
+                  <tr className="border-b border-black/10 last:border-b-0" key={row[0]}>
+                    {row.map((cell, index) => (
+                      <td className={`px-4 py-3 ${index === 0 ? "font-black" : "font-bold text-slate-700"}`} key={`${row[0]}-${index}`}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-8 rounded-lg border border-white/15 bg-white/8 p-5">
+            <p className="text-xs font-black uppercase text-green-300">Você não precisa saber mexer com tecnologia</p>
+            <p className="mt-2 text-sm font-bold leading-6 text-white/78 sm:text-base sm:leading-7">
+              A equipe do FechaPro te ajuda na configuração inicial, cadastro e primeiros passos, de acordo com o plano escolhido.
+            </p>
+          </div>
         </div>
       </section>
 

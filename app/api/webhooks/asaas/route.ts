@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAsaasWebhook } from "@/lib/asaas";
+import { sendProposalPushNotification } from "@/lib/push";
 
 interface AsaasPayment {
   id: string;
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
   });
 
   if (proposal) {
-    if (isPaid) {
+    if (isPaid && proposal.paymentStatus !== "paid") {
       await prisma.proposalAsset.update({
         where: { id: proposal.id },
         data: {
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
           paymentPaidAt: new Date(),
           paymentUpdatedAt: new Date(),
         },
+      });
+      await sendProposalPushNotification(proposal.userId, {
+        title: "Proposta paga",
+        body: `${proposal.clientName} pagou a proposta de ${proposal.serviceName}.`,
+        slug: proposal.publicSlug,
+        tag: `proposal-${proposal.publicSlug}-paid`,
       });
     } else if (isOverdue) {
       await prisma.proposalAsset.update({

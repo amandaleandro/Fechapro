@@ -117,61 +117,6 @@ export async function POST(request: Request) {
     return jsonError(`Limite de ${totalArtLimit} artes atingido. Compre um pacote individual para criar mais.`, 402);
   }
 
-  const [brand, portfolioImage] = await Promise.all([
-    prisma.brandProfile.findUnique({ where: { userId: session.id } }),
-    prisma.portfolioAsset.findFirst({
-      where: {
-        userId: session.id,
-        imageUrl: { not: null },
-      },
-      orderBy: { createdAt: "desc" },
-      select: { imageUrl: true },
-    }),
-  ]);
-  const aiCopy = await generateSalesCopyWithOpenAI({
-    audience,
-    brandName: brand?.businessName || session.name,
-    callToAction,
-    objective,
-    serviceName,
-    fallback: salesCopy,
-  }).catch(() => null);
-  if (aiCopy) salesCopy = aiCopy;
-
-  const prompt = buildTemplatePrompt({
-    audience,
-    brandName: brand?.businessName || session.name,
-    callToAction,
-    formatLabel: artFormats[format].label,
-    objective,
-    primaryColor: brand?.primaryColor || "#106b5b",
-    secondaryColor: brand?.secondaryColor || "#0F172A",
-    accentColor: brand?.accentColor || "#2563EB",
-    serviceName,
-    salesCopy,
-    whatsapp: brand?.whatsapp,
-    instagram: brand?.instagram,
-    referenceImageUrl,
-    useImageAsBackground,
-  });
-
-  const imageUrl = await createTemplateArt({
-    brandName: brand?.businessName || session.name,
-    callToAction,
-    format,
-    objective,
-    primaryColor: brand?.primaryColor || "#106b5b",
-    referenceImageUrl,
-    referenceImageUrls,
-    portfolioImageUrl: portfolioImage?.imageUrl || null,
-    salesCopy,
-    secondaryColor: brand?.secondaryColor || "#0F172A",
-    accentColor: brand?.accentColor || "#2563EB",
-    serviceName,
-    useImageAsBackground,
-    whatsapp: brand?.whatsapp,
-  });
-
   const item = await prisma.marketingArtAsset.create({
     data: {
       userId: session.id,
@@ -181,13 +126,21 @@ export async function POST(request: Request) {
       serviceName,
       audience,
       callToAction,
-      caption: salesCopy.caption,
-      whatsappMessage: salesCopy.whatsappMessage,
+      caption: null,
+      whatsappMessage: null,
       category: salesCopy.category,
-      prompt,
-      imageUrl,
+      prompt: [
+        `Formato: ${artFormats[format].label}`,
+        `Pedido: ${objective}`,
+        serviceName ? `Servico/produto: ${serviceName}` : "",
+        audience ? `Cidade/publico: ${audience}` : "",
+        callToAction ? `CTA: ${callToAction}` : "",
+        referenceImageUrls.length ? `Referencias: ${referenceImageUrls.join(", ")}` : "",
+        useImageAsBackground ? "Cliente pediu para usar uma referencia como fundo." : "",
+      ].filter(Boolean).join("\n"),
+      imageUrl: "",
       referenceImageUrl,
-      source: aiCopy ? "openai-template" : "template",
+      source: "requested",
     },
   });
 

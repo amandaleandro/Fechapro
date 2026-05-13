@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, UserCog, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, ImageIcon, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, Upload, UserCog, XCircle } from "lucide-react";
 
 type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
 
@@ -45,6 +45,31 @@ type AdminPayload = {
   users: AdminUser[];
 };
 
+type AdminMarketingArt = {
+  id: string;
+  title: string;
+  format: string;
+  objective: string;
+  serviceName: string | null;
+  audience: string | null;
+  callToAction: string | null;
+  caption: string | null;
+  whatsappMessage: string | null;
+  prompt: string;
+  imageUrl: string;
+  referenceImageUrl: string | null;
+  source: string;
+  createdAt: string;
+  user: {
+    name: string;
+    email: string;
+    brandProfile: {
+      businessName: string;
+      whatsapp: string | null;
+    } | null;
+  };
+};
+
 const statuses = ["active", "trial", "blocked", "pending", "paused", "canceled"];
 
 const statusLabels: Record<string, string> = {
@@ -62,6 +87,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [arts, setArts] = useState<AdminMarketingArt[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   async function loadUsers() {
@@ -78,9 +104,45 @@ export default function AdminPage() {
     }
   }
 
+  async function loadArts() {
+    try {
+      const response = await fetch("/api/admin/marketing-arts", { cache: "no-store" });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar os pedidos de arte."));
+      setArts((await response.json()) as AdminMarketingArt[]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar os pedidos de arte.");
+    }
+  }
+
   useEffect(() => {
     loadUsers();
+    loadArts();
   }, []);
+
+  async function uploadArt(item: AdminMarketingArt, file: File, caption: string, whatsappMessage: string) {
+    setSavingId(item.id);
+    setNotice(null);
+    setError(null);
+    try {
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      const uploadResponse = await fetch("/api/uploads", { method: "POST", body: uploadData });
+      if (!uploadResponse.ok) throw new Error(await readApiError(uploadResponse, "Nao foi possivel enviar a imagem."));
+      const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
+      const response = await fetch(`/api/admin/marketing-arts/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption, imageUrl: uploadResult.imageUrl, whatsappMessage }),
+      });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel anexar a arte."));
+      setNotice(`Arte de ${item.user.name} enviada para aprovacao.`);
+      await loadArts();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel anexar a arte.");
+    } finally {
+      setSavingId(null);
+    }
+  }
 
   const filteredUsers = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -138,6 +200,30 @@ export default function AdminPage() {
           <AdminStat icon={UserCog} label="Usuarios" value={String(totalUsers)} />
           <AdminStat icon={CheckCircle2} label="Liberados" value={String(activeUsers)} />
           <AdminStat icon={ShieldCheck} label="Bloqueados" value={String(blockedUsers)} />
+        </section>
+
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase text-blue-700">Artes solicitadas</p>
+              <h2 className="text-2xl font-black">Upload para aprovacao</h2>
+            </div>
+            <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadArts}>
+              <RefreshCcw size={15} />
+              Atualizar artes
+            </button>
+          </div>
+          {arts.length ? (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {arts.map((item) => (
+                <AdminArtCard key={item.id} item={item} saving={savingId === item.id} onUpload={uploadArt} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+              Nenhum pedido de arte ainda.
+            </div>
+          )}
         </section>
 
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
@@ -256,6 +342,89 @@ function AdminUserRow({
       </td>
     </tr>
   );
+}
+
+function AdminArtCard({
+  item,
+  onUpload,
+  saving,
+}: {
+  item: AdminMarketingArt;
+  onUpload: (item: AdminMarketingArt, file: File, caption: string, whatsappMessage: string) => void;
+  saving: boolean;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [caption, setCaption] = useState(item.caption || "");
+  const [whatsappMessage, setWhatsappMessage] = useState(item.whatsappMessage || "");
+
+  useEffect(() => {
+    setCaption(item.caption || "");
+    setWhatsappMessage(item.whatsappMessage || "");
+    setFile(null);
+  }, [item.caption, item.id, item.whatsappMessage]);
+
+  return (
+    <article className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-black">{item.title}</p>
+          <p className="mt-1 text-xs font-bold text-slate-500">
+            {item.user.name} | {item.user.brandProfile?.businessName || item.user.email}
+          </p>
+        </div>
+        <span className={`rounded-full px-2 py-1 text-[11px] font-black uppercase ${adminArtStatusClass(item.source)}`}>
+          {adminArtStatusLabel(item.source)}
+        </span>
+      </div>
+      <div className="grid gap-2 text-sm leading-6 text-slate-700">
+        <p><span className="font-black">Formato:</span> {item.format.replace("_", " ")}</p>
+        <p><span className="font-black">Servico:</span> {item.serviceName || "Nao informado"}</p>
+        <p><span className="font-black">Pedido:</span> {item.objective}</p>
+        {item.referenceImageUrl ? (
+          <a className="inline-flex items-center gap-2 text-sm font-black text-blue-700" href={item.referenceImageUrl} target="_blank" rel="noreferrer">
+            <ImageIcon size={15} />
+            Ver referencia enviada
+          </a>
+        ) : null}
+      </div>
+      {item.imageUrl ? (
+        <a className="overflow-hidden rounded-lg border border-black/10 bg-white" href={item.imageUrl} target="_blank" rel="noreferrer">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={item.title} className="max-h-56 w-full object-contain" src={item.imageUrl} />
+        </a>
+      ) : null}
+      <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+        Arte pronta
+        <input accept="image/*" className="min-h-11 rounded-lg border border-black/10 bg-white p-3" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+      </label>
+      <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+        Legenda
+        <textarea className="min-h-24 rounded-lg border border-black/10 bg-white p-3 outline-green-700" value={caption} onChange={(event) => setCaption(event.target.value)} />
+      </label>
+      <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+        Mensagem WhatsApp
+        <textarea className="min-h-20 rounded-lg border border-black/10 bg-white p-3 outline-green-700" value={whatsappMessage} onChange={(event) => setWhatsappMessage(event.target.value)} />
+      </label>
+      <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving || !file} type="button" onClick={() => file && onUpload(item, file, caption, whatsappMessage)}>
+        <Upload size={15} />
+        {saving ? "Enviando..." : "Enviar para aprovacao"}
+      </button>
+    </article>
+  );
+}
+
+function adminArtStatusLabel(source: string) {
+  if (source === "approved") return "Aprovada";
+  if (source === "uploaded") return "Aguardando aprovacao";
+  if (source === "requested") return "Solicitada";
+  return source || "Em preparo";
+}
+
+function adminArtStatusClass(source: string) {
+  if (source === "approved") return "bg-green-50 text-green-700";
+  if (source === "uploaded") return "bg-blue-50 text-blue-700";
+  if (source === "requested") return "bg-amber-50 text-amber-700";
+  return "bg-slate-100 text-slate-600";
 }
 
 function QuickAction({

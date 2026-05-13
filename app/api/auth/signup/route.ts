@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
+import { sendWelcomeEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, setSession } from "@/lib/session";
 import { getClientIp, rateLimit, rateLimitError } from "@/lib/rate-limit";
@@ -40,5 +41,6 @@ export async function POST(request: Request) {
 
   const session = { id: user.id, name: user.name, email: user.email };
   await setSession(session);
+  await sendWelcomeEmail(user.email, user.name);
   return NextResponse.json(session, { status: 201 });
 }

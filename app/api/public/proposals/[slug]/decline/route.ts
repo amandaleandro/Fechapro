@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { sendProposalDeclinedEmail } from "@/lib/email";
+import { sendProposalDeclinedEmail, sendProposalDeclinedToClientEmail } from "@/lib/email";
+import { sendProposalPushNotification } from "@/lib/push";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const DECLINABLE_STATUSES = ["sent", "viewed", "awaiting_response"];
@@ -11,7 +12,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
 
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
-    select: { status: true, serviceName: true, clientName: true, user: { select: { email: true, name: true } } },
+    select: { userId: true, status: true, serviceName: true, clientName: true, clientEmail: true, user: { select: { email: true, name: true } } },
   });
 
   if (!proposal || !DECLINABLE_STATUSES.includes(proposal.status)) {
@@ -45,6 +46,24 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
       proposal.clientName,
       proposal.serviceName,
       trimmedReason
+    );
+  }
+
+  await sendProposalPushNotification(proposal.userId, {
+    title: "Proposta recusada",
+    body: `${proposal.clientName} recusou a proposta de ${proposal.serviceName}.`,
+    slug,
+    tag: `proposal-${slug}-declined`,
+  });
+
+  if (proposal.clientEmail) {
+    await sendProposalDeclinedToClientEmail(
+      proposal.clientEmail,
+      proposal.clientName,
+      proposal.user.name,
+      proposal.serviceName,
+      trimmedReason,
+      slug
     );
   }
 

@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { sendProposalAcceptedEmail } from "@/lib/email";
+import { sendProposalAcceptedEmail, sendProposalAcceptedToClientEmail } from "@/lib/email";
+import { sendProposalPushNotification } from "@/lib/push";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const ACCEPTABLE_STATUSES = ["sent", "viewed", "awaiting_response"];
@@ -11,7 +12,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
 
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
-    select: { status: true, validUntil: true, serviceName: true, user: { select: { email: true, name: true } } },
+    select: { userId: true, status: true, validUntil: true, serviceName: true, clientEmail: true, user: { select: { email: true, name: true } } },
   });
 
   if (!proposal || !ACCEPTABLE_STATUSES.includes(proposal.status)) {
@@ -47,6 +48,24 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
       proposal.user.email,
       proposal.user.name,
       signerName,
+      proposal.serviceName,
+      slug
+    );
+  }
+
+  await sendProposalPushNotification(proposal.userId, {
+    title: "Proposta aceita",
+    body: `${signerName} aceitou a proposta de ${proposal.serviceName}.`,
+    slug,
+    tag: `proposal-${slug}-accepted`,
+  });
+
+  const clientEmail = signerEmail || proposal.clientEmail;
+  if (clientEmail) {
+    await sendProposalAcceptedToClientEmail(
+      clientEmail,
+      signerName,
+      proposal.user.name,
       proposal.serviceName,
       slug
     );

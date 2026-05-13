@@ -22,6 +22,7 @@ model User {
   portfolioAssets    PortfolioAsset[]
   marketingArtAssets MarketingArtAsset[]
   artCreditPurchases  ArtCreditPurchase[]
+  pushSubscriptions   PushSubscription[]
 }
 
 model PlanSubscription {
@@ -172,6 +173,18 @@ model ArtCreditPurchase {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh     String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model InterestLead {
