@@ -3,7 +3,10 @@ const { randomBytes, scryptSync } = require("node:crypto");
 const { existsSync, readFileSync } = require("node:fs");
 const { resolve } = require("node:path");
 
-loadEnvFile(".env");
+const initialEnvKeys = new Set(Object.keys(process.env));
+const loadedEnvKeys = new Set();
+
+loadEnvFiles();
 
 const prisma = new PrismaClient();
 
@@ -11,7 +14,7 @@ const adminName = process.env.ADMIN_NAME || "Administrador Geral";
 const adminEmail = (process.env.ADMIN_EMAIL || firstAdminEmail() || "admin@fechapro.local").trim().toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD || "FechaProAdmin123!";
 
-function loadEnvFile(filename) {
+function loadEnvFile(filename, options = {}) {
   const path = resolve(process.cwd(), filename);
   if (!existsSync(path)) return;
 
@@ -22,9 +25,19 @@ function loadEnvFile(filename) {
     const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
     if (!match) continue;
     const [, key, rawValue] = match;
-    if (process.env[key]) continue;
+    const canOverride = options.overrideLoaded && loadedEnvKeys.has(key) && !initialEnvKeys.has(key);
+    if (process.env[key] && !canOverride) continue;
     process.env[key] = rawValue.trim().replace(/^['"]|['"]$/g, "");
+    loadedEnvKeys.add(key);
   }
+}
+
+function loadEnvFiles() {
+  loadEnvFile(".env");
+  if (process.env.NODE_ENV === "production") {
+    loadEnvFile(".env.production", { overrideLoaded: true });
+  }
+  loadEnvFile(".env.local", { overrideLoaded: true });
 }
 
 function firstAdminEmail() {

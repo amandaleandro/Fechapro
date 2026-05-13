@@ -62,6 +62,14 @@ Para aplicar o schema no banco:
 docker compose run --rm migrate
 ```
 
+Para criar ou atualizar a conta de administrador usando as variaveis `ADMIN_EMAIL`, `ADMIN_EMAILS`, `ADMIN_PASSWORD` e `ADMIN_NAME`:
+
+```bash
+docker compose exec app node scripts/create-admin.js
+```
+
+Em producao, confirme que essas variaveis estao preenchidas no `.env.production` antes de rodar o comando. O e-mail usado no login precisa estar tambem em `ADMIN_EMAILS` para liberar o painel `/admin`.
+
 Depois de mudar `prisma/schema.prisma`, rode:
 
 ```bash
