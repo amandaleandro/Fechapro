@@ -139,7 +139,7 @@ export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerN
   const safeOwnerName = escapeHtml(ownerName);
   const safeClientName = escapeHtml(clientName);
   const safeServiceName = escapeHtml(serviceName);
-  const intentLabel = intent === "negotiate" ? "quer negociar" : intent === "doubt" ? "tem uma dÃºvida" : "clicou no WhatsApp";
+  const intentLabel = intent === "negotiate" ? "quer negociar" : intent === "doubt" ? "tem uma dúvida" : "clicou no WhatsApp";
 
   await sendEmail(
     ownerEmail,
@@ -148,7 +148,7 @@ export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerN
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#111">Cliente chamou no WhatsApp</h2>
       <p style="color:#444;line-height:1.6">
-        OlÃ¡, <strong>${safeOwnerName}</strong>!
+        Olá, <strong>${safeOwnerName}</strong>!
         <strong>${safeClientName}</strong> ${intentLabel} na proposta de <strong>${safeServiceName}</strong>.
       </p>
       <a href="${link}" style="display:inline-block;margin:24px 0;padding:12px 24px;background:#106b5b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">

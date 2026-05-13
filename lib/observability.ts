@@ -87,7 +87,7 @@ async function checkAsaas(): Promise<ServiceCheck> {
   if (!config.hasApiKey) {
     return {
       status: "degraded",
-      message: "ASAAS_API_KEY nao configurada.",
+      message: "ASAAS_API_KEY não configurada.",
       meta: {
         sandbox: config.sandbox,
         hasWebhookToken: config.hasWebhookToken,
@@ -114,7 +114,7 @@ function checkEmail(): ServiceCheck {
   const configured = Boolean(process.env.RESEND_API_KEY?.trim());
   return {
     status: configured ? "ok" : "degraded",
-    message: configured ? undefined : "RESEND_API_KEY nao configurada; e-mails ficam desativados.",
+    message: configured ? undefined : "RESEND_API_KEY não configurada; e-mails ficam desativados.",
     meta: {
       hasFrom: Boolean(process.env.EMAIL_FROM?.trim()),
     },
@@ -151,7 +151,7 @@ function checkSentry(): ServiceCheck {
   const configured = isObservabilityEnabled();
   return {
     status: configured ? "ok" : "degraded",
-    message: configured ? undefined : "NEXT_PUBLIC_SENTRY_DSN nao configurada.",
+    message: configured ? undefined : "NEXT_PUBLIC_SENTRY_DSN não configurada.",
   };
 }
 

@@ -114,7 +114,7 @@ export default async function PublicProposalPage({
         {query.error === "whatsapp" ? (
           <div className="rounded-lg border border-amber-700/20 bg-amber-50 p-4 text-amber-900 shadow-xl shadow-slate-900/5">
             <strong>WhatsApp indisponivel.</strong>
-            <p className="mt-1 text-sm">O profissional ainda nao configurou um numero de WhatsApp para esta proposta.</p>
+            <p className="mt-1 text-sm">O profissional ainda não configurou um número de WhatsApp para esta proposta.</p>
           </div>
         ) : null}
 
@@ -349,9 +349,9 @@ export default async function PublicProposalPage({
           <h2 className="mt-1 text-2xl font-black">Perguntas frequentes</h2>
           <div className="mt-4 grid gap-3">
             {[
-              ["Como aprovo?", "Use o aceite digital nesta pagina para registrar nome, e-mail, data e hora."],
-              ["Posso tirar duvidas?", "Sim. Use o botao de WhatsApp para conversar antes de aprovar."],
-              ["O que acontece depois?", "O profissional recebe a confirmacao e combina os proximos passos do servico."],
+              ["Como aprovo?", "Use o aceite digital nesta página para registrar nome, e-mail, data e hora."],
+              ["Posso tirar dúvidas?", "Sim. Use o botão de WhatsApp para conversar antes de aprovar."],
+              ["O que acontece depois?", "O profissional recebe a confirmação e combina os próximos passos do serviço."],
             ].map(([question, answer]) => (
               <details className="rounded-lg border border-black/10 bg-slate-50 p-4" key={question}>
                 <summary className="cursor-pointer font-black">{question}</summary>
@@ -413,7 +413,7 @@ export default async function PublicProposalPage({
             {whatsappUrl ? (
               <div className="grid gap-2 sm:grid-cols-2">
                 <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black text-slate-800" href={`/api/public/proposals/${proposal.publicSlug}/whatsapp?intent=doubt`} target="_blank">
-                  Tenho uma duvida
+                  Tenho uma dúvida
                 </a>
                 <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black text-slate-800" href={`/api/public/proposals/${proposal.publicSlug}/whatsapp?intent=negotiate`} target="_blank">
                   Quero negociar

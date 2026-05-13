@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { sendProposalWhatsAppIntentEmail } from "@/lib/email";
 
 const intentMessages: Record<string, string> = {
-  approve: "Ola, vi a proposta e quero aprovar.",
-  doubt: "Ola, vi a proposta e tenho uma duvida.",
-  negotiate: "Ola, vi a proposta e quero negociar.",
-  contact: "Ola, vi a proposta e quero falar sobre ela.",
+  approve: "Olá, vi a proposta e quero aprovar.",
+  doubt: "Olá, vi a proposta e tenho uma dúvida.",
+  negotiate: "Olá, vi a proposta e quero negociar.",
+  contact: "Olá, vi a proposta e quero falar sobre ela.",
 };
 
 export async function GET(request: Request, context: { params: Promise<{ slug: string }> }) {

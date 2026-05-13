@@ -49,7 +49,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
             <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
               <CheckoutLine label="Empresa" value={brandName} />
               <CheckoutLine label="Prazo" value={proposal.deadline || "A combinar"} />
-              <CheckoutLine label="Condicao combinada" value={proposal.payment || "A combinar"} />
+              <CheckoutLine label="Condição combinada" value={proposal.payment || "A combinar"} />
               <CheckoutLine label="Status" value={paid ? "Pagamento confirmado" : "Aguardando pagamento"} />
             </div>
           </div>

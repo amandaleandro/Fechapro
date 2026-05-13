@@ -139,7 +139,7 @@ export async function createArtPackCheckout(input: {
   const pack = artPacks[input.pack];
   return request<AsaasPaymentLink>("POST", "/paymentLinks", {
     name: `FechaPro ${pack.name}`,
-    description: `${pack.name}: ${pack.credits} creditos extras para criacao de artes de divulgacao no FechaPro.`,
+    description: `${pack.name}: ${pack.credits} créditos extras para criação de artes de divulgação no FechaPro.`,
     value: pack.priceCents / 100,
     billingType: "UNDEFINED",
     chargeType: "DETACHED",

@@ -14,16 +14,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const status = body.status?.trim().toLowerCase();
 
   if (!plan || !plans[plan]) {
-    return jsonError("Plano invalido.");
+    return jsonError("Plano inválido.");
   }
 
   if (!status || !allowedStatuses.has(status)) {
-    return jsonError("Status invalido.");
+    return jsonError("Status inválido.");
   }
 
   const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
   if (!user) {
-    return jsonError("Usuario nao encontrado.", 404);
+    return jsonError("Usuário não encontrado.", 404);
   }
 
   const subscription = await prisma.planSubscription.upsert({

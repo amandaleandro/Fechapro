@@ -61,12 +61,12 @@ export async function POST(request: Request) {
     useImageAsBackground?: boolean;
   };
 
-  const title = cleanString(body.title) || "Arte de divulgacao";
+  const title = cleanString(body.title) || "Arte de divulgação";
   const format = artFormats[body.format || ""] ? body.format! : "instagram_post";
   const objective = cleanString(body.objective);
   const serviceName = cleanOptionalString(body.serviceName);
   const audience = cleanOptionalString(body.audience);
-  const callToAction = cleanOptionalString(body.callToAction) || "Peca seu orcamento";
+  const callToAction = cleanOptionalString(body.callToAction) || "Peça seu orçamento";
   const referenceImageUrl = cleanOptionalString(body.referenceImageUrl);
   const referenceImageUrls = Array.isArray(body.referenceImageUrls)
     ? body.referenceImageUrls.map((url) => cleanOptionalString(url)).filter((url): url is string => Boolean(url)).slice(0, 6)
@@ -222,7 +222,7 @@ function buildTemplatePrompt(input: {
     `Marca: ${input.brandName}.`,
     `Pedido bruto do usuario: ${input.objective}.`,
     input.serviceName ? `Servico: ${input.serviceName}.` : "",
-    input.audience ? `Publico-alvo: ${input.audience}.` : "",
+    input.audience ? `Público-alvo: ${input.audience}.` : "",
     `Copy final: badge "${input.salesCopy.badge}", headline "${input.salesCopy.headline}", apoio "${input.salesCopy.subheadline}", beneficios "${input.salesCopy.benefits.join("; ")}", CTA "${input.salesCopy.cta}".`,
     `Textos de apoio: legenda "${input.salesCopy.caption}", WhatsApp "${input.salesCopy.whatsappMessage}", categoria "${input.salesCopy.category}".`,
     `Paleta aplicada no template: principal ${input.primaryColor}, fundo ${input.secondaryColor}, destaque ${input.accentColor}.`,
@@ -272,7 +272,7 @@ async function generateSalesCopyWithOpenAI(input: {
             audience: input.audience,
             requestedCta: input.callToAction,
             task:
-              "Crie copy curta para uma arte que sera renderizada em template. Texto precisa vender, caber em post/status e nao pode ser generico.",
+              "Crie copy curta para uma arte que será renderizada em template. Texto precisa vender, caber em post/status e não pode ser genérico.",
             shape: {
               badge: "ate 24 caracteres",
               headline: "ate 54 caracteres",
@@ -981,7 +981,7 @@ async function createPolishedFallbackArt(input: {
   const storyLead = isStory
     ? `
       <text x="${margin + 170}" y="${dimensions.height - 335}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="38" font-weight="500">Ideal para quem quer</text>
-      <text x="${margin + 170}" y="${dimensions.height - 286}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="38" font-weight="900">vender melhor com presenca digital.</text>
+      <text x="${margin + 170}" y="${dimensions.height - 286}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="38" font-weight="900">vender melhor com presença digital.</text>
     `
     : "";
 
@@ -1203,16 +1203,16 @@ async function createAudienceCampaignFallbackArt(input: {
 
 function buildBenefits(objective: string, serviceName: string | null) {
   const lower = objective.toLowerCase();
-  if (lower.includes("site")) return ["Site one page", "Proposta + presenca online", "Contato direto para orcamento"];
-  if (lower.includes("proposta")) return ["Proposta profissional", "Link facil de enviar", "Mais confianca para fechar"];
-  if (lower.includes("promoc")) return ["Condicao especial", "Atendimento rapido", "Chame no WhatsApp"];
-  return [serviceName || "Servico profissional", "Atendimento personalizado", "Orcamento rapido"];
+  if (lower.includes("site")) return ["Site one page", "Proposta + presença online", "Contato direto para orçamento"];
+  if (lower.includes("proposta")) return ["Proposta profissional", "Link fácil de enviar", "Mais confiança para fechar"];
+  if (lower.includes("promoc")) return ["Condição especial", "Atendimento rápido", "Chame no WhatsApp"];
+  return [serviceName || "Serviço profissional", "Atendimento personalizado", "Orçamento rápido"];
 }
 
 function buildEditorialHeadline(copy: SalesCopy) {
   const lower = copy.headline.toLowerCase();
   if (lower.includes("site") || lower.includes("online")) return "3 motivos para ter um site profissional";
-  if (lower.includes("anuncio") || lower.includes("clientes")) return "Anuncios que fazem clientes chamarem";
+  if (lower.includes("anuncio") || lower.includes("clientes")) return "Anúncios que fazem clientes chamarem";
   if (lower.includes("agenda")) return "Agenda aberta para novos atendimentos";
   if (lower.includes("condicao") || lower.includes("oferta")) return "Oferta especial para fechar hoje";
   return copy.headline;
@@ -1221,14 +1221,14 @@ function buildEditorialHeadline(copy: SalesCopy) {
 function buildEditorialCards(copy: SalesCopy) {
   return copy.benefits.map((benefit) => {
     const lower = benefit.toLowerCase();
-    if (lower.includes("atendimento")) return ["Atendimento", "rapido"];
+    if (lower.includes("atendimento")) return ["Atendimento", "rápido"];
     if (lower.includes("escopo")) return ["Escopo", "explicado"];
     if (lower.includes("chamada") || lower.includes("whatsapp")) return ["Chamada", "direta"];
     if (lower.includes("visual")) return ["Visual", "profissional"];
-    if (lower.includes("botao")) return ["Botao", "WhatsApp"];
+    if (lower.includes("botao")) return ["Botão", "WhatsApp"];
     if (lower.includes("confianca")) return ["Mais", "confianca"];
     if (lower.includes("campanha")) return ["Campanhas", "ativas"];
-    if (lower.includes("publico")) return ["Publico", "certo"];
+    if (lower.includes("publico")) return ["Público", "certo"];
     const words = wrapTitle(benefit, 20);
     return [words[0] || benefit, words[1] || "profissional"];
   });
@@ -1290,15 +1290,15 @@ function buildSalesCopy(input: {
   ) {
     const product = extractFoodOffer(input.objective, input.serviceName);
     return {
-      badge: "Pedido rapido",
+      badge: "Pedido rápido",
       headline: product,
       subheadline: price
-        ? `Aproveite hoje por ${price} e peca pelo WhatsApp.`
-        : "Peça hoje com praticidade e receba atendimento rapido pelo WhatsApp.",
-      benefits: ["Sabor e praticidade", "Atendimento pelo WhatsApp", "Pedido facil hoje"],
+        ? `Aproveite hoje por ${price} e peça pelo WhatsApp.`
+        : "Peça hoje com praticidade e receba atendimento rápido pelo WhatsApp.",
+      benefits: ["Sabor e praticidade", "Atendimento pelo WhatsApp", "Pedido fácil hoje"],
       proof: `Ideal para ${audience} que querem pedir sem complicacao`,
-      caption: `${product} com pedido facil pelo WhatsApp. Aproveite hoje e faca seu pedido agora.`,
-      whatsappMessage: `Ola! Quero fazer um pedido: ${product}. Pode me passar as opcoes?`,
+      caption: `${product} com pedido fácil pelo WhatsApp. Aproveite hoje e faça seu pedido agora.`,
+      whatsappMessage: `Olá! Quero fazer um pedido: ${product}. Pode me passar as opções?`,
       category: "food",
       cta: cta || "Fazer pedido",
     };
@@ -1306,13 +1306,13 @@ function buildSalesCopy(input: {
 
   if (source.includes("site") || source.includes("landing") || source.includes("pagina")) {
     return {
-      badge: "Presenca online",
-      headline: price ? `Site profissional por ${price}` : "Seu negocio precisa aparecer online",
-      subheadline: "Transforme visitantes em pedidos de orcamento com uma pagina clara, bonita e facil de enviar.",
-      benefits: ["Visual profissional no celular", "Botao direto para WhatsApp", "Mais confianca antes do primeiro contato"],
+      badge: "Presença online",
+      headline: price ? `Site profissional por ${price}` : "Seu negócio precisa aparecer online",
+      subheadline: "Transforme visitantes em pedidos de orçamento com uma página clara, bonita e fácil de enviar.",
+      benefits: ["Visual profissional no celular", "Botão direto para WhatsApp", "Mais confiança antes do primeiro contato"],
       proof: `Ideal para ${audience} que querem vender melhor`,
-      caption: "Seu negocio merece uma presenca online mais profissional. Chame no WhatsApp e veja como comecar.",
-      whatsappMessage: "Ola! Quero saber mais sobre site profissional para meu negocio.",
+      caption: "Seu negócio merece uma presença online mais profissional. Chame no WhatsApp e veja como começar.",
+      whatsappMessage: "Olá! Quero saber mais sobre site profissional para meu negócio.",
       category: "site",
       cta,
     };
@@ -1321,12 +1321,12 @@ function buildSalesCopy(input: {
   if (source.includes("trafego") || source.includes("ads") || source.includes("anuncio")) {
     return {
       badge: "Mais clientes",
-      headline: "Anuncios que trazem pedidos reais",
-      subheadline: "Campanhas organizadas para atrair pessoas prontas para chamar e pedir orcamento.",
-      benefits: ["Publico bem segmentado", "Campanhas no Meta/Google", "Acompanhamento dos resultados"],
+      headline: "Anúncios que trazem pedidos reais",
+      subheadline: "Campanhas organizadas para atrair pessoas prontas para chamar e pedir orçamento.",
+      benefits: ["Público bem segmentado", "Campanhas no Meta/Google", "Acompanhamento dos resultados"],
       proof: `Para ${audience} que precisam vender com previsibilidade`,
-      caption: "Campanhas bem organizadas ajudam seu negocio a receber pedidos mais qualificados. Chame para conversar.",
-      whatsappMessage: "Ola! Quero saber mais sobre anuncios para atrair clientes.",
+      caption: "Campanhas bem organizadas ajudam seu negócio a receber pedidos mais qualificados. Chame para conversar.",
+      whatsappMessage: "Olá! Quero saber mais sobre anúncios para atrair clientes.",
       category: "traffic",
       cta,
     };
@@ -1335,12 +1335,12 @@ function buildSalesCopy(input: {
   if (source.includes("estetica") || source.includes("beleza") || source.includes("salao") || source.includes("clinica")) {
     return {
       badge: "Agenda aberta",
-      headline: "Realce sua melhor versao",
-      subheadline: "Atendimento profissional, cuidado nos detalhes e uma experiencia pensada para voce.",
-      benefits: ["Horario com agendamento", "Atendimento personalizado", "Resultado com acabamento profissional"],
+      headline: "Realce sua melhor versão",
+      subheadline: "Atendimento profissional, cuidado nos detalhes e uma experiência pensada para você.",
+      benefits: ["Horário com agendamento", "Atendimento personalizado", "Resultado com acabamento profissional"],
       proof: `Perfeito para ${audience}`,
-      caption: "Agenda aberta para voce cuidar de si com atendimento profissional. Chame e reserve seu horario.",
-      whatsappMessage: "Ola! Quero reservar um horario.",
+      caption: "Agenda aberta para você cuidar de si com atendimento profissional. Chame e reserve seu horário.",
+      whatsappMessage: "Olá! Quero reservar um horário.",
       category: "beauty",
       cta,
     };
@@ -1348,13 +1348,13 @@ function buildSalesCopy(input: {
 
   if (source.includes("limpeza") || source.includes("obra") || source.includes("manutencao") || source.includes("reforma")) {
     return {
-      badge: "Servico confiavel",
-      headline: "Resolva sem dor de cabeca",
+      badge: "Serviço confiável",
+      headline: "Resolva sem dor de cabeça",
       subheadline: "Equipe preparada, prazo combinado e entrega organizada para deixar tudo no ponto.",
-      benefits: ["Orcamento rapido", "Execucao profissional", "Atendimento com compromisso"],
+      benefits: ["Orçamento rápido", "Execução profissional", "Atendimento com compromisso"],
       proof: `Para ${audience} que querem praticidade`,
-      caption: "Servico profissional, atendimento claro e entrega com compromisso. Solicite seu orcamento.",
-      whatsappMessage: "Ola! Quero solicitar um orcamento.",
+      caption: "Serviço profissional, atendimento claro e entrega com compromisso. Solicite seu orçamento.",
+      whatsappMessage: "Olá! Quero solicitar um orçamento.",
       category: "service",
       cta,
     };
@@ -1363,12 +1363,12 @@ function buildSalesCopy(input: {
   if (source.includes("promoc") || source.includes("oferta") || price) {
     return {
       badge: "Oferta especial",
-      headline: price ? `Condicao especial: ${price}` : "Condicao especial por tempo limitado",
-      subheadline: "Aproveite para contratar com mais seguranca, clareza e atendimento profissional.",
-      benefits: ["Atendimento rapido", "Escopo explicado antes de fechar", "Chamada direta para orcamento"],
+      headline: price ? `Condição especial: ${price}` : "Condição especial por tempo limitado",
+      subheadline: "Aproveite para contratar com mais segurança, clareza e atendimento profissional.",
+      benefits: ["Atendimento rápido", "Escopo explicado antes de fechar", "Chamada direta para orçamento"],
       proof: `Criado para ${audience}`,
-      caption: "Condicao especial por tempo limitado. Chame no WhatsApp e aproveite antes que acabe.",
-      whatsappMessage: "Ola! Quero aproveitar essa condicao especial.",
+      caption: "Condição especial por tempo limitado. Chame no WhatsApp e aproveite antes que acabe.",
+      whatsappMessage: "Olá! Quero aproveitar essa condição especial.",
       category: "promotion",
       cta,
     };
@@ -1376,13 +1376,13 @@ function buildSalesCopy(input: {
 
   const service = input.serviceName || extractHeadline(input.objective);
   return {
-    badge: "Solucao profissional",
+    badge: "Solução profissional",
     headline: `${service} com atendimento profissional`,
-    subheadline: "Mostre seu valor com uma oferta clara, objetiva e facil de entender.",
-    benefits: ["Orcamento rapido", "Atendimento personalizado", "Entrega com padrao profissional"],
-    proof: `Para ${audience} que buscam uma solucao confiavel`,
-    caption: `${service} com atendimento profissional e proposta clara. Chame no WhatsApp e solicite seu orcamento.`,
-    whatsappMessage: `Ola! Quero saber mais sobre ${service}.`,
+    subheadline: "Mostre seu valor com uma oferta clara, objetiva e fácil de entender.",
+    benefits: ["Orçamento rápido", "Atendimento personalizado", "Entrega com padrão profissional"],
+    proof: `Para ${audience} que buscam uma solução confiável`,
+    caption: `${service} com atendimento profissional e proposta clara. Chame no WhatsApp e solicite seu orçamento.`,
+    whatsappMessage: `Olá! Quero saber mais sobre ${service}.`,
     category: "general",
     cta,
   };
@@ -1433,8 +1433,8 @@ function buildLogoParts(brandName: string) {
 
 function normalizeCta(value: string) {
   const cta = value.trim();
-  if (!cta) return "Peca seu orcamento";
-  return cta.length > 34 ? "Peca seu orcamento" : cta;
+  if (!cta) return "Peça seu orçamento";
+  return cta.length > 34 ? "Peça seu orçamento" : cta;
 }
 
 function extractHeadline(objective: string) {

@@ -258,7 +258,7 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
   { id: "proposals", label: "Propostas", icon: FileText },
   { id: "clients", label: "Clientes", icon: Users },
   { id: "services", label: "Serviços", icon: BriefcaseBusiness },
-  { id: "portfolio", label: "Portfolio", icon: ImageIcon },
+  { id: "portfolio", label: "Portfólio", icon: ImageIcon },
   { id: "testimonials", label: "Depoimentos", icon: MessageSquareQuote },
   { id: "brand", label: "Marca", icon: Settings },
   { id: "arts", label: "Artes IA", icon: Palette },
@@ -455,13 +455,13 @@ const proposalTemplates: ProposalTemplate[] = [
   {
     id: "eletricista",
     niche: "Eletricista",
-    title: "Instalacao residencial",
-    serviceName: "Instalacao e revisao eletrica",
+    title: "Instalação residencial",
+    serviceName: "Instalação e revisão elétrica",
     price: 450,
-    deadline: "1 dia util apos aprovacao",
-    payment: "30% para reservar e 70% na conclusao",
-    included: ["Visita tecnica", "Diagnostico", "Instalacao ou reparo", "Teste de seguranca", "Garantia de 30 dias"],
-    notes: "Materiais eletricos sao cobrados separadamente apos avaliacao.",
+    deadline: "1 dia útil após aprovação",
+    payment: "30% para reservar e 70% na conclusão",
+    included: ["Visita técnica", "Diagnóstico", "Instalação ou reparo", "Teste de segurança", "Garantia de 30 dias"],
+    notes: "Materiais elétricos são cobrados separadamente após avaliação.",
   },
   {
     id: "pedreiro",
@@ -471,7 +471,7 @@ const proposalTemplates: ProposalTemplate[] = [
     price: 1200,
     deadline: "5 dias uteis",
     payment: "40% entrada e 60% na entrega",
-    included: ["Avaliacao do local", "Preparacao da area", "Execucao do reparo", "Acabamento", "Limpeza basica"],
+    included: ["Avaliação do local", "Preparação da área", "Execução do reparo", "Acabamento", "Limpeza básica"],
     notes: "Nao inclui compra de materiais, cacamba ou alteracoes de escopo.",
   },
   {
@@ -480,10 +480,10 @@ const proposalTemplates: ProposalTemplate[] = [
     title: "Limpeza residencial",
     serviceName: "Diarista para limpeza completa",
     price: 220,
-    deadline: "1 diaria",
+    deadline: "1 diária",
     payment: "Pagamento no dia do atendimento",
-    included: ["Limpeza de quartos e sala", "Banheiros", "Cozinha", "Area de servico", "Organizacao leve"],
-    notes: "Nao inclui limpeza pesada pos-obra nem produtos especificos.",
+    included: ["Limpeza de quartos e sala", "Banheiros", "Cozinha", "Área de serviço", "Organização leve"],
+    notes: "Não inclui limpeza pesada pós-obra nem produtos específicos.",
   },
   {
     id: "esteticista",
@@ -491,10 +491,10 @@ const proposalTemplates: ProposalTemplate[] = [
     title: "Protocolo estetico",
     serviceName: "Protocolo estetico personalizado",
     price: 350,
-    deadline: "Sessao de 60 a 90 minutos",
+    deadline: "Sessão de 60 a 90 minutos",
     payment: "50% para agendar e 50% no atendimento",
-    included: ["Avaliacao inicial", "Higienizacao", "Procedimento principal", "Orientacoes de cuidado", "Acompanhamento por mensagem"],
-    notes: "Resultado pode variar conforme rotina de cuidados e numero de sessoes.",
+    included: ["Avaliação inicial", "Higienização", "Procedimento principal", "Orientações de cuidado", "Acompanhamento por mensagem"],
+    notes: "Resultado pode variar conforme rotina de cuidados e número de sessões.",
   },
   {
     id: "personal",
@@ -504,19 +504,19 @@ const proposalTemplates: ProposalTemplate[] = [
     price: 700,
     deadline: "4 semanas",
     payment: "Mensal antecipado",
-    included: ["Avaliacao fisica", "Plano de treino", "8 aulas presenciais ou online", "Ajustes semanais", "Suporte por WhatsApp"],
-    notes: "Nao inclui academia, equipamentos ou avaliacao medica.",
+    included: ["Avaliação física", "Plano de treino", "8 aulas presenciais ou online", "Ajustes semanais", "Suporte por WhatsApp"],
+    notes: "Não inclui academia, equipamentos ou avaliação médica.",
   },
   {
     id: "assistencia",
-    niche: "Assistencia tecnica",
-    title: "Diagnostico e reparo",
-    serviceName: "Assistencia tecnica especializada",
+    niche: "Assistência técnica",
+    title: "Diagnóstico e reparo",
+    serviceName: "Assistência técnica especializada",
     price: 300,
-    deadline: "3 dias uteis apos diagnostico",
-    payment: "Diagnostico na entrada e saldo na retirada",
-    included: ["Diagnostico", "Orcamento de pecas", "Mao de obra", "Testes finais", "Garantia do reparo"],
-    notes: "Pecas sao cobradas separadamente e dependem de disponibilidade.",
+    deadline: "3 dias úteis após diagnóstico",
+    payment: "Diagnóstico na entrada e saldo na retirada",
+    included: ["Diagnóstico", "Orçamento de peças", "Mão de obra", "Testes finais", "Garantia do reparo"],
+    notes: "Peças são cobradas separadamente e dependem de disponibilidade.",
   },
 ];
 
@@ -524,8 +524,8 @@ const marketingArtBriefs = [
   {
     id: "sell_service",
     label: "Servico",
-    objective: "Divulgar um servico profissional destacando beneficio, confianca, atendimento rapido e pedido de orcamento pelo WhatsApp.",
-    callToAction: "Peca seu orcamento",
+    objective: "Divulgar um serviço profissional destacando benefício, confiança, atendimento rápido e pedido de orçamento pelo WhatsApp.",
+    callToAction: "Peça seu orçamento",
   },
   {
     id: "promotion",
@@ -542,25 +542,25 @@ const marketingArtBriefs = [
   {
     id: "menu",
     label: "Cardapio",
-    objective: "Divulgar comida, combo, marmita, lanche, acai ou cardapio com apelo de sabor, praticidade e pedido rapido.",
+    objective: "Divulgar comida, combo, marmita, lanche, açaí ou cardápio com apelo de sabor, praticidade e pedido rápido.",
     callToAction: "Fazer pedido",
   },
   {
     id: "notice",
     label: "Aviso",
-    objective: "Comunicar um aviso importante de forma clara, bonita e facil de entender.",
+    objective: "Comunicar um aviso importante de forma clara, bonita e fácil de entender.",
     callToAction: "Saiba mais",
   },
   {
     id: "open_slots",
     label: "Agenda aberta",
-    objective: "Avisar que a agenda esta aberta, mostrar o principal resultado do servico e incentivar a pessoa a reservar um horario.",
-    callToAction: "Reservar horario",
+    objective: "Avisar que a agenda está aberta, mostrar o principal resultado do serviço e incentivar a pessoa a reservar um horário.",
+    callToAction: "Reservar horário",
   },
   {
     id: "online_presence",
-    label: "Presenca online",
-    objective: "Divulgar criacao de site ou presenca online mostrando que o negocio fica mais profissional, facil de encontrar e pronto para receber orcamentos.",
+    label: "Presença online",
+    objective: "Divulgar criação de site ou presença online mostrando que o negócio fica mais profissional, fácil de encontrar e pronto para receber orçamentos.",
     callToAction: "Quero meu site",
   },
 ];
@@ -1332,7 +1332,7 @@ function DashboardView({
         <section className="grid gap-3 rounded-lg border border-amber-700/20 bg-amber-50 p-4 shadow-xl shadow-slate-900/10">
           <SectionHeading eyebrow="Follow-up" title="Oportunidades para retomar hoje" />
           {followUps.map((proposal) => {
-            const message = `Oi, tudo bem? Passando para saber se conseguiu olhar o orcamento de ${proposal.serviceName} que te enviei. Posso tirar alguma duvida?`;
+            const message = `Oi, tudo bem? Passando para saber se conseguiu olhar o orçamento de ${proposal.serviceName} que te enviei. Posso tirar alguma dúvida?`;
             return (
               <div className="grid gap-3 rounded-lg border border-amber-700/20 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center" key={proposal.id}>
                 <div>
@@ -1884,13 +1884,13 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
               onChange={(event) => setForm({ ...form, status: event.target.value })}
             >
               <option value="lead">Lead</option>
-              <option value="proposal_sent">Orcamento enviado</option>
+              <option value="proposal_sent">Orçamento enviado</option>
               <option value="waiting">Aguardando resposta</option>
               <option value="won">Fechado</option>
               <option value="lost">Perdido</option>
             </select>
           </label>
-          <TextAreaField label="Observacoes" maxLength={500} rows={3} placeholder="Preferencias, historico e proximo passo." value={form.notes} onChange={(value) => setForm({ ...form, notes: value })} />
+          <TextAreaField label="Observações" maxLength={500} rows={3} placeholder="Preferências, histórico e próximo passo." value={form.notes} onChange={(value) => setForm({ ...form, notes: value })} />
           <SubmitButton label={editingId ? "Atualizar cliente" : "Salvar cliente"} />
           {editingId ? (
             <button
@@ -1935,7 +1935,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
 function clientStatusLabel(status?: string | null) {
   const labels: Record<string, string> = {
     lead: "Lead",
-    proposal_sent: "Orcamento enviado",
+    proposal_sent: "Orçamento enviado",
     waiting: "Aguardando resposta",
     won: "Fechado",
     lost: "Perdido",
@@ -2392,7 +2392,7 @@ function MarketingArtsView({
     objective: "",
     serviceName: "",
     audience: "",
-    callToAction: "Peca seu orcamento",
+    callToAction: "Peça seu orçamento",
     useImageAsBackground: false,
   });
   const [files, setFiles] = useState<File[]>([]);
@@ -2409,7 +2409,7 @@ function MarketingArtsView({
     event.preventDefault();
     setError(null);
     if (!form.objective.trim()) {
-      setError("Escreva o que voce quer divulgar.");
+      setError("Escreva o que você quer divulgar.");
       return;
     }
     if (remaining < formatsToGenerate.length) {
@@ -2460,7 +2460,7 @@ function MarketingArtsView({
         objective: "",
         serviceName: "",
         audience: "",
-        callToAction: "Peca seu orcamento",
+        callToAction: "Peça seu orçamento",
         useImageAsBackground: form.useImageAsBackground,
       });
       setSelectedBriefId("");
@@ -2487,7 +2487,7 @@ function MarketingArtsView({
 
         <div>
           <p className="text-xs font-black uppercase text-blue-700">Artes IA</p>
-          <h2 className="text-2xl font-black">Gerador de divulgacao</h2>
+          <h2 className="text-2xl font-black">Gerador de divulgação</h2>
           <p className="mt-2 leading-7 text-slate-600">
             Escreva do seu jeito. O FechaPro cria o texto, monta a arte e entrega pronta para postar.
           </p>
@@ -2510,7 +2510,7 @@ function MarketingArtsView({
           {error ? <FormError message={error} /> : null}
           <TextField label="Nome para salvar" maxLength={80} placeholder="Promocao de hoje" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            O que voce quer criar?
+            O que você quer criar?
             <select
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
               value={form.format}
@@ -2523,7 +2523,7 @@ function MarketingArtsView({
             </select>
           </label>
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            O que voce quer divulgar?
+            O que você quer divulgar?
             <select
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
               value={selectedBriefId}
@@ -2567,8 +2567,8 @@ function MarketingArtsView({
             value={form.objective}
             onChange={(value) => setForm({ ...form, objective: value })}
           />
-          <TextField label="Cidade ou publico" maxLength={120} placeholder="Uberlandia, noivas, lojas, moradores do bairro..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
-          <TextField label="Botao da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
+          <TextField label="Cidade ou público" maxLength={120} placeholder="Uberlândia, noivas, lojas, moradores do bairro..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
+          <TextField label="Botão da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Logo, produto ou foto
             <input
@@ -2582,7 +2582,7 @@ function MarketingArtsView({
               }}
             />
             <span className="text-xs font-bold text-slate-500">
-              Opcional. Voce pode enviar uma ou mais imagens. Se nao enviar nada, o FechaPro usa a logo salva na marca quando existir.
+              Opcional. Você pode enviar uma ou mais imagens. Se não enviar nada, o FechaPro usa a logo salva na marca quando existir.
             </span>
             {files.length ? (
               <span className="text-xs font-bold text-green-700">
@@ -2601,7 +2601,7 @@ function MarketingArtsView({
           </label>
           {form.useImageAsBackground && files.length > 1 ? (
             <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-              Qual imagem sera o fundo?
+              Qual imagem será o fundo?
               <select
                 className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
                 value={backgroundFileIndex}
@@ -2702,7 +2702,7 @@ function MarketingArtsView({
                 <Palette className="mx-auto text-blue-700" size={32} />
                 <p className="mt-3 font-black">Nenhuma arte gerada ainda.</p>
                 <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
-                  Preencha o objetivo, escolha o formato e gere a primeira peca de divulgacao.
+                  Preencha o objetivo, escolha o formato e gere a primeira peça de divulgação.
                 </p>
               </div>
             </div>
@@ -3040,34 +3040,102 @@ function AccountView({
   }
 
   return (
-    <section className="grid gap-5">
-      <form className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10" onSubmit={saveAccount}>
-        <SectionHeading eyebrow="Minha conta" title="Dados de acesso" />
+    <section className="grid gap-5 lg:grid-cols-[1fr_0.72fr]">
+      <div className="overflow-hidden rounded-lg border border-black/10 bg-slate-950 shadow-xl shadow-slate-900/10 lg:col-span-2">
+        <div className="grid gap-5 p-5 text-white md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <p className="text-xs font-black uppercase text-green-300">Minha conta</p>
+            <h2 className="mt-2 text-2xl font-black leading-tight">Ajustes do perfil</h2>
+            <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-slate-300">
+              Mantenha seus dados atualizados para assinar propostas, receber respostas dos clientes e acessar o FechaPro com segurança.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg border border-white/15 bg-white/10 p-3">
+            <span className="grid size-11 place-items-center rounded-lg bg-green-500 text-white">
+              <UserCircle size={24} />
+            </span>
+            <div>
+              <p className="text-sm font-black">{session.name}</p>
+              <p className="text-xs font-bold text-slate-300">{session.email}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <form className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10" onSubmit={saveAccount}>
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-blue-700 text-white">
+            <UserCircle size={20} />
+          </span>
+          <div>
+            <SectionHeading eyebrow="Dados pessoais" title="Acesso da conta" />
+            <p className="mt-1 text-sm font-bold leading-6 text-slate-600">Nome e e-mail usados para entrar e identificar sua conta.</p>
+          </div>
+        </div>
 
         {message ? <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold text-green-900">{message}</div> : null}
         {error ? <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-3 text-sm font-bold text-rose-900">{error}</div> : null}
 
-        <TextField label="Nome" autoComplete="name" maxLength={80} required value={name} onChange={setName} />
-        <TextField label="E-mail" autoComplete="email" required type="email" value={email} onChange={setEmail} />
-        <TextField label="Senha atual" autoComplete="current-password" type="password" value={currentPassword} onChange={setCurrentPassword} />
-        <TextField label="Nova senha" autoComplete="new-password" minLength={8} type="password" value={newPassword} onChange={setNewPassword} />
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField label="Nome" autoComplete="name" maxLength={80} required value={name} onChange={setName} />
+          <TextField label="E-mail" autoComplete="email" required type="email" value={email} onChange={setEmail} />
+        </div>
 
-        <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
-          {saving ? "Salvando..." : "Salvar conta"}
+        <div className="mt-2 grid gap-4 rounded-lg border border-black/10 bg-slate-50 p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-green-600 text-white">
+              <LockKeyhole size={19} />
+            </span>
+            <div>
+              <h3 className="font-black">Trocar senha</h3>
+              <p className="mt-1 text-sm font-bold leading-6 text-slate-600">Preencha apenas se quiser alterar sua senha atual.</p>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextField label="Senha atual" autoComplete="current-password" type="password" value={currentPassword} onChange={setCurrentPassword} />
+            <TextField label="Nova senha" autoComplete="new-password" minLength={8} type="password" value={newPassword} onChange={setNewPassword} />
+          </div>
+        </div>
+
+        <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-5 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
+          <CheckCircle2 size={18} />
+          {saving ? "Salvando..." : "Salvar alteracoes"}
         </button>
       </form>
 
-      <aside className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <p className="text-xs font-black uppercase text-blue-700">Segurança</p>
-        <h3 className="mt-1 text-xl font-black">Antes de publicar</h3>
-        <ul className="mt-3 grid gap-3 text-sm font-bold leading-6 text-slate-600">
-          <li>Use uma senha forte e troque o AUTH_SECRET em produção.</li>
-          <li>Ative Turnstile no cadastro para reduzir abuso.</li>
-          <li>Configure Resend para recuperar senha por e-mail.</li>
-          <li>Use storage S3/R2 para imagens em produção.</li>
-        </ul>
+      <aside className="grid content-start gap-4">
+        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10">
+          <p className="text-xs font-black uppercase text-blue-700">Status da conta</p>
+          <div className="mt-4 grid gap-3">
+            <AccountStatusItem label="Perfil identificado" detail={name || "Nome não informado"} done={Boolean(name.trim())} />
+            <AccountStatusItem label="E-mail de acesso" detail={email || "E-mail não informado"} done={isValidEmail(email.trim())} />
+            <AccountStatusItem label="Senha protegida" detail="Use pelo menos 8 caracteres ao trocar a senha." done={!newPassword || newPassword.length >= 8} />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-green-700/20 bg-green-50 p-5 shadow-xl shadow-slate-900/10">
+          <p className="text-xs font-black uppercase text-green-800">Dica rapida</p>
+          <h3 className="mt-1 text-lg font-black text-green-950">Conta pronta para vender</h3>
+          <p className="mt-2 text-sm font-bold leading-6 text-green-900">
+            Depois de salvar, confira a aba Marca para deixar logo, WhatsApp e cores aparecendo nas propostas enviadas.
+          </p>
+        </div>
       </aside>
     </section>
+  );
+}
+
+function AccountStatusItem({ detail, done, label }: { detail: string; done: boolean; label: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-black/10 bg-white p-3">
+      <span className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg ${done ? "bg-green-600 text-white" : "bg-amber-100 text-amber-800"}`}>
+        {done ? <CheckCircle2 size={17} /> : <LockKeyhole size={16} />}
+      </span>
+      <div>
+        <p className="text-sm font-black">{label}</p>
+        <p className="mt-1 text-xs font-bold leading-5 text-slate-500">{detail}</p>
+      </div>
+    </div>
   );
 }
 
@@ -3590,7 +3658,7 @@ function AuthScreen() {
                   Tenho interesse
                 </a>
                 <a className="min-h-11 rounded-lg bg-green-500 px-3 py-3 text-slate-950" href="/cadastro">
-                  ComeÃ§ar
+                  Começar
                 </a>
               </nav>
             ) : null}
@@ -3953,7 +4021,7 @@ function ProductUpdatesModal({
     {
       icon: Palette,
       title: "Artes com IA",
-      description: "Crie criativos para divulgar servicos, promocoes, cardapios e agenda aberta.",
+      description: "Crie criativos para divulgar serviços, promoções, cardápios e agenda aberta.",
       tag: "Novo",
     },
     {
@@ -3965,7 +4033,7 @@ function ProductUpdatesModal({
   ];
   const nextFeatures = [
     "Modelos de proposta por nicho com textos mais prontos para vender.",
-    "Mais opcoes de acompanhamento do cliente depois que ele abre a proposta.",
+    "Mais opções de acompanhamento do cliente depois que ele abre a proposta.",
     "Melhorias no checkout para deixar aceite e pagamento ainda mais diretos.",
   ];
 
@@ -4000,7 +4068,7 @@ function ProductUpdatesModal({
               <div>
                 <p className="text-xs font-black uppercase text-green-200">Agora no painel</p>
                 <p className="mt-2 text-lg font-black leading-snug">
-                  Seu cliente recebe uma proposta mais profissional, voce acompanha melhor o interesse e ainda ganha velocidade para divulgar seus servicos.
+                  Seu cliente recebe uma proposta mais profissional, você acompanha melhor o interesse e ainda ganha velocidade para divulgar seus serviços.
                 </p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
@@ -4782,7 +4850,7 @@ function proposalTimeline(proposal: Proposal) {
           : proposal.status === "declined"
             ? `Recusada${proposal.declinedReason ? `: ${proposal.declinedReason}` : "."}`
             : proposal.status === "awaiting_response"
-              ? "Cliente clicou no WhatsApp para tirar dÃºvida ou negociar."
+              ? "Cliente clicou no WhatsApp para tirar dúvida ou negociar."
               : expired
               ? `Expirada em ${formatDateOnly(proposal.validUntil)}.`
               : "Ainda aguardando aceite ou recusa.",

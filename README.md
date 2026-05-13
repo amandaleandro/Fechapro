@@ -1,24 +1,24 @@
 # FechaPro
 
-Plataforma mobile first para criar propostas comerciais profissionais com orcamento, portfolio, depoimentos, PDF, pagamento online e botao de aceite.
+Plataforma mobile first para criar propostas comerciais profissionais com orçamento, portfólio, depoimentos, PDF, pagamento online e botão de aceite.
 
 ## Produto
 
-O FechaPro ajuda prestadores de servico a transformar orcamentos simples em propostas bonitas, organizadas e prontas para fechar mais contratos.
+O FechaPro ajuda prestadores de serviço a transformar orçamentos simples em propostas bonitas, organizadas e prontas para fechar mais contratos.
 
 Principais recursos:
 
 - landing page comercial;
 - cadastro e login;
-- onboarding de marca e primeiro servico;
+- onboarding de marca e primeiro serviço;
 - painel com indicadores comerciais;
-- cadastro de clientes, servicos, portfolio e depoimentos;
+- cadastro de clientes, serviços, portfólio e depoimentos;
 - templates por nicho;
 - geracao de proposta com IA;
-- link publico da proposta;
+- link público da proposta;
 - aceite e recusa pelo cliente;
-- PDF automatico;
-- upload de imagens com remocao de fundo claro para logos;
+- PDF automático;
+- upload de imagens com remoção de fundo claro para logos;
 - integracao preparada para link de pagamento e webhook do Asaas;
 - Docker com app e Postgres.
 
@@ -29,7 +29,7 @@ Principais recursos:
 - **Banco:** Postgres.
 - **ORM:** Prisma.
 - **PDF:** PDFKit.
-- **Imagens:** Sharp para processamento e remocao de fundo claro.
+- **Imagens:** Sharp para processamento e remoção de fundo claro.
 - **IA:** OpenAI Responses API, com assistente interno de reserva.
 - **Pagamentos:** Asaas.
 - **Infra local:** Docker Compose.
@@ -81,7 +81,7 @@ docker compose down
 
 A esteira de deploy fica em `.github/workflows/deploy-vps.yml`. A cada push na branch `main`, ela:
 
-- builda a imagem da aplicacao;
+- builda a imagem da aplicação;
 - builda a imagem de migracao do Prisma;
 - publica as duas no GitHub Container Registry;
 - entra na VPS por SSH;
@@ -127,7 +127,7 @@ S3_ENDPOINT=
 S3_PUBLIC_URL=
 NEXT_PUBLIC_SITE_URL=https://seu-dominio.com
 NEXT_PUBLIC_WHATSAPP_NUMBER=
-NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE=Ola! Preciso de ajuda com o FechaPro.
+NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE=Olá! Preciso de ajuda com o FechaPro.
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
 NEXT_PUBLIC_SENTRY_DSN=
@@ -154,7 +154,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml --profile s
 docker exec fechapro-nginx nginx -s reload
 ```
 
-O servico `certbot-renew` fica ativo e tenta renovar o certificado automaticamente a cada 12 horas.
+O serviço `certbot-renew` fica ativo e tenta renovar o certificado automaticamente a cada 12 horas.
 
 ### Secrets Do GitHub
 
@@ -175,11 +175,11 @@ NEXT_PUBLIC_SENTRY_DSN
 
 `VPS_APP_DIR` deve ser o caminho da pasta na VPS onde estao `docker-compose.prod.yml` e `.env.production`.
 
-As variaveis `NEXT_PUBLIC_*` sao passadas no build porque o Next.js grava essas configuracoes no bundle do navegador.
+As variáveis `NEXT_PUBLIC_*` são passadas no build porque o Next.js grava essas configurações no bundle do navegador.
 
 ## Observabilidade
 
-O projeto ja esta instrumentado com Sentry para erros, performance e replay de sessoes com erro. Para ativar, configure:
+O projeto já está instrumentado com Sentry para erros, performance e replay de sessões com erro. Para ativar, configure:
 
 ```env
 NEXT_PUBLIC_SENTRY_DSN=
@@ -219,7 +219,7 @@ Nunca coloque chaves reais em arquivos versionados.
 
 ## Suporte Via WhatsApp
 
-Configure `NEXT_PUBLIC_WHATSAPP_NUMBER` com o numero do suporte para exibir um botao fixo no canto da aplicacao. Use somente numeros; com ou sem `55` no inicio funciona.
+Configure `NEXT_PUBLIC_WHATSAPP_NUMBER` com o número do suporte para exibir um botão fixo no canto da aplicação. Use somente números; com ou sem `55` no início funciona.
 
 Opcionalmente, ajuste `NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE` para mudar a mensagem preenchida automaticamente quando o cliente abrir o WhatsApp.
 
@@ -227,7 +227,7 @@ Opcionalmente, ajuste `NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE` para mudar a mensag
 
 - Sem `OPENAI_API_KEY`, o gerador usa um assistente interno de reserva.
 - Com `OPENAI_API_KEY`, a rota `/api/ai/proposal` usa a OpenAI Responses API.
-- Modelo padrao: `gpt-5.4-mini`, configuravel via `OPENAI_MODEL`.
+- Modelo padrão: `gpt-5.4-mini`, configurável via `OPENAI_MODEL`.
 
 ## Pagamentos
 
@@ -246,7 +246,7 @@ https://seu-dominio.com/api/webhooks/asaas
 
 O upload de logo remove automaticamente fundo branco ou claro e salva em PNG com transparencia.
 
-No portfolio, a remocao de fundo fica como opcao manual para evitar danificar fotos reais de trabalhos.
+No portfólio, a remoção de fundo fica como opção manual para evitar danificar fotos reais de trabalhos.
 
 ## Proximos Ajustes Recomendados
 

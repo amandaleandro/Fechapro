@@ -208,7 +208,7 @@ function AdminUserRow({
       <td className="rounded-l-lg px-3 py-3">
         <p className="font-black">{user.name}</p>
         <p className="mt-1 text-xs font-bold text-slate-500">{user.email}</p>
-        <p className="mt-2 text-xs text-slate-500">{user.brandProfile?.businessName || "Empresa nao configurada"}</p>
+        <p className="mt-2 text-xs text-slate-500">{user.brandProfile?.businessName || "Empresa não configurada"}</p>
       </td>
       <td className="px-3 py-3 font-bold text-slate-700">
         <p>{user.usage.proposalsThisMonth}/{user.usage.proposalLimit} propostas</p>

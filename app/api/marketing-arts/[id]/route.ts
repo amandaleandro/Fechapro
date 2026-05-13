@@ -10,7 +10,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     where: { id, userId: session.id },
   });
 
-  if (!item) return jsonError("Arte nao encontrada.", 404);
+  if (!item) return jsonError("Arte não encontrada.", 404);
 
   await prisma.marketingArtAsset.delete({ where: { id } });
   return NextResponse.json({ ok: true });

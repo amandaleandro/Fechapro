@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
   if (body.artPack) {
     if (!artPacks[body.artPack]) {
-      return jsonError("Pacote de artes invalido.");
+      return jsonError("Pacote de artes inválido.");
     }
 
     try {
