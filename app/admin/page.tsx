@@ -1,0 +1,306 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Ban, CheckCircle2, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, UserCog, XCircle } from "lucide-react";
+
+type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
+
+type AdminPlan = {
+  code: PlanCode;
+  name: string;
+  proposalLimit: number;
+  artLimit: number;
+};
+
+type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  brandProfile: {
+    businessName: string;
+    whatsapp: string | null;
+  } | null;
+  subscription: {
+    plan: PlanCode;
+    status: string;
+    provider: string | null;
+  };
+  usage: {
+    proposalsThisMonth: number;
+    proposalLimit: number;
+    artsThisMonth: number;
+    artLimit: number;
+  };
+  _count: {
+    proposalAssets: number;
+    marketingArtAssets: number;
+    clientAssets: number;
+  };
+};
+
+type AdminPayload = {
+  plans: AdminPlan[];
+  users: AdminUser[];
+};
+
+const statuses = ["active", "trial", "blocked", "pending", "paused", "canceled"];
+
+const statusLabels: Record<string, string> = {
+  active: "Ativo",
+  trial: "Teste liberado",
+  blocked: "Bloqueado",
+  pending: "Pendente",
+  paused: "Pausado",
+  canceled: "Cancelado",
+};
+
+export default function AdminPage() {
+  const [data, setData] = useState<AdminPayload | null>(null);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  async function loadUsers() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/users", { cache: "no-store" });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar o painel."));
+      setData((await response.json()) as AdminPayload);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o painel.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return data?.users || [];
+    return (data?.users || []).filter((user) =>
+      [user.name, user.email, user.brandProfile?.businessName || ""].some((value) =>
+        value.toLowerCase().includes(term),
+      ),
+    );
+  }, [data, query]);
+
+  async function updateSubscription(user: AdminUser, plan: PlanCode, status: string) {
+    setSavingId(user.id);
+    setNotice(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/subscription`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, status }),
+      });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel atualizar o plano."));
+      setNotice(`Assinatura de ${user.name} atualizada.`);
+      await loadUsers();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel atualizar o plano.");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  const totalUsers = data?.users.length || 0;
+  const activeUsers = data?.users.filter((user) => ["active", "trial"].includes(user.subscription.status)).length || 0;
+  const blockedUsers = data?.users.filter((user) => user.subscription.status === "blocked").length || 0;
+
+  return (
+    <main className="min-h-screen bg-slate-100 text-slate-950">
+      <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Link className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-slate-950" href="/">
+              <ArrowLeft size={16} />
+              Voltar ao painel
+            </Link>
+            <p className="text-xs font-black uppercase text-blue-700">Admin geral</p>
+            <h1 className="mt-1 text-3xl font-black tracking-normal">Controle de assinaturas</h1>
+          </div>
+          <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={loadUsers}>
+            <RefreshCcw size={17} />
+            Atualizar
+          </button>
+        </header>
+
+        <section className="grid gap-3 sm:grid-cols-3">
+          <AdminStat icon={UserCog} label="Usuarios" value={String(totalUsers)} />
+          <AdminStat icon={CheckCircle2} label="Liberados" value={String(activeUsers)} />
+          <AdminStat icon={ShieldCheck} label="Bloqueados" value={String(blockedUsers)} />
+        </section>
+
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+          <div className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4">
+            <Search className="text-slate-500" size={18} />
+            <input className="min-h-10 flex-1 bg-transparent outline-none" placeholder="Buscar por nome, e-mail ou empresa" value={query} onChange={(event) => setQuery(event.target.value)} />
+          </div>
+
+          {error ? <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-3 text-sm font-bold text-rose-900">{error}</div> : null}
+          {notice ? <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold text-green-900">{notice}</div> : null}
+
+          {loading ? (
+            <div className="rounded-lg border border-black/10 p-5 text-sm font-bold text-slate-500">Carregando usuarios...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-left text-sm">
+                <thead className="text-xs font-black uppercase text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">Usuario</th>
+                    <th className="px-3 py-2">Uso do mes</th>
+                    <th className="px-3 py-2">Totais</th>
+                    <th className="px-3 py-2">Plano</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Acao</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                    <AdminUserRow
+                      key={user.id}
+                      plans={data?.plans || []}
+                      saving={savingId === user.id}
+                      user={user}
+                      onSave={updateSubscription}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function AdminUserRow({
+  onSave,
+  plans,
+  saving,
+  user,
+}: {
+  onSave: (user: AdminUser, plan: PlanCode, status: string) => void;
+  plans: AdminPlan[];
+  saving: boolean;
+  user: AdminUser;
+}) {
+  const [plan, setPlan] = useState<PlanCode>(user.subscription.plan);
+  const [status, setStatus] = useState(user.subscription.status);
+
+  useEffect(() => {
+    setPlan(user.subscription.plan);
+    setStatus(user.subscription.status);
+  }, [user.subscription.plan, user.subscription.status]);
+
+  return (
+    <tr className="rounded-lg bg-slate-50 align-top shadow-sm">
+      <td className="rounded-l-lg px-3 py-3">
+        <p className="font-black">{user.name}</p>
+        <p className="mt-1 text-xs font-bold text-slate-500">{user.email}</p>
+        <p className="mt-2 text-xs text-slate-500">{user.brandProfile?.businessName || "Empresa nao configurada"}</p>
+      </td>
+      <td className="px-3 py-3 font-bold text-slate-700">
+        <p>{user.usage.proposalsThisMonth}/{user.usage.proposalLimit} propostas</p>
+        <p className="mt-1">{user.usage.artsThisMonth}/{user.usage.artLimit} artes</p>
+      </td>
+      <td className="px-3 py-3 text-slate-600">
+        <p>{user._count.proposalAssets} propostas</p>
+        <p>{user._count.clientAssets} clientes</p>
+        <p>{user._count.marketingArtAssets} artes</p>
+      </td>
+      <td className="px-3 py-3">
+        <select className="min-h-10 rounded-lg border border-black/10 bg-white px-3 font-bold" value={plan} onChange={(event) => setPlan(event.target.value as PlanCode)}>
+          {plans.map((item) => (
+            <option key={item.code} value={item.code}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="px-3 py-3">
+        <select className="min-h-10 rounded-lg border border-black/10 bg-white px-3 font-bold" value={status} onChange={(event) => setStatus(event.target.value)}>
+          {statuses.map((item) => (
+            <option key={item} value={item}>
+              {statusLabels[item] || item}
+            </option>
+          ))}
+        </select>
+        <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-black ${statusBadgeClass(user.subscription.status)}`}>
+          {statusLabels[user.subscription.status] || user.subscription.status}
+        </span>
+      </td>
+      <td className="rounded-r-lg px-3 py-3">
+        <div className="grid gap-2">
+          <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="button" onClick={() => onSave(user, plan, status)}>
+            <CheckCircle2 size={15} />
+            {saving ? "Salvando..." : "Salvar"}
+          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <QuickAction icon={Ban} label="Bloquear" disabled={saving} onClick={() => onSave(user, plan, "blocked")} />
+            <QuickAction icon={RotateCcw} label="Reativar" disabled={saving} onClick={() => onSave(user, plan, "active")} />
+            <QuickAction icon={PauseCircle} label="Pausar" disabled={saving} onClick={() => onSave(user, plan, "paused")} />
+            <QuickAction icon={XCircle} label="Cancelar" disabled={saving} onClick={() => onSave(user, plan, "canceled")} />
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function QuickAction({
+  disabled,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  disabled: boolean;
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg border border-black/10 bg-white px-2 text-xs font-black text-slate-700 disabled:opacity-60" disabled={disabled} type="button" onClick={onClick}>
+      <Icon size={14} />
+      {label}
+    </button>
+  );
+}
+
+function statusBadgeClass(status: string) {
+  if (status === "active" || status === "trial") return "bg-green-100 text-green-800";
+  if (status === "blocked" || status === "canceled") return "bg-rose-100 text-rose-800";
+  if (status === "paused") return "bg-amber-100 text-amber-800";
+  return "bg-slate-200 text-slate-700";
+}
+
+function AdminStat({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-black/10 bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-black uppercase text-slate-500">{label}</p>
+        <Icon className="text-blue-700" size={20} />
+      </div>
+      <p className="mt-3 text-3xl font-black">{value}</p>
+    </div>
+  );
+}
+
+async function readApiError(response: Response, fallback: string) {
+  try {
+    const data = (await response.json()) as { error?: string; message?: string };
+    return data.error || data.message || fallback;
+  } catch {
+    return fallback;
+  }
+}

@@ -1,4 +1,4 @@
-import { type PlanCode, plans } from "@/lib/plans";
+import { artPacks, type ArtPackCode, type PlanCode, plans } from "@/lib/plans";
 
 const ASAAS_BASE =
   process.env.ASAAS_SANDBOX === "true"
@@ -125,6 +125,27 @@ export async function createPlanCheckout(input: {
     notificationEnabled: true,
     callback: {
       successUrl: `${input.origin}/?payment=success&plan=${plan.code}`,
+      autoRedirect: true,
+    },
+  });
+}
+
+export async function createArtPackCheckout(input: {
+  origin: string;
+  pack: ArtPackCode;
+  userEmail: string;
+  userId: string;
+}) {
+  const pack = artPacks[input.pack];
+  return request<AsaasPaymentLink>("POST", "/paymentLinks", {
+    name: `FechaPro ${pack.name}`,
+    description: `${pack.name}: ${pack.credits} creditos extras para criacao de artes de divulgacao no FechaPro.`,
+    value: pack.priceCents / 100,
+    billingType: "UNDEFINED",
+    chargeType: "DETACHED",
+    notificationEnabled: true,
+    callback: {
+      successUrl: `${input.origin}/?payment=success&artPack=${pack.code}`,
       autoRedirect: true,
     },
   });

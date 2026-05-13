@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { jsonError } from "@/lib/api";
+import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
 import { renderMarketingArtHtml } from "@/lib/marketing-art-html";
 import { currentMonthRange, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
@@ -85,10 +86,15 @@ export async function POST(request: Request) {
 
   const subscription = await prisma.planSubscription.upsert({
     where: { userId: session.id },
-    create: { userId: session.id, plan: "start" },
+    create: { userId: session.id, plan: "start", status: "pending" },
     update: {},
   });
-  const plan = plans[subscription.plan];
+
+  if (!canUsePaidFeatures(subscription)) {
+    return jsonError(blockedSubscriptionMessage(subscription.status), 402);
+  }
+
+  const plan = planLimits(subscription.plan);
   const { start, end } = currentMonthRange();
   const usedThisMonth = await prisma.marketingArtAsset.count({
     where: {
@@ -100,12 +106,15 @@ export async function POST(request: Request) {
     },
   });
 
-  if (plan.artLimit <= 0) {
-    return jsonError("Artes IA estao disponiveis nos planos acima de R$ 100.", 402);
+  const totalArtLimit = plan.artLimit + subscription.artCreditBalance;
+  const shouldUseExtraCredit = usedThisMonth >= plan.artLimit;
+
+  if (totalArtLimit <= 0) {
+    return jsonError("Artes IA estao disponiveis nos planos acima de R$ 100 ou em pacotes individuais.", 402);
   }
 
-  if (usedThisMonth >= plan.artLimit) {
-    return jsonError(`Limite mensal de ${plan.artLimit} artes do plano ${plan.name} atingido.`, 402);
+  if (usedThisMonth >= totalArtLimit) {
+    return jsonError(`Limite de ${totalArtLimit} artes atingido. Compre um pacote individual para criar mais.`, 402);
   }
 
   const [brand, portfolioImage] = await Promise.all([
@@ -181,6 +190,13 @@ export async function POST(request: Request) {
       source: aiCopy ? "openai-template" : "template",
     },
   });
+
+  if (shouldUseExtraCredit) {
+    await prisma.planSubscription.update({
+      where: { userId: session.id },
+      data: { artCreditBalance: { decrement: 1 } },
+    });
+  }
 
   return NextResponse.json(item, { status: 201 });
 }

@@ -89,5 +89,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   }
 
+  const artCreditPurchase = await prisma.artCreditPurchase.findUnique({
+    where: { providerCheckoutId: paymentLinkId },
+  });
+
+  if (artCreditPurchase) {
+    if (isPaid && artCreditPurchase.status !== "paid") {
+      await prisma.$transaction([
+        prisma.artCreditPurchase.update({
+          where: { id: artCreditPurchase.id },
+          data: { status: "paid", paidAt: new Date(), provider: "asaas" },
+        }),
+        prisma.planSubscription.upsert({
+          where: { userId: artCreditPurchase.userId },
+          create: {
+            userId: artCreditPurchase.userId,
+            plan: "start",
+            status: "pending",
+            artCreditBalance: artCreditPurchase.credits,
+          },
+          update: {
+            artCreditBalance: { increment: artCreditPurchase.credits },
+          },
+        }),
+      ]);
+    } else if (isOverdue) {
+      await prisma.artCreditPurchase.update({
+        where: { id: artCreditPurchase.id },
+        data: { status: "overdue" },
+      });
+    } else if (isDeleted) {
+      await prisma.artCreditPurchase.update({
+        where: { id: artCreditPurchase.id },
+        data: { status: "canceled" },
+      });
+    }
+    return NextResponse.json({ received: true });
+  }
+
   return NextResponse.json({ received: true });
 }

@@ -135,7 +135,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           <form className="grid gap-5" onSubmit={submitAuth}>
             <div className="space-y-1">
               <p className="text-xs font-black uppercase text-blue-700">{isSignup ? "Cadastro" : "Login"}</p>
-              <h2 className="text-2xl font-black leading-tight">{isSignup ? "Crie sua conta grátis" : "Entre no FechaPro"}</h2>
+              <h2 className="text-2xl font-black leading-tight">{isSignup ? "Crie sua conta e escolha seu plano" : "Entre no FechaPro"}</h2>
               <p className="max-w-xl text-sm leading-6 text-slate-500">
                 {isSignup ? "Leva menos de um minuto para liberar seu painel." : "Continue de onde parou e acompanhe suas propostas."}
               </p>

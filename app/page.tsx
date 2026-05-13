@@ -17,6 +17,8 @@ import {
   Layers3,
   LockKeyhole,
   LogOut,
+  Megaphone,
+  Menu,
   MessageSquareQuote,
   Moon,
   Palette,
@@ -32,6 +34,7 @@ import {
   Trash2,
   UserCircle,
   Users,
+  X,
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 
@@ -135,6 +138,7 @@ type BrandProfile = {
 };
 
 type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
+type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
 
 type BillingPlan = {
   code: PlanCode;
@@ -148,17 +152,29 @@ type BillingPlan = {
   features: string[];
 };
 
+type BillingArtPack = {
+  code: ArtPackCode;
+  name: string;
+  price: string;
+  priceCents: number;
+  credits: number;
+  features: string[];
+};
+
 type BillingState = {
   subscription: {
     plan: PlanCode;
+    provider?: string | null;
     status: string;
   };
+  artPacks: BillingArtPack[];
   plans: BillingPlan[];
   usage: {
     proposalsThisMonth: number;
     proposalLimit: number;
     artsThisMonth: number;
     artLimit: number;
+    artCreditBalance: number;
   };
 };
 
@@ -203,6 +219,7 @@ const keys = {
   services: "fechapro_services_v1",
   portfolio: "fechapro_portfolio_v1",
   testimonials: "fechapro_testimonials_v1",
+  updatesModal: "fechapro_updates_modal_v1",
 };
 
 const blankDraft: ProposalDraft = {
@@ -566,6 +583,12 @@ export default function Home() {
   const [brand, setBrand] = useState<BrandProfile | null>(null);
   const [billing, setBilling] = useState<BillingState | null>(null);
   const [tourStepIndex, setTourStepIndex] = useState<number | null>(null);
+  const [showUpdatesModal, setShowUpdatesModal] = useState(false);
+  const hasPaidAccess = Boolean(
+    billing &&
+      ["active", "trial"].includes(billing.subscription.status) &&
+      ["asaas", "admin"].includes(billing.subscription.provider || ""),
+  );
   const currentPlan = billing?.subscription.plan || "start";
   const availableTourSteps = useMemo(
     () => tourSteps.filter((step) => canUseModule(step.view, currentPlan)),
@@ -606,6 +629,12 @@ export default function Home() {
     setTourStepIndex(Math.max(availableTourSteps.length - 1, 0));
   }, [availableTourSteps.length, tourStepIndex]);
 
+  useEffect(() => {
+    if (!session || onboardingIncomplete) return;
+    if (typeof window === "undefined") return;
+    setShowUpdatesModal(localStorage.getItem(keys.updatesModal) !== "seen");
+  }, [onboardingIncomplete, session]);
+
   async function loadDashboardData() {
     const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData, marketingArtsData] = await Promise.all([
       apiGet<BrandProfile>("/api/brand"),
@@ -626,6 +655,10 @@ export default function Home() {
     setTestimonials(testimonialsData);
     setProposals(proposalsData);
     setMarketingArts(marketingArtsData);
+    if (billingData.subscription.status !== "active" || billingData.subscription.provider !== "asaas") {
+      setNotice("Escolha um plano e conclua o pagamento pelo Asaas para liberar a criação de propostas.");
+      setActiveView("plans");
+    }
   }
 
   const openValue = useMemo(
@@ -833,6 +866,13 @@ export default function Home() {
     });
   }
 
+  function closeUpdatesModal() {
+    setShowUpdatesModal(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(keys.updatesModal, "seen");
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]" data-theme={dark ? "dark" : "light"}>
       <header className="sticky top-0 z-20 border-b border-black/10 bg-slate-100/90 px-4 py-4 backdrop-blur">
@@ -847,6 +887,7 @@ export default function Home() {
             </p>
           </div>
           <div className="flex shrink-0 gap-2 self-start sm:self-auto">
+            <IconButton label="Ver novidades" icon={Megaphone} onClick={() => setShowUpdatesModal(true)} />
             <IconButton label="Iniciar tour guiado" icon={Sparkles} onClick={startTour} />
             <IconButton label={dark ? "Usar tema claro" : "Usar tema escuro"} icon={dark ? Sun : Moon} onClick={() => setDark((current) => !current)} />
             <IconButton
@@ -896,7 +937,7 @@ export default function Home() {
           />
         ) : (
           <>
-            <nav className="flex gap-1 overflow-x-auto rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav className="grid grid-cols-4 gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/10 sm:flex sm:overflow-x-auto sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeView === item.id;
@@ -904,7 +945,7 @@ export default function Home() {
                 const tourFocus = currentTourStep?.view === item.id;
                 return (
                   <button
-                    className={`flex min-w-[52px] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-black leading-none ${
+                    className={`flex min-h-[58px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:min-w-[52px] sm:text-[11px] ${
                       active ? "bg-green-600 text-white" : locked ? "text-slate-400" : "text-slate-600"
                     } ${locked ? "border border-dashed border-slate-200 bg-slate-50/70" : ""} ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
                     key={item.id}
@@ -920,7 +961,7 @@ export default function Home() {
                     }}
                   >
                     <Icon size={16} />
-                    <span className="mt-0.5 whitespace-nowrap">{item.label}</span>
+                    <span className="mt-0.5 max-w-full truncate sm:whitespace-nowrap">{item.label}</span>
                     {locked ? <LockKeyhole size={10} /> : null}
                   </button>
                 );
@@ -1078,6 +1119,19 @@ export default function Home() {
           total={availableTourSteps.length}
         />
       ) : null}
+      {showUpdatesModal ? (
+        <ProductUpdatesModal
+          onClose={closeUpdatesModal}
+          onOpenArts={() => {
+            closeUpdatesModal();
+            setActiveView("arts");
+          }}
+          onOpenBrand={() => {
+            closeUpdatesModal();
+            setActiveView("brand");
+          }}
+        />
+      ) : null}
     </main>
   );
 }
@@ -1149,6 +1203,11 @@ function DashboardView({
   const acceptanceRate = proposals.length ? Math.round((accepted / proposals.length) * 100) : 0;
   const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
   const followUps = proposals.filter((proposal) => ["sent", "viewed", "awaiting_response"].includes(proposal.status) && daysSince(proposal.updatedAt || proposal.createdAt) >= 2).slice(0, 3);
+  const hasPaidAccess = Boolean(
+    billing &&
+      ["active", "trial"].includes(billing.subscription.status) &&
+      ["asaas", "admin"].includes(billing.subscription.provider || ""),
+  );
 
   function chooseService(serviceName: string) {
     const service = services.find((item) => item.name === serviceName);
@@ -1231,9 +1290,9 @@ function DashboardView({
       {billing ? (
         <section className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <SectionHeading eyebrow="Plano atual" title={`${billing.subscription.plan.toUpperCase()} em uso`} />
+            <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `${billing.subscription.plan.toUpperCase()} em uso` : "Pagamento pendente"} />
             <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
-              {`${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês`}
+              {hasPaidAccess ? `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês` : "Pague pelo Asaas para criar propostas"}
             </span>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
               {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes IA`}
@@ -2666,6 +2725,7 @@ function PlansView({
   const [asaasStatus, setAsaasStatus] = useState<AsaasStatus | null>(null);
   const [checkingAsaas, setCheckingAsaas] = useState(false);
   const [payingPlan, setPayingPlan] = useState<PlanCode | null>(null);
+  const [payingArtPack, setPayingArtPack] = useState<ArtPackCode | null>(null);
   const [paymentError, setPaymentError] = useState("");
 
   useEffect(() => {
@@ -2687,6 +2747,26 @@ function PlansView({
     setPaymentError("");
     setPayingPlan(plan);
     window.location.href = `/checkout/plano/${plan}`;
+  }
+
+  async function payArtPack(artPack: ArtPackCode) {
+    setPaymentError("");
+    setPayingArtPack(artPack);
+    try {
+      const response = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artPack }),
+      });
+      const data = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.error || "Nao foi possivel abrir o pagamento.");
+      }
+      window.location.href = data.url;
+    } catch (caught) {
+      setPaymentError(caught instanceof Error ? caught.message : "Nao foi possivel abrir o pagamento.");
+      setPayingArtPack(null);
+    }
   }
 
   if (!billing) {
@@ -2712,16 +2792,22 @@ function PlansView({
         <p className="text-xs font-black uppercase text-blue-700">Assinatura</p>
         <h2 className="text-2xl font-black">Planos do FechaPro</h2>
         <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Escolha um plano e pague online em ambiente seguro. Quando o Asaas confirmar, o plano é ativado automaticamente.
+          Escolha um plano e pague online em ambiente seguro. O acesso para criar propostas é liberado quando o Asaas confirmar o pagamento.
         </p>
         {paymentError ? (
           <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{paymentError}</p>
         ) : null}
         <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
-          Uso atual: {billing.usage.proposalsThisMonth}
-          {`/${billing.usage.proposalLimit} propostas este mês`}
+          Status: {billing.subscription.status === "active" && billing.subscription.provider === "asaas" ? "ativo" : "aguardando pagamento"}
+          <span className="mt-1 block">
+            Uso atual: {billing.usage.proposalsThisMonth}
+            {`/${billing.usage.proposalLimit} propostas este mês`}
+          </span>
           <span className="mt-1 block">
             Artes IA: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mes
+          </span>
+          <span className="mt-1 block">
+            Créditos extras de artes: {billing.usage.artCreditBalance}
           </span>
         </div>
       </div>
@@ -2732,15 +2818,15 @@ function PlansView({
         onRefresh={refreshAsaasStatus}
       />
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-5">
         {billing.plans.map((plan) => {
-          const active = billing.subscription.plan === plan.code;
+          const active = billing.subscription.plan === plan.code && billing.subscription.status === "active" && billing.subscription.provider === "asaas";
           const recommended = plan.code === "plus";
           return (
             <article
               className={`relative grid gap-4 rounded-lg border p-4 shadow-xl shadow-slate-900/10 ${
                 active ? "border-green-600 bg-green-50" : "border-black/10 bg-white"
-              }`}
+              } grid-rows-[auto_auto_auto_1fr_auto]`}
               key={plan.code}
             >
               {recommended ? (
@@ -2784,6 +2870,41 @@ function PlansView({
             </article>
           );
         })}
+      </div>
+
+      <div className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+        <p className="text-xs font-black uppercase text-blue-700">Criações individuais</p>
+        <h2 className="mt-1 text-2xl font-black">Pacotes extras de artes</h2>
+        <p className="mt-2 max-w-2xl leading-7 text-slate-600">
+          Cada perfil mantém só um plano principal ativo. Se precisar criar mais artes, compre créditos individuais sem trocar sua assinatura.
+        </p>
+        <div className="mt-4 grid items-stretch gap-3 md:grid-cols-3">
+          {billing.artPacks.map((pack) => (
+            <article className="grid h-full grid-rows-[auto_auto_1fr_auto] gap-4 rounded-lg border border-black/10 bg-slate-50 p-4" key={pack.code}>
+              <div>
+                <span className="text-xs font-black uppercase text-blue-700">Pacote</span>
+                <h3 className="mt-1 text-xl font-black">{pack.name}</h3>
+                <p className="mt-1 text-lg font-black text-green-700">{pack.price}</p>
+              </div>
+              <p className="rounded-lg bg-white p-3 text-sm font-black text-slate-700">
+                {pack.credits} crédito{pack.credits > 1 ? "s" : ""} para artes de divulgação.
+              </p>
+              <ul className="list-disc pl-5 leading-7 text-slate-600">
+                {pack.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
+              <button
+                className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-65"
+                type="button"
+                disabled={payingArtPack === pack.code}
+                onClick={() => payArtPack(pack.code)}
+              >
+                {payingArtPack === pack.code ? "Abrindo pagamento..." : "Comprar créditos"}
+              </button>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -3361,6 +3482,7 @@ function AuthScreen() {
   const [monthlyProposals, setMonthlyProposals] = useState(12);
   const [averageTicket, setAverageTicket] = useState(1200);
   const [rescuedDeals, setRescuedDeals] = useState(2);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const activeExample = landingExamples[activeExampleIndex];
   const estimatedMonthlyUpside = averageTicket * Math.min(rescuedDeals, monthlyProposals);
   const structuredData = {
@@ -3397,6 +3519,7 @@ function AuthScreen() {
   };
 
   function goToSection(id: string) {
+    setMobileMenuOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.history.replaceState(null, "", window.location.pathname);
   }
@@ -3412,7 +3535,7 @@ function AuthScreen() {
         <Image className="absolute inset-0 -z-20 object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" fill priority sizes="100vw" />
         <div className="absolute inset-0 -z-10 bg-slate-950/74" />
         <div className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 py-4 pb-20 sm:min-h-[92vh] sm:px-6 sm:pb-4 lg:px-8">
-          <header className="flex items-center justify-between gap-3">
+          <header className="relative flex items-center justify-between gap-3">
             <a className="inline-flex items-center gap-2 font-black" href="#">
               <span className="grid h-12 w-40 place-items-center rounded-lg bg-white/95 px-3">
                 <Image alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
@@ -3437,12 +3560,40 @@ function AuthScreen() {
             </nav>
             <div className="flex items-center gap-2">
               <a className="hidden min-h-10 items-center justify-center rounded-lg bg-green-500 px-4 text-sm font-black text-slate-950 sm:inline-flex" href="/cadastro">
-                Criar conta grátis
+                Criar conta
               </a>
               <a className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/25 px-4 text-sm font-black text-white" href="/login">
                 Entrar
               </a>
+              <button
+                aria-expanded={mobileMenuOpen}
+                aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+                className="grid h-10 w-10 place-items-center rounded-lg border border-white/25 text-white md:hidden"
+                type="button"
+                onClick={() => setMobileMenuOpen((current) => !current)}
+              >
+                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
             </div>
+            {mobileMenuOpen ? (
+              <nav className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-1 rounded-lg border border-white/15 bg-slate-950/96 p-2 text-sm font-black text-white shadow-xl shadow-black/30 backdrop-blur md:hidden">
+                <button className="min-h-11 rounded-lg px-3 text-left" type="button" onClick={() => goToSection("como-funciona")}>
+                  Como funciona
+                </button>
+                <button className="min-h-11 rounded-lg px-3 text-left" type="button" onClick={() => goToSection("recursos")}>
+                  Recursos
+                </button>
+                <button className="min-h-11 rounded-lg px-3 text-left" type="button" onClick={() => goToSection("planos")}>
+                  Planos
+                </button>
+                <a className="min-h-11 rounded-lg px-3 py-3" href="/interesse">
+                  Tenho interesse
+                </a>
+                <a className="min-h-11 rounded-lg bg-green-500 px-3 py-3 text-slate-950" href="/cadastro">
+                  ComeÃ§ar
+                </a>
+              </nav>
+            ) : null}
           </header>
 
           <div className="grid flex-1 content-end gap-6 pb-6 pt-12 sm:gap-8 sm:pb-8 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
@@ -3697,16 +3848,16 @@ function AuthScreen() {
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {plans.map((plan) => (
-              <article className={`relative rounded-lg border ${plan.badge ? "px-5 pb-5 pt-20" : "p-5"} ${plan.name === "Profissional" ? "border-green-400 bg-white text-slate-950" : "border-white/15 bg-white/8"}`} key={plan.name}>
+              <article className={`relative flex h-full flex-col rounded-lg border p-5 ${plan.name === "Profissional" ? "border-green-400 bg-white text-slate-950" : "border-white/15 bg-white/8"}`} key={plan.name}>
                 {plan.badge ? (
-                  <span className="absolute right-3 top-8 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
+                  <span className="absolute right-4 top-0 -translate-y-1/2 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
                     {plan.badge}
                   </span>
                 ) : null}
                 <p className="text-sm font-black uppercase text-blue-400">{plan.name}</p>
                 <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
                 <span className={plan.name === "Profissional" ? "mt-1 block text-slate-600" : "mt-1 block text-white/65"}>{plan.priceSuffix}</span>
-                <p className={plan.name === "Profissional" ? "mt-4 text-sm leading-6 text-slate-600" : "mt-4 text-sm leading-6 text-white/70"}>{plan.detail}</p>
+                <p className={plan.name === "Profissional" ? "mt-4 min-h-24 text-sm leading-6 text-slate-600" : "mt-4 min-h-24 text-sm leading-6 text-white/70"}>{plan.detail}</p>
                 <ul className="mt-5 grid gap-3">
                   {plan.items.map((item) => (
                     <li className="flex items-center gap-2 text-sm font-bold" key={item}>
@@ -3716,7 +3867,7 @@ function AuthScreen() {
                   ))}
                 </ul>
                 <a
-                  className={`mt-6 grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
+                  className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
                     plan.name === "Profissional" ? "bg-green-600 text-white" : "bg-white text-slate-950"
                   }`}
                   href="/cadastro"
@@ -3766,7 +3917,7 @@ function AuthScreen() {
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
         <a className="grid min-h-12 w-full place-items-center rounded-lg bg-green-600 px-4 text-center font-black text-white" href="/cadastro">
-          Criar proposta grátis
+          Começar com um plano
         </a>
       </div>
     </main>
@@ -3780,6 +3931,133 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
       <strong className="block text-lg font-black">{value}</strong>
       <span className="text-xs font-bold text-white/70">{label}</span>
     </article>
+  );
+}
+
+function ProductUpdatesModal({
+  onClose,
+  onOpenArts,
+  onOpenBrand,
+}: {
+  onClose: () => void;
+  onOpenArts: () => void;
+  onOpenBrand: () => void;
+}) {
+  const updates = [
+    {
+      icon: FileText,
+      title: "Propostas com aceite e PDF",
+      description: "Links publicos, PDF e status ajudam o cliente a decidir sem depender de mensagem solta.",
+      tag: "Disponivel",
+    },
+    {
+      icon: Palette,
+      title: "Artes com IA",
+      description: "Crie criativos para divulgar servicos, promocoes, cardapios e agenda aberta.",
+      tag: "Novo",
+    },
+    {
+      icon: CreditCard,
+      title: "Planos e cobranca",
+      description: "Assinatura pelo Asaas e limites por plano ja estao conectados ao painel.",
+      tag: "Ativo",
+    },
+  ];
+  const nextFeatures = [
+    "Modelos de proposta por nicho com textos mais prontos para vender.",
+    "Mais opcoes de acompanhamento do cliente depois que ele abre a proposta.",
+    "Melhorias no checkout para deixar aceite e pagamento ainda mais diretos.",
+  ];
+
+  return (
+    <div
+      aria-labelledby="updates-modal-title"
+      aria-modal="true"
+      className="fixed inset-0 z-50 grid items-end bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+      role="dialog"
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-lg border border-black/10 bg-white shadow-xl shadow-slate-950/30 sm:mx-auto sm:max-w-2xl sm:rounded-lg">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-black/10 bg-white p-4 sm:p-5">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase text-green-700">Novidades do FechaPro</p>
+            <h2 id="updates-modal-title" className="mt-1 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
+              Atualizacoes para vender com mais clareza
+            </h2>
+          </div>
+          <button
+            aria-label="Fechar novidades"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-black/10 bg-white text-slate-800"
+            type="button"
+            onClick={onClose}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="grid gap-5 p-4 sm:p-5">
+          <section className="rounded-lg bg-slate-950 p-4 text-white sm:p-5">
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <div>
+                <p className="text-xs font-black uppercase text-green-200">Agora no painel</p>
+                <p className="mt-2 text-lg font-black leading-snug">
+                  Seu cliente recebe uma proposta mais profissional, voce acompanha melhor o interesse e ainda ganha velocidade para divulgar seus servicos.
+                </p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
+                <Sparkles size={14} />
+                Maio 2026
+              </span>
+            </div>
+          </section>
+
+          <section className="grid gap-3">
+            {updates.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article className="grid grid-cols-[auto_1fr] gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:p-4" key={item.title}>
+                  <span className="grid size-10 place-items-center rounded-lg bg-green-100 text-green-700">
+                    <Icon size={19} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-black text-slate-950">{item.title}</h3>
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black uppercase text-blue-700">
+                        {item.tag}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm font-bold leading-6 text-slate-600">{item.description}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+
+          <section className="rounded-lg border border-black/10 p-4">
+            <p className="text-xs font-black uppercase text-blue-700">Proximas features</p>
+            <div className="mt-3 grid gap-2">
+              {nextFeatures.map((feature) => (
+                <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
+                  <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
+                  <span>{feature}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onOpenArts}>
+              Ver artes IA
+            </button>
+            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black text-slate-800" type="button" onClick={onOpenBrand}>
+              Ajustar marca
+            </button>
+            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black text-slate-800" type="button" onClick={onClose}>
+              Entendi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

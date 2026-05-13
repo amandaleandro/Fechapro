@@ -1,4 +1,5 @@
 export type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
+export type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
 
 export const plans: Record<
   PlanCode,
@@ -62,6 +63,43 @@ export const plans: Record<
     proposalLimit: 600,
     artLimit: 15,
     features: ["Até 600 propostas por mês", "15 artes de divulgação por mês", "Tudo do Pro Site", "Site completo simples", "Copy e textos do site", "Cadastro inicial de serviços", "Treinamento rápido"],
+  },
+};
+
+export const artPacks: Record<
+  ArtPackCode,
+  {
+    code: ArtPackCode;
+    name: string;
+    price: string;
+    priceCents: number;
+    credits: number;
+    features: string[];
+  }
+> = {
+  arts_5: {
+    code: "arts_5",
+    name: "Pacote 5 artes",
+    price: "R$ 39",
+    priceCents: 3900,
+    credits: 5,
+    features: ["5 criações individuais", "Créditos extras para usar quando quiser", "Mantém seu plano principal ativo"],
+  },
+  arts_15: {
+    code: "arts_15",
+    name: "Pacote 15 artes",
+    price: "R$ 97",
+    priceCents: 9700,
+    credits: 15,
+    features: ["15 criações individuais", "Ideal para campanhas e lançamentos", "Créditos extras acumuláveis"],
+  },
+  arts_30: {
+    code: "arts_30",
+    name: "Pacote 30 artes",
+    price: "R$ 179",
+    priceCents: 17900,
+    credits: 30,
+    features: ["30 criações individuais", "Melhor custo por arte", "Perfeito para divulgação recorrente"],
   },
 };
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError, slugify } from "@/lib/api";
 import { sendProposalSentToClientEmail } from "@/lib/email";
+import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
 import { currentMonthRange, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
@@ -64,10 +65,15 @@ export async function POST(request: Request) {
 
   const subscription = await prisma.planSubscription.upsert({
     where: { userId: session.id },
-    create: { userId: session.id, plan: "start" },
+    create: { userId: session.id, plan: "start", status: "pending" },
     update: {},
   });
-  const plan = plans[subscription.plan];
+
+  if (!canUsePaidFeatures(subscription)) {
+    return jsonError(blockedSubscriptionMessage(subscription.status), 402);
+  }
+
+  const plan = planLimits(subscription.plan);
   const { start, end } = currentMonthRange();
   const usedThisMonth = await prisma.proposalAsset.count({
     where: {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
-import { currentMonthRange, plans, type PlanCode } from "@/lib/plans";
+import { artPacks, currentMonthRange, plans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -8,7 +8,7 @@ export async function GET() {
   const session = await requireSession();
   const subscription = await prisma.planSubscription.upsert({
     where: { userId: session.id },
-    create: { userId: session.id, plan: "start" },
+    create: { userId: session.id, plan: "start", status: "pending" },
     update: {},
   });
   const { start, end } = currentMonthRange();
@@ -33,12 +33,14 @@ export async function GET() {
 
   return NextResponse.json({
     subscription,
+    artPacks: Object.values(artPacks),
     plans: Object.values(plans),
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
       artsThisMonth,
       artLimit: plans[subscription.plan].artLimit,
+      artCreditBalance: subscription.artCreditBalance,
     },
   });
 }
@@ -53,8 +55,8 @@ export async function PUT(request: Request) {
 
   const subscription = await prisma.planSubscription.upsert({
     where: { userId: session.id },
-    create: { userId: session.id, plan: body.plan, status: "active" },
-    update: { plan: body.plan, status: "active" },
+    create: { userId: session.id, plan: body.plan, status: "pending", provider: "asaas" },
+    update: { plan: body.plan, status: "pending", provider: "asaas" },
   });
   const { start, end } = currentMonthRange();
   const usedThisMonth = await prisma.proposalAsset.count({
@@ -78,12 +80,14 @@ export async function PUT(request: Request) {
 
   return NextResponse.json({
     subscription,
+    artPacks: Object.values(artPacks),
     plans: Object.values(plans),
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
       artsThisMonth,
       artLimit: plans[subscription.plan].artLimit,
+      artCreditBalance: subscription.artCreditBalance,
     },
   });
 }
