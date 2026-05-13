@@ -1,6 +1,6 @@
 .env
+.env.production
 .env.local
 .next
 node_modules
 uploads
-

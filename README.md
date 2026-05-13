@@ -77,6 +77,86 @@ Para parar:
 docker compose down
 ```
 
+## Deploy Na VPS
+
+A esteira de deploy fica em `.github/workflows/deploy-vps.yml`. A cada push na branch `main`, ela:
+
+- builda a imagem da aplicacao;
+- builda a imagem de migracao do Prisma;
+- publica as duas no GitHub Container Registry;
+- entra na VPS por SSH;
+- puxa as imagens novas;
+- roda `prisma db push`;
+- reinicia o app com `docker compose`.
+
+### Preparar A VPS
+
+Instale Docker e Docker Compose na VPS, crie uma pasta para o projeto e coloque nela estes arquivos:
+
+```text
+docker-compose.prod.yml
+.env.production
+```
+
+Exemplo de `.env.production`:
+
+```env
+POSTGRES_DB=fechapro
+POSTGRES_USER=fechapro
+POSTGRES_PASSWORD=troque_esta_senha
+AUTH_SECRET=troque_este_secret
+APP_URL=https://seu-dominio.com
+APP_PORT=3000
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.4-mini
+ASAAS_API_KEY=
+ASAAS_WEBHOOK_TOKEN=
+ASAAS_SANDBOX=false
+RESEND_API_KEY=
+EMAIL_FROM=FechaPro <noreply@seu-dominio.com>
+S3_BUCKET=
+S3_REGION=auto
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_ENDPOINT=
+S3_PUBLIC_URL=
+NEXT_PUBLIC_SITE_URL=https://seu-dominio.com
+NEXT_PUBLIC_WHATSAPP_NUMBER=
+NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE=Ola! Preciso de ajuda com o FechaPro.
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+NEXT_PUBLIC_SENTRY_DSN=
+```
+
+Na primeira subida manual, rode dentro da pasta da VPS:
+
+```bash
+APP_IMAGE=ghcr.io/seu-usuario-ou-org/fechapro:latest \
+MIGRATOR_IMAGE=ghcr.io/seu-usuario-ou-org/fechapro:migrator-latest \
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+```
+
+### Secrets Do GitHub
+
+Configure estes secrets no repositorio:
+
+```text
+VPS_HOST
+VPS_USER
+VPS_SSH_KEY
+VPS_PORT
+VPS_APP_DIR
+NEXT_PUBLIC_SITE_URL
+NEXT_PUBLIC_WHATSAPP_NUMBER
+NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE
+NEXT_PUBLIC_TURNSTILE_SITE_KEY
+NEXT_PUBLIC_SENTRY_DSN
+```
+
+`VPS_APP_DIR` deve ser o caminho da pasta na VPS onde estao `docker-compose.prod.yml` e `.env.production`.
+
+As variaveis `NEXT_PUBLIC_*` sao passadas no build porque o Next.js grava essas configuracoes no bundle do navegador.
+
 ## Variaveis De Ambiente
 
 Use `.env.example` como base e crie seu `.env`.
