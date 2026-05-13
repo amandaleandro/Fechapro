@@ -19,6 +19,9 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-FechaPro <noreply@fechapro.app>}
       APP_URL: ${APP_URL:-http://localhost:3000}
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-development}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${NEXT_PUBLIC_SENTRY_ENVIRONMENT:-development}
+      HEALTHCHECK_TOKEN: ${HEALTHCHECK_TOKEN:-}
       S3_BUCKET: ${S3_BUCKET:-}
       S3_REGION: ${S3_REGION:-auto}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
@@ -34,6 +37,12 @@ services:
       - "3000:3000"
     volumes:
       - fechapro_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header=\"Authorization: Bearer $$HEALTHCHECK_TOKEN\" http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   migrate:

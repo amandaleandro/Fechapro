@@ -3040,7 +3040,7 @@ function AccountView({
   }
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+    <section className="grid gap-5">
       <form className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10" onSubmit={saveAccount}>
         <SectionHeading eyebrow="Minha conta" title="Dados de acesso" />
 

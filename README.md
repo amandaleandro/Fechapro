@@ -131,6 +131,9 @@ NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE=Ola! Preciso de ajuda com o FechaPro.
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
 NEXT_PUBLIC_SENTRY_DSN=
+SENTRY_ENVIRONMENT=production
+NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
+HEALTHCHECK_TOKEN=
 ```
 
 Na primeira subida manual, rode dentro da pasta da VPS:
@@ -173,6 +176,24 @@ NEXT_PUBLIC_SENTRY_DSN
 `VPS_APP_DIR` deve ser o caminho da pasta na VPS onde estao `docker-compose.prod.yml` e `.env.production`.
 
 As variaveis `NEXT_PUBLIC_*` sao passadas no build porque o Next.js grava essas configuracoes no bundle do navegador.
+
+## Observabilidade
+
+O projeto ja esta instrumentado com Sentry para erros, performance e replay de sessoes com erro. Para ativar, configure:
+
+```env
+NEXT_PUBLIC_SENTRY_DSN=
+SENTRY_ENVIRONMENT=production
+NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
+```
+
+Tambem existe o endpoint operacional `GET /api/health`, que retorna status de banco, Asaas, e-mail, storage e Sentry sem expor chaves. Se `HEALTHCHECK_TOKEN` estiver configurado, envie `Authorization: Bearer seu_token` ou `x-healthcheck-token: seu_token`.
+
+Exemplo:
+
+```bash
+curl -H "Authorization: Bearer $HEALTHCHECK_TOKEN" https://seu-dominio.com/api/health
+```
 
 ## Variaveis De Ambiente
 
