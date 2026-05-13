@@ -1,12 +1,14 @@
 "use client";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
-const MESSAGE = "Olá! Preciso de ajuda com o FechaPro.";
+const SUPPORT_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "").replace(/\D/g, "");
+const SUPPORT_MESSAGE =
+  process.env.NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE || "Olá! Preciso de ajuda com o FechaPro.";
 
 export function WhatsAppSupportButton() {
-  if (!WHATSAPP_NUMBER) return null;
+  if (!SUPPORT_PHONE) return null;
 
-  const href = `https://wa.me/55${WHATSAPP_NUMBER}?text=${encodeURIComponent(MESSAGE)}`;
+  const phone = SUPPORT_PHONE.startsWith("55") ? SUPPORT_PHONE : `55${SUPPORT_PHONE}`;
+  const href = `https://wa.me/${phone}?text=${encodeURIComponent(SUPPORT_MESSAGE)}`;
 
   return (
     <a
@@ -14,10 +16,11 @@ export function WhatsAppSupportButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Suporte via WhatsApp"
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:ring-offset-2"
+      title="Suporte via WhatsApp"
+      className="fixed bottom-6 right-6 z-50 flex min-h-12 items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:ring-offset-2"
     >
       <WhatsAppIcon />
-      <span className="text-sm font-semibold text-white">Suporte</span>
+      <span className="hidden text-sm font-semibold text-white sm:inline">Suporte</span>
     </a>
   );
 }

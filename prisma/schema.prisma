@@ -147,6 +147,9 @@ model MarketingArtAsset {
   serviceName       String?
   audience          String?
   callToAction      String?
+  caption           String?
+  whatsappMessage   String?
+  category          String?
   prompt            String
   imageUrl          String
   referenceImageUrl String?

@@ -1,8 +1,8 @@
 import path from "node:path";
 import PDFDocument from "pdfkit";
 import { notFound } from "next/navigation";
+import { readLocalUploadFile } from "@/lib/local-upload-file";
 import { prisma } from "@/lib/prisma";
-import { readLocalFile } from "@/lib/storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -363,7 +363,7 @@ async function readImageFromUrl(url: string) {
 
   if (url.startsWith("/api/uploads/")) {
     const filename = path.basename(url);
-    return readLocalFile(filename);
+    return readLocalUploadFile(filename);
   }
 
   if (url.startsWith("http://") || url.startsWith("https://")) {

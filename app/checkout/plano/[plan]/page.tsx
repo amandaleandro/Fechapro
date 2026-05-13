@@ -36,7 +36,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
             <div className="grid gap-3 sm:grid-cols-3">
               <CheckoutMetric label="Plano" value={plan.name} />
-              <CheckoutMetric label={plan.maintenancePrice ? "Primeiro mês" : "Valor mensal"} value={plan.price} />
+              <CheckoutMetric label={plan.maintenancePrice ? "Implantação" : "Valor mensal"} value={plan.price} />
               <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mês`} />
             </div>
 
@@ -56,11 +56,11 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
         <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
           <div>
-            <p className="text-xs font-black uppercase text-blue-700">{plan.maintenancePrice ? "Primeiro pagamento" : "Total mensal"}</p>
+            <p className="text-xs font-black uppercase text-blue-700">{plan.maintenancePrice ? "Implantação" : "Total mensal"}</p>
             <strong className="mt-1 block text-4xl font-black">{plan.price}</strong>
             {plan.maintenancePrice ? (
               <p className="mt-2 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
-                Depois: {plan.maintenancePrice} para manutenção do site e acesso ao FechaPro.
+                {plan.maintenancePrice} para manutenção do site e acesso ao FechaPro.
               </p>
             ) : null}
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">

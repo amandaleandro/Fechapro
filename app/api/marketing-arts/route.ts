@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { jsonError } from "@/lib/api";
+import { renderMarketingArtHtml } from "@/lib/marketing-art-html";
 import { currentMonthRange, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, rateLimitError } from "@/lib/rate-limit";
@@ -22,10 +23,13 @@ const artFormats: Record<string, { label: string; width: number; height: number 
 type SalesCopy = {
   badge: string;
   benefits: string[];
+  caption: string;
+  category: string;
   cta: string;
   headline: string;
   proof: string;
   subheadline: string;
+  whatsappMessage: string;
 };
 
 export async function GET() {
@@ -52,6 +56,7 @@ export async function POST(request: Request) {
     audience?: string;
     callToAction?: string;
     referenceImageUrl?: string | null;
+    referenceImageUrls?: string[] | null;
     useImageAsBackground?: boolean;
   };
 
@@ -62,13 +67,19 @@ export async function POST(request: Request) {
   const audience = cleanOptionalString(body.audience);
   const callToAction = cleanOptionalString(body.callToAction) || "Peca seu orcamento";
   const referenceImageUrl = cleanOptionalString(body.referenceImageUrl);
+  const referenceImageUrls = Array.isArray(body.referenceImageUrls)
+    ? body.referenceImageUrls.map((url) => cleanOptionalString(url)).filter((url): url is string => Boolean(url)).slice(0, 6)
+    : referenceImageUrl
+      ? [referenceImageUrl]
+      : [];
   const useImageAsBackground = body.useImageAsBackground === true;
-  const salesCopy = buildSalesCopy({
+  let salesCopy = buildSalesCopy({
     audience,
     callToAction,
     objective,
     serviceName,
   });
+  salesCopy = normalizeSalesCopy(salesCopy, salesCopy);
 
   if (!objective) return jsonError("Informe o objetivo da arte.");
 
@@ -90,15 +101,35 @@ export async function POST(request: Request) {
   });
 
   if (plan.artLimit <= 0) {
-    return jsonError("Artes IA estao disponiveis a partir do plano Essencial.", 402);
+    return jsonError("Artes IA estao disponiveis nos planos acima de R$ 100.", 402);
   }
 
   if (usedThisMonth >= plan.artLimit) {
     return jsonError(`Limite mensal de ${plan.artLimit} artes do plano ${plan.name} atingido.`, 402);
   }
 
-  const brand = await prisma.brandProfile.findUnique({ where: { userId: session.id } });
-  const prompt = buildArtPrompt({
+  const [brand, portfolioImage] = await Promise.all([
+    prisma.brandProfile.findUnique({ where: { userId: session.id } }),
+    prisma.portfolioAsset.findFirst({
+      where: {
+        userId: session.id,
+        imageUrl: { not: null },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { imageUrl: true },
+    }),
+  ]);
+  const aiCopy = await generateSalesCopyWithOpenAI({
+    audience,
+    brandName: brand?.businessName || session.name,
+    callToAction,
+    objective,
+    serviceName,
+    fallback: salesCopy,
+  }).catch(() => null);
+  if (aiCopy) salesCopy = aiCopy;
+
+  const prompt = buildTemplatePrompt({
     audience,
     brandName: brand?.businessName || session.name,
     callToAction,
@@ -115,30 +146,22 @@ export async function POST(request: Request) {
     useImageAsBackground,
   });
 
-  const generated = process.env.OPENAI_API_KEY
-    ? await generateWithOpenAI(prompt, {
-        format,
-        referenceImageUrl,
-        useImageAsBackground,
-      }).catch(() => null)
-    : null;
-  const source = generated ? "openai" : "fallback";
-  const imageUrl = generated
-    ? await saveFile(`${crypto.randomUUID()}.png`, generated, "image/png")
-    : await createFallbackArt({
-        brandName: brand?.businessName || session.name,
-        callToAction,
-        format,
-        objective,
-        primaryColor: brand?.primaryColor || "#106b5b",
-        referenceImageUrl,
-        salesCopy,
-        secondaryColor: brand?.secondaryColor || "#0F172A",
-        accentColor: brand?.accentColor || "#2563EB",
-        serviceName,
-        useImageAsBackground,
-        whatsapp: brand?.whatsapp,
-      });
+  const imageUrl = await createTemplateArt({
+    brandName: brand?.businessName || session.name,
+    callToAction,
+    format,
+    objective,
+    primaryColor: brand?.primaryColor || "#106b5b",
+    referenceImageUrl,
+    referenceImageUrls,
+    portfolioImageUrl: portfolioImage?.imageUrl || null,
+    salesCopy,
+    secondaryColor: brand?.secondaryColor || "#0F172A",
+    accentColor: brand?.accentColor || "#2563EB",
+    serviceName,
+    useImageAsBackground,
+    whatsapp: brand?.whatsapp,
+  });
 
   const item = await prisma.marketingArtAsset.create({
     data: {
@@ -149,17 +172,20 @@ export async function POST(request: Request) {
       serviceName,
       audience,
       callToAction,
+      caption: salesCopy.caption,
+      whatsappMessage: salesCopy.whatsappMessage,
+      category: salesCopy.category,
       prompt,
       imageUrl,
       referenceImageUrl,
-      source,
+      source: aiCopy ? "openai-template" : "template",
     },
   });
 
   return NextResponse.json(item, { status: 201 });
 }
 
-function buildArtPrompt(input: {
+function buildTemplatePrompt(input: {
   audience: string | null;
   brandName: string;
   callToAction: string;
@@ -176,27 +202,123 @@ function buildArtPrompt(input: {
   useImageAsBackground: boolean;
 }) {
   return [
-    `Crie uma arte de divulgacao profissional para ${input.formatLabel}, com acabamento de designer de social media.`,
+    `Arte renderizada por template para ${input.formatLabel}.`,
     `Marca: ${input.brandName}.`,
     `Pedido bruto do usuario: ${input.objective}.`,
     input.serviceName ? `Servico: ${input.serviceName}.` : "",
     input.audience ? `Publico-alvo: ${input.audience}.` : "",
-    `Use esta estrategia de venda na arte: headline "${input.salesCopy.headline}", apoio "${input.salesCopy.subheadline}", beneficios "${input.salesCopy.benefits.join("; ")}", CTA "${input.salesCopy.cta}".`,
-    `Usar paleta da marca de forma sutil: principal ${input.primaryColor}, fundo ${input.secondaryColor}, destaque ${input.accentColor}.`,
-    `Chamada principal no botao: ${input.salesCopy.cta}.`,
+    `Copy final: badge "${input.salesCopy.badge}", headline "${input.salesCopy.headline}", apoio "${input.salesCopy.subheadline}", beneficios "${input.salesCopy.benefits.join("; ")}", CTA "${input.salesCopy.cta}".`,
+    `Textos de apoio: legenda "${input.salesCopy.caption}", WhatsApp "${input.salesCopy.whatsappMessage}", categoria "${input.salesCopy.category}".`,
+    `Paleta aplicada no template: principal ${input.primaryColor}, fundo ${input.secondaryColor}, destaque ${input.accentColor}.`,
     input.whatsapp ? `Incluir WhatsApp: ${input.whatsapp}.` : "",
     input.instagram ? `Incluir Instagram: ${input.instagram}.` : "",
     input.referenceImageUrl && input.useImageAsBackground
-      ? "Use a imagem enviada como fundo principal da arte, com overlay/gradiente para garantir leitura do texto por cima."
+      ? "Imagem enviada usada como fundo com overlay para leitura."
       : input.referenceImageUrl
-        ? "Use a imagem enviada como referencia visual, mas mantenha a composicao limpa."
+        ? "Imagem enviada usada como referencia/logo."
         : "",
-    "Direcao visual: clean, sofisticada, universal para qualquer estabelecimento, com bastante respiro, tipografia forte, poucos elementos, sem poluicao visual, sem texto sobreposto.",
-    "A arte precisa vender: mostre problema/beneficio claro, promessa especifica, 2 ou 3 motivos para chamar e um CTA evidente.",
-    "Crie uma composicao parecida com o que um designer e copywriter fariam no ChatGPT/console: imagem final pronta para publicar, texto grande e legivel, CTA claro, sem marcas d'agua.",
+    "Render: template visual controlado pelo FechaPro, com texto grande, hierarquia, CTA e sem texto gerado dentro de imagem por IA.",
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+async function generateSalesCopyWithOpenAI(input: {
+  audience: string | null;
+  brandName: string;
+  callToAction: string;
+  fallback: SalesCopy;
+  objective: string;
+  serviceName: string | null;
+}): Promise<SalesCopy | null> {
+  if (!process.env.OPENAI_API_KEY) return null;
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_TEXT_MODEL || process.env.OPENAI_RESPONSES_MODEL || process.env.OPENAI_MODEL || "gpt-5",
+      input: [
+        {
+          role: "system",
+          content:
+            "Voce e um copywriter de social media para pequenos negocios brasileiros. Responda somente JSON valido, sem markdown.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            brandName: input.brandName,
+            serviceName: input.serviceName,
+            objective: input.objective,
+            audience: input.audience,
+            requestedCta: input.callToAction,
+            task:
+              "Crie copy curta para uma arte que sera renderizada em template. Texto precisa vender, caber em post/status e nao pode ser generico.",
+            shape: {
+              badge: "ate 24 caracteres",
+              headline: "ate 54 caracteres",
+              subheadline: "ate 110 caracteres",
+              benefits: "3 itens, ate 42 caracteres cada",
+              proof: "ate 70 caracteres",
+              cta: "ate 34 caracteres",
+            },
+          }),
+        },
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "marketing_art_copy",
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["badge", "headline", "subheadline", "benefits", "proof", "cta", "caption", "whatsappMessage", "category"],
+            properties: {
+              badge: { type: "string" },
+              headline: { type: "string" },
+              subheadline: { type: "string" },
+              benefits: {
+                type: "array",
+                minItems: 3,
+                maxItems: 3,
+                items: { type: "string" },
+              },
+              proof: { type: "string" },
+              cta: { type: "string" },
+              caption: { type: "string" },
+              whatsappMessage: { type: "string" },
+              category: {
+                type: "string",
+                enum: ["food", "promotion", "service", "beauty", "traffic", "site", "notice", "agenda", "general"],
+              },
+            },
+          },
+          strict: true,
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) return null;
+  const data = (await response.json()) as {
+    output_text?: string;
+    output?: Array<{
+      content?: Array<{ text?: string; type?: string }>;
+      type?: string;
+    }>;
+  };
+  const raw =
+    data.output_text ||
+    data.output
+      ?.flatMap((item) => item.content || [])
+      .find((content) => content.type === "output_text" || content.text)?.text;
+  if (!raw) return null;
+
+  const parsed = JSON.parse(raw) as Partial<SalesCopy>;
+  return normalizeSalesCopy(parsed, input.fallback);
 }
 
 async function generateWithOpenAI(prompt: string, options: {
@@ -272,6 +394,46 @@ async function generateWithOpenAI(prompt: string, options: {
   return base64 ? Buffer.from(base64, "base64") : null;
 }
 
+async function generateSupportImage(input: {
+  audience: string | null;
+  format: string;
+  objective: string;
+  salesCopy: SalesCopy;
+  serviceName: string | null;
+}) {
+  const prompt = [
+    "Generate a polished marketing support image for a Brazilian small business social media post.",
+    "Do not include any words, letters, numbers, logos, watermarks, badges, UI text, or fake brand names in the image.",
+    "The image will be used beside overlaid text, so leave clean negative space and keep the subject on the right side.",
+    `Service/topic: ${input.serviceName || input.objective}.`,
+    input.audience ? `Target audience: ${input.audience}.` : "",
+    `Campaign message: ${input.salesCopy.headline}.`,
+    "Style: modern commercial illustration/photo-real hybrid, friendly entrepreneur or customer, clean blue/green accents, professional, trustworthy, bright background.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: imageModel,
+      prompt,
+      size: input.format === "instagram_post" ? "1024x1024" : "1024x1536",
+      quality: "high",
+      n: 1,
+    }),
+  });
+
+  if (!response.ok) return null;
+  const data = (await response.json()) as { data?: Array<{ b64_json?: string }> };
+  const base64 = data.data?.[0]?.b64_json;
+  return base64 ? Buffer.from(base64, "base64") : null;
+}
+
 async function loadReferenceImage(referenceImageUrl: string | null) {
   if (!referenceImageUrl?.startsWith("/api/uploads/")) return null;
   const filename = referenceImageUrl.split("/").pop();
@@ -281,6 +443,59 @@ async function loadReferenceImage(referenceImageUrl: string | null) {
   const metadata = await sharp(bytes).metadata().catch(() => null);
   const contentType = metadata?.format === "png" ? "image/png" : metadata?.format === "webp" ? "image/webp" : "image/jpeg";
   return { bytes, contentType };
+}
+
+async function loadImageDataUrl(imageUrl: string | null) {
+  if (!imageUrl) return null;
+
+  if (imageUrl.startsWith("/api/uploads/")) {
+    const reference = await loadReferenceImage(imageUrl);
+    return reference ? `data:${reference.contentType};base64,${reference.bytes.toString("base64")}` : null;
+  }
+
+  if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) return null;
+
+  try {
+    const response = await fetch(imageUrl, { cache: "no-store" });
+    if (!response.ok) return null;
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith("image/")) return null;
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return `data:${contentType};base64,${bytes.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
+async function createTemplateArt(input: {
+  accentColor: string;
+  brandName: string;
+  callToAction: string;
+  format: string;
+  objective: string;
+  primaryColor: string;
+  referenceImageUrl?: string | null;
+  referenceImageUrls?: string[] | null;
+  portfolioImageUrl?: string | null;
+  salesCopy: SalesCopy;
+  secondaryColor: string;
+  serviceName: string | null;
+  useImageAsBackground?: boolean;
+  whatsapp?: string | null;
+}) {
+  const uploadedUrls = input.referenceImageUrls?.length ? input.referenceImageUrls : input.referenceImageUrl ? [input.referenceImageUrl] : [];
+  const reference = input.useImageAsBackground ? await loadReferenceImage(uploadedUrls[0] || null) : null;
+  const backgroundDataUrl = reference ? `data:${reference.contentType};base64,${reference.bytes.toString("base64")}` : null;
+  const mediaUrls = !input.useImageAsBackground ? (uploadedUrls.length ? uploadedUrls : input.portfolioImageUrl ? [input.portfolioImageUrl] : []) : [];
+  const mediaDataUrls = (await Promise.all(mediaUrls.slice(0, 4).map((url) => loadImageDataUrl(url)))).filter((url): url is string => Boolean(url));
+  const bytes = await renderMarketingArtHtml({
+    ...input,
+    backgroundDataUrl,
+    mediaDataUrl: mediaDataUrls[0] || null,
+    mediaDataUrls,
+    category: input.salesCopy.category,
+  });
+  return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
 }
 
 async function createFallbackArt(input: {
@@ -294,6 +509,7 @@ async function createFallbackArt(input: {
   salesCopy: SalesCopy;
   secondaryColor: string;
   serviceName: string | null;
+  supportImage?: Buffer | null;
   useImageAsBackground?: boolean;
   whatsapp?: string | null;
 }) {
@@ -409,6 +625,7 @@ async function createCleanFallbackArt(input: {
   salesCopy: SalesCopy;
   secondaryColor: string;
   serviceName: string | null;
+  supportImage?: Buffer | null;
   useImageAsBackground?: boolean;
   whatsapp?: string | null;
 }) {
@@ -422,6 +639,8 @@ async function createCleanFallbackArt(input: {
   const subtitleLines = wrapTitle(input.salesCopy.subheadline, isStory ? 34 : 30).slice(0, 2);
   const contact = input.whatsapp || "Fale conosco";
   const useBackground = Boolean(input.useImageAsBackground && input.referenceImageUrl);
+  if (!useBackground) return createBrandCampaignFallbackArt(input);
+
   const panelX = useBackground ? (isStory ? 74 : 62) : 0;
   const panelY = useBackground ? (isStory ? 86 : 58) : 0;
   const panelWidth = useBackground ? dimensions.width - panelX * 2 : 0;
@@ -549,6 +768,123 @@ async function createCleanFallbackArt(input: {
     bytes = await sharp(Buffer.from(overlaySvg)).png().toBuffer();
   }
 
+  return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
+}
+
+async function createBrandCampaignFallbackArt(input: {
+  accentColor: string;
+  brandName: string;
+  callToAction: string;
+  format: string;
+  objective: string;
+  primaryColor: string;
+  referenceImageUrl?: string | null;
+  salesCopy: SalesCopy;
+  secondaryColor: string;
+  serviceName: string | null;
+  supportImage?: Buffer | null;
+  useImageAsBackground?: boolean;
+  whatsapp?: string | null;
+}) {
+  return createAudienceCampaignFallbackArt(input);
+
+  const dimensions = artFormats[input.format] || artFormats.instagram_post;
+  const isStory = dimensions.height > dimensions.width;
+  const brandColor = sanitizeColor(input.primaryColor, "#16a34a");
+  const accentColor = sanitizeColor(input.accentColor, "#1455ff");
+  const darkColor = "#061334";
+  const margin = isStory ? 82 : 68;
+  const headline = buildEditorialHeadline(input.salesCopy);
+  const titleLines = wrapTitle(headline, isStory ? 17 : 18).slice(0, isStory ? 4 : 3);
+  const titleTop = isStory ? 330 : 250;
+  const titleSize = isStory ? 82 : 76;
+  const titleLineHeight = isStory ? 90 : 84;
+  const explainTop = titleTop + titleLines.length * titleLineHeight + (isStory ? 54 : 44);
+  const cardTop = explainTop + (isStory ? 150 : 118);
+  const cardCount = input.supportImage && !isStory ? 2 : isStory ? 4 : 4;
+  const cards = buildEditorialCards(input.salesCopy).slice(0, cardCount);
+  const cardWidth = isStory ? Math.floor((dimensions.width - margin * 2 - 42) / 2) : Math.floor((dimensions.width - margin * 2 - 48) / 4);
+  const cardHeight = isStory ? 160 : 150;
+  const ctaHeight = isStory ? 116 : 96;
+  const ctaY = dimensions.height - (isStory ? 210 : 136);
+  const logo = buildLogoParts(input.brandName);
+  const titleSvg = titleLines
+    .map((line, index) => {
+      const fill = index === 1 ? accentColor : darkColor;
+      return `<text x="${margin}" y="${titleTop + index * titleLineHeight}" fill="${fill}" font-family="Arial, sans-serif" font-size="${titleSize}" font-weight="900">${escapeXml(line)}</text>`;
+    })
+    .join("");
+  const cardsSvg = cards
+    .map((card, index) => {
+      const col = isStory ? index % 2 : index;
+      const row = isStory ? Math.floor(index / 2) : 0;
+      const x = margin + col * (cardWidth + (isStory ? 42 : 16));
+      const y = cardTop + row * (cardHeight + 28);
+      const iconPath = index === 0 ? documentIcon() : index === 1 ? checkIcon() : index === 2 ? chartIcon() : peopleIcon();
+      return `
+        <g filter="url(#softShadow)">
+          <rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="22" fill="#ffffff"/>
+        </g>
+        <g transform="translate(${x + 34} ${y + 26}) scale(${isStory ? 1.16 : 1})" fill="none" stroke="${index % 2 ? brandColor : darkColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${iconPath}</g>
+        <text x="${x + 26}" y="${y + cardHeight - 48}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 24 : 18}" font-weight="900">${escapeXml(card[0])}</text>
+        <text x="${x + 26}" y="${y + cardHeight - 20}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 24 : 18}" font-weight="900">${escapeXml(card[1])}</text>
+      `;
+    })
+    .join("");
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" viewBox="0 0 ${dimensions.width} ${dimensions.height}">
+      <defs>
+        <linearGradient id="pageBg" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="56%" stop-color="#f7fbff"/>
+          <stop offset="100%" stop-color="#eef6ff"/>
+        </linearGradient>
+        <linearGradient id="blueBlock" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#0d46ff"/>
+          <stop offset="100%" stop-color="#0631a9"/>
+        </linearGradient>
+        <linearGradient id="cta" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="#061334"/>
+          <stop offset="100%" stop-color="#08245e"/>
+        </linearGradient>
+        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+          <feDropShadow dx="0" dy="14" stdDeviation="15" flood-color="#0f172a" flood-opacity="0.13"/>
+        </filter>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#pageBg)"/>
+      <path d="M ${dimensions.width * 0.7} 0 C ${dimensions.width * 0.82} ${isStory ? 120 : 80}, ${dimensions.width * 0.93} ${isStory ? 70 : 50}, ${dimensions.width} ${isStory ? 130 : 80} V 0 Z" fill="url(#blueBlock)"/>
+      <path d="M 0 ${dimensions.height - (isStory ? 190 : 130)} C ${dimensions.width * 0.08} ${dimensions.height - (isStory ? 105 : 76)}, ${dimensions.width * 0.2} ${dimensions.height - (isStory ? 80 : 56)}, ${dimensions.width * 0.32} ${dimensions.height} H 0 Z" fill="#0d46ff"/>
+      <circle cx="${dimensions.width - (isStory ? 150 : 125)}" cy="${isStory ? 310 : 250}" r="${isStory ? 135 : 115}" fill="#dbeafe" opacity="0.68"/>
+      <g opacity="0.34" fill="#bfdbfe">${dotPattern(dimensions.width - (isStory ? 520 : 470), isStory ? 180 : 110, isStory ? 260 : 230)}</g>
+      <g transform="translate(${margin} ${isStory ? 74 : 68})">
+        <rect x="0" y="0" width="${isStory ? 64 : 54}" height="${isStory ? 64 : 54}" rx="15" fill="#ffffff" stroke="${darkColor}" stroke-width="4"/>
+        <path d="M ${isStory ? 18 : 15} ${isStory ? 34 : 29} l ${isStory ? 10 : 8} ${isStory ? 10 : 8} l ${isStory ? 21 : 17} -${isStory ? 25 : 20}" fill="none" stroke="${brandColor}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="${isStory ? 82 : 70}" y="${isStory ? 47 : 41}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 48 : 42}" font-weight="900">${escapeXml(logo.main)}</text>
+        <text x="${isStory ? 82 + logo.main.length * 29 : 70 + logo.main.length * 25}" y="${isStory ? 47 : 41}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 48 : 42}" font-weight="900">${escapeXml(logo.accent)}</text>
+      </g>
+      <rect x="${margin}" y="${titleTop - (isStory ? 108 : 86)}" width="${isStory ? 300 : 250}" height="${isStory ? 68 : 58}" rx="18" fill="${accentColor}"/>
+      <path d="M ${margin + 46} ${titleTop - (isStory ? 40 : 32)} l -22 22 h 36 z" fill="${accentColor}"/>
+      <text x="${margin + 34}" y="${titleTop - (isStory ? 63 : 48)}" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 34 : 28}" font-weight="900">${escapeXml(input.salesCopy.badge)}</text>
+      <g filter="url(#softShadow)">
+        <rect x="${margin - 32}" y="${titleTop - 42}" width="${isStory ? dimensions.width - margin * 1.35 : dimensions.width * 0.56}" height="${titleLines.length * titleLineHeight + (isStory ? 80 : 64)}" rx="34" fill="#ffffff" opacity="0.9"/>
+      </g>
+      ${titleSvg}
+      <path d="M ${margin + 160} ${titleTop + titleLines.length * titleLineHeight - 22} C ${margin + 260} ${titleTop + titleLines.length * titleLineHeight - 40}, ${margin + 390} ${titleTop + titleLines.length * titleLineHeight - 36}, ${margin + 500} ${titleTop + titleLines.length * titleLineHeight - 50}" fill="none" stroke="${brandColor}" stroke-width="8" stroke-linecap="round"/>
+      <g>
+        <circle cx="${margin + 48}" cy="${explainTop - 18}" r="${isStory ? 36 : 28}" fill="${accentColor}"/>
+        <path d="M ${margin + 48} ${explainTop - 37} v 38 M ${margin + 30} ${explainTop - 18} h 36" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+        <text x="${margin + (isStory ? 108 : 90)}" y="${explainTop - 26}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 32 : 27}" font-weight="500">${escapeXml(wrapTitle(input.salesCopy.subheadline, isStory ? 40 : 45)[0] || "")}</text>
+        <text x="${margin + (isStory ? 108 : 90)}" y="${explainTop + 18}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 32 : 27}" font-weight="900">${escapeXml(wrapTitle(input.salesCopy.subheadline, isStory ? 40 : 45)[1] || input.salesCopy.proof)}</text>
+      </g>
+      ${cardsSvg}
+      <g filter="url(#softShadow)">
+        <rect x="${margin + (isStory ? 36 : dimensions.width * 0.16)}" y="${ctaY}" width="${isStory ? dimensions.width - margin * 2 - 72 : dimensions.width * 0.68}" height="${ctaHeight}" rx="${ctaHeight / 2}" fill="url(#cta)"/>
+      </g>
+      <text x="${dimensions.width / 2}" y="${ctaY + (isStory ? 72 : 61)}" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 40 : 34}" font-weight="900">${escapeXml(truncate(input.salesCopy.cta, isStory ? 34 : 30))}</text>
+    </svg>
+  `;
+  const bytes = await sharp(Buffer.from(svg)).png().toBuffer();
   return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
 }
 
@@ -684,12 +1020,234 @@ async function createPolishedFallbackArt(input: {
   return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
 }
 
+async function createAudienceCampaignFallbackArt(input: {
+  accentColor: string;
+  brandName: string;
+  callToAction: string;
+  format: string;
+  objective: string;
+  primaryColor: string;
+  referenceImageUrl?: string | null;
+  salesCopy: SalesCopy;
+  secondaryColor: string;
+  serviceName: string | null;
+  supportImage?: Buffer | null;
+  useImageAsBackground?: boolean;
+  whatsapp?: string | null;
+}) {
+  const dimensions = artFormats[input.format] || artFormats.instagram_post;
+  const isStory = dimensions.height > dimensions.width;
+  const brandColor = sanitizeColor(input.primaryColor, "#16a34a");
+  const accentColor = sanitizeColor(input.accentColor, "#1455ff");
+  const darkColor = "#061334";
+  const margin = isStory ? 76 : 64;
+  const headline = buildEditorialHeadline(input.salesCopy);
+  const titleLines = wrapTitle(headline, isStory ? 19 : 22).slice(0, isStory ? 4 : 2);
+  const titleSize = isStory ? 74 : 58;
+  const titleLineHeight = isStory ? 82 : 66;
+  const titleTop = isStory ? 300 : 292;
+  const copyTop = titleTop + titleLines.length * titleLineHeight + (isStory ? 42 : 34);
+  const copyLines = wrapTitle(input.salesCopy.subheadline, isStory ? 36 : 30).slice(0, 2);
+  const cardTop = isStory ? copyTop + 150 : 682;
+  const cardWidth = isStory ? Math.floor((dimensions.width - margin * 2 - 24) / 2) : 220;
+  const cardHeight = isStory ? 146 : 128;
+  const cards = buildEditorialCards(input.salesCopy).slice(0, isStory ? 4 : 3);
+  const ctaWidth = isStory ? dimensions.width - margin * 2 : 690;
+  const ctaHeight = isStory ? 104 : 86;
+  const ctaX = isStory ? margin : Math.round((dimensions.width - ctaWidth) / 2);
+  const ctaY = dimensions.height - (isStory ? 184 : 128);
+  const mediaBox = {
+    x: isStory ? dimensions.width - 450 : 650,
+    y: isStory ? 250 : 190,
+    width: isStory ? 360 : 350,
+    height: isStory ? 520 : 430,
+    radius: isStory ? 52 : 42,
+  };
+  const illustration = input.supportImage
+    ? `
+      <g filter="url(#softShadow)">
+        <rect x="${mediaBox.x}" y="${mediaBox.y}" width="${mediaBox.width}" height="${mediaBox.height}" rx="${mediaBox.radius}" fill="#ffffff"/>
+      </g>
+      <rect x="${mediaBox.x}" y="${mediaBox.y}" width="${mediaBox.width}" height="${mediaBox.height}" rx="${mediaBox.radius}" fill="#dbeafe"/>
+    `
+    : buildAudienceIllustration({
+    accentColor,
+    brandColor,
+    darkColor,
+    isStory,
+    x: isStory ? dimensions.width - 420 : 655,
+    y: isStory ? 255 : 205,
+  });
+  const titleSvg = titleLines
+    .map((line, index) => {
+      return `<text x="${margin}" y="${titleTop + index * titleLineHeight}" fill="${index === 1 ? accentColor : darkColor}" font-family="Arial, sans-serif" font-size="${titleSize}" font-weight="900">${escapeXml(line)}</text>`;
+    })
+    .join("");
+  const copySvg = copyLines
+    .map((line, index) => {
+      return `<text x="${margin}" y="${copyTop + index * (isStory ? 40 : 34)}" fill="${index === 1 ? accentColor : darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 30 : 25}" font-weight="${index === 1 ? 900 : 600}">${escapeXml(line)}</text>`;
+    })
+    .join("");
+  const cardsSvg = cards
+    .map((card, index) => {
+      const col = isStory ? index % 2 : index;
+      const row = isStory ? Math.floor(index / 2) : 0;
+      const gap = isStory ? 24 : 20;
+      const x = margin + col * (cardWidth + gap);
+      const y = cardTop + row * (cardHeight + 24);
+      const iconPath = index === 0 ? documentIcon() : index === 1 ? checkIcon() : index === 2 ? chartIcon() : peopleIcon();
+      return `
+        <g filter="url(#softShadow)">
+          <rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="20" fill="#ffffff"/>
+        </g>
+        <g transform="translate(${x + 26} ${y + 22}) scale(${isStory ? 1.05 : 0.88})" fill="none" stroke="${index % 2 ? brandColor : darkColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${iconPath}</g>
+        <text x="${x + 22}" y="${y + cardHeight - 44}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 22 : 18}" font-weight="900">${escapeXml(card[0])}</text>
+        <text x="${x + 22}" y="${y + cardHeight - 18}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 22 : 18}" font-weight="900">${escapeXml(card[1])}</text>
+      `;
+    })
+    .join("");
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" viewBox="0 0 ${dimensions.width} ${dimensions.height}">
+      <defs>
+        <linearGradient id="pageBg" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="56%" stop-color="#f7fbff"/>
+          <stop offset="100%" stop-color="#eef6ff"/>
+        </linearGradient>
+        <linearGradient id="blueBlock" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#1455ff"/>
+          <stop offset="100%" stop-color="#062d9f"/>
+        </linearGradient>
+        <linearGradient id="cta" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="#061334"/>
+          <stop offset="100%" stop-color="#08245e"/>
+        </linearGradient>
+        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+          <feDropShadow dx="0" dy="14" stdDeviation="15" flood-color="#0f172a" flood-opacity="0.13"/>
+        </filter>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#pageBg)"/>
+      <path d="M ${dimensions.width * 0.7} 0 C ${dimensions.width * 0.82} ${isStory ? 120 : 72}, ${dimensions.width * 0.93} ${isStory ? 70 : 46}, ${dimensions.width} ${isStory ? 130 : 86} V 0 Z" fill="url(#blueBlock)"/>
+      <path d="M 0 ${dimensions.height - (isStory ? 190 : 122)} C ${dimensions.width * 0.1} ${dimensions.height - (isStory ? 105 : 70)}, ${dimensions.width * 0.23} ${dimensions.height - (isStory ? 80 : 48)}, ${dimensions.width * 0.34} ${dimensions.height} H 0 Z" fill="#1455ff"/>
+      <circle cx="${dimensions.width - (isStory ? 140 : 112)}" cy="${isStory ? 315 : 250}" r="${isStory ? 132 : 104}" fill="#dbeafe" opacity="0.76"/>
+      <g opacity="0.32" fill="#bfdbfe">${dotPattern(dimensions.width - (isStory ? 520 : 455), isStory ? 180 : 120, isStory ? 260 : 220)}</g>
+      <g transform="translate(${margin} ${isStory ? 76 : 66})">
+        <rect x="0" y="0" width="${isStory ? 62 : 54}" height="${isStory ? 62 : 54}" rx="14" fill="#ffffff" stroke="${darkColor}" stroke-width="4"/>
+        <path d="M ${isStory ? 17 : 15} ${isStory ? 33 : 29} l ${isStory ? 10 : 8} ${isStory ? 10 : 8} l ${isStory ? 21 : 17} -${isStory ? 25 : 20}" fill="none" stroke="${brandColor}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="${isStory ? 80 : 70}" y="${isStory ? 45 : 40}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 40 : 33}" font-weight="900">${escapeXml(truncate(input.brandName, isStory ? 22 : 20))}</text>
+      </g>
+      ${illustration}
+      <rect x="${margin}" y="${titleTop - (isStory ? 98 : 118)}" width="${isStory ? 300 : 254}" height="${isStory ? 62 : 52}" rx="17" fill="${accentColor}"/>
+      <path d="M ${margin + 44} ${titleTop - (isStory ? 36 : 68)} l -20 20 h 34 z" fill="${accentColor}"/>
+      <text x="${margin + 28}" y="${titleTop - (isStory ? 58 : 83)}" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 31 : 25}" font-weight="900">${escapeXml(input.salesCopy.badge)}</text>
+      ${titleSvg}
+      <path d="M ${margin + 170} ${titleTop + titleLines.length * titleLineHeight - 18} C ${margin + 270} ${titleTop + titleLines.length * titleLineHeight - 36}, ${margin + 390} ${titleTop + titleLines.length * titleLineHeight - 34}, ${margin + 500} ${titleTop + titleLines.length * titleLineHeight - 48}" fill="none" stroke="${brandColor}" stroke-width="7" stroke-linecap="round"/>
+      <g>
+        <circle cx="${margin + 42}" cy="${copyTop - 18}" r="${isStory ? 34 : 28}" fill="${accentColor}"/>
+        <path d="M ${margin + 42} ${copyTop - 36} v 36 M ${margin + 25} ${copyTop - 18} h 34" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+        ${copySvg.replaceAll(`x="${margin}"`, `x="${margin + (isStory ? 94 : 82)}"`)}
+      </g>
+      ${cardsSvg}
+      <g filter="url(#softShadow)">
+        <rect x="${ctaX}" y="${ctaY}" width="${ctaWidth}" height="${ctaHeight}" rx="${ctaHeight / 2}" fill="url(#cta)"/>
+      </g>
+      <text x="${ctaX + ctaWidth / 2}" y="${ctaY + (isStory ? 67 : 56)}" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 38 : 32}" font-weight="900">${escapeXml(truncate(input.salesCopy.cta, isStory ? 34 : 30))}</text>
+    </svg>
+  `;
+  let bytes = await sharp(Buffer.from(svg)).png().toBuffer();
+  if (input.supportImage) {
+    const roundedMask = Buffer.from(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="${mediaBox.width}" height="${mediaBox.height}">
+        <rect width="${mediaBox.width}" height="${mediaBox.height}" rx="${mediaBox.radius}" fill="#ffffff"/>
+      </svg>
+    `);
+    const media = await sharp(input.supportImage)
+      .rotate()
+      .resize(mediaBox.width, mediaBox.height, { fit: "cover" })
+      .composite([{ input: roundedMask, blend: "dest-in" }])
+      .png()
+      .toBuffer();
+    const frame = Buffer.from(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}">
+        <rect x="${mediaBox.x}" y="${mediaBox.y}" width="${mediaBox.width}" height="${mediaBox.height}" rx="${mediaBox.radius}" fill="none" stroke="#ffffff" stroke-width="10"/>
+        <rect x="${mediaBox.x + 5}" y="${mediaBox.y + 5}" width="${mediaBox.width - 10}" height="${mediaBox.height - 10}" rx="${Math.max(1, mediaBox.radius - 5)}" fill="none" stroke="${accentColor}" stroke-opacity="0.34" stroke-width="3"/>
+      </svg>
+    `);
+    bytes = await sharp(bytes)
+      .composite([
+        { input: media, left: mediaBox.x, top: mediaBox.y },
+        { input: frame, left: 0, top: 0 },
+      ])
+      .png()
+      .toBuffer();
+  }
+  return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
+}
+
 function buildBenefits(objective: string, serviceName: string | null) {
   const lower = objective.toLowerCase();
   if (lower.includes("site")) return ["Site one page", "Proposta + presenca online", "Contato direto para orcamento"];
   if (lower.includes("proposta")) return ["Proposta profissional", "Link facil de enviar", "Mais confianca para fechar"];
   if (lower.includes("promoc")) return ["Condicao especial", "Atendimento rapido", "Chame no WhatsApp"];
   return [serviceName || "Servico profissional", "Atendimento personalizado", "Orcamento rapido"];
+}
+
+function buildEditorialHeadline(copy: SalesCopy) {
+  const lower = copy.headline.toLowerCase();
+  if (lower.includes("site") || lower.includes("online")) return "3 motivos para ter um site profissional";
+  if (lower.includes("anuncio") || lower.includes("clientes")) return "Anuncios que fazem clientes chamarem";
+  if (lower.includes("agenda")) return "Agenda aberta para novos atendimentos";
+  if (lower.includes("condicao") || lower.includes("oferta")) return "Oferta especial para fechar hoje";
+  return copy.headline;
+}
+
+function buildEditorialCards(copy: SalesCopy) {
+  return copy.benefits.map((benefit) => {
+    const lower = benefit.toLowerCase();
+    if (lower.includes("atendimento")) return ["Atendimento", "rapido"];
+    if (lower.includes("escopo")) return ["Escopo", "explicado"];
+    if (lower.includes("chamada") || lower.includes("whatsapp")) return ["Chamada", "direta"];
+    if (lower.includes("visual")) return ["Visual", "profissional"];
+    if (lower.includes("botao")) return ["Botao", "WhatsApp"];
+    if (lower.includes("confianca")) return ["Mais", "confianca"];
+    if (lower.includes("campanha")) return ["Campanhas", "ativas"];
+    if (lower.includes("publico")) return ["Publico", "certo"];
+    const words = wrapTitle(benefit, 20);
+    return [words[0] || benefit, words[1] || "profissional"];
+  });
+}
+
+function buildAudienceIllustration(input: {
+  accentColor: string;
+  brandColor: string;
+  darkColor: string;
+  isStory: boolean;
+  x: number;
+  y: number;
+}) {
+  const scale = input.isStory ? 1.22 : 0.95;
+  return `
+    <g transform="translate(${input.x} ${input.y}) scale(${scale})">
+      <ellipse cx="175" cy="250" rx="150" ry="42" fill="#dbeafe" opacity="0.7"/>
+      <circle cx="155" cy="82" r="58" fill="#c8793d"/>
+      <path d="M 88 82 C 82 22, 136 -8, 184 14 C 239 36, 237 102, 208 132 C 211 88, 188 60, 151 61 C 122 62, 103 72, 88 82 Z" fill="#24140f"/>
+      <circle cx="136" cy="82" r="7" fill="#061334"/>
+      <circle cx="177" cy="82" r="7" fill="#061334"/>
+      <path d="M 137 114 C 150 124, 166 124, 181 114" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+      <path d="M 76 198 C 82 148, 112 128, 158 128 C 218 128, 254 162, 262 220 L 278 390 H 48 Z" fill="${input.darkColor}"/>
+      <path d="M 118 152 H 205 L 222 390 H 96 Z" fill="#ffffff"/>
+      <path d="M 86 204 C 39 230, 20 277, 28 334" fill="none" stroke="${input.darkColor}" stroke-width="34" stroke-linecap="round"/>
+      <path d="M 252 204 C 304 230, 326 280, 314 338" fill="none" stroke="${input.darkColor}" stroke-width="34" stroke-linecap="round"/>
+      <path d="M 138 165 h 48" stroke="${input.accentColor}" stroke-width="11" stroke-linecap="round"/>
+      <rect x="188" y="236" width="155" height="106" rx="16" fill="#ffffff" stroke="${input.accentColor}" stroke-width="7"/>
+      <path d="M 218 302 l 32 -34 l 28 23 l 36 -45" fill="none" stroke="${input.brandColor}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="338" cy="232" r="32" fill="${input.brandColor}"/>
+      <path d="M 324 232 l 11 12 l 22 -27" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 56 44 C 28 68, 22 112, 51 142" fill="none" stroke="${input.accentColor}" stroke-width="9" stroke-linecap="round"/>
+      <path d="M 266 46 C 300 73, 305 112, 276 143" fill="none" stroke="${input.brandColor}" stroke-width="9" stroke-linecap="round"/>
+    </g>
+  `;
 }
 
 function buildSalesCopy(input: {
@@ -703,6 +1261,33 @@ function buildSalesCopy(input: {
   const cta = normalizeCta(input.callToAction);
   const price = extractPrice(input.objective);
 
+  if (
+    source.includes("marmita") ||
+    source.includes("pastel") ||
+    source.includes("acai") ||
+    source.includes("açaí") ||
+    source.includes("lanche") ||
+    source.includes("combo") ||
+    source.includes("cardapio") ||
+    source.includes("cardápio") ||
+    source.includes("comida")
+  ) {
+    const product = extractFoodOffer(input.objective, input.serviceName);
+    return {
+      badge: "Pedido rapido",
+      headline: product,
+      subheadline: price
+        ? `Aproveite hoje por ${price} e peca pelo WhatsApp.`
+        : "Peça hoje com praticidade e receba atendimento rapido pelo WhatsApp.",
+      benefits: ["Sabor e praticidade", "Atendimento pelo WhatsApp", "Pedido facil hoje"],
+      proof: `Ideal para ${audience} que querem pedir sem complicacao`,
+      caption: `${product} com pedido facil pelo WhatsApp. Aproveite hoje e faca seu pedido agora.`,
+      whatsappMessage: `Ola! Quero fazer um pedido: ${product}. Pode me passar as opcoes?`,
+      category: "food",
+      cta: cta || "Fazer pedido",
+    };
+  }
+
   if (source.includes("site") || source.includes("landing") || source.includes("pagina")) {
     return {
       badge: "Presenca online",
@@ -710,6 +1295,9 @@ function buildSalesCopy(input: {
       subheadline: "Transforme visitantes em pedidos de orcamento com uma pagina clara, bonita e facil de enviar.",
       benefits: ["Visual profissional no celular", "Botao direto para WhatsApp", "Mais confianca antes do primeiro contato"],
       proof: `Ideal para ${audience} que querem vender melhor`,
+      caption: "Seu negocio merece uma presenca online mais profissional. Chame no WhatsApp e veja como comecar.",
+      whatsappMessage: "Ola! Quero saber mais sobre site profissional para meu negocio.",
+      category: "site",
       cta,
     };
   }
@@ -721,6 +1309,9 @@ function buildSalesCopy(input: {
       subheadline: "Campanhas organizadas para atrair pessoas prontas para chamar e pedir orcamento.",
       benefits: ["Publico bem segmentado", "Campanhas no Meta/Google", "Acompanhamento dos resultados"],
       proof: `Para ${audience} que precisam vender com previsibilidade`,
+      caption: "Campanhas bem organizadas ajudam seu negocio a receber pedidos mais qualificados. Chame para conversar.",
+      whatsappMessage: "Ola! Quero saber mais sobre anuncios para atrair clientes.",
+      category: "traffic",
       cta,
     };
   }
@@ -732,6 +1323,9 @@ function buildSalesCopy(input: {
       subheadline: "Atendimento profissional, cuidado nos detalhes e uma experiencia pensada para voce.",
       benefits: ["Horario com agendamento", "Atendimento personalizado", "Resultado com acabamento profissional"],
       proof: `Perfeito para ${audience}`,
+      caption: "Agenda aberta para voce cuidar de si com atendimento profissional. Chame e reserve seu horario.",
+      whatsappMessage: "Ola! Quero reservar um horario.",
+      category: "beauty",
       cta,
     };
   }
@@ -743,6 +1337,9 @@ function buildSalesCopy(input: {
       subheadline: "Equipe preparada, prazo combinado e entrega organizada para deixar tudo no ponto.",
       benefits: ["Orcamento rapido", "Execucao profissional", "Atendimento com compromisso"],
       proof: `Para ${audience} que querem praticidade`,
+      caption: "Servico profissional, atendimento claro e entrega com compromisso. Solicite seu orcamento.",
+      whatsappMessage: "Ola! Quero solicitar um orcamento.",
+      category: "service",
       cta,
     };
   }
@@ -754,6 +1351,9 @@ function buildSalesCopy(input: {
       subheadline: "Aproveite para contratar com mais seguranca, clareza e atendimento profissional.",
       benefits: ["Atendimento rapido", "Escopo explicado antes de fechar", "Chamada direta para orcamento"],
       proof: `Criado para ${audience}`,
+      caption: "Condicao especial por tempo limitado. Chame no WhatsApp e aproveite antes que acabe.",
+      whatsappMessage: "Ola! Quero aproveitar essa condicao especial.",
+      category: "promotion",
       cta,
     };
   }
@@ -765,7 +1365,53 @@ function buildSalesCopy(input: {
     subheadline: "Mostre seu valor com uma oferta clara, objetiva e facil de entender.",
     benefits: ["Orcamento rapido", "Atendimento personalizado", "Entrega com padrao profissional"],
     proof: `Para ${audience} que buscam uma solucao confiavel`,
+    caption: `${service} com atendimento profissional e proposta clara. Chame no WhatsApp e solicite seu orcamento.`,
+    whatsappMessage: `Ola! Quero saber mais sobre ${service}.`,
+    category: "general",
     cta,
+  };
+}
+
+function normalizeSalesCopy(value: Partial<SalesCopy>, fallback: SalesCopy): SalesCopy {
+  const benefits = Array.isArray(value.benefits)
+    ? value.benefits
+        .map((item) => cleanOptionalString(item))
+        .filter((item): item is string => Boolean(item))
+        .slice(0, 3)
+    : [];
+
+  while (benefits.length < 3) {
+    benefits.push(fallback.benefits[benefits.length] || "Atendimento profissional");
+  }
+
+  return {
+    badge: truncate(cleanOptionalString(value.badge) || fallback.badge, 24),
+    headline: truncate(cleanOptionalString(value.headline) || fallback.headline, 54),
+    subheadline: truncate(cleanOptionalString(value.subheadline) || fallback.subheadline, 110),
+    benefits: benefits.map((item) => truncate(item, 42)),
+    proof: truncate(cleanOptionalString(value.proof) || fallback.proof, 70),
+    cta: normalizeCta(cleanOptionalString(value.cta) || fallback.cta),
+    caption: truncate(cleanOptionalString(value.caption) || fallback.caption, 260),
+    whatsappMessage: truncate(cleanOptionalString(value.whatsappMessage) || fallback.whatsappMessage, 180),
+    category: normalizeCategory(cleanOptionalString(value.category) || fallback.category),
+  };
+}
+
+function normalizeCategory(value: string) {
+  const allowed = new Set(["food", "promotion", "service", "beauty", "traffic", "site", "notice", "agenda", "general"]);
+  return allowed.has(value) ? value : "general";
+}
+
+function buildLogoParts(brandName: string) {
+  const clean = brandName
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!clean.length) return { main: "Fecha", accent: "Pro" };
+  if (clean.length === 1) return { main: clean[0].slice(0, 10), accent: "" };
+  return {
+    main: clean[0].slice(0, 10),
+    accent: clean[1].slice(0, 8),
   };
 }
 
@@ -788,6 +1434,27 @@ function extractPrice(objective: string) {
   const raw = match[0].trim();
   if (raw.toLowerCase().includes("r$")) return raw.replace(/\s+/g, " ");
   return `R$ ${raw.replace(/reais|\/mes|\/mês/gi, "").trim()}`;
+}
+
+function extractFoodOffer(objective: string, serviceName: string | null) {
+  const source = `${serviceName || ""} ${objective}`.toLowerCase();
+  const items: string[] = [];
+  if (source.includes("marmita")) items.push("marmita");
+  if (source.includes("pastel")) items.push("pastel");
+  if (source.includes("açaí") || source.includes("acai")) items.push("acai");
+  if (source.includes("lanche")) items.push("lanche");
+  if (source.includes("combo")) items.push("combo");
+  if (source.includes("suco")) items.push("suco");
+
+  if (items.length >= 2) {
+    return `${capitalizeWords(items.slice(0, 2).join(" + "))} hoje`;
+  }
+  if (items.length === 1) return `${capitalizeWords(items[0])} fresquinho hoje`;
+  return serviceName || "Pedido gostoso para hoje";
+}
+
+function capitalizeWords(value: string) {
+  return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function sanitizeColor(value: string, fallback: string) {
@@ -818,6 +1485,10 @@ function chartIcon() {
 
 function checkIcon() {
   return '<circle cx="22" cy="22" r="17"/><path d="M14 23l6 6l12-14"/>';
+}
+
+function peopleIcon() {
+  return '<circle cx="15" cy="16" r="5"/><circle cx="30" cy="16" r="5"/><path d="M6 36c2-7 8-11 16-11s14 4 16 11"/><path d="M24 26c2-3 5-5 9-5c6 0 10 4 12 10"/>';
 }
 
 function wrapTitle(value: string, size: number) {

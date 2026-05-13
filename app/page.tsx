@@ -79,10 +79,14 @@ type MarketingArt = {
   serviceName: string | null;
   audience: string | null;
   callToAction: string | null;
+  caption: string | null;
+  whatsappMessage: string | null;
+  category: string | null;
   prompt: string;
   imageUrl: string;
   referenceImageUrl: string | null;
-  source: "openai" | "fallback";
+  referenceImageUrls?: string[] | null;
+  source: string;
   createdAt: string;
 };
 
@@ -502,7 +506,7 @@ const proposalTemplates: ProposalTemplate[] = [
 const marketingArtBriefs = [
   {
     id: "sell_service",
-    label: "Vender serviço",
+    label: "Servico",
     objective: "Divulgar um servico profissional destacando beneficio, confianca, atendimento rapido e pedido de orcamento pelo WhatsApp.",
     callToAction: "Peca seu orcamento",
   },
@@ -511,6 +515,24 @@ const marketingArtBriefs = [
     label: "Promocao",
     objective: "Divulgar uma promocao com oferta clara, senso de oportunidade, beneficio principal e chamada direta para comprar ou chamar no WhatsApp.",
     callToAction: "Quero aproveitar",
+  },
+  {
+    id: "product",
+    label: "Produto",
+    objective: "Divulgar um produto com destaque para desejo, beneficio, preco ou condicao especial e chamada para comprar.",
+    callToAction: "Quero comprar",
+  },
+  {
+    id: "menu",
+    label: "Cardapio",
+    objective: "Divulgar comida, combo, marmita, lanche, acai ou cardapio com apelo de sabor, praticidade e pedido rapido.",
+    callToAction: "Fazer pedido",
+  },
+  {
+    id: "notice",
+    label: "Aviso",
+    objective: "Comunicar um aviso importante de forma clara, bonita e facil de entender.",
+    callToAction: "Saiba mais",
   },
   {
     id: "open_slots",
@@ -766,6 +788,7 @@ export default function Home() {
     audience: string;
     callToAction: string;
     referenceImageUrl: string | null;
+    referenceImageUrls?: string[] | null;
     useImageAsBackground: boolean;
   }) {
     const item = await apiPost<MarketingArt>("/api/marketing-arts", payload);
@@ -2297,6 +2320,7 @@ function MarketingArtsView({
     audience: string;
     callToAction: string;
     referenceImageUrl: string | null;
+    referenceImageUrls?: string[] | null;
     useImageAsBackground: boolean;
   }) => Promise<MarketingArt>;
   onNotice: (message: string | null) => void;
@@ -2305,48 +2329,72 @@ function MarketingArtsView({
 }) {
   const [form, setForm] = useState({
     title: "",
-    format: "instagram_post",
+    format: "all",
     objective: "",
     serviceName: "",
     audience: "",
     callToAction: "Peca seu orcamento",
     useImageAsBackground: false,
   });
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [backgroundFileIndex, setBackgroundFileIndex] = useState(0);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBriefId, setSelectedBriefId] = useState("");
   const used = billing?.usage.artsThisMonth ?? 0;
   const limit = billing?.usage.artLimit ?? 0;
   const remaining = Math.max(0, limit - used);
+  const formatsToGenerate = form.format === "all" ? ["instagram_post", "instagram_story", "whatsapp_status"] : [form.format];
 
   async function generateArt(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     if (!form.objective.trim()) {
-      setError("Informe o objetivo da arte.");
+      setError("Escreva o que voce quer divulgar.");
+      return;
+    }
+    if (remaining < formatsToGenerate.length) {
+      setError(`Voce precisa de ${formatsToGenerate.length} credito(s) para gerar essa opcao.`);
       return;
     }
 
     setCreating(true);
     try {
-      let referenceImageUrl: string | null = form.useImageAsBackground ? null : brand.logoUrl || null;
-      if (file) {
+      const uploadedImageUrls: string[] = [];
+      for (const file of files) {
         const uploadData = new FormData();
         uploadData.append("file", file);
-        const uploadResponse = await fetch("/api/uploads", {
-          method: "POST",
-          body: uploadData,
-        });
-        if (!uploadResponse.ok) throw new Error("Falha ao enviar imagem de referencia.");
+        const uploadResponse = await fetch("/api/uploads", { method: "POST", body: uploadData });
+        if (!uploadResponse.ok) throw new Error("Falha ao enviar imagem.");
         const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
-        referenceImageUrl = uploadResult.imageUrl;
+        uploadedImageUrls.push(uploadResult.imageUrl);
       }
+      const selectedBackgroundUrl = uploadedImageUrls[Math.min(backgroundFileIndex, Math.max(0, uploadedImageUrls.length - 1))];
+      const orderedUploadedUrls =
+        form.useImageAsBackground && selectedBackgroundUrl
+          ? [selectedBackgroundUrl, ...uploadedImageUrls.filter((url) => url !== selectedBackgroundUrl)]
+          : uploadedImageUrls;
+      const referenceImageUrls = orderedUploadedUrls.length ? orderedUploadedUrls : form.useImageAsBackground ? [] : brand.logoUrl ? [brand.logoUrl] : [];
+      const referenceImageUrl = referenceImageUrls[0] || null;
 
-      await onCreate({
-        ...form,
-        title: form.title || form.objective.slice(0, 60),
-        referenceImageUrl,
-      });
+      const brief = marketingArtBriefs.find((item) => item.id === selectedBriefId);
+      const finalObjective = [brief?.objective, `Pedido do cliente: ${form.objective}`].filter(Boolean).join(" ");
+      const formatNames: Record<string, string> = {
+        instagram_post: "Post",
+        instagram_story: "Story",
+        whatsapp_status: "Status",
+      };
+
+      for (const format of formatsToGenerate) {
+        await onCreate({
+          ...form,
+          format,
+          objective: finalObjective,
+          title: form.title || `${formatNames[format] || "Arte"} - ${form.objective.slice(0, 45)}`,
+          referenceImageUrl,
+          referenceImageUrls,
+        });
+      }
       setForm({
         title: "",
         format: form.format,
@@ -2356,7 +2404,9 @@ function MarketingArtsView({
         callToAction: "Peca seu orcamento",
         useImageAsBackground: form.useImageAsBackground,
       });
-      setFile(null);
+      setSelectedBriefId("");
+      setFiles([]);
+      setBackgroundFileIndex(0);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Nao foi possivel gerar a arte.");
     } finally {
@@ -2380,7 +2430,7 @@ function MarketingArtsView({
           <p className="text-xs font-black uppercase text-blue-700">Artes IA</p>
           <h2 className="text-2xl font-black">Gerador de divulgacao</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Gere posts, stories e status usando as informacoes da marca, servicos cadastrados e uma imagem de referencia.
+            Escreva do seu jeito. O FechaPro cria o texto, monta a arte e entrega pronta para postar.
           </p>
         </div>
 
@@ -2393,78 +2443,93 @@ function MarketingArtsView({
             />
           </div>
           <p className="mt-2 text-xs font-bold text-slate-500">
-            {limit ? `${remaining} credito(s) restantes neste ciclo.` : "Disponivel a partir do plano Essencial ou pacote de artes."}
+            {limit ? `${remaining} credito(s) restantes neste ciclo.` : "Disponivel a partir do plano Profissional e pacote de artes."}
           </p>
         </div>
 
         <form className="grid gap-3" onSubmit={generateArt}>
           {error ? <FormError message={error} /> : null}
-          <TextField label="Titulo interno" maxLength={80} placeholder="Promocao de maio" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+          <TextField label="Nome para salvar" maxLength={80} placeholder="Promocao de hoje" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Formato
+            O que voce quer criar?
             <select
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
               value={form.format}
               onChange={(event) => setForm({ ...form, format: event.target.value })}
             >
-              <option value="instagram_post">Post quadrado</option>
-              <option value="instagram_story">Story</option>
-              <option value="whatsapp_status">Status WhatsApp</option>
+              <option value="all">Post + Story + Status</option>
+              <option value="instagram_post">Somente post</option>
+              <option value="instagram_story">Somente story</option>
+              <option value="whatsapp_status">Somente status WhatsApp</option>
             </select>
           </label>
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Objetivo pronto
+            O que voce quer divulgar?
             <select
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
-              defaultValue=""
+              value={selectedBriefId}
               onChange={(event) => {
-                const brief = marketingArtBriefs.find((item) => item.id === event.target.value);
+                const nextBriefId = event.target.value;
+                setSelectedBriefId(nextBriefId);
+                const brief = marketingArtBriefs.find((item) => item.id === nextBriefId);
                 if (!brief) return;
                 setForm({
                   ...form,
-                  objective: brief.objective,
                   callToAction: brief.callToAction,
                 });
-                event.target.value = "";
               }}
             >
-              <option value="">Escolha um objetivo para vender melhor</option>
+              <option value="">Escolha uma opcao</option>
               {marketingArtBriefs.map((brief) => (
                 <option key={brief.id} value={brief.id}>
                   {brief.label}
                 </option>
               ))}
             </select>
+            {selectedBriefId ? (
+              <span className="text-xs font-bold text-green-700">
+                Pronto. Agora escreva do seu jeito no campo abaixo.
+              </span>
+            ) : null}
           </label>
           <SelectField
-            label="Servico"
+            label="Servico ou produto"
             options={services.map((service) => service.name)}
-            placeholder="Selecione ou digite"
+            placeholder="Ex: Marmita grande, manicure, site profissional"
             value={form.serviceName}
             onChange={(value) => setForm({ ...form, serviceName: value })}
           />
           <TextAreaField
-            label="Objetivo da arte"
+            label="Escreva do seu jeito"
             maxLength={400}
-            placeholder="Ex: Quero divulgar criacao de sites para pequenos negocios e receber pedidos no WhatsApp"
+            placeholder="Ex: Quero divulgar marmita grande com suco por R$ 22 hoje em Uberlandia. Pedido pelo WhatsApp."
             required
             rows={4}
             value={form.objective}
             onChange={(value) => setForm({ ...form, objective: value })}
           />
-          <TextField label="Publico-alvo" maxLength={120} placeholder="Condominios, lojas, noivas..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
-          <TextField label="Chamada" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
+          <TextField label="Cidade ou publico" maxLength={120} placeholder="Uberlandia, noivas, lojas, moradores do bairro..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
+          <TextField label="Botao da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Logo ou imagem de referencia
+            Logo, produto ou foto
             <input
               accept="image/*"
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+              multiple
               type="file"
-              onChange={(event) => setFile(event.target.files?.[0] || null)}
+              onChange={(event) => {
+                setFiles(Array.from(event.target.files || []));
+                setBackgroundFileIndex(0);
+              }}
             />
             <span className="text-xs font-bold text-slate-500">
-              Se nao enviar nada, o FechaPro usa a logo salva na marca quando existir.
+              Opcional. Voce pode enviar uma ou mais imagens. Se nao enviar nada, o FechaPro usa a logo salva na marca quando existir.
             </span>
+            {files.length ? (
+              <span className="text-xs font-bold text-green-700">
+                {files.length} imagem(ns) selecionada(s).
+              </span>
+            ) : null}
           </label>
           <label className="flex items-start gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-600">
             <input
@@ -2473,11 +2538,27 @@ function MarketingArtsView({
               checked={form.useImageAsBackground}
               onChange={(event) => setForm({ ...form, useImageAsBackground: event.target.checked })}
             />
-            Usar a imagem enviada como fundo e colocar os textos por cima
+            Usar essa foto como fundo da arte
           </label>
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={creating || limit === 0 || remaining <= 0} type="submit">
+          {form.useImageAsBackground && files.length > 1 ? (
+            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+              Qual imagem sera o fundo?
+              <select
+                className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+                value={backgroundFileIndex}
+                onChange={(event) => setBackgroundFileIndex(Number(event.target.value))}
+              >
+                {files.map((file, index) => (
+                  <option key={`${file.name}-${index}`} value={index}>
+                    {index + 1}. {file.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={creating || limit === 0 || remaining < formatsToGenerate.length} type="submit">
             <Sparkles size={18} />
-            {creating ? "Gerando arte..." : "Gerar arte"}
+            {creating ? "Gerando..." : formatsToGenerate.length > 1 ? "Gerar artes prontas" : "Gerar arte pronta"}
           </button>
         </form>
       </aside>
@@ -2506,10 +2587,36 @@ function MarketingArtsView({
                     <div>
                       <h3 className="font-black">{art.title}</h3>
                       <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
-                        {art.serviceName || "Divulgacao"} | {art.source === "openai" ? "OpenAI" : "Reserva"}
+                        {art.serviceName || "Divulgacao"} | Arte pronta
                       </p>
                     </div>
                     <p className="line-clamp-2 text-sm leading-6 text-slate-600">{art.objective}</p>
+                    {art.caption || art.whatsappMessage ? (
+                      <div className="grid gap-2 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                        {art.caption ? (
+                          <div className="grid gap-1">
+                            <div>
+                              <span className="font-black text-slate-900">Legenda: </span>
+                              {art.caption}
+                            </div>
+                            <button className="justify-self-start text-xs font-black text-blue-700" type="button" onClick={() => navigator.clipboard.writeText(art.caption || "")}>
+                              Copiar legenda
+                            </button>
+                          </div>
+                        ) : null}
+                        {art.whatsappMessage ? (
+                          <div className="grid gap-1">
+                            <div>
+                              <span className="font-black text-slate-900">WhatsApp: </span>
+                              {art.whatsappMessage}
+                            </div>
+                            <button className="justify-self-start text-xs font-black text-blue-700" type="button" onClick={() => navigator.clipboard.writeText(art.whatsappMessage || "")}>
+                              Copiar WhatsApp
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <div className="grid grid-cols-2 gap-2">
                       <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700" href={art.imageUrl} target="_blank" rel="noreferrer">
                         <FileDown size={15} />
@@ -2628,7 +2735,7 @@ function PlansView({
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {billing.plans.map((plan) => {
           const active = billing.subscription.plan === plan.code;
-          const recommended = plan.code === "premium";
+          const recommended = plan.code === "plus";
           return (
             <article
               className={`relative grid gap-4 rounded-lg border p-4 shadow-xl shadow-slate-900/10 ${
@@ -2638,7 +2745,7 @@ function PlansView({
             >
               {recommended ? (
                 <span className="absolute right-3 top-3 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
-                  Mais vendido
+                  Mais escolhido
                 </span>
               ) : null}
               <div>
@@ -2651,7 +2758,9 @@ function PlansView({
               </div>
               <p className="text-sm font-bold text-slate-500">
                 {`Até ${plan.proposalLimit} propostas por mês`}
-                <span className="mt-1 block">{`${plan.artLimit} artes de divulgacao por mes`}</span>
+                <span className="mt-1 block">
+                  {plan.artLimit > 0 ? `${plan.artLimit} artes de divulgação por mês` : "Artes de divulgação não inclusas"}
+                </span>
               </p>
               <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-600">
                 <span className="block font-black uppercase text-slate-500">Módulos liberados</span>
@@ -3182,11 +3291,44 @@ function AuthScreen() {
     },
   ];
   const plans = [
-    { name: "Start", price: "R$ 49", detail: "Para nunca mais mandar preço solto.", items: ["20 propostas por mês", "Link profissional", "PDF automático"] },
-    { name: "Essencial", price: "R$ 97", detail: "Para vender com marca e parecer mais premium.", items: ["50 propostas por mês", "Serviços cadastrados", "Identidade básica"] },
-    { name: "Profissional", price: "R$ 147", detail: "Para defender valor com portfólio e prova social.", items: ["120 propostas por mês", "Portfólio no FechaPro", "Depoimentos na proposta"] },
-    { name: "Pro Site", price: "R$ 497", detail: "Primeiro mês. Depois R$ 197/mês manutenção.", items: ["300 propostas por mês", "Site one page", "Proposta + presença online"] },
-    { name: "Premium Site", price: "R$ 997", detail: "Primeiro mês. Depois R$ 297/mês manutenção.", items: ["600 propostas por mês", "Site completo simples", "Copy, cadastro inicial e treinamento"] },
+    {
+      name: "Start",
+      price: "R$ 49",
+      priceSuffix: "/mês",
+      detail: "Para quem quer começar a enviar propostas profissionais.",
+      items: ["20 propostas por mês", "Artes de divulgação não inclusas", "Link profissional", "PDF automático"],
+    },
+    {
+      name: "Essencial",
+      price: "R$ 97",
+      priceSuffix: "/mês",
+      detail: "Para prestadores que querem organizar propostas, serviços e divulgação.",
+      items: ["50 propostas por mês", "Artes de divulgação não inclusas", "Serviços cadastrados", "Identidade básica"],
+    },
+    {
+      name: "Profissional",
+      price: "R$ 147",
+      priceSuffix: "/mês",
+      badge: "Mais escolhido",
+      detail: "Para quem vende com frequência e quer mais propostas, artes e portfólio.",
+      items: ["120 propostas por mês", "5 artes de divulgação por mês", "Portfólio no FechaPro", "Depoimentos na proposta"],
+    },
+    {
+      name: "Pro Site",
+      price: "R$ 497",
+      priceSuffix: "implantação",
+      badge: "Ideal para site pronto",
+      detail: "Depois R$ 197/mês. Para quem quer o FechaPro + site one page pronto.",
+      items: ["300 propostas por mês", "10 artes de divulgação por mês", "Site one page", "Proposta + presença online"],
+    },
+    {
+      name: "Premium Site",
+      price: "R$ 997",
+      priceSuffix: "implantação",
+      badge: "Mais completo",
+      detail: "Depois R$ 297/mês. Para quem quer site completo simples + copy + cadastro inicial + treinamento.",
+      items: ["600 propostas por mês", "15 artes de divulgação por mês", "Site completo simples", "Copy, cadastro inicial e treinamento"],
+    },
   ];
   const faqs = [
     {
@@ -3547,21 +3689,24 @@ function AuthScreen() {
             <p className="text-xs font-black uppercase text-green-300">Preço que valida negócio</p>
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quanto vale parar de perder venda por uma proposta fraca?</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Comece com links profissionais e evolua para site quando quiser transformar sua proposta em uma máquina de captação e fechamento.
+              Escolha o plano ideal para criar propostas profissionais, divulgar seus serviços e vender com mais confiança.
+            </p>
+            <p className="mt-3 text-sm font-bold leading-6 text-green-100 sm:text-base">
+              Disponível a partir do plano Profissional e pacote de artes.
             </p>
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {plans.map((plan) => (
-              <article className={`relative rounded-lg border p-5 ${plan.name === "Pro Site" ? "border-green-400 bg-white text-slate-950" : "border-white/15 bg-white/8"}`} key={plan.name}>
-                {plan.name === "Pro Site" ? (
-                  <span className="absolute right-3 top-3 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
-                    Mais vendido
+              <article className={`relative rounded-lg border ${plan.badge ? "px-5 pb-5 pt-20" : "p-5"} ${plan.name === "Profissional" ? "border-green-400 bg-white text-slate-950" : "border-white/15 bg-white/8"}`} key={plan.name}>
+                {plan.badge ? (
+                  <span className="absolute right-3 top-8 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
+                    {plan.badge}
                   </span>
                 ) : null}
                 <p className="text-sm font-black uppercase text-blue-400">{plan.name}</p>
                 <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
-                <span className={plan.name === "Pro Site" ? "mt-1 block text-slate-600" : "mt-1 block text-white/65"}>/mês</span>
-                <p className={plan.name === "Pro Site" ? "mt-4 text-sm leading-6 text-slate-600" : "mt-4 text-sm leading-6 text-white/70"}>{plan.detail}</p>
+                <span className={plan.name === "Profissional" ? "mt-1 block text-slate-600" : "mt-1 block text-white/65"}>{plan.priceSuffix}</span>
+                <p className={plan.name === "Profissional" ? "mt-4 text-sm leading-6 text-slate-600" : "mt-4 text-sm leading-6 text-white/70"}>{plan.detail}</p>
                 <ul className="mt-5 grid gap-3">
                   {plan.items.map((item) => (
                     <li className="flex items-center gap-2 text-sm font-bold" key={item}>
@@ -3572,7 +3717,7 @@ function AuthScreen() {
                 </ul>
                 <a
                   className={`mt-6 grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.name === "Pro Site" ? "bg-green-600 text-white" : "bg-white text-slate-950"
+                    plan.name === "Profissional" ? "bg-green-600 text-white" : "bg-white text-slate-950"
                   }`}
                   href="/cadastro"
                 >
@@ -3581,6 +3726,9 @@ function AuthScreen() {
               </article>
             ))}
           </div>
+          <p className="mt-6 rounded-lg border border-white/15 bg-white/8 p-4 text-sm font-bold leading-6 text-white/78">
+            Todos os planos incluem acesso ao painel, propostas profissionais, cadastro de clientes e link para enviar ao cliente.
+          </p>
         </div>
       </section>
 

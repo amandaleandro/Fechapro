@@ -1,6 +1,7 @@
 FROM node:24-alpine AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 FROM base AS deps
 COPY package.json package-lock.json ./
@@ -21,6 +22,7 @@ CMD ["npx", "prisma", "db", "push"]
 FROM base AS runner
 ENV NODE_ENV=production
 
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
@@ -37,5 +39,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV UPLOAD_DIR=/app/uploads
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 CMD ["node", "server.js"]

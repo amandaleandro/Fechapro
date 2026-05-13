@@ -93,9 +93,17 @@ POSTGRES_DB="fechapro"
 POSTGRES_USER="fechapro"
 POSTGRES_PASSWORD="fechapro_dev_password"
 UPLOAD_DIR="/app/uploads"
+NEXT_PUBLIC_WHATSAPP_NUMBER="11999998888"
+NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE="Olá! Preciso de ajuda com o FechaPro."
 ```
 
 Nunca coloque chaves reais em arquivos versionados.
+
+## Suporte Via WhatsApp
+
+Configure `NEXT_PUBLIC_WHATSAPP_NUMBER` com o numero do suporte para exibir um botao fixo no canto da aplicacao. Use somente numeros; com ou sem `55` no inicio funciona.
+
+Opcionalmente, ajuste `NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE` para mudar a mensagem preenchida automaticamente quando o cliente abrir o WhatsApp.
 
 ## IA
 
