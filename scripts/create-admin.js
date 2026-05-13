@@ -102,7 +102,7 @@ async function main() {
   console.log("Admin pronto:");
   console.log(`- Nome: ${user.name}`);
   console.log(`- Email: ${user.email}`);
-  console.log(`- Senha: ${adminPassword}`);
+  console.log("- Senha: definida a partir de ADMIN_PASSWORD");
   console.log(`- Plano: ${user.subscription?.plan} (${user.subscription?.status}, ${user.subscription?.provider})`);
   console.log("");
   console.log(`Configure ADMIN_EMAILS="${user.email}" no ambiente da aplicacao para liberar /admin somente para este usuario.`);

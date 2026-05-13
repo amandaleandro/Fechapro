@@ -10,6 +10,10 @@ services:
     environment:
       DATABASE_URL: postgresql://fechapro:fechapro_dev_password@db:5432/fechapro?schema=public
       AUTH_SECRET: fechapro_local_secret_change_in_prod
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-admin@fechapro.local}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@fechapro.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-FechaProAdmin123!}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador Geral}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-mini}
       MERCADO_PAGO_ACCESS_TOKEN: ${MERCADO_PAGO_ACCESS_TOKEN:-}
