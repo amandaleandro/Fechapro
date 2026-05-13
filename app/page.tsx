@@ -3690,9 +3690,9 @@ function AuthScreen() {
               <button className="font-bold" type="button" onClick={() => goToSection("recursos")}>
                 Recursos
               </button>
-              <button className="font-bold" type="button" onClick={() => goToSection("planos")}>
+              <a className="font-bold" href="#planos">
                 Planos
-              </button>
+              </a>
               <a href="/interesse">
                 Tenho interesse
               </a>
@@ -3725,9 +3725,9 @@ function AuthScreen() {
                 <button className="min-h-11 rounded-lg px-3 text-left" type="button" onClick={() => goToSection("recursos")}>
                   Recursos
                 </button>
-                <button className="min-h-11 rounded-lg px-3 text-left" type="button" onClick={() => goToSection("planos")}>
+                <a className="min-h-11 rounded-lg px-3 py-3" href="#planos" onClick={() => setMobileMenuOpen(false)}>
                   Planos
-                </button>
+                </a>
                 <a className="min-h-11 rounded-lg px-3 py-3" href="/interesse">
                   Tenho interesse
                 </a>
@@ -3761,9 +3761,9 @@ function AuthScreen() {
                   <Sparkles size={18} />
                   Quero começar agora
                 </a>
-                <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" type="button" onClick={() => goToSection("planos")}>
+                <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
                   Ver planos
-                </button>
+                </a>
                 <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="/interesse">
                   Tenho interesse
                 </a>
@@ -4002,7 +4002,7 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-slate-950 text-white" id="planos">
+      <section className="scroll-mt-6 bg-slate-950 text-white" id="planos">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase text-green-300">Escolha como quer começar</p>
@@ -4152,7 +4152,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-100">Pronto para subir o nível</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua próxima proposta pode parecer mais cara, mais clara e mais fácil de aprovar.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua próxima proposta pode parecer mais valiosa, mais clara e mais fácil de aprovar.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="/cadastro">
             Melhorar meus fechamentos
