@@ -11,8 +11,13 @@ loadEnvFiles();
 const prisma = new PrismaClient();
 
 const adminName = process.env.ADMIN_NAME || "Administrador Geral";
-const adminEmail = (process.env.ADMIN_EMAIL || firstAdminEmail() || "admin@fechapro.local").trim().toLowerCase();
+const configuredAdminEmail = process.env.ADMIN_EMAIL || firstAdminEmail();
+const adminEmail = (configuredAdminEmail || "admin@fechapro.local").trim().toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD || "FechaProAdmin123!";
+
+if (process.env.NODE_ENV === "production" && (!configuredAdminEmail || !process.env.ADMIN_PASSWORD)) {
+  throw new Error("Configure ADMIN_EMAIL ou ADMIN_EMAILS e ADMIN_PASSWORD antes de iniciar em producao.");
+}
 
 function loadEnvFile(filename, options = {}) {
   const path = resolve(process.cwd(), filename);

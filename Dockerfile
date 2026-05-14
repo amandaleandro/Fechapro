@@ -60,4 +60,4 @@ ENV HOSTNAME=0.0.0.0
 ENV UPLOAD_DIR=/app/uploads
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node scripts/create-admin.js && node server.js"]

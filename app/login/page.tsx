@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { AuthPageClient } from "../auth/AuthPageClient";
 
 export default function LoginPage() {
-  return <AuthPageClient mode="login" />;
+  return (
+    <Suspense fallback={null}>
+      <AuthPageClient mode="login" />
+    </Suspense>
+  );
 }
