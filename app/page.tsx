@@ -206,7 +206,7 @@ const keys = {
   services: "fechapro_services_v1",
   portfolio: "fechapro_portfolio_v1",
   testimonials: "fechapro_testimonials_v1",
-  updatesModal: "fechapro_updates_modal_v1",
+  updatesModal: "fechapro_updates_modal_v2",
 };
 
 const blankDraft: ProposalDraft = {
@@ -4201,26 +4201,27 @@ function ProductUpdatesModal({
   const updates = [
     {
       icon: FileText,
-      title: "Propostas com aceite e PDF",
-      description: "Links publicos, PDF e status ajudam o cliente a decidir sem depender de mensagem solta.",
-      tag: "Disponivel",
+      title: "Propostas mais completas",
+      description: "Link público, aceite do cliente, PDF, status e pagamento ficam juntos em um fluxo mais profissional.",
+      tag: "Disponível",
     },
     {
       icon: Palette,
       title: "Artes de divulgação",
-      description: "Crie criativos para divulgar serviços, promoções, cardápios e agenda aberta.",
+      description: "Crie peças para divulgar serviços, promoções, cardápios, agenda aberta e campanhas rápidas.",
       tag: "Novo",
     },
     {
       icon: CreditCard,
-      title: "Planos e cobranca",
-      description: "Assinatura pelo Mercado Pago e limites por plano ja estao conectados ao painel.",
+      title: "Planos, créditos e cobrança",
+      description: "Assinaturas, pacotes extras de artes e limites por plano já aparecem conectados ao painel.",
       tag: "Ativo",
     },
   ];
   const nextFeatures = [
     "Modelos de proposta por nicho com textos mais prontos para vender.",
-    "Mais opções de acompanhamento do cliente depois que ele abre a proposta.",
+    "Acompanhamento mais detalhado depois que o cliente abre, aceita ou paga a proposta.",
+    "Mais opções para transformar propostas aceitas em próximos passos de atendimento.",
     "Melhorias no checkout para deixar aceite e pagamento ainda mais diretos.",
   ];
 
@@ -4236,7 +4237,7 @@ function ProductUpdatesModal({
           <div className="min-w-0">
             <p className="text-xs font-black uppercase text-green-700">Novidades do FechaPro</p>
             <h2 id="updates-modal-title" className="mt-1 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              Atualizacoes para vender com mais clareza
+              Atualizações para vender com mais clareza
             </h2>
           </div>
           <button
@@ -4288,7 +4289,7 @@ function ProductUpdatesModal({
           </section>
 
           <section className="rounded-lg border border-black/10 p-4">
-            <p className="text-xs font-black uppercase text-blue-700">Proximas features</p>
+            <p className="text-xs font-black uppercase text-blue-700">Próximas features</p>
             <div className="mt-3 grid gap-2">
               {nextFeatures.map((feature) => (
                 <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>

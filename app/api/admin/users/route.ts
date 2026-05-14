@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { requireAdmin } from "@/lib/admin";
-import { currentMonthRange, plans } from "@/lib/plans";
+import { currentMonthRange, plans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
+import { hashPassword } from "@/lib/session";
+import { isValidEmail } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -75,4 +78,73 @@ export async function GET() {
     },
     { headers: { "Cache-Control": "no-store" } },
   );
+}
+
+const allowedStatuses = new Set(["active", "trial", "blocked", "pending", "paused", "canceled"]);
+
+export async function POST(request: Request) {
+  await requireAdmin();
+
+  const body = (await request.json()) as {
+    email?: string;
+    name?: string;
+    password?: string;
+    plan?: PlanCode;
+    status?: string;
+  };
+  const name = body.name?.trim();
+  const email = body.email?.trim().toLowerCase();
+  const password = body.password || "";
+  const plan = body.plan || "start";
+  const status = body.status?.trim().toLowerCase() || "active";
+
+  if (!name || !email || password.length < 8) {
+    return jsonError("Informe nome, e-mail e senha com pelo menos 8 caracteres.");
+  }
+
+  if (!isValidEmail(email)) {
+    return jsonError("Informe um e-mail valido.");
+  }
+
+  if (!plans[plan]) {
+    return jsonError("Plano invalido.");
+  }
+
+  if (!allowedStatuses.has(status)) {
+    return jsonError("Status invalido.");
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (existing) {
+    return jsonError("E-mail ja cadastrado.", 409);
+  }
+
+  const user = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({
+      data: {
+        email,
+        name,
+        passwordHash: hashPassword(password),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+
+    await tx.planSubscription.create({
+      data: {
+        userId: created.id,
+        plan,
+        status,
+        provider: "admin",
+      },
+    });
+
+    return created;
+  });
+
+  return NextResponse.json({ user }, { status: 201 });
 }

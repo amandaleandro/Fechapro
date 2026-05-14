@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, ImageIcon, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, Upload, UserCog, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, ImageIcon, KeyRound, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
 
 type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
 
@@ -104,6 +104,14 @@ export default function AdminPage() {
   const [arts, setArts] = useState<AdminMarketingArt[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUser, setNewUser] = useState({
+    email: "",
+    name: "",
+    password: "",
+    plan: "start" as PlanCode,
+    status: "active",
+  });
 
   async function loadUsers() {
     setLoading(true);
@@ -200,6 +208,28 @@ export default function AdminPage() {
     }
   }
 
+  async function createUser(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCreatingUser(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel criar o usuario."));
+      setNotice(`Usuario ${newUser.name} criado e liberado pelo admin.`);
+      setNewUser({ email: "", name: "", password: "", plan: "start", status: "active" });
+      await loadUsers();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel criar o usuario.");
+    } finally {
+      setCreatingUser(false);
+    }
+  }
+
   const totalUsers = data?.users.length || 0;
   const activeUsers = data?.users.filter((user) => ["active", "trial"].includes(user.subscription.status)).length || 0;
   const blockedUsers = data?.users.filter((user) => user.subscription.status === "blocked").length || 0;
@@ -280,6 +310,74 @@ export default function AdminPage() {
         </section>
 
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+          <form className="grid gap-4 rounded-lg border border-green-700/20 bg-green-50 p-4" onSubmit={createUser}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase text-green-700">Criar usuario manual</p>
+                <h2 className="text-2xl font-black">Acesso sem pagamento</h2>
+                <p className="mt-1 text-sm font-bold text-slate-600">
+                  Cadastre nome, e-mail e senha para entregar o login ao cliente. O plano fica com provedor admin e nao passa pelo checkout.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-green-700">
+                <KeyRound size={14} />
+                Login direto
+              </span>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <AdminInput
+                autoComplete="name"
+                label="Nome"
+                required
+                value={newUser.name}
+                onChange={(value) => setNewUser((current) => ({ ...current, name: value }))}
+              />
+              <AdminInput
+                autoComplete="email"
+                label="E-mail"
+                required
+                type="email"
+                value={newUser.email}
+                onChange={(value) => setNewUser((current) => ({ ...current, email: value }))}
+              />
+              <AdminInput
+                autoComplete="new-password"
+                label="Senha"
+                minLength={8}
+                required
+                type="password"
+                value={newUser.password}
+                onChange={(value) => setNewUser((current) => ({ ...current, password: value }))}
+              />
+              <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                Plano
+                <select className="min-h-11 rounded-lg border border-black/10 bg-white px-3 font-bold outline-green-700" value={newUser.plan} onChange={(event) => setNewUser((current) => ({ ...current, plan: event.target.value as PlanCode }))}>
+                  {(data?.plans || []).map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                Status
+                <select className="min-h-11 rounded-lg border border-black/10 bg-white px-3 font-bold outline-green-700" value={newUser.status} onChange={(event) => setNewUser((current) => ({ ...current, status: event.target.value }))}>
+                  {statuses.map((item) => (
+                    <option key={item} value={item}>
+                      {statusLabels[item] || item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <button className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60 sm:w-fit" disabled={creatingUser || !data?.plans.length} type="submit">
+              <UserPlus size={17} />
+              {creatingUser ? "Criando usuario..." : "Criar usuario liberado"}
+            </button>
+          </form>
+
           <div className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4">
             <Search className="text-slate-500" size={18} />
             <input className="min-h-10 flex-1 bg-transparent outline-none" placeholder="Buscar por nome, e-mail ou empresa" value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -499,6 +597,39 @@ function QuickAction({
       <Icon size={14} />
       {label}
     </button>
+  );
+}
+
+function AdminInput({
+  autoComplete,
+  label,
+  minLength,
+  onChange,
+  required,
+  type = "text",
+  value,
+}: {
+  autoComplete?: string;
+  label: string;
+  minLength?: number;
+  onChange: (value: string) => void;
+  required?: boolean;
+  type?: string;
+  value: string;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+      {label}
+      <input
+        autoComplete={autoComplete}
+        className="min-h-11 rounded-lg border border-black/10 bg-white px-3 font-bold outline-green-700"
+        minLength={minLength}
+        required={required}
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
   );
 }
 
