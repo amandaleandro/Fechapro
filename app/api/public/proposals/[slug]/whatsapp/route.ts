@@ -9,6 +9,13 @@ const intentMessages: Record<string, string> = {
   contact: "Olá, vi a proposta e quero falar sobre ela.",
 };
 
+function formatWhatsAppPhone(value?: string | null) {
+  const digits = value?.replace(/\D/g, "");
+  if (!digits) return "";
+
+  return digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+}
+
 export async function GET(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
   const url = new URL(request.url);
@@ -30,7 +37,7 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
     },
   });
 
-  const phone = proposal?.user.brandProfile?.whatsapp?.replace(/\D/g, "");
+  const phone = formatWhatsAppPhone(proposal?.user.brandProfile?.whatsapp);
   if (!proposal || !phone) redirect(`/p/${slug}?error=whatsapp`);
 
   const message = intentMessages[intent] || intentMessages.contact;

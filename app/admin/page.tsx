@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, ImageIcon, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, Upload, UserCog, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, ImageIcon, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, Upload, UserCog, XCircle } from "lucide-react";
 
 type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
 
@@ -43,6 +43,20 @@ type AdminUser = {
 type AdminPayload = {
   plans: AdminPlan[];
   users: AdminUser[];
+};
+
+type MetricsPeriodKey = "daily" | "weekly" | "monthly" | "yearly";
+
+type AdminMetrics = {
+  periods: Record<
+    MetricsPeriodKey,
+    {
+      accessCount: number;
+      revenueCents: number;
+      start: string;
+      end: string;
+    }
+  >;
 };
 
 type AdminMarketingArt = {
@@ -88,6 +102,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [arts, setArts] = useState<AdminMarketingArt[]>([]);
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   async function loadUsers() {
@@ -114,9 +129,20 @@ export default function AdminPage() {
     }
   }
 
+  async function loadMetrics() {
+    try {
+      const response = await fetch("/api/admin/metrics", { cache: "no-store" });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar as metricas."));
+      setMetrics((await response.json()) as AdminMetrics);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar as metricas.");
+    }
+  }
+
   useEffect(() => {
     loadUsers();
     loadArts();
+    loadMetrics();
   }, []);
 
   async function uploadArt(item: AdminMarketingArt, file: File, caption: string, whatsappMessage: string) {
@@ -193,7 +219,7 @@ export default function AdminPage() {
               Use esta tela para liberar clientes sem pagamento confirmado, reativar assinaturas atrasadas ou bloquear acessos.
             </p>
           </div>
-          <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={loadUsers}>
+          <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={() => { loadUsers(); loadMetrics(); }}>
             <RefreshCcw size={17} />
             Atualizar
           </button>
@@ -203,6 +229,27 @@ export default function AdminPage() {
           <AdminStat icon={UserCog} label="Usuarios" value={String(totalUsers)} />
           <AdminStat icon={CheckCircle2} label="Liberados" value={String(activeUsers)} />
           <AdminStat icon={ShieldCheck} label="Bloqueados" value={String(blockedUsers)} />
+        </section>
+
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase text-blue-700">Metricas gerais</p>
+              <h2 className="text-2xl font-black">Acessos e receita</h2>
+              <p className="mt-1 text-sm font-bold text-slate-600">
+                Acompanhamento diario, semanal, mensal e anual dos acessos registrados e pagamentos confirmados.
+              </p>
+            </div>
+            <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadMetrics}>
+              <RefreshCcw size={15} />
+              Atualizar metricas
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {(["daily", "weekly", "monthly", "yearly"] as MetricsPeriodKey[]).map((period) => (
+              <MetricCard key={period} label={metricPeriodLabel(period)} period={metrics?.periods[period] || null} />
+            ))}
+          </div>
         </section>
 
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
@@ -472,6 +519,44 @@ function AdminStat({ icon: Icon, label, value }: { icon: React.ElementType; labe
       <p className="mt-3 text-3xl font-black">{value}</p>
     </div>
   );
+}
+
+function MetricCard({ label, period }: { label: string; period: AdminMetrics["periods"][MetricsPeriodKey] | null }) {
+  return (
+    <article className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <p className="text-sm font-black uppercase text-slate-500">{label}</p>
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 text-sm font-black text-slate-600">
+            <Eye size={16} />
+            Acessos
+          </span>
+          <strong className="text-2xl font-black">{period ? period.accessCount.toLocaleString("pt-BR") : "--"}</strong>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 text-sm font-black text-slate-600">
+            <DollarSign size={16} />
+            Receita
+          </span>
+          <strong className="text-2xl font-black text-green-700">{period ? formatMoney(period.revenueCents) : "--"}</strong>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function metricPeriodLabel(period: MetricsPeriodKey) {
+  const labels: Record<MetricsPeriodKey, string> = {
+    daily: "Hoje",
+    weekly: "Semana",
+    monthly: "Mes",
+    yearly: "Ano",
+  };
+  return labels[period];
+}
+
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat("pt-BR", { currency: "BRL", style: "currency" }).format(cents / 100);
 }
 
 async function readApiError(response: Response, fallback: string) {
