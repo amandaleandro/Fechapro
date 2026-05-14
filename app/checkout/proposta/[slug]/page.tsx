@@ -25,7 +25,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
   const signal50 = Math.max(100, Math.round(proposal.price * 0.5));
 
   return (
-    <main className="min-h-screen bg-[#eef3f8] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">
+    <main className="min-h-screen bg-[var(--ui-bg)] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">
       <section className="mx-auto grid w-full max-w-6xl gap-5">
         <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10">
           <a className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-black text-slate-600 hover:text-slate-950" href={`/p/${proposal.publicSlug}`}>

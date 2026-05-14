@@ -16,11 +16,12 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
   const recurringPrice = plan.maintenancePrice || plan.price;
+  const hasSetup = Boolean(plan.maintenancePrice);
   const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id } });
   const active = Boolean(subscription?.plan === plan.code && canUsePaidFeatures(subscription));
 
   return (
-    <main className="min-h-screen bg-[#eef3f8] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">
+    <main className="min-h-screen bg-[var(--ui-bg)] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">
       <section className="mx-auto grid w-full max-w-6xl gap-5">
         <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10">
           <Link className="inline-flex min-h-11 items-center gap-3 rounded-lg px-2 font-black text-slate-900" href="/">
@@ -51,16 +52,18 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
               <div>
                 <p className="text-xs font-black uppercase text-blue-700">Assinatura FechaPro</p>
                 <h1 className="mt-2 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">
-                  Confirme o plano {plan.name} e libere seu painel.
+                  {hasSetup ? `Confirme a continuidade do plano ${plan.name}.` : `Confirme o plano ${plan.name} e libere seu painel.`}
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-                  Revise o resumo antes de seguir para o Mercado Pago. Assim que o pagamento for confirmado, o FechaPro atualiza sua assinatura automaticamente.
+                  {hasSetup
+                    ? "A implantacao e combinada com a equipe para deixar tudo pronto. Pelo Mercado Pago, voce autoriza a mensalidade de continuidade e acesso ao FechaPro."
+                    : "Revise o resumo antes de seguir para o Mercado Pago. Assim que o pagamento for confirmado, o FechaPro atualiza sua assinatura automaticamente."}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
-                <CheckoutMetric label="Mensalidade recorrente" value={recurringPrice} />
+                <CheckoutMetric label={hasSetup ? "Continuidade" : "Mensalidade recorrente"} value={recurringPrice} />
                 <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mes`} />
               </div>
 
@@ -86,16 +89,16 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
           <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">Assinatura mensal</p>
+              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Continuidade mensal" : "Assinatura mensal"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{recurringPrice}</strong>
-              {plan.maintenancePrice ? (
-                <p className="mt-2 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
-                  Implantacao combinada a parte: {plan.price}.
+              {hasSetup ? (
+                <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">
+                  Implantacao completa: {plan.price}.
                 </p>
               ) : null}
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                {plan.maintenancePrice
-                  ? "Este checkout autoriza a mensalidade promocional de manutencao e acesso ao FechaPro."
+                {hasSetup
+                  ? "Este checkout autoriza a mensalidade para manter o acesso depois da configuracao inicial."
                   : "Assinatura mensal em ambiente seguro do Mercado Pago."}
               </p>
             </div>

@@ -134,7 +134,7 @@ function PasswordField({
 
 export default function RedefinirSenhaPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-6 text-slate-950">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--ui-bg)] px-4 py-6 text-slate-950">
       <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg sm:p-8">
         <div className="mb-6">
           <a href="/login" className="text-sm text-slate-500 hover:text-slate-700">

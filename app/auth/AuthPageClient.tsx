@@ -82,14 +82,13 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f6f8fb] text-slate-950">
+    <main className="min-h-screen overflow-hidden bg-[var(--ui-bg)] text-slate-950">
       {isSignup && turnstileSiteKey ? (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
       ) : null}
       <div className="mx-auto grid min-h-screen w-full max-w-5xl gap-4 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <section className="relative isolate grid min-h-[380px] overflow-hidden rounded-lg border border-slate-200/10 bg-[#102033] p-5 text-white shadow-xl shadow-slate-900/10 sm:min-h-[480px] sm:p-7 lg:min-h-[540px]">
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(145deg,rgba(20,83,45,0.45),rgba(15,23,42,0.2)_42%,rgba(30,64,175,0.16))]" />
-          <div className="absolute inset-x-8 bottom-0 -z-10 h-48 rounded-t-[100%] bg-emerald-400/[0.08] blur-3xl" />
 
           <Link className="inline-flex w-fit items-center gap-2 font-black" href="/">
             <span className="grid h-12 w-40 place-items-center rounded-lg bg-white px-3 shadow-sm shadow-black/10">
@@ -100,15 +99,15 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           <div className="self-center">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-3 py-2 text-xs font-bold uppercase tracking-wide text-emerald-100 shadow-sm">
               <Sparkles size={14} />
-              {isSignup ? "Comece agora" : "Bem-vindo de volta"}
+              {isSignup ? "Cadastro" : "Acesso"}
             </div>
             <h1 className="max-w-[12ch] text-3xl font-extrabold leading-tight tracking-normal sm:max-w-[11ch] sm:text-5xl">
-              {isSignup ? "Crie propostas que vendem." : "Acesse seu painel."}
+              {isSignup ? "Configure seu painel de propostas." : "Entre no painel."}
             </h1>
             <p className="mt-6 max-w-md text-base leading-7 text-slate-200/85 sm:text-lg">
               {isSignup
-                ? "Cadastre-se para montar propostas com portfólio, PDF, status e botão de aceite."
-                : "Entre para gerenciar clientes, serviços, portfólio, depoimentos e propostas."}
+                ? "Finalize o cadastro para criar propostas, acompanhar status e manter seus dados comerciais organizados."
+                : "Gerencie clientes, serviços, propostas, portfólio e conta em um só lugar."}
             </p>
           </div>
 
@@ -127,7 +126,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/8 sm:p-5">
-          <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+          <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-[var(--ui-bg)] p-1">
             <a className={`grid min-h-10 place-items-center rounded-md text-sm font-bold transition hover:text-slate-950 ${!isSignup ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200" : "text-slate-500"}`} href="/login">
               Entrar
             </a>
@@ -140,16 +139,16 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             <div className="grid gap-5">
               <div className="space-y-1">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Plano obrigatorio</p>
-                <h2 className="text-2xl font-extrabold leading-tight text-slate-900">Escolha um plano para criar sua conta</h2>
+                <h2 className="text-2xl font-extrabold leading-tight text-slate-900">Escolha um plano para liberar o cadastro</h2>
                 <p className="max-w-xl text-sm leading-6 text-slate-500">
-                  O acesso ao FechaPro e liberado somente depois da confirmacao do pagamento pelo Mercado Pago.
+                  O acesso é liberado depois da confirmação do pagamento pelo Mercado Pago.
                 </p>
               </div>
-              <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 font-bold text-white shadow-sm shadow-emerald-700/10 transition hover:bg-emerald-700" href="/#planos">
+              <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-bold text-white shadow-sm shadow-green-700/10 transition hover:bg-green-700" href="/#planos">
                 <CreditCard size={18} />
                 Escolher plano
               </Link>
-              <div className="rounded-lg border border-emerald-600/15 bg-emerald-50/70 p-3 text-sm font-semibold leading-6 text-emerald-950">
+              <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-semibold leading-6 text-green-900">
                 Depois do pagamento, voce volta para esta tela para finalizar nome, e-mail e senha.
               </div>
             </div>
@@ -157,9 +156,9 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           <form className="grid gap-5" onSubmit={submitAuth}>
             <div className="space-y-1">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{isSignup ? "Cadastro" : "Login"}</p>
-              <h2 className="text-2xl font-extrabold leading-tight">{isSignup ? "Crie sua conta e escolha seu plano" : "Entre no FechaPro"}</h2>
+              <h2 className="text-2xl font-extrabold leading-tight">{isSignup ? "Finalize sua conta" : "Entre no FechaPro"}</h2>
               <p className="max-w-xl text-sm leading-6 text-slate-500">
-                {isSignup ? `Pagamento ${plan ? `do plano ${plan}` : "do plano"} confirmado? Finalize seu cadastro para liberar o painel.` : "Continue de onde parou e acompanhe suas propostas."}
+                {isSignup ? `Pagamento ${plan ? `do plano ${plan}` : "do plano"} confirmado? Complete os dados para acessar o painel.` : "Continue de onde parou e acompanhe suas propostas."}
               </p>
             </div>
 
@@ -192,18 +191,18 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
               </div>
             ) : null}
 
-            <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 font-bold text-white shadow-sm shadow-emerald-700/10 transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-3 focus-visible:outline-emerald-700/25 disabled:cursor-not-allowed disabled:opacity-60" disabled={authLoading} type="submit">
+            <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-bold text-white shadow-sm shadow-green-700/10 transition hover:bg-green-700 focus-visible:outline focus-visible:outline-3 focus-visible:outline-green-700/25 disabled:cursor-not-allowed disabled:opacity-60" disabled={authLoading} type="submit">
               {authLoading ? <Lock size={18} /> : <ArrowRight size={18} />}
               {authLoading ? "Aguarde..." : isSignup ? "Criar conta e entrar" : "Entrar no FechaPro"}
             </button>
 
             <div className="grid gap-2 border-t border-slate-100 pt-1 text-sm leading-6 text-slate-500 sm:grid-cols-2">
               <span className="inline-flex items-center gap-2">
-                <Check className="text-emerald-600" size={16} />
+                <Check className="text-green-700" size={16} />
                 Propostas em PDF e link
               </span>
               <span className="inline-flex items-center gap-2">
-                <Check className="text-emerald-600" size={16} />
+                <Check className="text-green-700" size={16} />
                 Aceite com status
               </span>
             </div>

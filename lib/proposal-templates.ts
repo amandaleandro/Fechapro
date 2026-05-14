@@ -1,0 +1,161 @@
+export type ProposalTemplate = {
+  id: string;
+  niche: string;
+  title: string;
+  serviceName: string;
+  price: number;
+  deadline: string;
+  payment: string;
+  included: string[];
+  notes: string;
+};
+
+export const proposalTemplates: ProposalTemplate[] = [
+  {
+    id: "social-media",
+    niche: "Social media",
+    title: "Gestao mensal de Instagram",
+    serviceName: "Gestao de redes sociais",
+    price: 1200,
+    deadline: "30 dias",
+    payment: "Mensal antecipado",
+    included: ["Planejamento editorial", "12 posts feed", "8 stories", "Legenda estrategica", "Relatorio mensal"],
+    notes: "Nao inclui impulsionamento de posts nem verba de midia.",
+  },
+  {
+    id: "designer",
+    niche: "Designer",
+    title: "Identidade visual",
+    serviceName: "Identidade visual profissional",
+    price: 1500,
+    deadline: "10 dias uteis",
+    payment: "50% entrada e 50% entrega",
+    included: ["Logo principal", "Logo secundario", "Paleta de cores", "Tipografia", "Mini manual da marca"],
+    notes: "Inclui ate 2 rodadas de ajustes dentro do escopo aprovado.",
+  },
+  {
+    id: "fotografo",
+    niche: "Fotografia",
+    title: "Ensaio profissional",
+    serviceName: "Ensaio fotografico profissional",
+    price: 900,
+    deadline: "7 dias uteis apos o ensaio",
+    payment: "50% reserva e 50% no dia",
+    included: ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online", "Entrega digital"],
+    notes: "Deslocamentos fora da cidade podem gerar custo adicional.",
+  },
+  {
+    id: "arquiteto",
+    niche: "Arquitetura",
+    title: "Projeto de interiores",
+    serviceName: "Projeto de interiores",
+    price: 3500,
+    deadline: "25 dias uteis",
+    payment: "40% entrada, 30% desenvolvimento e 30% entrega",
+    included: ["Levantamento de necessidades", "Layout", "Moodboard", "Projeto 3D", "Lista de compras"],
+    notes: "Execucao de obra e acompanhamento presencial podem ser contratados a parte.",
+  },
+  {
+    id: "consultor",
+    niche: "Consultoria",
+    title: "Consultoria estrategica",
+    serviceName: "Consultoria estrategica personalizada",
+    price: 1800,
+    deadline: "4 semanas",
+    payment: "Integral no inicio ou 2 parcelas",
+    included: ["Diagnostico", "Plano de acao", "4 encontros online", "Material de apoio", "Suporte por mensagem"],
+    notes: "O resultado depende da execucao das acoes combinadas pelo cliente.",
+  },
+  {
+    id: "tecnico",
+    niche: "Servico tecnico",
+    title: "Instalacao e manutencao",
+    serviceName: "Servico tecnico especializado",
+    price: 850,
+    deadline: "5 dias uteis",
+    payment: "50% entrada e 50% conclusao",
+    included: ["Visita tecnica", "Diagnostico", "Instalacao ou manutencao", "Teste final", "Garantia de 30 dias"],
+    notes: "Pecas e materiais podem ser cobrados separadamente apos avaliacao.",
+  },
+  {
+    id: "manicure",
+    niche: "Manicure",
+    title: "Pacote de unhas",
+    serviceName: "Manicure e alongamento",
+    price: 160,
+    deadline: "Atendimento em 2 horas",
+    payment: "R$ 50 de sinal e restante no atendimento",
+    included: ["Cutilagem", "Esmaltacao", "Alongamento ou manutencao", "Finalizacao hidratante", "Garantia de 7 dias"],
+    notes: "Materiais especiais, nail art e deslocamento podem alterar o valor final.",
+  },
+  {
+    id: "eletricista",
+    niche: "Eletricista",
+    title: "Instalacao residencial",
+    serviceName: "Instalacao e revisao eletrica",
+    price: 450,
+    deadline: "1 dia util apos aprovacao",
+    payment: "30% para reservar e 70% na conclusao",
+    included: ["Visita tecnica", "Diagnostico", "Instalacao ou reparo", "Teste de seguranca", "Garantia de 30 dias"],
+    notes: "Materiais eletricos sao cobrados separadamente apos avaliacao.",
+  },
+  {
+    id: "pedreiro",
+    niche: "Pedreiro",
+    title: "Reparo e acabamento",
+    serviceName: "Servico de alvenaria e acabamento",
+    price: 1200,
+    deadline: "5 dias uteis",
+    payment: "40% entrada e 60% na entrega",
+    included: ["Avaliacao do local", "Preparacao da area", "Execucao do reparo", "Acabamento", "Limpeza basica"],
+    notes: "Nao inclui compra de materiais, cacamba ou alteracoes de escopo.",
+  },
+  {
+    id: "diarista",
+    niche: "Diarista",
+    title: "Limpeza residencial",
+    serviceName: "Diarista para limpeza completa",
+    price: 220,
+    deadline: "1 diaria",
+    payment: "Pagamento no dia do atendimento",
+    included: ["Limpeza de quartos e sala", "Banheiros", "Cozinha", "Area de servico", "Organizacao leve"],
+    notes: "Nao inclui limpeza pesada pos-obra nem produtos especificos.",
+  },
+  {
+    id: "esteticista",
+    niche: "Esteticista",
+    title: "Protocolo estetico",
+    serviceName: "Protocolo estetico personalizado",
+    price: 350,
+    deadline: "Sessao de 60 a 90 minutos",
+    payment: "50% para agendar e 50% no atendimento",
+    included: ["Avaliacao inicial", "Higienizacao", "Procedimento principal", "Orientacoes de cuidado", "Acompanhamento por mensagem"],
+    notes: "Resultado pode variar conforme rotina de cuidados e numero de sessoes.",
+  },
+  {
+    id: "personal",
+    niche: "Personal trainer",
+    title: "Plano mensal de treino",
+    serviceName: "Acompanhamento personal trainer",
+    price: 700,
+    deadline: "4 semanas",
+    payment: "Mensal antecipado",
+    included: ["Avaliacao fisica", "Plano de treino", "8 aulas presenciais ou online", "Ajustes semanais", "Suporte por WhatsApp"],
+    notes: "Nao inclui academia, equipamentos ou avaliacao medica.",
+  },
+  {
+    id: "assistencia",
+    niche: "Assistencia tecnica",
+    title: "Diagnostico e reparo",
+    serviceName: "Assistencia tecnica especializada",
+    price: 300,
+    deadline: "3 dias uteis apos diagnostico",
+    payment: "Diagnostico na entrada e saldo na retirada",
+    included: ["Diagnostico", "Orcamento de pecas", "Mao de obra", "Testes finais", "Garantia do reparo"],
+    notes: "Pecas sao cobradas separadamente e dependem de disponibilidade.",
+  },
+];
+
+export function findProposalTemplate(templateId?: string | null) {
+  return proposalTemplates.find((template) => template.id === templateId) || null;
+}

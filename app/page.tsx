@@ -38,6 +38,7 @@ import {
   X,
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
+import { findProposalTemplate, type ProposalTemplate } from "@/lib/proposal-templates";
 
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "account";
 type ProposalStatus = "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
@@ -122,7 +123,9 @@ type Proposal = {
   createdAt: string;
 };
 
-type ProposalDraft = Omit<Proposal, "id" | "status" | "createdAt" | "publicSlug" | "viewCount">;
+type ProposalDraft = Omit<Proposal, "id" | "status" | "createdAt" | "publicSlug" | "viewCount"> & {
+  templateId: string;
+};
 
 type BrandProfile = {
   id?: string;
@@ -179,18 +182,6 @@ type BillingState = {
   };
 };
 
-type ProposalTemplate = {
-  id: string;
-  niche: string;
-  title: string;
-  serviceName: string;
-  price: number;
-  deadline: string;
-  payment: string;
-  included: string[];
-  notes: string;
-};
-
 type TourStep = {
   view: ActiveView;
   eyebrow: string;
@@ -210,6 +201,7 @@ const keys = {
 };
 
 const blankDraft: ProposalDraft = {
+  templateId: "",
   clientName: "",
   clientEmail: "",
   serviceName: "",
@@ -264,10 +256,10 @@ const planAccessRank: Record<PlanCode, number> = {
 
 const planLabels: Record<PlanCode, string> = {
   start: "Start",
-  pro: "Essencial",
+  pro: "Pro",
   plus: "Profissional",
   premium: "Pro Site",
-  premium_site: "Premium Site",
+  premium_site: "Implantação Completa",
 };
 
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
@@ -557,8 +549,6 @@ export default function Home() {
   const [session, setSession] = useState<{ name: string; email: string; isAdmin?: boolean } | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [dark, setDark] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [aiSource, setAiSource] = useState<"openai" | "fallback" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState<ProposalDraft>(blankDraft);
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -567,6 +557,7 @@ export default function Home() {
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [marketingArts, setMarketingArts] = useState<MarketingArt[]>([]);
+  const [customProposalTemplates, setCustomProposalTemplates] = useState<ProposalTemplate[]>([]);
   const [brand, setBrand] = useState<BrandProfile | null>(null);
   const [billing, setBilling] = useState<BillingState | null>(null);
   const [tourStepIndex, setTourStepIndex] = useState<number | null>(null);
@@ -588,6 +579,10 @@ export default function Home() {
       services.length === 0,
   );
   const currentTourStep = tourStepIndex === null ? null : availableTourSteps[tourStepIndex] || null;
+  const allProposalTemplates = useMemo(
+    () => [...customProposalTemplates, ...proposalTemplates],
+    [customProposalTemplates],
+  );
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -623,7 +618,7 @@ export default function Home() {
   }, [onboardingIncomplete, session]);
 
   async function loadDashboardData() {
-    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData, marketingArtsData] = await Promise.all([
+    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData, marketingArtsData, proposalTemplatesData] = await Promise.all([
       apiGet<BrandProfile>("/api/brand"),
       apiGet<BillingState>("/api/billing/plan"),
       apiGet<Client[]>("/api/clients"),
@@ -632,6 +627,7 @@ export default function Home() {
       apiGet<Testimonial[]>("/api/testimonials"),
       apiGet<Proposal[]>("/api/proposals"),
       apiGet<MarketingArt[]>("/api/marketing-arts"),
+      apiGet<ProposalTemplate[]>("/api/proposal-templates"),
     ]);
 
     setBrand(brandData);
@@ -642,6 +638,7 @@ export default function Home() {
     setTestimonials(testimonialsData);
     setProposals(proposalsData);
     setMarketingArts(marketingArtsData);
+    setCustomProposalTemplates(proposalTemplatesData);
     if (!(["active", "trial"].includes(billingData.subscription.status) && ["mercadopago", "admin"].includes(billingData.subscription.provider || ""))) {
       setNotice("Escolha um plano e conclua o pagamento pelo Mercado Pago para liberar a criação de propostas.");
       setActiveView("plans");
@@ -679,7 +676,6 @@ export default function Home() {
       const result = await apiPost<Proposal & { clientEmailSent?: boolean }>("/api/proposals", {
         ...draft,
         clientEmail: draft.clientEmail?.trim() || "",
-        payment: draft.payment || "A combinar",
         status,
       });
       setProposals((current) => [result, ...current]);
@@ -824,7 +820,7 @@ export default function Home() {
           }
         : current,
     );
-    setNotice("Solicitacao enviada. Um agente vai construir a arte e anexar para sua aprovacao.");
+      setNotice("Solicitacao enviada. A equipe vai preparar a arte e anexar para sua aprovacao.");
     return item;
   }
 
@@ -868,11 +864,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]" data-theme={dark ? "dark" : "light"}>
-      <header className="sticky top-0 z-20 border-b border-black/10 bg-slate-100/90 px-4 py-3 backdrop-blur sm:py-4">
+      <header className="fp-shell-header sticky top-0 z-20 border-b border-black/10 px-4 py-3 backdrop-blur sm:py-4">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <Image alt="FechaPro" className="mb-3 h-9 w-36 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
-            <h1 className="max-w-xs text-2xl font-black leading-tight sm:max-w-none sm:text-3xl">
+            <h1 className="max-w-xs text-2xl font-black leading-tight tracking-normal sm:max-w-none sm:text-3xl">
               Sistema de propostas profissionais.
             </h1>
             <p className="mt-1 text-sm font-bold text-slate-500">
@@ -935,7 +931,7 @@ export default function Home() {
           />
         ) : (
           <>
-            <nav className="grid grid-cols-3 gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/10 min-[430px]:grid-cols-4 sm:flex sm:overflow-x-auto sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
+            <nav className="fp-nav grid grid-cols-3 gap-1 rounded-lg border p-1.5 min-[430px]:grid-cols-4 sm:flex sm:overflow-x-auto sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeView === item.id;
@@ -943,9 +939,9 @@ export default function Home() {
                 const tourFocus = currentTourStep?.view === item.id;
                 return (
                   <button
-                    className={`flex min-h-[58px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:min-w-[52px] sm:text-[11px] ${
-                      active ? "bg-green-600 text-white" : locked ? "text-slate-400" : "text-slate-600"
-                    } ${locked ? "border border-dashed border-slate-200 bg-slate-50/70" : ""} ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
+                    className={`fp-nav-item flex min-h-[58px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:min-w-[52px] sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
+                    data-active={active}
+                    data-locked={locked}
                     key={item.id}
                     type="button"
                     title={locked ? `Disponível a partir do plano ${requiredPlanLabel(item.id)}` : item.label}
@@ -969,7 +965,6 @@ export default function Home() {
             {activeView === "dashboard" ? (
           <DashboardView
             accepted={accepted}
-            aiPrompt={aiPrompt}
             clients={clients}
             draft={draft}
             brand={
@@ -986,29 +981,7 @@ export default function Home() {
                 bio: null,
               }
             }
-            onAiPromptChange={setAiPrompt}
-            aiSource={aiSource}
             onDraftChange={updateDraft}
-            onGenerate={async () => {
-              if (!aiPrompt.trim()) return;
-              const result = await apiPost<{
-                source: "openai" | "fallback";
-                proposal: Partial<ProposalDraft> & { upsell?: string; sendMessage?: string };
-              }>("/api/ai/proposal", { prompt: aiPrompt });
-              setAiSource(result.source);
-              setDraft((current) => ({
-                ...current,
-                clientName: result.proposal.clientName || current.clientName,
-                serviceName: result.proposal.serviceName || current.serviceName,
-                price: Number(result.proposal.price || current.price || 0),
-                deadline: result.proposal.deadline || current.deadline,
-                payment: result.proposal.payment || current.payment,
-                included: result.proposal.included?.length ? result.proposal.included : current.included,
-                notes: [result.proposal.notes, result.proposal.upsell ? `Upsell sugerido: ${result.proposal.upsell}` : "", result.proposal.sendMessage ? `Mensagem de envio: ${result.proposal.sendMessage}` : ""]
-                  .filter(Boolean)
-                  .join("\n\n"),
-              }));
-            }}
             onProposalSave={saveProposal}
             onSeed={seedExamples}
             billing={billing}
@@ -1022,6 +995,7 @@ export default function Home() {
             openValue={openValue}
             portfolio={portfolio}
             proposals={proposals}
+            proposalTemplates={allProposalTemplates}
             services={services}
             testimonials={testimonials}
           />
@@ -1078,9 +1052,13 @@ export default function Home() {
             ) : null}
             {activeView === "templates" ? (
               <TemplatesView
+                customTemplates={customProposalTemplates}
+                onTemplateCreated={(template) => setCustomProposalTemplates((current) => [template, ...current])}
+                proposalTemplates={allProposalTemplates}
                 onUseTemplate={(template) => {
                   setDraft((current) => ({
                     ...current,
+                    templateId: template.id,
                     serviceName: template.serviceName,
                     price: template.price,
                     deadline: template.deadline,
@@ -1215,14 +1193,10 @@ function urlBase64ToUint8Array(value: string) {
 
 function DashboardView({
   accepted,
-  aiPrompt,
-  aiSource,
   brand,
   clients,
   draft,
-  onAiPromptChange,
   onDraftChange,
-  onGenerate,
   onProposalDuplicate,
   onProposalRemove,
   onProposalResend,
@@ -1238,16 +1212,13 @@ function DashboardView({
   billing,
   notice,
   onNotice,
+  proposalTemplates,
 }: {
   accepted: number;
-  aiPrompt: string;
-  aiSource: "openai" | "fallback" | null;
   brand: BrandProfile;
   clients: Client[];
   draft: ProposalDraft;
-  onAiPromptChange: (value: string) => void;
   onDraftChange: <K extends keyof ProposalDraft>(key: K, value: ProposalDraft[K]) => void;
-  onGenerate: () => void;
   onProposalDuplicate: (id: string) => void;
   onProposalRemove: (id: string) => void;
   onProposalResend: (id: string) => void;
@@ -1263,6 +1234,7 @@ function DashboardView({
   billing: BillingState | null;
   notice: string | null;
   onNotice: (message: string | null) => void;
+  proposalTemplates: ProposalTemplate[];
 }) {
   const includedItems = draft.included.length ? draft.included : ["Itens da proposta aparecem aqui."];
   const acceptedValue = proposals
@@ -1311,7 +1283,7 @@ function DashboardView({
 
       <PushNotificationPanel onNotice={onNotice} />
 
-      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[1fr_0.85fr] sm:items-end sm:p-6">
+      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[1fr_auto] sm:items-end sm:p-6">
         <div>
           <span className="mb-3 inline-flex rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
             Plataforma mobile first
@@ -1324,33 +1296,10 @@ function DashboardView({
           </p>
         </div>
 
-        <form
-          className="grid gap-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onGenerate();
-          }}
-        >
-          <label className="grid gap-2 text-sm font-extrabold text-slate-600" htmlFor="aiPrompt">
-            Rascunho rápido com IA
-          </label>
-          <textarea
-            className="min-h-32 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
-            id="aiPrompt"
-            placeholder="Ex: Identidade visual para loja de roupas, prazo de 7 dias, valor 1200, pagamento 50/50"
-            value={aiPrompt}
-            onChange={(event) => onAiPromptChange(event.target.value)}
-          />
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
-            <Sparkles size={18} />
-            Gerar proposta
-          </button>
-          {aiSource ? (
-            <p className="text-xs font-bold text-slate-500">
-              Proposta organizada pelo assistente do FechaPro.
-            </p>
-          ) : null}
-        </form>
+        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+          <FileText size={18} />
+          Criar proposta
+        </button>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-4">
@@ -1459,6 +1408,7 @@ function DashboardView({
 
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
         <form
+          id="proposal-form"
           className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10"
           onSubmit={(event) => {
             event.preventDefault();
@@ -1472,17 +1422,18 @@ function DashboardView({
               Template por nicho
               <select
                 className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                defaultValue=""
+                required
+                value={draft.templateId}
                 onChange={(event) => {
                   const template = proposalTemplates.find((item) => item.id === event.target.value);
                   if (!template) return;
+                  onDraftChange("templateId", template.id);
                   onDraftChange("serviceName", template.serviceName);
                   onDraftChange("price", template.price);
                   onDraftChange("deadline", template.deadline);
                   onDraftChange("payment", template.payment);
                   onDraftChange("included", template.included);
                   onDraftChange("notes", template.notes);
-                  event.target.value = "";
                 }}
               >
                 <option value="">Escolha um modelo pronto</option>
@@ -2388,7 +2339,48 @@ function TestimonialsView({
   );
 }
 
-function TemplatesView({ onUseTemplate }: { onUseTemplate: (template: ProposalTemplate) => void }) {
+function TemplatesView({
+  customTemplates,
+  onTemplateCreated,
+  onUseTemplate,
+  proposalTemplates,
+}: {
+  customTemplates: ProposalTemplate[];
+  onTemplateCreated: (template: ProposalTemplate) => void;
+  onUseTemplate: (template: ProposalTemplate) => void;
+  proposalTemplates: ProposalTemplate[];
+}) {
+  const [uploadForm, setUploadForm] = useState({ title: "", niche: "", serviceName: "", price: 0, deadline: "", payment: "", included: "", notes: "" });
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submitImportedTemplate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (!file) {
+      setError("Envie um PDF, planilha ou imagem do template.");
+      return;
+    }
+    const data = new FormData();
+    data.append("file", file);
+    Object.entries(uploadForm).forEach(([key, value]) => data.append(key, String(value)));
+    setSaving(true);
+    try {
+      const response = await fetch("/api/proposal-templates", { method: "POST", body: data });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel importar o template."));
+      const template = (await response.json()) as ProposalTemplate;
+      onTemplateCreated(template);
+      setUploadForm({ title: "", niche: "", serviceName: "", price: 0, deadline: "", payment: "", included: "", notes: "" });
+      setFile(null);
+      onUseTemplate(template);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel importar o template.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <section className="grid gap-4">
       <div className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
@@ -2398,6 +2390,27 @@ function TemplatesView({ onUseTemplate }: { onUseTemplate: (template: ProposalTe
           Use um modelo como ponto de partida. Ele preenche serviço, valor, prazo, pagamento, itens inclusos e observações.
         </p>
       </div>
+
+      <form className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10" onSubmit={submitImportedTemplate}>
+        <SectionHeading eyebrow="Importar template" title="Subir PDF, planilha ou print" />
+        <input accept=".pdf,.csv,.xls,.xlsx,image/png,image/jpeg,image/webp" className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TextField label="Titulo do template" maxLength={80} required value={uploadForm.title} onChange={(value) => setUploadForm({ ...uploadForm, title: value })} />
+          <TextField label="Nicho" maxLength={80} placeholder="Ex: Designer, Manicure, Eletricista" value={uploadForm.niche} onChange={(value) => setUploadForm({ ...uploadForm, niche: value })} />
+          <TextField label="Servico" maxLength={100} required value={uploadForm.serviceName} onChange={(value) => setUploadForm({ ...uploadForm, serviceName: value })} />
+          <TextField label="Valor" min={1} required step="1" type="number" value={uploadForm.price || ""} onChange={(value) => setUploadForm({ ...uploadForm, price: Number(value || 0) })} />
+          <TextField label="Prazo" maxLength={80} required value={uploadForm.deadline} onChange={(value) => setUploadForm({ ...uploadForm, deadline: value })} />
+          <TextField label="Pagamento" maxLength={120} value={uploadForm.payment} onChange={(value) => setUploadForm({ ...uploadForm, payment: value })} />
+        </div>
+        <TextAreaField label="Itens inclusos" maxLength={1200} placeholder={"Um item por linha"} value={uploadForm.included} onChange={(value) => setUploadForm({ ...uploadForm, included: value })} />
+        <TextAreaField label="Observacoes" maxLength={800} rows={3} value={uploadForm.notes} onChange={(value) => setUploadForm({ ...uploadForm, notes: value })} />
+        {error ? <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
+        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
+          <FileDown size={18} />
+          {saving ? "Importando..." : "Importar e usar template"}
+        </button>
+        {customTemplates.length ? <p className="text-sm font-bold text-slate-500">{customTemplates.length} template(s) importado(s) salvos.</p> : null}
+      </form>
 
       <div className="grid gap-3 lg:grid-cols-2">
         {proposalTemplates.map((template) => (
@@ -2570,7 +2583,7 @@ function MarketingArtsView({
           <p className="text-xs font-black uppercase text-blue-700">Artes de divulgação</p>
           <h2 className="text-2xl font-black">Solicitar arte de divulgação</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Preencha o briefing para um agente construir a arte. Depois ele anexa a imagem pronta para sua aprovacao.
+            Preencha o pedido para a equipe preparar a arte. Depois ela anexa a imagem pronta para sua aprovacao.
           </p>
         </div>
 
@@ -2640,7 +2653,7 @@ function MarketingArtsView({
             onChange={(value) => setForm({ ...form, serviceName: value })}
           />
           <TextAreaField
-            label="Briefing para o agente"
+            label="Pedido da campanha"
             maxLength={400}
             placeholder="Ex: Quero uma arte para divulgar marmita grande com suco por R$ 22 hoje em Uberlandia. Pedido pelo WhatsApp."
             required
@@ -2651,7 +2664,7 @@ function MarketingArtsView({
           <TextField label="Cidade ou público" maxLength={120} placeholder="Uberlândia, noivas, lojas, moradores do bairro..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
           <TextField label="Botão da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Referencias para o agente
+            Referencias para a equipe
             <input
               accept="image/*"
               className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
@@ -3515,87 +3528,45 @@ function AuthScreen() {
     {
       code: "start",
       name: "Start",
-      price: "R$ 49",
+      price: "R$ 97",
       priceSuffix: "/mês",
-      group: "simple",
-      cta: "Começar simples",
-      detail: "Para quem quer começar a enviar propostas profissionais.",
-      items: ["20 propostas por mês", "Link profissional", "PDF automático", "Propostas com visual profissional", "Sem artes de divulgação", "Sem site incluso"],
+      cta: "Quero começar",
+      detail: "Para criar propostas profissionais e enviar para clientes sem gastar muito.",
+      items: ["20 propostas por mês", "Propostas profissionais", "PDF automático", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
     {
       code: "pro",
-      name: "Essencial",
-      price: "R$ 97",
+      name: "Pro",
+      price: "R$ 197",
       priceSuffix: "/mês",
-      group: "simple",
-      cta: "Organizar minhas propostas",
-      detail: "Para prestadores que querem organizar propostas, serviços e melhorar a apresentação.",
-      items: ["50 propostas por mês", "Serviços cadastrados", "Identidade básica", "Link profissional", "PDF automático", "Sem artes de divulgação"],
-    },
-    {
-      code: "plus",
-      name: "Profissional",
-      price: "R$ 147",
-      priceSuffix: "/mês",
-      badge: "Melhor custo-benefício",
-      group: "featured",
-      cta: "Quero vender melhor",
-      detail: "Para quem vende com frequência e quer propostas, portfólio e artes mensais.",
-      items: ["120 propostas por mês", "5 artes de divulgação por mês", "Portfólio no FechaPro", "Depoimentos na proposta", "Identidade básica", "Link profissional", "PDF automático"],
-    },
-    {
-      code: "premium",
-      name: "Pro Site",
-      price: "R$ 497",
-      priceSuffix: "implantação",
-      promoPrice: "+ R$ 97/mês por 6 meses",
-      afterPrice: "Depois R$ 197/mês",
-      badge: "Mais vendido",
-      group: "featured",
-      cta: "Quero meu site pronto",
-      detail: "Para quem quer o FechaPro completo + uma página profissional pronta para vender melhor.",
-      items: ["300 propostas por mês", "10 artes de divulgação por mês", "Site one page", "Portfólio", "Proposta + presença online", "Cadastro inicial", "Configuração assistida", "Treinamento rápido", "Link profissional", "PDF automático"],
+      badge: "Mais escolhido",
+      cta: "Quero o plano Pro",
+      detail: "Para vender com uma apresentação mais profissional, completa e frequente.",
+      items: ["120 propostas por mês", "Tudo do Start", "Templates mais completos", "Personalização visual", "Portfólio e proposta mais bonitos", "5 artes de divulgação por mês", "Suporte melhor"],
     },
     {
       code: "premium_site",
-      name: "Premium Site",
+      name: "Implantação Completa",
       price: "R$ 997",
       priceSuffix: "implantação",
       promoPrice: "+ R$ 197/mês por 6 meses",
-      afterPrice: "Depois R$ 297/mês",
-      badge: "Mais completo",
-      group: "featured",
-      cta: "Quero estrutura completa",
-      detail: "Para quem quer uma presença digital mais completa, com site, copy e acompanhamento inicial.",
-      items: ["600 propostas por mês", "15 artes de divulgação por mês", "Site completo simples", "Copy do site", "Cadastro inicial", "Treinamento", "Suporte prioritário", "Portfólio", "Depoimentos", "Link profissional", "PDF automático"],
+      badge: "Oferta recomendada",
+      cta: "Quero tudo pronto",
+      detail: "Eu configuro tudo para você sair usando, enviar as primeiras propostas e começar a vender.",
+      items: ["Sistema configurado", "Primeiras propostas criadas", "Templates ajustados para o negócio", "Kit de mensagens para clientes", "Artes de divulgação", "Treinamento rápido", "Acompanhamento inicial"],
     },
   ];
-  const featuredPlans = plans.filter((plan) => plan.group === "featured");
-  const simplePlans = plans.filter((plan) => plan.group === "simple");
   const practicalValue = [
     { icon: FileText, title: "Proposta mais bonita", text: "Envie uma apresentação profissional em vez de um orçamento solto no WhatsApp." },
     { icon: FileDown, title: "PDF automático", text: "Seu cliente pode baixar e visualizar sua proposta com mais confiança." },
     { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre seus serviços, fotos e provas de que você entrega um bom trabalho." },
     { icon: Megaphone, title: "Artes para divulgar", text: "Tenha materiais prontos para postar e chamar mais atenção, conforme o plano." },
-    { icon: LayoutDashboard, title: "Site pronto", text: "Nos planos com site, você recebe uma página profissional para divulgar seu negócio." },
-  ];
-  const comparisonRows = [
-    ["Propostas por mês", "20", "50", "120", "300", "600"],
-    ["PDF automático", "Sim", "Sim", "Sim", "Sim", "Sim"],
-    ["Link profissional", "Sim", "Sim", "Sim", "Sim", "Sim"],
-    ["Serviços cadastrados", "Não", "Sim", "Sim", "Sim", "Sim"],
-    ["Portfólio", "Não", "Não", "Sim", "Sim", "Sim"],
-    ["Depoimentos", "Não", "Não", "Sim", "Sim", "Sim"],
-    ["Artes mensais", "Não", "Não", "5", "10", "15"],
-    ["Site incluso", "Não", "Não", "Não", "One page", "Completo simples"],
-    ["Copy do site", "Não", "Não", "Não", "Não", "Sim"],
-    ["Treinamento", "Não", "Não", "Não", "Sim", "Sim"],
-    ["Suporte prioritário", "Não", "Não", "Não", "Não", "Sim"],
+    { icon: LayoutDashboard, title: "Tudo pronto na implantação", text: "Na oferta completa, a configuração inicial e os materiais comerciais já chegam encaminhados." },
   ];
   const faqs = [
     {
-      question: "Preciso saber criar site?",
-      answer: "Não. Nos planos Pro Site e Premium Site, a equipe do FechaPro configura a estrutura inicial para você.",
+      question: "Preciso configurar tudo sozinho?",
+      answer: "Não. Na Implantação Completa, a equipe do FechaPro configura a estrutura inicial para você sair usando.",
     },
     {
       question: "Posso cancelar?",
@@ -3603,15 +3574,15 @@ function AuthScreen() {
     },
     {
       question: "As artes são feitas por vocês?",
-      answer: "Sim. Nos planos Profissional, Pro Site e Premium Site, você recebe artes de divulgação mensais conforme o limite do plano.",
+      answer: "Na Implantação Completa, as artes de divulgação entram no pacote inicial. No plano Pro, você também tem créditos mensais para artes.",
     },
     {
-      question: "O site está incluso em todos os planos?",
-      answer: "Não. O site está incluso apenas nos planos Pro Site e Premium Site.",
+      question: "Qual plano devo escolher para vender mais rápido?",
+      answer: "A Implantação Completa é a melhor escolha para quem quer receber o sistema pronto, com primeiras propostas, templates, mensagens, artes e treinamento.",
     },
     {
-      question: "O valor promocional é para sempre?",
-      answer: "Não. A mensalidade promocional dos planos com site vale por 6 meses. Depois volta para o valor normal do plano.",
+      question: "A implantação substitui a mensalidade?",
+      answer: "Não. A implantação é o pacote para deixar tudo pronto. A mensalidade mantém o acesso e a continuidade depois da configuração.",
     },
     {
       question: "O FechaPro substitui meu orçamento manual?",
@@ -3682,8 +3653,8 @@ function AuthScreen() {
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
     />
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <section className="relative isolate overflow-hidden bg-slate-950 text-white">
+    <main className="fp-landing min-h-screen bg-slate-50 text-slate-950">
+      <section className="fp-landing-hero relative isolate overflow-hidden bg-slate-950 text-white">
         <Image className="motion-hero-pan absolute inset-0 -z-20 object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" fill priority sizes="100vw" />
         <div className="absolute inset-0 -z-10 bg-slate-950/74" />
         <div className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 py-4 pb-20 sm:min-h-[92vh] sm:px-6 sm:pb-4 lg:px-8">
@@ -3750,44 +3721,44 @@ function AuthScreen() {
 
           <div className="grid flex-1 content-end gap-6 pb-6 pt-12 sm:gap-8 sm:pb-8 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="max-w-3xl">
-              <p className="inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
-                Campanha de lançamento até 03/06
+              <p className="fp-landing-kicker inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
+                Propostas, PDF e aceite em um link
               </p>
               <h1 className="mt-5 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Crie propostas profissionais e apresente melhor o seu serviço em minutos.
+                Organize propostas comerciais sem depender de arquivo solto e mensagem perdida.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                Com o FechaPro, você envia propostas com PDF automático, link profissional, portfólio, artes de divulgação e, nos planos com site, uma página pronta para vender mais.
+                O FechaPro ajuda prestadores de serviço a montar proposta com escopo, valor, prazo, portfólio, PDF, aceite e acompanhamento de status.
               </p>
-              <div className="motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
-                <p className="text-sm font-black text-green-100">Planos com site a partir de R$497 de implantação + mensalidade promocional por 6 meses.</p>
-                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Pro Site: R$497 + R$97/mês por 6 meses. Premium Site: R$997 + R$197/mês por 6 meses.</p>
+              <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
+                <p className="text-sm font-black text-green-100">Plano Start por R$97/mês, Pro por R$197/mês ou implantação completa por R$997.</p>
+                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Na implantação, eu configuro tudo para você sair usando e vender com as primeiras propostas prontas.</p>
               </div>
               <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-white/80">
-                Tenha propostas profissionais, portfólio, PDF automático e uma presença online pronta para fechar mais serviços.
+                Um painel simples para enviar, acompanhar e reaproveitar informações de clientes, serviços e propostas.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
+                <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Quero começar agora
-                </a>
-                <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
                   Ver planos
                 </a>
-                <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="/interesse">
+                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
+                  Quero tudo pronto
+                </a>
+                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="/interesse">
                   Tenho interesse
                 </a>
               </div>
             </div>
 
-            <div className="motion-float-slow grid gap-3 rounded-lg border border-white/15 bg-white/10 p-3 backdrop-blur sm:p-4">
+            <div className="fp-landing-demo motion-float-slow grid gap-3 rounded-lg border border-white/15 bg-white/10 p-3 backdrop-blur sm:p-4">
               <div className="grid gap-2 sm:grid-cols-3">
                 {salesProof.map((metric) => (
                   <LandingMetric key={metric.value} value={metric.value} label={metric.label} />
                 ))}
               </div>
               <div className="motion-lift rounded-lg bg-white p-4 text-slate-950">
-                <p className="text-xs font-black uppercase text-blue-700">De orçamento comum para proposta premium</p>
+                <p className="text-xs font-black uppercase text-blue-700">Exemplo de proposta</p>
                 <h2 className="mt-1 text-xl font-black">{activeExample.service}</h2>
                 <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600">
                   <span>Cliente: {activeExample.client}</span>
@@ -3817,9 +3788,9 @@ function AuthScreen() {
                 ))}
               </div>
               <div className="rounded-lg border border-white/15 bg-slate-950/60 p-4">
-                <p className="text-xs font-black uppercase text-green-200">O efeito que você quer causar</p>
+                <p className="text-xs font-black uppercase text-green-200">Para o cliente</p>
                 <p className="mt-2 text-sm font-bold leading-6 text-white/80">
-                  "Agora entendi por que custa isso. Faz sentido. Como eu aprovo?"
+                  Escopo, valor, prazo e próximos passos ficam em uma única página.
                 </p>
               </div>
             </div>
@@ -3827,10 +3798,10 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-white">
+      <section className="fp-landing-band border-b border-black/10 bg-white">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:grid-cols-3 sm:px-6 lg:px-8">
           {benefits.map((benefit) => (
-            <article className="motion-lift rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={benefit.title}>
+            <article className="fp-landing-card motion-lift rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={benefit.title}>
               <benefit.icon className="text-green-700" size={24} />
               <h2 className="mt-4 text-lg font-black">{benefit.title}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">{benefit.description}</p>
@@ -3839,19 +3810,18 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="fp-landing-band bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-rose-700">Onde a venda escapa</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Seu serviço é bom, mas sua apresentação ainda parece improvisada?</h2>
+            <p className="text-xs font-black uppercase text-rose-700">Problema comum</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quando a proposta fica espalhada, o cliente demora mais para decidir.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Muitos prestadores perdem clientes porque ainda enviam orçamento no WhatsApp de qualquer jeito, sem portfólio, sem PDF, sem identidade e sem uma página profissional.
-              Com o FechaPro, você passa mais confiança desde o primeiro contato.
+              Conversas por WhatsApp ajudam, mas não substituem uma proposta clara. O FechaPro coloca os dados importantes em um formato fácil de revisar, aprovar e guardar.
             </p>
           </div>
           <div className="grid gap-3">
             {dealLeaks.map((item) => (
-              <article className="grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-rose-700/15 bg-rose-50 p-5" key={item}>
+              <article className="fp-landing-alert grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-rose-700/15 bg-rose-50 p-5" key={item}>
                 <span className="motion-float-soft grid size-9 place-items-center rounded-lg bg-rose-700 font-black text-white">!</span>
                 <p className="self-center text-sm font-black leading-6 text-rose-950 sm:text-base">{item}</p>
               </article>
@@ -3860,17 +3830,17 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-slate-100">
+      <section className="fp-landing-band fp-landing-muted bg-slate-100">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-blue-700">Simulador de fechamento</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Coloque números no problema: quanto custa deixar proposta esfriar?</h2>
+            <p className="text-xs font-black uppercase text-blue-700">Simulador</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Veja o impacto de recuperar propostas que ficam sem resposta.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Ajuste o volume de propostas, o ticket médio e quantas vendas poderiam ser resgatadas com uma apresentação mais clara, mais forte e mais fácil de aprovar.
+              Ajuste o volume de propostas, o ticket médio e uma estimativa conservadora de vendas que poderiam voltar para a conversa.
             </p>
           </div>
 
-          <div className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10">
+          <div className="fp-landing-card grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10">
             <div className="grid gap-4 sm:grid-cols-3">
               <LandingRange
                 label="Propostas por mês"
@@ -3903,27 +3873,27 @@ function AuthScreen() {
 
             <div className="grid gap-3 rounded-lg bg-slate-950 p-5 text-white sm:grid-cols-[1fr_auto] sm:items-center">
               <div>
-                <p className="text-xs font-black uppercase text-green-300">Potencial que hoje pode estar vazando</p>
+                <p className="text-xs font-black uppercase text-green-300">Potencial estimado</p>
                 <strong className="mt-2 block text-3xl font-black sm:text-4xl">{money.format(estimatedMonthlyUpside)}</strong>
                 <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-                  Se apenas {clampedRescuedDeals} proposta(s) por mês deixarem de morrer no follow-up, esse é o valor que volta para a conversa.
+                  Se {clampedRescuedDeals} proposta(s) por mês forem recuperadas, essa é a receita que pode voltar para negociação.
                 </p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
-                Quero testar na prática
+                Ver planos
               </a>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-slate-950 text-white" id="recursos">
+      <section className="fp-landing-dark bg-slate-950 text-white" id="recursos">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-green-300">O que o FechaPro entrega</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua venda ganha proposta, prova, PDF e presença online.</h2>
+            <p className="text-xs font-black uppercase text-green-300">Recursos</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Proposta, PDF, histórico e materiais de apoio no mesmo fluxo.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              O cliente entende o que está comprando, percebe profissionalismo, vê motivos para confiar e encontra um caminho claro para aprovar.
+              Você monta a proposta, envia o link, acompanha visualizações e mantém os dados organizados para usar de novo.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -3931,9 +3901,9 @@ function AuthScreen() {
               { icon: FileText, title: "Propostas profissionais com link", text: "Organize valor, prazo, escopo, observações e aceite em uma página profissional para enviar ao cliente." },
               { icon: FileDown, title: "PDF automático", text: "O cliente pode visualizar online e baixar uma versão em PDF com mais confiança." },
               { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre trabalhos anteriores e provas sociais dentro da própria proposta." },
-              { icon: Megaphone, title: "Artes e site nos planos certos", text: "Tenha artes de divulgação e, nos planos Pro Site e Premium Site, uma presença online pronta." },
+              { icon: Megaphone, title: "Materiais para vender melhor", text: "Tenha propostas, portfólio, mensagens e artes de apoio conforme o plano escolhido." },
             ].map((feature) => (
-              <article className="motion-lift rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
+              <article className="fp-landing-dark-card motion-lift rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
                 <feature.icon className="text-green-300" size={24} />
                 <h3 className="mt-4 text-lg font-black">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-white/70">{feature.text}</p>
@@ -3943,18 +3913,18 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-slate-100" id="como-funciona">
+      <section className="fp-landing-band fp-landing-muted bg-slate-100" id="como-funciona">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-blue-700">Fluxo de venda</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Monte uma proposta que conduz o cliente até o sim.</h2>
+            <p className="text-xs font-black uppercase text-blue-700">Fluxo</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Da criação ao aceite, sem sair do painel.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              O FechaPro organiza sua venda em uma sequência simples: contexto, valor, prova, condição e aceite.
+              O processo fica dividido em etapas objetivas: cliente, serviço, condições, envio, acompanhamento e aceite.
             </p>
           </div>
           <div className="grid gap-3">
             {steps.map((step, index) => (
-              <article className="grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-black/10 bg-white p-5" key={step}>
+              <article className="fp-landing-step grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-black/10 bg-white p-5" key={step}>
                 <span className={`motion-float-soft grid size-10 place-items-center rounded-lg bg-slate-950 font-black text-white motion-delay-${Math.min(index, 3)}`}>{index + 1}</span>
                 <p className="self-center text-base font-black leading-6 sm:text-lg sm:leading-7">{step}</p>
               </article>
@@ -3963,12 +3933,12 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="fp-landing-band bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-blue-700">Para quem vende serviço</p>
-            <h2 className="mt-2 max-w-3xl text-3xl font-black leading-tight sm:text-4xl">Feito para quem vende algo que não deveria ser julgado só pelo preço.</h2>
-            <div className="mt-6 flex flex-wrap gap-2">
+            <p className="text-xs font-black uppercase text-blue-700">Público</p>
+            <h2 className="mt-2 max-w-3xl text-3xl font-black leading-tight sm:text-4xl">Para prestadores que precisam explicar escopo, prazo e valor com clareza.</h2>
+            <div className="fp-landing-tags mt-6 flex flex-wrap gap-2">
               {niches.map((niche) => (
                 <span className="rounded-lg border border-black/10 bg-slate-50 px-4 py-3 text-sm font-black" key={niche}>
                   {niche}
@@ -3976,9 +3946,9 @@ function AuthScreen() {
               ))}
             </div>
           </div>
-          <div className="rounded-lg border border-black/10 bg-slate-50 p-5">
-            <p className="text-xs font-black uppercase text-blue-700">O que a proposta precisa provar</p>
-            <h3 className="mt-2 text-xl font-black sm:text-2xl">O cliente não compra só entrega. Ele compra confiança para escolher você.</h3>
+          <div className="fp-landing-card rounded-lg border border-black/10 bg-slate-50 p-5">
+            <p className="text-xs font-black uppercase text-blue-700">Na decisão do cliente</p>
+            <h3 className="mt-2 text-xl font-black sm:text-2xl">A proposta precisa responder às dúvidas antes do follow-up.</h3>
             <ul className="mt-5 grid gap-3">
               {objections.map((item) => (
                 <li className="flex gap-3 text-sm font-bold leading-6 text-slate-700 sm:text-base sm:leading-7" key={item}>
@@ -3991,18 +3961,18 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="fp-landing-band bg-white">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase text-blue-700">O que você recebe na prática</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Menos orçamento improvisado. Mais apresentação pronta para vender.</h2>
+            <p className="text-xs font-black uppercase text-blue-700">Na prática</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Um padrão melhor para enviar propostas todo dia.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              O FechaPro junta proposta, PDF, provas, divulgação e site nos planos certos para sua venda parecer mais profissional desde o primeiro contato.
+              A ideia é reduzir retrabalho: cadastrar serviços, reaproveitar dados, gerar PDF e manter o cliente em um link organizado.
             </p>
           </div>
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {practicalValue.map((item) => (
-              <article className="motion-lift rounded-lg border border-black/10 bg-slate-50 p-5" key={item.title}>
+              <article className="fp-landing-card motion-lift rounded-lg border border-black/10 bg-slate-50 p-5" key={item.title}>
                 <item.icon className="text-green-700" size={24} />
                 <h3 className="mt-4 text-lg font-black">{item.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
@@ -4012,32 +3982,30 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="scroll-mt-6 bg-slate-950 text-white" id="planos">
+      <section className="fp-landing-dark scroll-mt-6 bg-slate-950 text-white" id="planos">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase text-green-300">Escolha como quer começar</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Planos para proposta profissional, artes e presença online pronta.</h2>
+            <p className="text-xs font-black uppercase text-green-300">Planos</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha como quer começar.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              A recomendação é começar pelos planos que mais ajudam a vender melhor: Profissional, Pro Site ou Premium Site.
+              Três caminhos simples: começar com propostas, vender com uma apresentação mais completa ou receber tudo configurado para usar.
             </p>
           </div>
 
-          <div className="motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
-            <p className="text-xs font-black uppercase text-green-200">Condição especial até 03/06</p>
-            <h3 className="mt-2 text-2xl font-black">Feche um plano com site e garanta mensalidade promocional por 6 meses.</h3>
-            <div className="mt-4 grid gap-3 text-sm font-bold leading-6 text-white/82 md:grid-cols-2">
-              <p><strong className="text-white">Pro Site:</strong> R$497 de implantação + R$97/mês por 6 meses.</p>
-              <p><strong className="text-white">Premium Site:</strong> R$997 de implantação + R$197/mês por 6 meses.</p>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-white/65">Depois do período promocional, os planos voltam para o valor normal.</p>
+          <div className="fp-landing-offer motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
+            <p className="text-xs font-black uppercase text-green-200">Oferta recomendada</p>
+            <h3 className="mt-2 text-2xl font-black">Implantação Completa: eu configuro tudo para você sair usando.</h3>
+            <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-white/82">
+              Ideal para quem quer vender rápido: sistema configurado, primeiras propostas criadas, templates ajustados, mensagens para clientes, artes de divulgação, treinamento e acompanhamento inicial.
+            </p>
           </div>
 
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {featuredPlans.map((plan) => (
-              <article className={`motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
-                plan.name === "Pro Site"
+            {plans.map((plan) => (
+              <article className={`fp-landing-plan motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
+                plan.name === "Pro"
                   ? "motion-pulse-soft border-green-300 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.03]"
-                  : plan.name === "Profissional"
+                  : plan.name === "Start"
                     ? "border-green-400 bg-white text-slate-950"
                     : "border-white/15 bg-white/8"
               }`} key={plan.name}>
@@ -4046,12 +4014,11 @@ function AuthScreen() {
                     {plan.badge}
                   </span>
                 ) : null}
-                <p className={`text-sm font-black uppercase ${plan.name === "Premium Site" ? "text-green-300" : "text-blue-700"}`}>{plan.name}</p>
+                <p className={`text-sm font-black uppercase ${plan.name === "Implantação Completa" ? "text-green-300" : "text-blue-700"}`}>{plan.name}</p>
                 <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
-                <span className={plan.name === "Premium Site" ? "mt-1 block text-white/65" : "mt-1 block text-slate-600"}>{plan.priceSuffix}</span>
-                {plan.promoPrice ? <strong className={plan.name === "Premium Site" ? "mt-3 block text-xl text-white" : "mt-3 block text-xl text-slate-950"}>{plan.promoPrice}</strong> : null}
-                {plan.afterPrice ? <span className={plan.name === "Premium Site" ? "mt-1 block text-sm font-bold text-white/65" : "mt-1 block text-sm font-bold text-slate-500"}>{plan.afterPrice}</span> : null}
-                <p className={plan.name === "Premium Site" ? "mt-4 min-h-24 text-sm leading-6 text-white/70" : "mt-4 min-h-24 text-sm leading-6 text-slate-600"}>{plan.detail}</p>
+                <span className={plan.name === "Implantação Completa" ? "mt-1 block text-white/65" : "mt-1 block text-slate-600"}>{plan.priceSuffix}</span>
+                {plan.promoPrice ? <strong className={plan.name === "Implantação Completa" ? "mt-3 block text-xl text-white" : "mt-3 block text-xl text-slate-950"}>{plan.promoPrice}</strong> : null}
+                <p className={plan.name === "Implantação Completa" ? "mt-4 min-h-24 text-sm leading-6 text-white/70" : "mt-4 min-h-24 text-sm leading-6 text-slate-600"}>{plan.detail}</p>
                 <ul className="mt-5 grid gap-3">
                   {plan.items.map((item) => (
                     <li className="flex items-center gap-2 text-sm font-bold" key={item}>
@@ -4062,7 +4029,7 @@ function AuthScreen() {
                 </ul>
                 <a
                   className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.name === "Premium Site" ? "bg-white text-slate-950" : "bg-green-600 text-white"
+                    plan.name === "Implantação Completa" ? "bg-white text-slate-950" : "bg-green-600 text-white"
                   }`}
                   href={`/checkout/cadastro/${plan.code}`}
                 >
@@ -4070,63 +4037,6 @@ function AuthScreen() {
                 </a>
               </article>
             ))}
-          </div>
-
-          <div className="mt-8 rounded-lg border border-white/15 bg-white/8 p-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase text-white/55">Para começar simples</p>
-                <h3 className="mt-1 text-2xl font-black">Quer algo menor? Temos planos a partir de R$49/mês.</h3>
-              </div>
-            </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {simplePlans.map((plan) => (
-                <article className="motion-lift rounded-lg border border-white/15 bg-slate-950/45 p-5" key={plan.name}>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-sm font-black uppercase text-green-300">{plan.name}</p>
-                      <p className="mt-2 text-sm leading-6 text-white/70">{plan.detail}</p>
-                    </div>
-                    <div className="shrink-0 sm:text-right">
-                      <strong className="block text-2xl font-black">{plan.price}</strong>
-                      <span className="text-sm font-bold text-white/60">{plan.priceSuffix}</span>
-                    </div>
-                  </div>
-                  <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-                    {plan.items.slice(0, 4).map((item) => (
-                      <li className="flex items-center gap-2 text-sm font-bold text-white/82" key={item}>
-                        <CheckCircle2 className="shrink-0 text-green-400" size={17} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <a className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-4 font-black text-slate-950" href={`/checkout/cadastro/${plan.code}`}>
-                    {plan.cta}
-                  </a>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-8 overflow-x-auto rounded-lg border border-white/15 bg-white text-slate-950">
-            <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-              <thead className="bg-slate-100">
-                <tr>
-                  {["Recurso", "Start", "Essencial", "Profissional", "Pro Site", "Premium"].map((heading) => (
-                    <th className="border-b border-black/10 px-4 py-3 font-black" key={heading}>{heading}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonRows.map((row) => (
-                  <tr className="border-b border-black/10 last:border-b-0" key={row[0]}>
-                    {row.map((cell, index) => (
-                      <td className={`px-4 py-3 ${index === 0 ? "font-black" : "font-bold text-slate-700"}`} key={`${row[0]}-${index}`}>{cell}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
 
           <div className="mt-8 rounded-lg border border-white/15 bg-white/8 p-5">
@@ -4138,18 +4048,18 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="fp-landing-band bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Dúvidas comuns</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Antes de mandar mais um orçamento simples, tire suas dúvidas.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Perguntas antes de escolher um plano.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              O FechaPro foi pensado para tirar sua venda do improviso e colocar sua oferta em uma apresentação clara, rastreável e fácil de aceitar.
+              Alguns pontos importantes sobre uso, pagamento, limites e configuração inicial.
             </p>
           </div>
           <div className="grid gap-3">
             {faqs.map((faq) => (
-              <details className="rounded-lg border border-black/10 bg-slate-50 p-4" key={faq.question}>
+              <details className="fp-landing-faq rounded-lg border border-black/10 bg-slate-50 p-4" key={faq.question}>
                 <summary className="cursor-pointer font-black">{faq.question}</summary>
                 <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">{faq.answer}</p>
               </details>
@@ -4158,14 +4068,14 @@ function AuthScreen() {
         </div>
       </section>
 
-      <section className="bg-green-600 text-white">
+      <section className="fp-landing-cta bg-green-600 text-white">
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-green-100">Pronto para subir o nível</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Sua próxima proposta pode parecer mais valiosa, mais clara e mais fácil de aprovar.</h2>
+            <p className="text-xs font-black uppercase text-green-100">Comece pelo próximo envio</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Transforme sua próxima proposta em um link claro, revisável e pronto para aceite.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="#planos">
-            Melhorar meus fechamentos
+            Escolher plano
           </a>
         </div>
       </section>
@@ -4941,6 +4851,7 @@ function parsePrompt(prompt: string): ProposalDraft {
   const service = prompt.split(",")[0]?.trim() || "Serviço personalizado";
 
   return {
+    templateId: "",
     clientName: "",
     serviceName: service.charAt(0).toUpperCase() + service.slice(1),
     price: valueMatch ? Number(valueMatch[1].replace(/\./g, "").replace(",", ".")) : 0,
@@ -4964,6 +4875,7 @@ function todayDate() {
 
 function validateProposalDraft(draft: ProposalDraft) {
   if (!draft.clientName.trim()) return "Informe o nome do cliente.";
+  if (!findProposalTemplate(draft.templateId)) return "Escolha um template pronto para criar a proposta.";
   if (!draft.serviceName.trim()) return "Informe o serviço da proposta.";
   if (!Number.isFinite(draft.price) || draft.price <= 0) return "Informe um valor maior que zero.";
   if (!draft.deadline.trim()) return "Informe o prazo da proposta.";

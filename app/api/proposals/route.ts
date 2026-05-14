@@ -4,8 +4,9 @@ import { sendProposalSentToClientEmail } from "@/lib/email";
 import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
 import { currentMonthRange, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
+import { findProposalTemplate } from "@/lib/proposal-templates";
 import { requireSession } from "@/lib/session";
-import { cleanOptionalString, cleanString, cleanStringList, isValidDateOnly, isValidEmail, normalizePrice } from "@/lib/validation";
+import { cleanOptionalString, cleanString, isValidDateOnly, isValidEmail } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     clientName?: string;
     clientEmail?: string;
+    templateId?: string;
     serviceName?: string;
     price?: number;
     deadline?: string;
@@ -43,20 +45,23 @@ export async function POST(request: Request) {
   };
 
   const clientName = cleanString(body.clientName);
-  const serviceName = cleanString(body.serviceName);
-  const deadline = cleanString(body.deadline);
-  const price = normalizePrice(body.price);
+  const staticTemplate = findProposalTemplate(body.templateId);
+  const customTemplate = staticTemplate
+    ? null
+    : body.templateId
+      ? await prisma.proposalTemplateAsset.findFirst({ where: { id: body.templateId, userId: session.id } })
+      : null;
+  const template = staticTemplate || customTemplate;
   const validUntil = cleanOptionalString(body.validUntil);
   const clientEmail = cleanOptionalString(body.clientEmail);
-  const payment = cleanOptionalString(body.payment);
-  const notes = cleanOptionalString(body.notes);
-  const included = cleanStringList(body.included);
 
-  if (!clientName || !serviceName || !deadline) {
-    return jsonError("Cliente, serviço e prazo são obrigatórios.");
+  if (!clientName) {
+    return jsonError("Cliente e template pronto são obrigatórios.");
   }
 
-  if (price === null || price <= 0) return jsonError("Informe um valor maior que zero.");
+  if (!template) {
+    return jsonError("Escolha um template pronto para criar a proposta.");
+  }
   if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade inválida.");
 
   if (clientEmail && !isValidEmail(clientEmail)) {
@@ -94,15 +99,15 @@ export async function POST(request: Request) {
       userId: session.id,
       clientName,
       clientEmail,
-      serviceName,
-      price,
-      deadline,
+      serviceName: template.serviceName,
+      price: template.price,
+      deadline: template.deadline,
       validUntil,
-      payment,
-      included,
-      notes,
+      payment: template.payment,
+      included: template.included,
+      notes: template.notes,
       status: body.status || "sent",
-      publicSlug: slugify(`${clientName}-${serviceName}`),
+      publicSlug: slugify(`${clientName}-${template.serviceName}`),
     },
     include: { user: { select: { name: true } } },
   });

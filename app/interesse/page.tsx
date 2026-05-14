@@ -99,13 +99,13 @@ export default function InterestPage() {
         <div className="grid gap-6">
           <div>
             <p className="inline-flex rounded-lg bg-green-100 px-3 py-2 text-xs font-black uppercase text-green-800">
-              Lista de interesse
+              Interesse
             </p>
             <h1 className="mt-5 text-4xl font-black leading-tight sm:text-6xl">
-              Quer usar o FechaPro no seu negócio?
+              Quer avaliar o FechaPro para sua rotina?
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-              Deixe seus dados para receber prioridade em novidades, testes e condições de entrada. Ideal para prestadores que querem propostas mais bonitas, organizadas e fáceis de aceitar.
+              Deixe seus dados para receber retorno sobre planos, implantação e uso no seu tipo de serviço.
             </p>
           </div>
 
@@ -125,7 +125,7 @@ export default function InterestPage() {
               <div>
                 <h2 className="text-3xl font-black">Interesse registrado.</h2>
                 <p className="mx-auto mt-3 max-w-md leading-7 text-slate-600">
-                  Obrigado. Seus dados ficaram salvos e podemos te chamar quando houver novidade ou prioridade de acesso.
+                  Obrigado. Seus dados ficaram salvos para retorno comercial sobre o FechaPro.
                 </p>
               </div>
               <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -142,7 +142,7 @@ export default function InterestPage() {
             <form className="grid gap-4" onSubmit={submitInterest}>
               <div>
                 <p className="text-xs font-black uppercase text-blue-700">Cadastro de interesse</p>
-                <h2 className="text-2xl font-black leading-tight">Conte um pouco sobre você</h2>
+                <h2 className="text-2xl font-black leading-tight">Informe seus dados</h2>
               </div>
 
               {error ? (
@@ -187,7 +187,7 @@ export default function InterestPage() {
                 <textarea
                   className="min-h-28 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
                   maxLength={600}
-                  placeholder="Conte o que você gostaria de resolver com o FechaPro."
+                  placeholder="Conte como você envia propostas hoje ou qual plano quer entender melhor."
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
                 />

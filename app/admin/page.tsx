@@ -235,7 +235,7 @@ export default function AdminPage() {
   const blockedUsers = data?.users.filter((user) => user.subscription.status === "blocked").length || 0;
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
+    <main className="min-h-screen bg-[var(--ui-bg)] text-slate-950">
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -578,7 +578,7 @@ function adminArtStatusClass(source: string) {
   if (source === "approved") return "bg-green-50 text-green-700";
   if (source === "uploaded") return "bg-blue-50 text-blue-700";
   if (source === "requested") return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 text-slate-600";
+  return "bg-[var(--ui-bg)] text-slate-600";
 }
 
 function QuickAction({

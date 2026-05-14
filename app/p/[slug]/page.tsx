@@ -91,7 +91,7 @@ export default async function PublicProposalPage({
   const acceptHref = hasDecision ? "#status" : "#aceite";
 
   return (
-    <main className="mobile-safe-bottom min-h-screen bg-slate-100 pb-20 text-slate-900">
+    <main className="mobile-safe-bottom min-h-screen bg-[var(--ui-bg)] pb-20 text-slate-900">
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
@@ -239,7 +239,7 @@ export default async function PublicProposalPage({
             </section>
 
             {proposal.notes ? (
-              <section className="rounded-lg bg-slate-100 p-4">
+              <section className="rounded-lg bg-[var(--ui-bg)] p-4">
                 <h2 className="font-black">Observações</h2>
                 <p className="mt-2 whitespace-pre-line leading-7 text-slate-700">{proposal.notes}</p>
               </section>
