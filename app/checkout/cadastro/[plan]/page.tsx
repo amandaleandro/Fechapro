@@ -9,7 +9,7 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
   const { plan: rawPlan } = await params;
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
-  const recurringPrice = plan.maintenancePrice?.replace("Depois ", "") || plan.price;
+  const recurringPrice = plan.maintenancePrice || plan.price;
 
   return (
     <main className="min-h-screen bg-[#eef3f8] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { setSession, verifyPassword } from "@/lib/session";
 import { getClientIp, rateLimit, rateLimitError } from "@/lib/rate-limit";
 import { isValidEmail } from "@/lib/validation";
+import { isAdminEmail } from "@/lib/admin";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -30,5 +31,5 @@ export async function POST(request: Request) {
 
   const session = { id: user.id, name: user.name, email: user.email };
   await setSession(session);
-  return NextResponse.json(session);
+  return NextResponse.json({ ...session, isAdmin: isAdminEmail(user.email) });
 }

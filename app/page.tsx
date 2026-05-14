@@ -554,7 +554,7 @@ const marketingArtBriefs = [
 
 
 export default function Home() {
-  const [session, setSession] = useState<{ name: string; email: string } | null>(null);
+  const [session, setSession] = useState<{ name: string; email: string; isAdmin?: boolean } | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [dark, setDark] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -592,7 +592,7 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((response) => response.json())
-      .then((data: { user: { id: string; name: string; email: string } | null }) => {
+      .then((data: { user: { id: string; name: string; email: string; isAdmin?: boolean } | null }) => {
         setSession(data.user);
         if (data.user) loadDashboardData();
       })
@@ -642,7 +642,7 @@ export default function Home() {
     setTestimonials(testimonialsData);
     setProposals(proposalsData);
     setMarketingArts(marketingArtsData);
-    if (billingData.subscription.status !== "active" || billingData.subscription.provider !== "mercadopago") {
+    if (!(["active", "trial"].includes(billingData.subscription.status) && ["mercadopago", "admin"].includes(billingData.subscription.provider || ""))) {
       setNotice("Escolha um plano e conclua o pagamento pelo Mercado Pago para liberar a criação de propostas.");
       setActiveView("plans");
     }
@@ -880,6 +880,11 @@ export default function Home() {
             </p>
           </div>
           <div className="flex w-full shrink-0 flex-wrap gap-2 self-start sm:w-auto sm:self-auto">
+            {session.isAdmin ? (
+              <a className="inline-grid h-10 min-w-10 place-items-center rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-950" href="/admin">
+                Admin geral
+              </a>
+            ) : null}
             <IconButton label="Ver novidades" icon={Megaphone} onClick={() => setShowUpdatesModal(true)} />
             <IconButton label="Iniciar tour guiado" icon={Sparkles} onClick={startTour} />
             <IconButton label={dark ? "Usar tema claro" : "Usar tema escuro"} icon={dark ? Sun : Moon} onClick={() => setDark((current) => !current)} />
@@ -1366,7 +1371,7 @@ function DashboardView({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `${billing.subscription.plan.toUpperCase()} em uso` : "Pagamento pendente"} />
             <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
-              {hasPaidAccess ? `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês` : "Pague pelo Mercado Pago para criar propostas"}
+              {hasPaidAccess ? `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês` : "Pague pelo Mercado Pago ou aguarde liberação do admin"}
             </span>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
               {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes de divulgação`}
@@ -2900,7 +2905,7 @@ function PlansView({
           <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{paymentError}</p>
         ) : null}
         <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm font-black text-slate-700">
-          Status: {billing.subscription.status === "active" && billing.subscription.provider === "mercadopago" ? "ativo" : "aguardando pagamento"}
+          Status: {["active", "trial"].includes(billing.subscription.status) && ["mercadopago", "admin"].includes(billing.subscription.provider || "") ? "ativo" : "aguardando pagamento/liberação"}
           <span className="mt-1 block">
             Uso atual: {billing.usage.proposalsThisMonth}
             {`/${billing.usage.proposalLimit} propostas este mês`}
@@ -2916,7 +2921,7 @@ function PlansView({
 
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-5">
         {billing.plans.map((plan) => {
-          const active = billing.subscription.plan === plan.code && billing.subscription.status === "active" && billing.subscription.provider === "mercadopago";
+          const active = billing.subscription.plan === plan.code && ["active", "trial"].includes(billing.subscription.status) && ["mercadopago", "admin"].includes(billing.subscription.provider || "");
           const recommended = plan.code === "plus";
           return (
             <article

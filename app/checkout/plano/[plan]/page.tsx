@@ -6,6 +6,7 @@ import { PlanCheckoutClient } from "@/app/checkout/plano/[plan]/PlanCheckoutClie
 import { type PlanCode, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { canUsePaidFeatures } from "@/lib/billing-access";
 
 export default async function PlanCheckoutPage({ params }: { params: Promise<{ plan: string }> }) {
   const session = await getSession();
@@ -14,9 +15,9 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
   const { plan: rawPlan } = await params;
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
-  const recurringPrice = plan.maintenancePrice?.replace("Depois ", "") || plan.price;
+  const recurringPrice = plan.maintenancePrice || plan.price;
   const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id } });
-  const active = subscription?.plan === plan.code && subscription.status === "active" && subscription.provider === "mercadopago";
+  const active = Boolean(subscription?.plan === plan.code && canUsePaidFeatures(subscription));
 
   return (
     <main className="min-h-screen bg-[#eef3f8] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">
@@ -94,7 +95,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
               ) : null}
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
                 {plan.maintenancePrice
-                  ? "Este checkout autoriza a assinatura recorrente de manutencao e acesso ao FechaPro."
+                  ? "Este checkout autoriza a mensalidade promocional de manutencao e acesso ao FechaPro."
                   : "Assinatura mensal em ambiente seguro do Mercado Pago."}
               </p>
             </div>
@@ -102,7 +103,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
             <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-700">
               <CheckoutLine label="Ambiente" value="Mercado Pago" />
               <CheckoutLine label="Cartao" value="Nao armazenado" />
-              <CheckoutLine label="Status" value={active ? "Plano ativo" : "Aguardando pagamento"} />
+              <CheckoutLine label="Status" value={active ? "Plano ativo" : "Aguardando pagamento/liberacao"} />
             </div>
 
             {active ? (

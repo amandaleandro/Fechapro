@@ -65,14 +65,14 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
 
     setAuthLoading(true);
     try {
-      await apiPost(mode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
+      const result = await apiPost<{ isAdmin?: boolean }>(mode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
         checkoutId,
         name: name.trim(),
         email: email.trim(),
         password,
         turnstileToken,
       });
-      router.push("/");
+      router.push(!isSignup && result.isAdmin ? "/admin" : "/");
       router.refresh();
     } catch (caught) {
       setAuthError(caught instanceof Error ? caught.message : "Não foi possível entrar agora.");
@@ -261,7 +261,7 @@ declare global {
   }
 }
 
-async function apiPost(url: string, body: unknown) {
+async function apiPost<T = unknown>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -274,7 +274,7 @@ async function apiPost(url: string, body: unknown) {
     throw new Error(await readApiError(response, "Não foi possível continuar."));
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }
 
 async function readApiError(response: Response, fallback: string) {
