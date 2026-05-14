@@ -248,7 +248,7 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
   { id: "portfolio", label: "Portfólio", icon: ImageIcon },
   { id: "testimonials", label: "Depoimentos", icon: MessageSquareQuote },
   { id: "brand", label: "Marca", icon: Settings },
-  { id: "arts", label: "Artes IA", icon: Palette },
+  { id: "arts", label: "Artes de divulgação", icon: Palette },
   { id: "templates", label: "Templates", icon: Layers3 },
   { id: "plans", label: "Planos", icon: CreditCard },
   { id: "account", label: "Conta", icon: UserCircle },
@@ -1369,7 +1369,7 @@ function DashboardView({
               {hasPaidAccess ? `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês` : "Pague pelo Mercado Pago para criar propostas"}
             </span>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
-              {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes IA`}
+              {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes de divulgação`}
             </span>
           </div>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
@@ -2150,7 +2150,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
         });
 
         if (!uploadResponse.ok) {
-          throw new Error("Falha ao enviar imagem.");
+          throw new Error(await readApiError(uploadResponse, "Falha ao enviar imagem."));
         }
 
         const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
@@ -2562,8 +2562,8 @@ function MarketingArtsView({
         ) : null}
 
         <div>
-          <p className="text-xs font-black uppercase text-blue-700">Artes IA</p>
-          <h2 className="text-2xl font-black">Solicitar arte ao agente</h2>
+          <p className="text-xs font-black uppercase text-blue-700">Artes de divulgação</p>
+          <h2 className="text-2xl font-black">Solicitar arte de divulgação</h2>
           <p className="mt-2 leading-7 text-slate-600">
             Preencha o briefing para um agente construir a arte. Depois ele anexa a imagem pronta para sua aprovacao.
           </p>
@@ -2906,7 +2906,7 @@ function PlansView({
             {`/${billing.usage.proposalLimit} propostas este mês`}
           </span>
           <span className="mt-1 block">
-            Artes IA: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mes
+            Artes de divulgação: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mes
           </span>
           <span className="mt-1 block">
             Créditos extras de artes: {billing.usage.artCreditBalance}
@@ -4202,7 +4202,7 @@ function ProductUpdatesModal({
     },
     {
       icon: Palette,
-      title: "Artes com IA",
+      title: "Artes de divulgação",
       description: "Crie criativos para divulgar serviços, promoções, cardápios e agenda aberta.",
       tag: "Novo",
     },
@@ -4296,7 +4296,7 @@ function ProductUpdatesModal({
 
           <div className="grid gap-2 sm:grid-cols-3">
             <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onOpenArts}>
-              Ver artes IA
+              Ver artes de divulgação
             </button>
             <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black text-slate-800" type="button" onClick={onOpenBrand}>
               Ajustar marca

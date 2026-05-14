@@ -73,7 +73,7 @@ type AdminMarketingArt = {
 const statuses = ["active", "trial", "blocked", "pending", "paused", "canceled"];
 
 const statusLabels: Record<string, string> = {
-  active: "Ativo",
+  active: "Liberado sem pagamento",
   trial: "Teste liberado",
   blocked: "Bloqueado",
   pending: "Pendente",
@@ -188,7 +188,10 @@ export default function AdminPage() {
               Voltar ao painel
             </Link>
             <p className="text-xs font-black uppercase text-blue-700">Admin geral</p>
-            <h1 className="mt-1 text-3xl font-black tracking-normal">Controle de assinaturas</h1>
+            <h1 className="mt-1 text-3xl font-black tracking-normal">Liberação manual de planos</h1>
+            <p className="mt-2 max-w-2xl text-sm font-bold text-slate-600">
+              Use esta tela para liberar clientes sem pagamento confirmado, reativar assinaturas atrasadas ou bloquear acessos.
+            </p>
           </div>
           <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={loadUsers}>
             <RefreshCcw size={17} />
@@ -207,6 +210,9 @@ export default function AdminPage() {
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Artes solicitadas</p>
               <h2 className="text-2xl font-black">Upload do agente para aprovacao</h2>
+              <p className="mt-1 text-sm font-bold text-slate-600">
+                Os pedidos feitos pelo cliente em Artes de divulgação aparecem aqui. Anexe a arte pronta para enviar ao cliente aprovar.
+              </p>
             </div>
             <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadArts}>
               <RefreshCcw size={15} />
@@ -221,7 +227,7 @@ export default function AdminPage() {
             </div>
           ) : (
             <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-bold text-slate-500">
-              Nenhum pedido de arte ainda.
+              Nenhum pedido de arte ainda. Quando um cliente solicitar uma arte em Artes de divulgação, ela aparece aqui para upload.
             </div>
           )}
         </section>
@@ -325,6 +331,9 @@ function AdminUserRow({
         <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-black ${statusBadgeClass(user.subscription.status)}`}>
           {statusLabels[user.subscription.status] || user.subscription.status}
         </span>
+        <p className="mt-2 text-xs font-bold text-slate-500">
+          Salvar como liberado define o provedor como admin e libera o painel mesmo sem pagamento confirmado.
+        </p>
       </td>
       <td className="rounded-r-lg px-3 py-3">
         <div className="grid gap-2">
@@ -407,7 +416,7 @@ function AdminArtCard({
       </label>
       <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving || !file} type="button" onClick={() => file && onUpload(item, file, caption, whatsappMessage)}>
         <Upload size={15} />
-        {saving ? "Enviando..." : "Enviar arte para aprovacao"}
+        {saving ? "Salvando..." : "Salvar arte e enviar para aprovacao"}
       </button>
     </article>
   );

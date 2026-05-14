@@ -2,6 +2,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
+export function uploadDir() {
+  return process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
+}
+
 function s3Client() {
   const endpoint = process.env.S3_ENDPOINT;
   const region = process.env.S3_REGION || "auto";
@@ -39,15 +43,15 @@ export async function saveFile(
     return publicUrl ? `${publicUrl}/${filename}` : `/api/uploads/${filename}`;
   }
 
-  await mkdir(path.join(process.cwd(), "uploads"), { recursive: true });
-  await writeFile(path.join(process.cwd(), "uploads", path.basename(filename)), bytes);
+  await mkdir(uploadDir(), { recursive: true });
+  await writeFile(path.join(uploadDir(), path.basename(filename)), bytes);
   return `/api/uploads/${filename}`;
 }
 
 export async function readLocalFile(filename: string): Promise<Buffer | null> {
   try {
     const safeFilename = path.basename(filename);
-    return await readFile(path.join(process.cwd(), "uploads", safeFilename));
+    return await readFile(path.join(uploadDir(), safeFilename));
   } catch {
     return null;
   }

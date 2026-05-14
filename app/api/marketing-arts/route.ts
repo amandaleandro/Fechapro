@@ -110,7 +110,7 @@ export async function POST(request: Request) {
   const shouldUseExtraCredit = usedThisMonth >= plan.artLimit;
 
   if (totalArtLimit <= 0) {
-    return jsonError("Artes IA estao disponiveis nos planos acima de R$ 100 ou em pacotes individuais.", 402);
+    return jsonError("Artes de divulgacao estao disponiveis nos planos acima de R$ 100 ou em pacotes individuais.", 402);
   }
 
   if (usedThisMonth >= totalArtLimit) {
