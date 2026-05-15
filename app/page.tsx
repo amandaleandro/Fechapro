@@ -3105,6 +3105,9 @@ function PlansView({
                   <p className="mt-1 text-sm font-black text-slate-400 line-through">R$ 2.997/ano</p>
                 ) : null}
                 <p className="mt-1 text-lg font-black text-green-700">{plan.price}</p>
+                {plan.annualPrice ? (
+                  <p className="mt-1 text-sm font-black text-slate-500">ou {plan.annualPrice}</p>
+                ) : null}
                 {plan.maintenancePrice ? (
                   <p className="mt-1 text-sm font-black text-slate-500">{plan.maintenancePrice}</p>
                 ) : null}
@@ -3687,7 +3690,7 @@ function AuthScreen() {
       code: "start",
       name: "Start",
       price: "R$ 97",
-      priceSuffix: "/mês",
+      priceSuffix: "/mês ou R$ 897/ano",
       cta: "Quero começar",
       detail: "Para criar propostas profissionais e enviar para clientes sem gastar muito.",
       items: ["20 propostas por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
@@ -3696,7 +3699,7 @@ function AuthScreen() {
       code: "pro",
       name: "Pro",
       price: "R$ 197",
-      priceSuffix: "/mês",
+      priceSuffix: "/mês ou R$ 1.497/ano",
       badge: "Mais escolhido",
       cta: "Quero o plano Pro",
       detail: "Para vender com uma apresentação mais profissional, completa e frequente.",

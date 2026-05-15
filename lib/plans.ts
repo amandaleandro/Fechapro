@@ -8,6 +8,7 @@ export const plans: Record<
     name: string;
     price: string;
     priceCents: number;
+    annualPrice?: string;
     maintenancePrice?: string;
     maintenancePriceCents?: number;
     proposalLimit: number;
@@ -21,6 +22,7 @@ export const plans: Record<
     name: "Start",
     price: "R$ 97/mês",
     priceCents: 9700,
+    annualPrice: "R$ 897/ano",
     proposalLimit: 20,
     artLimit: 0,
     public: true,
@@ -31,6 +33,7 @@ export const plans: Record<
     name: "Pro",
     price: "R$ 197/mês",
     priceCents: 19700,
+    annualPrice: "R$ 1.497/ano",
     proposalLimit: 120,
     artLimit: 5,
     public: true,
