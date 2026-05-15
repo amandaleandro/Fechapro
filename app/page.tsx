@@ -201,6 +201,13 @@ const keys = {
   updatesModal: "fechapro_updates_modal_v2",
 };
 
+function getPublicAppUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+  if (typeof window !== "undefined") return window.location.origin;
+  return "https://fechapro.com.br";
+}
+
 const blankDraft: ProposalDraft = {
   templateId: "",
   clientName: "",
@@ -1395,7 +1402,8 @@ function DashboardView({
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black text-slate-800"
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText("Conhece o FechaPro? Estou usando para enviar propostas profissionais e acompanhar aceite dos clientes.");
+            const inviteLink = getPublicAppUrl();
+            navigator.clipboard.writeText(`Conhece o FechaPro? Estou usando para enviar propostas profissionais e acompanhar aceite dos clientes: ${inviteLink}`);
             onNotice("Mensagem de indicacao copiada.");
           }}
         >
@@ -3694,7 +3702,7 @@ function AuthScreen() {
       priceSuffix: "/mês ou R$ 897/ano",
       cta: "Quero começar",
       detail: "Para criar propostas profissionais e enviar para clientes sem gastar muito.",
-      items: ["20 propostas por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
+      items: ["20 propostas por mês", "5 artes de divulgação por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
     {
       code: "pro",
@@ -3704,7 +3712,7 @@ function AuthScreen() {
       badge: "Mais escolhido",
       cta: "Quero o plano Pro",
       detail: "Para vender com uma apresentação mais profissional, completa e frequente.",
-      items: ["120 propostas por mês", "Tudo do Start", "Templates mais completos", "Personalização visual", "Portfólio e proposta mais bonitos", "5 artes de divulgação por mês", "Suporte melhor"],
+      items: ["120 propostas por mês", "Tudo do Start", "Templates mais completos", "Personalização visual", "Portfólio e proposta mais bonitos", "10 artes de divulgação por mês", "Suporte melhor"],
     },
     {
       code: "premium_site",
