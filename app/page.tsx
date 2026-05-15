@@ -149,6 +149,7 @@ type BillingPlan = {
   name: string;
   price: string;
   priceCents: number;
+  annualPrice?: string;
   maintenancePrice?: string;
   maintenancePriceCents?: number;
   proposalLimit: number;
