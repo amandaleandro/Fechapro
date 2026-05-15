@@ -54,7 +54,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
                   Confirme o investimento antes de seguir.
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-                  O pagamento abre no Mercado Pago. O profissional recebe a atualizacao automaticamente quando a confirmacao chegar.
+                  O pagamento abre no Mercado Pago. O profissional recebe a atualizacao quando a confirmacao chegar.
                 </p>
               </div>
 

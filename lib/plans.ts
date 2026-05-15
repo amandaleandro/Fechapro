@@ -12,6 +12,7 @@ export const plans: Record<
     maintenancePriceCents?: number;
     proposalLimit: number;
     artLimit: number;
+    public: boolean;
     features: string[];
   }
 > = {
@@ -22,7 +23,8 @@ export const plans: Record<
     priceCents: 9700,
     proposalLimit: 20,
     artLimit: 0,
-    features: ["Até 20 propostas por mês", "Propostas profissionais", "PDF automático", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
+    public: true,
+    features: ["Até 20 propostas por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
   },
   pro: {
     code: "pro",
@@ -31,6 +33,7 @@ export const plans: Record<
     priceCents: 19700,
     proposalLimit: 120,
     artLimit: 5,
+    public: true,
     features: ["Até 120 propostas por mês", "Tudo do Start", "Templates mais completos", "Personalização visual", "Portfólio e proposta mais bonitos", "5 artes de divulgação por mês", "Suporte melhor"],
   },
   plus: {
@@ -40,6 +43,7 @@ export const plans: Record<
     priceCents: 14700,
     proposalLimit: 120,
     artLimit: 5,
+    public: false,
     features: ["Até 120 propostas por mês", "5 artes de divulgação por mês", "Portfólio dentro do FechaPro", "Modelos de proposta", "Página de apresentação", "Suporte inicial"],
   },
   premium: {
@@ -51,20 +55,24 @@ export const plans: Record<
     maintenancePriceCents: 9700,
     proposalLimit: 300,
     artLimit: 10,
+    public: false,
     features: ["Até 300 propostas por mês", "10 artes de divulgação por mês", "Tudo do Profissional", "Criação de site one page", "Início, serviços, sobre, portfólio e contato", "Botão para orçamento"],
   },
   premium_site: {
     code: "premium_site",
-    name: "Implantação Completa",
-    price: "R$ 997 implantação",
-    priceCents: 99700,
-    maintenancePrice: "R$ 197/mês por 6 meses",
-    maintenancePriceCents: 19700,
+    name: "Premium com Site",
+    price: "R$ 1.500/ano",
+    priceCents: 150000,
+    maintenancePrice: "ou R$ 300/mês + R$ 997 implantação",
+    maintenancePriceCents: 30000,
     proposalLimit: 600,
-    artLimit: 15,
-    features: ["Sistema configurado", "Primeiras propostas criadas", "Templates ajustados para o negócio", "Kit de mensagens para enviar aos clientes", "Artes de divulgação", "Treinamento rápido", "Acompanhamento inicial"],
+    artLimit: 20,
+    public: true,
+    features: ["12 meses de FechaPro", "Mini site profissional de até 5 seções", "Propostas profissionais", "PDF da proposta", "Aceite online", "Portfólio", "Botão de WhatsApp", "Configuração inicial", "Primeiras propostas criadas", "Treinamento rápido", "20 imagens por mês"],
   },
 };
+
+export const publicPlans = Object.values(plans).filter((plan) => plan.public);
 
 export const artPacks: Record<
   ArtPackCode,

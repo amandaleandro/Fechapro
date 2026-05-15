@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const email = body?.email?.trim().toLowerCase();
   const origin = new URL(request.url).origin;
 
-  if (!plan || !plans[plan]) {
+  if (!plan || !plans[plan]?.public) {
     return jsonError("Plano invalido.");
   }
   if (!email || !isValidEmail(email)) {

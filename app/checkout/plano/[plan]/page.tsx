@@ -15,6 +15,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
   const { plan: rawPlan } = await params;
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
+  if (!plan.public) notFound();
   const recurringPrice = plan.maintenancePrice || plan.price;
   const hasSetup = Boolean(plan.maintenancePrice);
   const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id } });
@@ -52,18 +53,18 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
               <div>
                 <p className="text-xs font-black uppercase text-blue-700">Assinatura FechaPro</p>
                 <h1 className="mt-2 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">
-                  {hasSetup ? `Confirme a continuidade do plano ${plan.name}.` : `Confirme o plano ${plan.name} e libere seu painel.`}
+                  {hasSetup ? `Confirme o plano ${plan.name}.` : `Confirme o plano ${plan.name} e libere seu painel.`}
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                   {hasSetup
-                    ? "A implantacao e combinada com a equipe para deixar tudo pronto. Pelo Mercado Pago, voce autoriza a mensalidade de continuidade e acesso ao FechaPro."
-                    : "Revise o resumo antes de seguir para o Mercado Pago. Assim que o pagamento for confirmado, o FechaPro atualiza sua assinatura automaticamente."}
+                    ? "Na oferta ate 03/06, o Premium com Site anual sai por R$ 1.500. A alternativa mensal e R$ 300/mes + R$ 997 de implantacao."
+                    : "Revise o resumo antes de seguir para o Mercado Pago. Assim que o pagamento for confirmado, o FechaPro atualiza sua assinatura."}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
-                <CheckoutMetric label={hasSetup ? "Continuidade" : "Mensalidade recorrente"} value={recurringPrice} />
+                <CheckoutMetric label={hasSetup ? "Alternativa mensal" : "Mensalidade recorrente"} value={recurringPrice} />
                 <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mes`} />
               </div>
 
@@ -81,7 +82,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
               <div className="grid gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4 sm:grid-cols-3">
                 <TrustItem title="Pagamento externo" text="Cartao e Pix ficam no ambiente Mercado Pago." />
-                <TrustItem title="Acesso automatico" text="O plano muda para ativo apos confirmacao." />
+                <TrustItem title="Acesso ao plano" text="O plano muda para ativo apos confirmacao." />
                 <TrustItem title="Controle no painel" text="Uso, limites e creditos aparecem em Planos." />
               </div>
             </div>
@@ -89,16 +90,16 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
           <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Continuidade mensal" : "Assinatura mensal"}</p>
+              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Oferta anual ate 03/06" : "Assinatura mensal"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{recurringPrice}</strong>
               {hasSetup ? (
                 <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">
-                  Implantacao completa: {plan.price}.
+                  Promocional anual: {plan.price}. Normal: R$ 2.997/ano.
                 </p>
               ) : null}
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
                 {hasSetup
-                  ? "Este checkout autoriza a mensalidade para manter o acesso depois da configuracao inicial."
+                  ? "Para garantir a oferta anual, fale com a equipe. Pelo Mercado Pago, este checkout autoriza a alternativa mensal."
                   : "Assinatura mensal em ambiente seguro do Mercado Pago."}
               </p>
             </div>

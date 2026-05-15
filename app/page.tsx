@@ -259,7 +259,7 @@ const planLabels: Record<PlanCode, string> = {
   pro: "Pro",
   plus: "Profissional",
   premium: "Pro Site",
-  premium_site: "Implantação Completa",
+  premium_site: "Premium com Site",
 };
 
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
@@ -306,8 +306,8 @@ const tourSteps: TourStep[] = [
     view: "dashboard",
     eyebrow: "Comece por aqui",
     title: "Crie propostas em poucos minutos",
-    description: "O painel junta IA, dados do cliente, serviço, valor, prazo e preview para você montar uma proposta profissional sem sair da tela.",
-    checklist: ["Use a IA para organizar o texto", "Escolha cliente e serviço cadastrados", "Salve ou gere o PDF quando estiver pronto"],
+    description: "O painel junta dados do cliente, serviço, valor, prazo e preview para você montar uma proposta profissional sem sair da tela.",
+    checklist: ["Organize o texto da proposta", "Escolha cliente e serviço cadastrados", "Salve ou gere o PDF quando estiver pronto"],
   },
   {
     view: "proposals",
@@ -1285,9 +1285,6 @@ function DashboardView({
 
       <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[1fr_auto] sm:items-end sm:p-6">
         <div>
-          <span className="mb-3 inline-flex rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
-            Plataforma mobile first
-          </span>
           <h2 className="max-w-[14ch] text-3xl font-black leading-none sm:max-w-[12ch] sm:text-6xl">
             Crie uma proposta comercial em minutos.
           </h2>
@@ -1474,7 +1471,7 @@ function DashboardView({
           </div>
 
           <TextField
-            label="E-mail do cliente (envio automático)"
+            label="E-mail do cliente"
             placeholder="cliente@email.com"
             type="email"
             autoComplete="email"
@@ -2596,6 +2593,20 @@ function MarketingArtsView({
   const limit = billing?.usage.artLimit ?? 0;
   const remaining = Math.max(0, limit - used);
   const formatsToGenerate = form.format === "all" ? ["instagram_post", "instagram_story", "whatsapp_status"] : [form.format];
+  const selectedBrief = marketingArtBriefs.find((item) => item.id === selectedBriefId);
+  const formatOptions = [
+    { value: "all", label: "Post + Story + Status", credits: 3 },
+    { value: "instagram_post", label: "Somente post", credits: 1 },
+    { value: "instagram_story", label: "Somente story", credits: 1 },
+    { value: "whatsapp_status", label: "Somente status WhatsApp", credits: 1 },
+  ];
+  const selectedFormat = formatOptions.find((option) => option.value === form.format) || formatOptions[0];
+  const requestSummary = [
+    form.serviceName ? `Oferta: ${form.serviceName}` : null,
+    selectedBrief ? `Tipo: ${selectedBrief.label}` : null,
+    form.audience ? `Publico: ${form.audience}` : null,
+    form.callToAction ? `Chamada: ${form.callToAction}` : null,
+  ].filter(Boolean);
 
   async function requestArt(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2698,74 +2709,98 @@ function MarketingArtsView({
           </p>
         </div>
 
-        <form className="grid gap-3" onSubmit={requestArt}>
+        <form className="grid gap-5" onSubmit={requestArt}>
           {error ? <FormError message={error} /> : null}
-          <TextField label="Nome para salvar" maxLength={80} placeholder="Promocao de hoje" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
-          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Formato solicitado
-            <select
-              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
-              value={form.format}
-              onChange={(event) => setForm({ ...form, format: event.target.value })}
-            >
-              <option value="all">Post + Story + Status</option>
-              <option value="instagram_post">Somente post</option>
-              <option value="instagram_story">Somente story</option>
-              <option value="whatsapp_status">Somente status WhatsApp</option>
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Tipo de arte
-            <select
-              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
-              value={selectedBriefId}
-              onChange={(event) => {
-                const nextBriefId = event.target.value;
-                setSelectedBriefId(nextBriefId);
-                const brief = marketingArtBriefs.find((item) => item.id === nextBriefId);
-                if (!brief) return;
-                setForm({
-                  ...form,
-                  callToAction: brief.callToAction,
-                });
-              }}
-            >
-              <option value="">Escolha uma opcao</option>
-              {marketingArtBriefs.map((brief) => (
-                <option key={brief.id} value={brief.id}>
-                  {brief.label}
-                </option>
-              ))}
-            </select>
-            {selectedBriefId ? (
-              <span className="text-xs font-bold text-green-700">
-                Pronto. Agora escreva do seu jeito no campo abaixo.
-              </span>
+
+          <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3">
+            <div className="flex items-center gap-2">
+              <span className="grid size-7 place-items-center rounded-full bg-green-600 text-sm font-black text-white">1</span>
+              <div>
+                <h3 className="font-black text-slate-900">Pedido</h3>
+                <p className="text-xs font-bold text-slate-500">Diga onde a arte sera usada e como voce quer encontra-la depois.</p>
+              </div>
+            </div>
+
+            <TextField label="Nome interno" maxLength={80} placeholder="Promocao de hoje" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+              Formato
+              <select
+                className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                value={form.format}
+                onChange={(event) => setForm({ ...form, format: event.target.value })}
+              >
+                {formatOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} - {option.credits} credito{option.credits > 1 ? "s" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-3 rounded-lg border border-black/10 bg-white p-3">
+            <div className="flex items-center gap-2">
+              <span className="grid size-7 place-items-center rounded-full bg-green-600 text-sm font-black text-white">2</span>
+              <div>
+                <h3 className="font-black text-slate-900">Campanha</h3>
+                <p className="text-xs font-bold text-slate-500">Escolha um ponto de partida e preencha os detalhes principais.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {marketingArtBriefs.map((brief) => {
+                const active = selectedBriefId === brief.id;
+                return (
+                  <button
+                    className={`min-h-10 rounded-full border px-3 text-sm font-black ${
+                      active ? "border-green-600 bg-green-600 text-white" : "border-black/10 bg-slate-50 text-slate-700 hover:border-green-600/50"
+                    }`}
+                    key={brief.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedBriefId(brief.id);
+                      setForm({ ...form, callToAction: brief.callToAction });
+                    }}
+                  >
+                    {brief.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedBrief ? (
+              <p className="rounded-lg bg-green-50 px-3 py-2 text-xs font-bold leading-5 text-green-800">
+                {selectedBrief.objective}
+              </p>
             ) : null}
-          </label>
-          <SelectField
-            label="Servico ou produto"
-            options={services.map((service) => service.name)}
-            placeholder="Ex: Marmita grande, manicure, site profissional"
-            value={form.serviceName}
-            onChange={(value) => setForm({ ...form, serviceName: value })}
-          />
-          <TextAreaField
-            label="Pedido da campanha"
-            maxLength={400}
-            placeholder="Ex: Quero uma arte para divulgar marmita grande com suco por R$ 22 hoje em Uberlandia. Pedido pelo WhatsApp."
-            required
-            rows={4}
-            value={form.objective}
-            onChange={(value) => setForm({ ...form, objective: value })}
-          />
-          <TextField label="Cidade ou público" maxLength={120} placeholder="Uberlândia, noivas, lojas, moradores do bairro..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
-          <TextField label="Botão da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
-          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Referencias para a equipe
+
+            <SelectField
+              label="Servico ou produto"
+              options={services.map((service) => service.name)}
+              placeholder="Ex: Marmita grande, manicure, site profissional"
+              value={form.serviceName}
+              onChange={(value) => setForm({ ...form, serviceName: value })}
+            />
+            <TextAreaField
+              label="Texto do pedido"
+              maxLength={400}
+              placeholder="Ex: Marmita grande com suco por R$ 22 hoje. Pedido pelo WhatsApp. Entrega ate 14h."
+              required
+              rows={4}
+              value={form.objective}
+              onChange={(value) => setForm({ ...form, objective: value })}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextField label="Cidade ou publico" maxLength={120} placeholder="Uberlandia, noivas, lojas..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
+              <TextField label="Chamada da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
+            </div>
+          </div>
+
+          <label className="grid gap-2 rounded-lg border border-dashed border-black/15 bg-slate-50 p-3 text-sm font-extrabold text-slate-600">
+            Referencias visuais
             <input
               accept="image/*"
-              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
+              className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
               multiple
               type="file"
               onChange={(event) => {
@@ -2774,11 +2809,11 @@ function MarketingArtsView({
               }}
             />
             <span className="text-xs font-bold text-slate-500">
-              Opcional. Você pode enviar uma ou mais imagens. Se não enviar nada, o FechaPro usa a logo salva na marca quando existir.
+              Opcional. Envie fotos do produto, logo, referencia visual ou imagem que deve entrar na peca.
             </span>
             {files.length ? (
               <span className="text-xs font-bold text-green-700">
-                {files.length} imagem(ns) selecionada(s).
+                {files.length} imagem{files.length > 1 ? "s" : ""} selecionada{files.length > 1 ? "s" : ""}.
               </span>
             ) : null}
           </label>
@@ -2789,7 +2824,10 @@ function MarketingArtsView({
               checked={form.useImageAsBackground}
               onChange={(event) => setForm({ ...form, useImageAsBackground: event.target.checked })}
             />
-            Usar essa foto como fundo da arte
+            <span>
+              Usar a referencia como fundo
+              <span className="block text-xs font-bold text-slate-500">Marque quando a foto enviada deve ser a base visual da arte.</span>
+            </span>
           </label>
           {form.useImageAsBackground && files.length > 1 ? (
             <label className="grid gap-2 text-sm font-extrabold text-slate-600">
@@ -2807,7 +2845,18 @@ function MarketingArtsView({
               </select>
             </label>
           ) : null}
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={creating || limit === 0 || remaining < formatsToGenerate.length} type="submit">
+          <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-black text-slate-700">Resumo do envio</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-black ${remaining >= formatsToGenerate.length ? "bg-green-100 text-green-800" : "bg-rose-100 text-rose-800"}`}>
+                {selectedFormat.credits} credito{selectedFormat.credits > 1 ? "s" : ""}
+              </span>
+            </div>
+            <p className="mt-2 text-xs font-bold leading-5 text-slate-500">
+              {requestSummary.length ? requestSummary.join(" | ") : "Escolha o tipo, descreva a campanha e envie para a equipe preparar a arte."}
+            </p>
+          </div>
+          <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white shadow-lg shadow-green-900/10 disabled:opacity-60" disabled={creating || limit === 0 || remaining < formatsToGenerate.length} type="submit">
             <Sparkles size={18} />
             {creating ? "Enviando..." : formatsToGenerate.length > 1 ? "Enviar solicitacoes" : "Enviar solicitacao"}
           </button>
@@ -3030,10 +3079,10 @@ function PlansView({
         </div>
       </div>
 
-      <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
         {billing.plans.map((plan) => {
           const active = billing.subscription.plan === plan.code && ["active", "trial"].includes(billing.subscription.status) && ["mercadopago", "admin"].includes(billing.subscription.provider || "");
-          const recommended = plan.code === "plus";
+          const recommended = plan.code === "premium_site";
           return (
             <article
               className={`relative grid gap-4 rounded-lg border p-4 shadow-xl shadow-slate-900/10 ${
@@ -3043,15 +3092,26 @@ function PlansView({
             >
               {recommended ? (
                 <span className="absolute right-3 top-3 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
-                  Mais escolhido
+                  Melhor oferta de lançamento
                 </span>
               ) : null}
               <div>
                 <span className="text-xs font-black uppercase text-blue-700">{active ? "Plano atual" : "Plano"}</span>
                 <h3 className="mt-1 text-2xl font-black">{plan.name}</h3>
+                {plan.code === "premium_site" ? (
+                  <p className="mt-2 text-xs font-black uppercase text-green-700">Oferta até 03/06</p>
+                ) : null}
+                {plan.code === "premium_site" ? (
+                  <p className="mt-1 text-sm font-black text-slate-400 line-through">R$ 2.997/ano</p>
+                ) : null}
                 <p className="mt-1 text-lg font-black text-green-700">{plan.price}</p>
                 {plan.maintenancePrice ? (
                   <p className="mt-1 text-sm font-black text-slate-500">{plan.maintenancePrice}</p>
+                ) : null}
+                {plan.code === "premium_site" ? (
+                  <p className="mt-2 rounded-lg bg-green-50 p-3 text-xs font-black leading-5 text-green-900">
+                    Condição especial de lançamento para os primeiros clientes até 03/06.
+                  </p>
                 ) : null}
               </div>
               <p className="text-sm font-bold text-slate-500">
@@ -3386,7 +3446,7 @@ function BrandView({
               onChange={(event) => setFile(event.target.files?.[0] || null)}
             />
             <span className="text-xs font-bold text-slate-500">
-              O FechaPro remove automaticamente fundo branco ou claro do logo.
+              O FechaPro pode remover fundo branco ou claro do logo.
             </span>
           </label>
           <TextField label="URL do logo" placeholder="Opcional: https://..." type="url" value={form.logoUrl || ""} onChange={(value) => setForm({ ...form, logoUrl: value })} />
@@ -3630,7 +3690,7 @@ function AuthScreen() {
       priceSuffix: "/mês",
       cta: "Quero começar",
       detail: "Para criar propostas profissionais e enviar para clientes sem gastar muito.",
-      items: ["20 propostas por mês", "Propostas profissionais", "PDF automático", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
+      items: ["20 propostas por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
     {
       code: "pro",
@@ -3644,27 +3704,27 @@ function AuthScreen() {
     },
     {
       code: "premium_site",
-      name: "Implantação Completa",
-      price: "R$ 997",
-      priceSuffix: "implantação",
-      promoPrice: "+ R$ 197/mês por 6 meses",
-      badge: "Oferta recomendada",
-      cta: "Quero tudo pronto",
-      detail: "Eu configuro tudo para você sair usando, enviar as primeiras propostas e começar a vender.",
-      items: ["Sistema configurado", "Primeiras propostas criadas", "Templates ajustados para o negócio", "Kit de mensagens para clientes", "Artes de divulgação", "Treinamento rápido", "Acompanhamento inicial"],
+      name: "Premium com Site",
+      price: "R$ 1.500",
+      priceSuffix: "/ano na oferta até 03/06",
+      promoPrice: "De R$ 2.997/ano ou R$ 300/mês + R$ 997 implantação",
+      badge: "Melhor oferta de lançamento",
+      cta: "Quero garantir a oferta",
+      detail: "Condição especial de lançamento para os primeiros clientes: FechaPro por 12 meses com mini site profissional e configuração inicial.",
+      items: ["12 meses de FechaPro", "Mini site profissional de até 5 seções", "Propostas profissionais", "PDF da proposta", "Aceite online", "Portfólio", "Botão de WhatsApp", "Primeiras propostas criadas", "Treinamento rápido", "20 imagens por mês"],
     },
   ];
   const practicalValue = [
     { icon: FileText, title: "Proposta mais bonita", text: "Envie uma apresentação profissional em vez de um orçamento solto no WhatsApp." },
-    { icon: FileDown, title: "PDF automático", text: "Seu cliente pode baixar e visualizar sua proposta com mais confiança." },
+    { icon: FileDown, title: "PDF da proposta", text: "Seu cliente pode baixar e visualizar sua proposta com mais confiança." },
     { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre seus serviços, fotos e provas de que você entrega um bom trabalho." },
     { icon: Megaphone, title: "Artes para divulgar", text: "Tenha materiais prontos para postar e chamar mais atenção, conforme o plano." },
-    { icon: LayoutDashboard, title: "Tudo pronto na implantação", text: "Na oferta completa, a configuração inicial e os materiais comerciais já chegam encaminhados." },
+    { icon: LayoutDashboard, title: "Premium com Site", text: "Na oferta de lançamento, você recebe o FechaPro por 12 meses, mini site e configuração inicial." },
   ];
   const faqs = [
     {
       question: "Preciso configurar tudo sozinho?",
-      answer: "Não. Na Implantação Completa, a equipe do FechaPro configura a estrutura inicial para você sair usando.",
+      answer: "Não. No Premium com Site, a equipe do FechaPro configura a estrutura inicial para você sair usando.",
     },
     {
       question: "Posso cancelar?",
@@ -3672,19 +3732,19 @@ function AuthScreen() {
     },
     {
       question: "As artes são feitas por vocês?",
-      answer: "Na Implantação Completa, as artes de divulgação entram no pacote inicial. No plano Pro, você também tem créditos mensais para artes.",
+      answer: "No Premium com Site, você tem 20 imagens por mês. No plano Pro, você também tem créditos mensais para artes.",
     },
     {
       question: "Qual plano devo escolher para vender mais rápido?",
-      answer: "A Implantação Completa é a melhor escolha para quem quer receber o sistema pronto, com primeiras propostas, templates, mensagens, artes e treinamento.",
+      answer: "O Premium com Site anual por R$ 1.500 é a melhor escolha para quem quer receber sistema, mini site, primeiras propostas, portfólio, aceite online, PDF e treinamento.",
     },
     {
-      question: "A implantação substitui a mensalidade?",
-      answer: "Não. A implantação é o pacote para deixar tudo pronto. A mensalidade mantém o acesso e a continuidade depois da configuração.",
+      question: "Qual é o limite do site?",
+      answer: "O mini site profissional tem até 5 seções e é feito com modelo pronto personalizado para sua empresa.",
     },
     {
       question: "O FechaPro substitui meu orçamento manual?",
-      answer: "Sim. Você cria uma proposta com link, PDF automático, portfólio, depoimentos e aceite, em vez de enviar só uma mensagem solta com preço.",
+      answer: "Sim. Você cria uma proposta com link, PDF, portfólio, depoimentos e aceite, em vez de enviar só uma mensagem solta com preço.",
     },
   ];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
@@ -3829,8 +3889,8 @@ function AuthScreen() {
                 O FechaPro ajuda prestadores de serviço a montar proposta com escopo, valor, prazo, portfólio, PDF, aceite e acompanhamento de status.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
-                <p className="text-sm font-black text-green-100">Plano Start por R$97/mês, Pro por R$197/mês ou implantação completa por R$997.</p>
-                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Na implantação, eu configuro tudo para você sair usando e vender com as primeiras propostas prontas.</p>
+                <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano.</p>
+                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Inclui 12 meses de FechaPro, mini site profissional, configuração inicial e 20 imagens por mês.</p>
               </div>
               <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-white/80">
                 Um painel simples para enviar, acompanhar e reaproveitar informações de clientes, serviços e propostas.
@@ -3997,7 +4057,7 @@ function AuthScreen() {
           <div className="grid gap-3 sm:grid-cols-2">
             {[
               { icon: FileText, title: "Propostas profissionais com link", text: "Organize valor, prazo, escopo, observações e aceite em uma página profissional para enviar ao cliente." },
-              { icon: FileDown, title: "PDF automático", text: "O cliente pode visualizar online e baixar uma versão em PDF com mais confiança." },
+              { icon: FileDown, title: "PDF da proposta", text: "O cliente pode visualizar online e baixar uma versão em PDF com mais confiança." },
               { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre trabalhos anteriores e provas sociais dentro da própria proposta." },
               { icon: Megaphone, title: "Materiais para vender melhor", text: "Tenha propostas, portfólio, mensagens e artes de apoio conforme o plano escolhido." },
             ].map((feature) => (
@@ -4091,17 +4151,17 @@ function AuthScreen() {
           </div>
 
           <div className="fp-landing-offer motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
-            <p className="text-xs font-black uppercase text-green-200">Oferta recomendada</p>
-            <h3 className="mt-2 text-2xl font-black">Implantação Completa: eu configuro tudo para você sair usando.</h3>
+            <p className="text-xs font-black uppercase text-green-200">Oferta de lançamento até 03/06</p>
+            <h3 className="mt-2 text-2xl font-black">Premium com Site anual por R$ 1.500.</h3>
             <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-white/82">
-              Ideal para quem quer vender rápido: sistema configurado, primeiras propostas criadas, templates ajustados, mensagens para clientes, artes de divulgação, treinamento e acompanhamento inicial.
+              Condição especial para os primeiros clientes: 12 meses de FechaPro, mini site profissional, propostas, PDF, aceite online, portfólio, WhatsApp, configuração inicial, primeiras propostas, treinamento rápido e 20 imagens por mês.
             </p>
           </div>
 
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {plans.map((plan) => (
               <article className={`fp-landing-plan motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
-                plan.name === "Pro"
+                plan.name === "Premium com Site"
                   ? "motion-pulse-soft border-green-300 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.03]"
                   : plan.name === "Start"
                     ? "border-green-400 bg-white text-slate-950"
@@ -4112,11 +4172,11 @@ function AuthScreen() {
                     {plan.badge}
                   </span>
                 ) : null}
-                <p className={`text-sm font-black uppercase ${plan.name === "Implantação Completa" ? "text-green-300" : "text-blue-700"}`}>{plan.name}</p>
+                <p className={`text-sm font-black uppercase ${plan.name === "Premium com Site" ? "text-green-700" : "text-blue-700"}`}>{plan.name}</p>
                 <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
-                <span className={plan.name === "Implantação Completa" ? "mt-1 block text-white/65" : "mt-1 block text-slate-600"}>{plan.priceSuffix}</span>
-                {plan.promoPrice ? <strong className={plan.name === "Implantação Completa" ? "mt-3 block text-xl text-white" : "mt-3 block text-xl text-slate-950"}>{plan.promoPrice}</strong> : null}
-                <p className={plan.name === "Implantação Completa" ? "mt-4 min-h-24 text-sm leading-6 text-white/70" : "mt-4 min-h-24 text-sm leading-6 text-slate-600"}>{plan.detail}</p>
+                <span className="mt-1 block text-slate-600">{plan.priceSuffix}</span>
+                {plan.promoPrice ? <strong className="mt-3 block text-xl text-slate-950">{plan.promoPrice}</strong> : null}
+                <p className="mt-4 min-h-24 text-sm leading-6 text-slate-600">{plan.detail}</p>
                 <ul className="mt-5 grid gap-3">
                   {plan.items.map((item) => (
                     <li className="flex items-center gap-2 text-sm font-bold" key={item}>
@@ -4127,7 +4187,7 @@ function AuthScreen() {
                 </ul>
                 <a
                   className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.name === "Implantação Completa" ? "bg-white text-slate-950" : "bg-green-600 text-white"
+                    plan.name === "Premium com Site" ? "bg-slate-950 text-white" : "bg-green-600 text-white"
                   }`}
                   href={`/checkout/cadastro/${plan.code}`}
                 >

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
-import { artPacks, currentMonthRange, plans, type PlanCode } from "@/lib/plans";
+import { artPacks, currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -34,7 +34,7 @@ export async function GET() {
   return NextResponse.json({
     subscription,
     artPacks: Object.values(artPacks),
-    plans: Object.values(plans),
+    plans: publicPlans,
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
@@ -49,7 +49,7 @@ export async function PUT(request: Request) {
   const session = await requireSession();
   const body = (await request.json()) as { plan?: PlanCode };
 
-  if (!body.plan || !plans[body.plan]) {
+  if (!body.plan || !plans[body.plan]?.public) {
     return jsonError("Plano inválido.");
   }
 
@@ -81,7 +81,7 @@ export async function PUT(request: Request) {
   return NextResponse.json({
     subscription,
     artPacks: Object.values(artPacks),
-    plans: Object.values(plans),
+    plans: publicPlans,
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,

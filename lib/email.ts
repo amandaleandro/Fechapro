@@ -306,7 +306,7 @@ function emailTemplate({ title, preheader, heroImageUrl, heroImageAlt, intro, bo
                 ${button}
                 <tr>
                   <td style="padding:22px 32px;background:#f8faf9;border-top:1px solid #e6eeea;color:#667085;font-size:13px;line-height:1.5">
-                    ${footer ? escapeHtml(footer) : "Mensagem automatica enviada pelo FechaPro."}
+                    ${footer ? escapeHtml(footer) : "Mensagem enviada pelo FechaPro."}
                   </td>
                 </tr>
               </table>

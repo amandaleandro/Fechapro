@@ -110,7 +110,7 @@ export default async function PublicProposalPage({
         {query.payment === "success" ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Pagamento iniciado.</strong>
-            <p className="mt-1 text-sm">Assim que o Mercado Pago confirmar o pagamento, o status será atualizado automaticamente.</p>
+            <p className="mt-1 text-sm">Assim que o Mercado Pago confirmar o pagamento, o status será atualizado.</p>
           </div>
         ) : null}
 

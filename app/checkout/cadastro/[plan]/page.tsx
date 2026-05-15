@@ -9,6 +9,7 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
   const { plan: rawPlan } = await params;
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
+  if (!plan.public) notFound();
   const recurringPrice = plan.maintenancePrice || plan.price;
   const hasSetup = Boolean(plan.maintenancePrice);
 
@@ -44,18 +45,18 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
               <div>
                 <p className="text-xs font-black uppercase text-blue-700">Primeiro pagamento</p>
                 <h1 className="mt-2 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">
-                  {hasSetup ? `Confirme a continuidade do plano ${plan.name}.` : `Pague o plano ${plan.name} para liberar seu cadastro.`}
+                  {hasSetup ? `Confirme o plano ${plan.name}.` : `Pague o plano ${plan.name} para liberar seu cadastro.`}
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                   {hasSetup
-                    ? "A implantacao e combinada com a equipe para deixar tudo pronto. Pelo Mercado Pago, voce autoriza a mensalidade de continuidade e acesso ao FechaPro."
+                    ? "Na oferta ate 03/06, o Premium com Site anual sai por R$ 1.500. A alternativa mensal e R$ 300/mes + R$ 997 de implantacao."
                     : "Depois da confirmacao pelo Mercado Pago, voce volta para criar nome, e-mail e senha. Sem pagamento confirmado, o painel fica bloqueado."}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
-                <CheckoutMetric label={hasSetup ? "Continuidade" : "Mensalidade recorrente"} value={recurringPrice} />
+                <CheckoutMetric label={hasSetup ? "Alternativa mensal" : "Mensalidade recorrente"} value={recurringPrice} />
                 <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mes`} />
               </div>
 
@@ -63,7 +64,7 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
                 <p className="text-xs font-black uppercase text-blue-700">O que acontece depois</p>
                 <ul className="mt-3 grid gap-2 leading-7 text-slate-700">
                   {(hasSetup
-                    ? ["Implantacao alinhada com a equipe", "Mensalidade autorizada pelo Mercado Pago", "Conta criada ja com assinatura ativa"]
+                    ? ["Oferta anual alinhada com a equipe", "Mini site profissional de ate 5 secoes", "Conta criada ja com assinatura ativa"]
                     : ["Pagamento confirmado pelo Mercado Pago", "Cadastro liberado com o plano escolhido", "Conta criada ja com assinatura ativa"]
                   ).map((item) => (
                     <li className="grid grid-cols-[auto_1fr] gap-2 font-bold" key={item}>
@@ -78,12 +79,12 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
 
           <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Continuidade mensal" : "Assinatura mensal"}</p>
+              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Oferta anual ate 03/06" : "Assinatura mensal"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{recurringPrice}</strong>
-              {hasSetup ? <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">Implantacao completa: {plan.price}.</p> : null}
+              {hasSetup ? <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">Promocional anual: {plan.price}. Normal: R$ 2.997/ano.</p> : null}
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
                 {hasSetup
-                  ? "Este passo autoriza a mensalidade para manter o acesso depois da configuracao inicial."
+                  ? "Para garantir a oferta anual, fale com a equipe. Pelo Mercado Pago, este passo autoriza a alternativa mensal."
                   : "O cadastro so sera liberado apos a autorizacao da assinatura recorrente."}
               </p>
             </div>

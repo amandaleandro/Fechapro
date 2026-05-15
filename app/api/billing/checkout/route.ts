@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     }
   }
 
-  if (!body.plan || !plans[body.plan]) {
+  if (!body.plan || !plans[body.plan]?.public) {
     return jsonError("Plano inválido.");
   }
 
