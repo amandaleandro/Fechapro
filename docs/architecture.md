@@ -7,13 +7,15 @@ O FechaPro é uma plataforma para prestadores de serviço criarem propostas come
 ## Entidades Principais
 
 - **User:** dono da conta.
-- **BrandProfile:** dados comerciais, logo, cor principal e canais de contato.
+- **BrandProfile:** dados comerciais, logo, cores, chave PIX e canais de contato.
 - **ClientAsset:** clientes cadastrados pelo usuario.
 - **ServiceAsset:** serviços e pacotes reutilizáveis.
 - **PortfolioAsset:** imagens e trabalhos anteriores usados nas propostas.
 - **TestimonialAsset:** depoimentos reutilizaveis.
 - **ProposalAsset:** proposta comercial publicada, com valores, prazo, validade, status e link público.
 - **PlanSubscription:** plano ativo, limites e informacoes de assinatura.
+
+Observacao: `ProposalAsset.checkoutMode` define se a proposta usa Mercado Pago ou PIX direto.
 
 ## Status De Proposta
 
@@ -40,12 +42,14 @@ Logos passam por remoção automática de fundo claro e são salvos como PNG. Im
 
 ## Pagamentos
 
-O fluxo de pagamento usa AbacatePay:
+Historicamente o fluxo de pagamento foi descrito aqui como AbacatePay, mas a implementacao atual usa Mercado Pago e PIX direto:
 
-- a proposta cria ou reutiliza produto/checkout;
-- o cliente e redirecionado para o checkout;
-- o webhook confirma pagamento;
-- a proposta registra status e recibo.
+- a proposta cria um checkout no provedor quando usa Mercado Pago;
+- o cliente e redirecionado para Mercado Pago, ou ve QR Code/copia e cola quando usa PIX direto;
+- o webhook confirma pagamentos intermediados pelo Mercado Pago;
+- a proposta registra status, provedor, recibo e data de pagamento quando ha confirmacao automatica.
+
+Implementacao atual: planos, creditos de artes e checkout intermediado de propostas usam Mercado Pago, com confirmacao pelo webhook `/api/webhooks/mercadopago`. Propostas tambem podem usar PIX direto quando o profissional cadastra `pixKey` em `BrandProfile` e salva a proposta com `checkoutMode = "pix"`; nesse caso o checkout publico gera payload EMV PIX, QR Code e codigo copia e cola, mas a confirmacao fica fora do webhook automatico.
 
 ## IA
 
@@ -59,6 +63,6 @@ Antes de publicar em producao, recomenda-se:
 - usar Postgres gerenciado;
 - migrar uploads para storage externo;
 - configurar dominio e HTTPS;
-- validar webhook da AbacatePay;
+- validar webhook do Mercado Pago;
 - rotacionar qualquer chave exposta;
 - ativar logs e monitoramento.

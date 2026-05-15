@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     deadline?: string;
     validUntil?: string;
     payment?: string;
+    checkoutMode?: string;
     included?: string[];
     notes?: string;
     status?: "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
   const template = staticTemplate || customTemplate;
   const validUntil = cleanOptionalString(body.validUntil);
   const clientEmail = cleanOptionalString(body.clientEmail);
+  const checkoutMode = body.checkoutMode === "pix" ? "pix" : "mercadopago";
 
   if (!clientName) {
     return jsonError("Cliente e template pronto são obrigatórios.");
@@ -66,6 +68,16 @@ export async function POST(request: Request) {
 
   if (clientEmail && !isValidEmail(clientEmail)) {
     return jsonError("E-mail do cliente inválido.");
+  }
+
+  if (checkoutMode === "pix") {
+    const brand = await prisma.brandProfile.findUnique({
+      where: { userId: session.id },
+      select: { pixKey: true },
+    });
+    if (!brand?.pixKey) {
+      return jsonError("Cadastre uma chave PIX na aba Marca antes de escolher recebimento por PIX.");
+    }
   }
 
   const subscription = await prisma.planSubscription.upsert({
@@ -104,6 +116,7 @@ export async function POST(request: Request) {
       deadline: template.deadline,
       validUntil,
       payment: template.payment,
+      checkoutMode,
       included: template.included,
       notes: template.notes,
       status: body.status || "sent",

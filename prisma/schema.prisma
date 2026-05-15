@@ -65,6 +65,7 @@ model BrandProfile {
   secondaryColor String   @default("#0F172A")
   accentColor    String   @default("#2563EB")
   whatsapp       String?
+  pixKey         String?
   instagram      String?
   email          String?
   website        String?
@@ -136,6 +137,7 @@ model ProposalAsset {
   viewCount             Int            @default(0)
   whatsappClickCount    Int            @default(0)
   paymentStatus         String         @default("not_started")
+  checkoutMode          String         @default("mercadopago")
   paymentProvider       String?
   providerCheckoutId    String?
   providerCheckoutUrl   String?

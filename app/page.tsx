@@ -25,6 +25,7 @@ import {
   Palette,
   CreditCard,
   Plus,
+  QrCode,
   RotateCcw,
   Settings,
   Send,
@@ -112,6 +113,7 @@ type Proposal = {
   whatsappClickCount?: number;
   updatedAt?: string;
   paymentStatus?: string;
+  checkoutMode?: "pix" | "mercadopago";
   paymentMethod?: string | null;
   paymentPaidAt?: string | null;
   providerReceiptUrl?: string | null;
@@ -135,6 +137,7 @@ type BrandProfile = {
   secondaryColor: string;
   accentColor: string;
   whatsapp: string | null;
+  pixKey: string | null;
   instagram: string | null;
   email: string | null;
   website: string | null;
@@ -217,6 +220,7 @@ const blankDraft: ProposalDraft = {
   deadline: "",
   validUntil: nextWeekDate(),
   payment: "",
+  checkoutMode: "mercadopago",
   included: [],
   notes: "",
 };
@@ -679,6 +683,10 @@ export default function Home() {
       setNotice(validationError);
       return null;
     }
+    if (draft.checkoutMode === "pix" && !brand?.pixKey) {
+      setNotice("Cadastre uma chave PIX na aba Marca antes de escolher recebimento por PIX.");
+      return null;
+    }
 
     try {
       const result = await apiPost<Proposal & { clientEmailSent?: boolean }>("/api/proposals", {
@@ -915,6 +923,7 @@ export default function Home() {
                 secondaryColor: "#0F172A",
                 accentColor: "#2563EB",
                 whatsapp: null,
+                pixKey: null,
                 instagram: null,
                 email: session.email,
                 website: null,
@@ -983,6 +992,7 @@ export default function Home() {
                 secondaryColor: "#0F172A",
                 accentColor: "#2563EB",
                 whatsapp: null,
+                pixKey: null,
                 instagram: null,
                 email: session.email,
                 website: null,
@@ -1044,6 +1054,7 @@ export default function Home() {
                     secondaryColor: "#0F172A",
                     accentColor: "#2563EB",
                     whatsapp: null,
+                    pixKey: null,
                     instagram: null,
                     email: session.email,
                     website: null,
@@ -1479,6 +1490,18 @@ function DashboardView({
             <TextField label="Pagamento" maxLength={120} placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
           </div>
 
+          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+            Como receber nesta proposta
+            <select
+              className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+              value={draft.checkoutMode || "mercadopago"}
+              onChange={(event) => onDraftChange("checkoutMode", event.target.value as ProposalDraft["checkoutMode"])}
+            >
+              <option value="pix">PIX direto para minha chave</option>
+              <option value="mercadopago">Mercado Pago: PIX, cartão e boleto</option>
+            </select>
+          </label>
+
           <TextField
             label="E-mail do cliente"
             placeholder="cliente@email.com"
@@ -1552,6 +1575,7 @@ function DashboardView({
               <PreviewItem label="Investimento" value={money.format(draft.price)} />
               <PreviewItem label="Prazo" value={draft.deadline || "-"} />
               <PreviewItem label="Pagamento" value={draft.payment || "A combinar"} />
+              <PreviewItem label="Recebimento" value={(draft.checkoutMode || "mercadopago") === "pix" ? "PIX direto" : "Mercado Pago"} />
             </dl>
 
             <div>
@@ -3371,6 +3395,7 @@ function BrandView({
       secondaryColor: "#0F172A",
       accentColor: "#2563EB",
       whatsapp: null,
+      pixKey: null,
       instagram: null,
       email: session.email,
       website: null,
@@ -3492,6 +3517,7 @@ function BrandView({
             </label>
           </div>
           <TextField label="WhatsApp" autoComplete="tel" maxLength={20} placeholder="5511999999999" value={form.whatsapp || ""} onChange={(value) => setForm({ ...form, whatsapp: value })} />
+          <TextField label="Chave PIX" maxLength={120} placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatoria" value={form.pixKey || ""} onChange={(value) => setForm({ ...form, pixKey: value })} />
           <TextField label="Instagram" maxLength={60} placeholder="@seuperfil" value={form.instagram || ""} onChange={(value) => setForm({ ...form, instagram: value })} />
           <TextField label="E-mail comercial" autoComplete="email" type="email" value={form.email || ""} onChange={(value) => setForm({ ...form, email: value })} />
           <TextField label="Site" placeholder="https://..." type="url" value={form.website || ""} onChange={(value) => setForm({ ...form, website: value })} />
@@ -3521,6 +3547,7 @@ function BrandView({
 
           <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600">
             <span>WhatsApp: {form.whatsapp || "Não informado"}</span>
+            <span>PIX: {form.pixKey || "Não informado"}</span>
             <span>Instagram: {form.instagram || "Não informado"}</span>
             <span>E-mail: {form.email || "Não informado"}</span>
             <span>Site: {form.website || "Não informado"}</span>
@@ -4269,6 +4296,34 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+const currentUpdates = [
+  {
+    icon: FileText,
+    title: "PDF mais limpo",
+    description: "A proposta em PDF ganhou capa mais organizada, resumo direto e tabela de servicos mais facil de ler.",
+    tag: "Disponivel",
+  },
+  {
+    icon: QrCode,
+    title: "PIX direto na proposta",
+    description: "Cadastre sua chave PIX na marca e escolha proposta por proposta se quer receber direto ou pelo Mercado Pago.",
+    tag: "Novo",
+  },
+  {
+    icon: CreditCard,
+    title: "Checkout por escolha",
+    description: "O cliente ve o fluxo certo: QR Code e copia e cola para PIX direto, ou PIX, cartao e boleto pelo Mercado Pago.",
+    tag: "Ativo",
+  },
+];
+
+const upcomingFeatures = [
+  "Confirmacao automatica para pagamentos PIX diretos.",
+  "Mais detalhes de acompanhamento depois que o cliente abre, aceita ou paga a proposta.",
+  "Novas opcoes para transformar propostas aceitas em proximos passos de atendimento.",
+  "Mais modelos de proposta por nicho com textos prontos para vender.",
+];
+
 function ProductUpdatesModal({
   onClose,
   onOpenArts,
@@ -4304,6 +4359,9 @@ function ProductUpdatesModal({
     "Mais opções para transformar propostas aceitas em próximos passos de atendimento.",
     "Melhorias no checkout para deixar aceite e pagamento ainda mais diretos.",
   ];
+
+  updates.splice(0, updates.length, ...currentUpdates);
+  nextFeatures.splice(0, nextFeatures.length, ...upcomingFeatures);
 
   return (
     <div

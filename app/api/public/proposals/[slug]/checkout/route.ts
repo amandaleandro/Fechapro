@@ -12,6 +12,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
 
   if (!proposal) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Proposta não encontrada")}`);
   if (proposal.price <= 0) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Valor da proposta inválido")}`);
+  if (proposal.checkoutMode === "pix") redirect(`/checkout/proposta/${slug}`);
   const formData = await request.formData().catch(() => null);
   const paymentMode = String(formData?.get("paymentMode") || "full");
   const amountCents = paymentMode === "signal_30"

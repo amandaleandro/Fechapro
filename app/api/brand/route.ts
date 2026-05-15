@@ -18,6 +18,7 @@ export async function GET() {
       secondaryColor: "#0F172A",
       accentColor: "#2563EB",
       whatsapp: null,
+      pixKey: null,
       instagram: null,
       email: session.email,
       website: null,
@@ -35,6 +36,7 @@ export async function PUT(request: Request) {
     secondaryColor?: string;
     accentColor?: string;
     whatsapp?: string | null;
+    pixKey?: string | null;
     instagram?: string | null;
     email?: string | null;
     website?: string | null;
@@ -44,6 +46,7 @@ export async function PUT(request: Request) {
   const businessName = cleanString(body.businessName) || session.name;
   const logoUrl = clean(body.logoUrl);
   const whatsapp = clean(body.whatsapp);
+  const pixKey = clean(body.pixKey);
   const instagram = clean(body.instagram);
   const email = clean(body.email) || session.email;
   const website = clean(body.website);
@@ -63,6 +66,7 @@ export async function PUT(request: Request) {
       secondaryColor: normalizeColor(body.secondaryColor, "#0F172A"),
       accentColor: normalizeColor(body.accentColor, "#2563EB"),
       whatsapp,
+      pixKey,
       instagram,
       email,
       website,
@@ -75,6 +79,7 @@ export async function PUT(request: Request) {
       secondaryColor: normalizeColor(body.secondaryColor, "#0F172A"),
       accentColor: normalizeColor(body.accentColor, "#2563EB"),
       whatsapp,
+      pixKey,
       instagram,
       email,
       website,

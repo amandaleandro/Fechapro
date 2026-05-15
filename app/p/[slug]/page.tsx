@@ -89,6 +89,7 @@ export default async function PublicProposalPage({
     ? `/api/public/proposals/${proposal.publicSlug}/whatsapp?intent=contact`
     : null;
   const acceptHref = hasDecision ? "#status" : "#aceite";
+  const wantsPix = proposal.checkoutMode === "pix";
 
   return (
     <main className="mobile-safe-bottom min-h-screen bg-[var(--ui-bg)] pb-20 text-slate-900">
@@ -249,11 +250,13 @@ export default async function PublicProposalPage({
           <aside className="grid gap-4">
             <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Pagamento</p>
-              <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : "Pague com PIX ou cartão"}</h2>
+              <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : wantsPix ? "Pague com PIX" : "Pague com PIX ou cartão"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
                 {proposal.paymentStatus === "paid"
                   ? "O Mercado Pago confirmou o pagamento desta proposta."
-                  : "Finalize o pagamento em ambiente seguro via Mercado Pago."}
+                  : wantsPix
+                    ? "Finalize com o PIX direto do profissional."
+                    : "Finalize o pagamento em ambiente seguro via Mercado Pago."}
               </p>
               {proposal.paymentStatus === "paid" && proposal.providerReceiptUrl ? (
                 <a className="mt-4 grid min-h-11 place-items-center rounded-lg px-5 text-center font-black text-white" href={proposal.providerReceiptUrl} style={{ background: brandColor }} target="_blank">

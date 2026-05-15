@@ -18,7 +18,7 @@ Principais recursos:
 - link público da proposta;
 - aceite, recusa, visualizações e clique no WhatsApp;
 - PDF automático;
-- pagamento da proposta pelo Mercado Pago;
+- pagamento da proposta pelo Mercado Pago ou PIX direto com QR Code e copia e cola;
 - assinatura de planos e compra de créditos de artes pelo Mercado Pago;
 - artes de divulgação com IA, conforme plano e créditos;
 - upload de imagens com remoção de fundo claro para logos;
@@ -145,6 +145,8 @@ Para ativar:
 ```text
 https://seu-dominio.com/api/webhooks/mercadopago
 ```
+
+Nas propostas, o profissional tambem pode escolher PIX direto. Para isso, cadastre a chave PIX na tela **Marca** e selecione **PIX direto para minha chave** ao criar a proposta. O cliente vera QR Code e codigo copia e cola no checkout da proposta. A confirmacao desse PIX direto deve ser combinada com o cliente, pois o FechaPro apenas exibe a chave configurada.
 
 ## IA
 

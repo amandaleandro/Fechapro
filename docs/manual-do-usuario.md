@@ -10,6 +10,7 @@ O FechaPro e um sistema para transformar orcamentos simples em propostas comerci
 - criar propostas com valor, prazo, pagamento e itens inclusos;
 - gerar link publico da proposta para enviar ao cliente;
 - baixar a proposta em PDF;
+- escolher recebimento por Mercado Pago ou PIX direto em cada proposta;
 - acompanhar visualizacoes, aceite, recusa e cliques no WhatsApp;
 - criar artes de divulgacao com IA, conforme o plano contratado;
 - controlar plano, limites de propostas e creditos de artes.
@@ -63,6 +64,7 @@ Preencha:
 - **Logo:** envie uma imagem ou informe uma URL.
 - **Cores:** escolha cor principal, fundo e destaque.
 - **WhatsApp:** numero para contato com clientes.
+- **Chave PIX:** CPF, CNPJ, e-mail, telefone ou chave aleatoria para receber PIX direto nas propostas.
 - **Instagram:** perfil comercial.
 - **E-mail comercial:** e-mail exibido nas propostas.
 - **Site:** endereco do seu site, se tiver.
@@ -145,6 +147,7 @@ Campos principais:
 - **Prazo:** prazo de entrega.
 - **Validade:** ate quando a proposta vale.
 - **Pagamento:** condicao combinada, como entrada e restante na entrega.
+- **Como receber nesta proposta:** escolha Mercado Pago ou PIX direto para sua chave cadastrada.
 - **E-mail do cliente:** usado quando houver envio automatico configurado.
 - **Itens inclusos:** entregas da proposta, um item por linha.
 - **Observacoes:** regras, limites, ajustes ou informacoes importantes.
@@ -213,13 +216,23 @@ O cliente abre a proposta pelo link publico. Nessa pagina ele consegue ver:
 - perguntas frequentes;
 - botao para WhatsApp;
 - opcao de baixar PDF;
+- opcao de iniciar pagamento pelo Mercado Pago ou visualizar o PIX direto, conforme a proposta;
 - opcao de aceitar ou recusar a proposta.
 
 Para aceitar, o cliente informa nome e e-mail e clica em **Aceitar proposta**.
 
 Para recusar, ele pode informar o motivo e clicar em **Recusar proposta**.
 
-## 15. Acompanhar resultados
+## 15. Pagamento da proposta
+
+Ao criar a proposta, escolha como deseja receber:
+
+- **Mercado Pago:** o cliente pode seguir para PIX, cartao ou boleto, conforme disponibilidade do Mercado Pago. Quando a confirmacao chega pelo webhook, a proposta registra o pagamento.
+- **PIX direto:** o cliente ve um QR Code e o codigo copia e cola com a chave PIX cadastrada em **Marca**. Nesse modo, combine o envio do comprovante com o cliente, pois a confirmacao nao e automatica.
+
+Se escolher PIX direto sem chave cadastrada, o sistema pede que voce volte em **Marca** e informe a chave antes de salvar.
+
+## 16. Acompanhar resultados
 
 No **Painel**, voce acompanha indicadores como:
 
@@ -234,7 +247,7 @@ No **Painel**, voce acompanha indicadores como:
 
 Use esses dados para saber quais clientes precisam de follow-up.
 
-## 16. Solicitar artes ao agente
+## 17. Solicitar artes ao agente
 
 Acesse **Artes IA** para solicitar materiais de divulgacao que serao construidos por um agente.
 
@@ -266,7 +279,7 @@ Em cada pedido voce pode:
 
 O uso de artes depende do plano e dos creditos disponiveis.
 
-## 17. Planos e limites
+## 18. Planos e limites
 
 Acesse **Planos** para ver seu plano atual, limites e pacotes extras.
 
@@ -286,7 +299,7 @@ Tambem existem pacotes extras de artes:
 
 Os valores, limites e recursos podem mudar conforme a configuracao comercial vigente. Confira sempre a tela **Planos**.
 
-## 18. Conta e senha
+## 19. Conta e senha
 
 Acesse **Conta** para atualizar:
 
@@ -300,7 +313,7 @@ Para trocar a senha:
 2. Digite a nova senha com pelo menos 8 caracteres.
 3. Clique em **Salvar alteracoes**.
 
-## 19. Boas praticas para vender melhor
+## 20. Boas praticas para vender melhor
 
 - Cadastre seus servicos mais vendidos antes de criar propostas.
 - Use nomes claros nos itens inclusos.
@@ -311,7 +324,7 @@ Para trocar a senha:
 - Revise a validade da proposta antes de enviar.
 - Duplique propostas antigas quando o servico for parecido.
 
-## 20. Duvidas frequentes
+## 21. Duvidas frequentes
 
 **Preciso cadastrar cliente antes de criar proposta?**  
 Nao. Voce pode digitar o nome diretamente, mas cadastrar clientes acelera o uso futuro.
@@ -325,6 +338,9 @@ Nao. Ele aceita pela pagina publica da proposta.
 **Consigo baixar PDF?**  
 Sim. A proposta pode ser aberta online e baixada em PDF.
 
+**Posso receber por PIX direto?**
+Sim. Cadastre a chave PIX em **Marca** e escolha PIX direto ao criar a proposta.
+
 **Posso alterar uma proposta depois de salvar?**  
 Voce pode acompanhar, duplicar, reenviar, remover e alterar status. Para uma nova versao com mudancas, use **Duplicar** e ajuste os dados antes de enviar.
 
@@ -334,7 +350,7 @@ O status passa a indicar aceite, e a linha do tempo mostra os dados registrados.
 **As artes IA sao ilimitadas?**  
 Nao. Elas seguem o limite do plano ou os creditos extras comprados.
 
-## 21. Suporte
+## 22. Suporte
 
 Se precisar de ajuda, use o botao de WhatsApp de suporte exibido no sistema ou fale com a equipe responsavel pelo seu acesso.
 
