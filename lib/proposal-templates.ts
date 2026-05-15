@@ -10,151 +10,204 @@ export type ProposalTemplate = {
   notes: string;
 };
 
-export const proposalTemplates: ProposalTemplate[] = [
+type TemplateSeed = {
+  niche: string;
+  services: Array<{
+    title: string;
+    serviceName: string;
+    price: number;
+    deadline: string;
+    included: string[];
+    notes?: string;
+    payment?: string;
+  }>;
+};
+
+const templateSeeds: TemplateSeed[] = [
   {
-    id: "social-media",
     niche: "Social media",
-    title: "Gestao mensal de Instagram",
-    serviceName: "Gestao de redes sociais",
-    price: 1200,
-    deadline: "30 dias",
-    payment: "Mensal antecipado",
-    included: ["Planejamento editorial", "12 posts feed", "8 stories", "Legenda estrategica", "Relatorio mensal"],
-    notes: "Nao inclui impulsionamento de posts nem verba de midia.",
+    services: [
+      ["Gestao mensal de Instagram", "Gestao de redes sociais", 1200, "30 dias", ["Planejamento editorial", "12 posts feed", "8 stories", "Legenda estrategica", "Relatorio mensal"]],
+      ["Calendario de conteudo", "Planejamento de conteudo mensal", 650, "7 dias uteis", ["Pesquisa de temas", "Calendario mensal", "Sugestoes de formatos", "Chamadas para acao", "Linha editorial"]],
+      ["Pacote de Reels", "Criacao de Reels para Instagram", 900, "10 dias uteis", ["Roteiros", "Edicao de 6 videos", "Legendas", "Capas simples", "Orientacao de postagem"]],
+    ].map(toService),
   },
   {
-    id: "designer",
     niche: "Designer",
-    title: "Identidade visual",
-    serviceName: "Identidade visual profissional",
-    price: 1500,
-    deadline: "10 dias uteis",
-    payment: "50% entrada e 50% entrega",
-    included: ["Logo principal", "Logo secundario", "Paleta de cores", "Tipografia", "Mini manual da marca"],
-    notes: "Inclui ate 2 rodadas de ajustes dentro do escopo aprovado.",
+    services: [
+      ["Identidade visual", "Identidade visual profissional", 1500, "10 dias uteis", ["Logo principal", "Logo secundario", "Paleta de cores", "Tipografia", "Mini manual da marca"]],
+      ["Artes para campanha", "Pacote de artes digitais", 700, "5 dias uteis", ["5 artes para feed", "5 stories", "Adaptacao de textos", "Arquivos finais", "1 rodada de ajustes"]],
+      ["Cardapio digital", "Design de cardapio digital", 480, "4 dias uteis", ["Organizacao dos itens", "Layout visual", "PDF final", "Versao para WhatsApp", "Ajustes combinados"]],
+    ].map(toService),
   },
   {
-    id: "fotografo",
     niche: "Fotografia",
-    title: "Ensaio profissional",
-    serviceName: "Ensaio fotografico profissional",
-    price: 900,
-    deadline: "7 dias uteis apos o ensaio",
-    payment: "50% reserva e 50% no dia",
-    included: ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online", "Entrega digital"],
-    notes: "Deslocamentos fora da cidade podem gerar custo adicional.",
+    services: [
+      ["Ensaio profissional", "Ensaio fotografico profissional", 900, "7 dias uteis apos o ensaio", ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online", "Entrega digital"]],
+      ["Fotos de produto", "Fotografia de produto", 850, "8 dias uteis", ["Briefing visual", "Ate 20 produtos", "Fotos tratadas", "Entrega digital", "Uso comercial basico"]],
+      ["Cobertura de evento", "Cobertura fotografica de evento", 1600, "10 dias uteis apos evento", ["Cobertura de ate 4 horas", "Selecao de fotos", "Tratamento basico", "Galeria online", "Entrega digital"]],
+    ].map(toService),
   },
   {
-    id: "arquiteto",
     niche: "Arquitetura",
-    title: "Projeto de interiores",
-    serviceName: "Projeto de interiores",
-    price: 3500,
-    deadline: "25 dias uteis",
-    payment: "40% entrada, 30% desenvolvimento e 30% entrega",
-    included: ["Levantamento de necessidades", "Layout", "Moodboard", "Projeto 3D", "Lista de compras"],
-    notes: "Execucao de obra e acompanhamento presencial podem ser contratados a parte.",
+    services: [
+      ["Projeto de interiores", "Projeto de interiores", 3500, "25 dias uteis", ["Levantamento de necessidades", "Layout", "Moodboard", "Projeto 3D", "Lista de compras"]],
+      ["Consultoria de ambiente", "Consultoria de decoracao", 750, "7 dias uteis", ["Reuniao de briefing", "Diagnostico do ambiente", "Sugestao de layout", "Paleta de referencias", "Lista de melhorias"]],
+      ["Projeto executivo", "Projeto executivo residencial", 5200, "35 dias uteis", ["Plantas tecnicas", "Detalhamentos", "Compatibilizacao basica", "Memorial descritivo", "Entrega em PDF"]],
+    ].map(toService),
   },
   {
-    id: "consultor",
     niche: "Consultoria",
-    title: "Consultoria estrategica",
-    serviceName: "Consultoria estrategica personalizada",
-    price: 1800,
-    deadline: "4 semanas",
-    payment: "Integral no inicio ou 2 parcelas",
-    included: ["Diagnostico", "Plano de acao", "4 encontros online", "Material de apoio", "Suporte por mensagem"],
-    notes: "O resultado depende da execucao das acoes combinadas pelo cliente.",
+    services: [
+      ["Consultoria estrategica", "Consultoria estrategica personalizada", 1800, "4 semanas", ["Diagnostico", "Plano de acao", "4 encontros online", "Material de apoio", "Suporte por mensagem"]],
+      ["Mentoria individual", "Mentoria individual", 1200, "30 dias", ["Sessao inicial", "3 encontros de acompanhamento", "Plano de prioridades", "Suporte por mensagem", "Resumo final"]],
+      ["Diagnostico de negocio", "Diagnostico comercial", 900, "10 dias uteis", ["Coleta de informacoes", "Analise do funil", "Mapa de gargalos", "Recomendacoes", "Reuniao de devolutiva"]],
+    ].map(toService),
   },
   {
-    id: "tecnico",
     niche: "Servico tecnico",
-    title: "Instalacao e manutencao",
-    serviceName: "Servico tecnico especializado",
-    price: 850,
-    deadline: "5 dias uteis",
-    payment: "50% entrada e 50% conclusao",
-    included: ["Visita tecnica", "Diagnostico", "Instalacao ou manutencao", "Teste final", "Garantia de 30 dias"],
-    notes: "Pecas e materiais podem ser cobrados separadamente apos avaliacao.",
+    services: [
+      ["Instalacao e manutencao", "Servico tecnico especializado", 850, "5 dias uteis", ["Visita tecnica", "Diagnostico", "Instalacao ou manutencao", "Teste final", "Garantia de 30 dias"]],
+      ["Manutencao preventiva", "Manutencao preventiva", 420, "2 dias uteis", ["Checklist tecnico", "Limpeza basica", "Ajustes necessarios", "Teste de funcionamento", "Relatorio simples"]],
+      ["Atendimento emergencial", "Atendimento tecnico emergencial", 300, "Ate 24 horas", ["Triagem", "Deslocamento local", "Diagnostico", "Solucao inicial", "Orientacoes ao cliente"]],
+    ].map(toService),
   },
   {
-    id: "manicure",
-    niche: "Manicure",
-    title: "Pacote de unhas",
-    serviceName: "Manicure e alongamento",
-    price: 160,
-    deadline: "Atendimento em 2 horas",
-    payment: "R$ 50 de sinal e restante no atendimento",
-    included: ["Cutilagem", "Esmaltacao", "Alongamento ou manutencao", "Finalizacao hidratante", "Garantia de 7 dias"],
-    notes: "Materiais especiais, nail art e deslocamento podem alterar o valor final.",
+    niche: "Beleza",
+    services: [
+      ["Pacote de unhas", "Manicure e alongamento", 160, "Atendimento em 2 horas", ["Cutilagem", "Esmaltacao", "Alongamento ou manutencao", "Finalizacao hidratante", "Garantia de 7 dias"]],
+      ["Protocolo estetico", "Protocolo estetico personalizado", 350, "Sessao de 60 a 90 minutos", ["Avaliacao inicial", "Higienizacao", "Procedimento principal", "Orientacoes de cuidado", "Acompanhamento por mensagem"]],
+      ["Design de sobrancelhas", "Design de sobrancelhas", 90, "Atendimento em 1 hora", ["Mapeamento facial", "Design personalizado", "Finalizacao", "Orientacoes de cuidado", "Registro do atendimento"]],
+      ["Pacote cabelo", "Corte, tratamento e finalizacao", 280, "Atendimento em 3 horas", ["Analise do fio", "Corte", "Tratamento", "Finalizacao", "Orientacao de manutencao"]],
+    ].map(toService),
   },
   {
-    id: "eletricista",
-    niche: "Eletricista",
-    title: "Instalacao residencial",
-    serviceName: "Instalacao e revisao eletrica",
-    price: 450,
-    deadline: "1 dia util apos aprovacao",
-    payment: "30% para reservar e 70% na conclusao",
-    included: ["Visita tecnica", "Diagnostico", "Instalacao ou reparo", "Teste de seguranca", "Garantia de 30 dias"],
-    notes: "Materiais eletricos sao cobrados separadamente apos avaliacao.",
+    niche: "Casa e reforma",
+    services: [
+      ["Instalacao residencial", "Instalacao e revisao eletrica", 450, "1 dia util apos aprovacao", ["Visita tecnica", "Diagnostico", "Instalacao ou reparo", "Teste de seguranca", "Garantia de 30 dias"]],
+      ["Reparo e acabamento", "Servico de alvenaria e acabamento", 1200, "5 dias uteis", ["Avaliacao do local", "Preparacao da area", "Execucao do reparo", "Acabamento", "Limpeza basica"]],
+      ["Pintura residencial", "Pintura de ambiente residencial", 950, "4 dias uteis", ["Protecao do ambiente", "Preparacao de parede", "Pintura", "Acabamento", "Limpeza basica"]],
+      ["Instalacao hidraulica", "Reparo e instalacao hidraulica", 380, "1 dia util", ["Diagnostico", "Reparo ou instalacao", "Teste de vazamento", "Orientacoes", "Garantia de 30 dias"]],
+    ].map(toService),
   },
   {
-    id: "pedreiro",
-    niche: "Pedreiro",
-    title: "Reparo e acabamento",
-    serviceName: "Servico de alvenaria e acabamento",
-    price: 1200,
-    deadline: "5 dias uteis",
-    payment: "40% entrada e 60% na entrega",
-    included: ["Avaliacao do local", "Preparacao da area", "Execucao do reparo", "Acabamento", "Limpeza basica"],
-    notes: "Nao inclui compra de materiais, cacamba ou alteracoes de escopo.",
+    niche: "Limpeza",
+    services: [
+      ["Limpeza residencial", "Diarista para limpeza completa", 220, "1 diaria", ["Limpeza de quartos e sala", "Banheiros", "Cozinha", "Area de servico", "Organizacao leve"]],
+      ["Limpeza pos-obra", "Limpeza pos-obra", 780, "2 dias uteis", ["Remocao de residuos leves", "Limpeza de pisos", "Banheiros", "Vidros acessiveis", "Finalizacao do ambiente"]],
+      ["Higienizacao de estofado", "Higienizacao de sofa e estofados", 260, "Atendimento em 2 horas", ["Aspiracao", "Aplicacao de produto", "Extracao", "Secagem orientada", "Garantia do servico"]],
+    ].map(toService),
   },
   {
-    id: "diarista",
-    niche: "Diarista",
-    title: "Limpeza residencial",
-    serviceName: "Diarista para limpeza completa",
-    price: 220,
-    deadline: "1 diaria",
-    payment: "Pagamento no dia do atendimento",
-    included: ["Limpeza de quartos e sala", "Banheiros", "Cozinha", "Area de servico", "Organizacao leve"],
-    notes: "Nao inclui limpeza pesada pos-obra nem produtos especificos.",
+    niche: "Saude e fitness",
+    services: [
+      ["Plano mensal de treino", "Acompanhamento personal trainer", 700, "4 semanas", ["Avaliacao fisica", "Plano de treino", "8 aulas presenciais ou online", "Ajustes semanais", "Suporte por WhatsApp"]],
+      ["Consulta nutricional", "Plano alimentar personalizado", 420, "7 dias uteis", ["Anamnese", "Plano alimentar", "Lista de substituicoes", "Orientacoes", "Retorno online"]],
+      ["Pilates individual", "Pacote de aulas de pilates", 480, "4 semanas", ["Avaliacao inicial", "4 aulas", "Ajustes de exercicios", "Orientacoes", "Acompanhamento"]],
+    ].map(toService),
   },
   {
-    id: "esteticista",
-    niche: "Esteticista",
-    title: "Protocolo estetico",
-    serviceName: "Protocolo estetico personalizado",
-    price: 350,
-    deadline: "Sessao de 60 a 90 minutos",
-    payment: "50% para agendar e 50% no atendimento",
-    included: ["Avaliacao inicial", "Higienizacao", "Procedimento principal", "Orientacoes de cuidado", "Acompanhamento por mensagem"],
-    notes: "Resultado pode variar conforme rotina de cuidados e numero de sessoes.",
+    niche: "Tecnologia",
+    services: [
+      ["Site one page", "Criacao de site one page", 1800, "15 dias uteis", ["Briefing", "Layout responsivo", "Pagina publicada", "Formulario de contato", "Ajustes finais"]],
+      ["Landing page", "Landing page de vendas", 1400, "10 dias uteis", ["Copy base", "Layout responsivo", "Formulario", "Integracao simples", "Publicacao"]],
+      ["Manutencao de computador", "Formatacao e otimizacao de computador", 250, "2 dias uteis", ["Backup orientado", "Formatacao", "Instalacao basica", "Atualizacoes", "Teste final"]],
+      ["Automacao simples", "Automacao de processo com planilha", 900, "12 dias uteis", ["Mapeamento do processo", "Planilha estruturada", "Automacoes basicas", "Teste", "Treinamento rapido"]],
+    ].map(toService),
   },
   {
-    id: "personal",
-    niche: "Personal trainer",
-    title: "Plano mensal de treino",
-    serviceName: "Acompanhamento personal trainer",
-    price: 700,
-    deadline: "4 semanas",
-    payment: "Mensal antecipado",
-    included: ["Avaliacao fisica", "Plano de treino", "8 aulas presenciais ou online", "Ajustes semanais", "Suporte por WhatsApp"],
-    notes: "Nao inclui academia, equipamentos ou avaliacao medica.",
+    niche: "Eventos",
+    services: [
+      ["Cerimonial", "Cerimonial para evento", 2200, "Conforme data do evento", ["Reuniao inicial", "Roteiro do evento", "Coordenacao no dia", "Equipe base", "Checklist final"]],
+      ["Decoracao de festa", "Decoracao personalizada de evento", 1800, "Conforme data do evento", ["Briefing", "Projeto decorativo", "Montagem", "Desmontagem", "Itens combinados"]],
+      ["Buffet pequeno", "Buffet para evento pequeno", 2500, "Conforme data do evento", ["Cardapio combinado", "Preparo", "Equipe de apoio", "Montagem da mesa", "Atendimento"]],
+    ].map(toService),
   },
   {
-    id: "assistencia",
-    niche: "Assistencia tecnica",
-    title: "Diagnostico e reparo",
-    serviceName: "Assistencia tecnica especializada",
-    price: 300,
-    deadline: "3 dias uteis apos diagnostico",
-    payment: "Diagnostico na entrada e saldo na retirada",
-    included: ["Diagnostico", "Orcamento de pecas", "Mao de obra", "Testes finais", "Garantia do reparo"],
-    notes: "Pecas sao cobradas separadamente e dependem de disponibilidade.",
+    niche: "Aulas e educacao",
+    services: [
+      ["Aula particular", "Pacote de aulas particulares", 400, "4 semanas", ["Diagnostico inicial", "4 aulas", "Material de apoio", "Exercicios", "Acompanhamento"]],
+      ["Curso rapido", "Treinamento rapido personalizado", 1200, "2 semanas", ["Plano de aulas", "Material digital", "Aulas ao vivo", "Exercicios praticos", "Certificado simples"]],
+      ["Reforco escolar", "Reforco escolar mensal", 650, "30 dias", ["Avaliacao do aluno", "8 encontros", "Plano de estudo", "Atividades", "Relatorio aos responsaveis"]],
+    ].map(toService),
+  },
+  {
+    niche: "Pet",
+    services: [
+      ["Banho e tosa", "Banho e tosa completo", 120, "Atendimento em 2 horas", ["Banho", "Secagem", "Tosa higienica", "Corte de unhas", "Finalizacao"]],
+      ["Adestramento", "Pacote de adestramento", 900, "4 semanas", ["Avaliacao comportamental", "4 aulas", "Exercicios guiados", "Orientacao ao tutor", "Acompanhamento"]],
+      ["Pet sitter", "Cuidado domiciliar para pet", 280, "Pacote de visitas", ["Visitas combinadas", "Alimentacao", "Troca de agua", "Passeio curto", "Relatorio ao tutor"]],
+    ].map(toService),
+  },
+  {
+    niche: "Gastronomia",
+    services: [
+      ["Marmitas semanais", "Pacote de marmitas semanais", 280, "Entrega semanal", ["Cardapio semanal", "10 marmitas", "Embalagem", "Entrega local", "Ajustes combinados"]],
+      ["Bolos personalizados", "Bolo personalizado", 220, "3 dias uteis", ["Briefing do tema", "Massa e recheio", "Decoracao", "Embalagem", "Retirada ou entrega combinada"]],
+      ["Coffee break", "Coffee break corporativo", 1500, "Conforme data", ["Cardapio combinado", "Preparo", "Montagem", "Bebidas", "Itens descartaveis"]],
+    ].map(toService),
   },
 ];
+
+const templateLevels = [
+  { id: "essencial", label: "Essencial", multiplier: 0.75, prefix: "Pacote essencial", extra: "Entrega enxuta com foco no principal combinado." },
+  { id: "padrao", label: "Padrao", multiplier: 1, prefix: "", extra: "Entrega equilibrada para atender o escopo principal." },
+  { id: "completo", label: "Completo", multiplier: 1.45, prefix: "Pacote completo", extra: "Inclui acompanhamento mais proximo e maior detalhamento da entrega." },
+];
+
+export const proposalTemplates: ProposalTemplate[] = templateSeeds.flatMap((seed) =>
+  seed.services.flatMap((service, serviceIndex) =>
+    templateLevels.map((level) => {
+      const price = roundPrice(service.price * level.multiplier);
+      return {
+        id: `${slug(seed.niche)}-${slug(service.title)}-${level.id}-${serviceIndex + 1}`,
+        niche: seed.niche,
+        title: level.prefix ? `${level.prefix}: ${service.title}` : service.title,
+        serviceName: level.label === "Padrao" ? service.serviceName : `${service.serviceName} - ${level.label}`,
+        price,
+        deadline: service.deadline,
+        payment: service.payment || defaultPayment(price),
+        included: level.id === "completo" ? [...service.included, "Acompanhamento adicional", "Checklist final"] : service.included,
+        notes: `${service.notes || defaultNotes(seed.niche)} ${level.extra}`,
+      };
+    })
+  )
+);
+
+function toService(values: Array<string | number | string[]>) {
+  const [title, serviceName, price, deadline, included] = values;
+  return {
+    title: String(title),
+    serviceName: String(serviceName),
+    price: Number(price),
+    deadline: String(deadline),
+    included: Array.isArray(included) ? included.map(String) : [],
+  };
+}
+
+function slug(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function defaultPayment(price: number) {
+  if (price <= 300) return "Pagamento no atendimento ou na entrega";
+  if (price <= 1000) return "50% para reservar e 50% na conclusao";
+  return "40% entrada, 30% desenvolvimento e 30% entrega";
+}
+
+function roundPrice(price: number) {
+  if (price < 200) return Math.max(50, Math.round(price / 10) * 10);
+  return Math.max(100, Math.round(price / 50) * 50);
+}
+
+function defaultNotes(niche: string) {
+  return `Valores podem variar conforme escopo, deslocamento, urgencia e necessidades especificas do cliente. Template base para ${niche}.`;
+}
 
 export function findProposalTemplate(templateId?: string | null) {
   return proposalTemplates.find((template) => template.id === templateId) || null;

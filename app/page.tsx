@@ -38,7 +38,7 @@ import {
   X,
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
-import { findProposalTemplate, type ProposalTemplate } from "@/lib/proposal-templates";
+import { findProposalTemplate, proposalTemplates as readyProposalTemplates, type ProposalTemplate } from "@/lib/proposal-templates";
 
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "account";
 type ProposalStatus = "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
@@ -580,7 +580,7 @@ export default function Home() {
   );
   const currentTourStep = tourStepIndex === null ? null : availableTourSteps[tourStepIndex] || null;
   const allProposalTemplates = useMemo(
-    () => [...customProposalTemplates, ...proposalTemplates],
+    () => [...customProposalTemplates, ...readyProposalTemplates],
     [customProposalTemplates],
   );
 
@@ -1644,6 +1644,12 @@ function ProposalsView({
   proposals: Proposal[];
 }) {
   const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(proposals.length / pageSize));
+  const visibleProposals = proposals.slice((page - 1) * pageSize, page * pageSize);
+  const firstVisible = proposals.length ? (page - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(page * pageSize, proposals.length);
   const selectedProposal = proposals.find((proposal) => proposal.id === selectedProposalId) || null;
   const acceptedValue = proposals
     .filter((proposal) => proposal.status === "accepted")
@@ -1653,6 +1659,10 @@ function ProposalsView({
   const awaitingResponse = proposals.filter((proposal) => proposal.status === "awaiting_response").length;
   const accepted = proposals.filter((proposal) => proposal.status === "accepted").length;
   const declined = proposals.filter((proposal) => proposal.status === "declined").length;
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   return (
     <section className="grid gap-4">
@@ -1704,9 +1714,36 @@ function ProposalsView({
         />
       ) : null}
 
+      <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-bold text-slate-600">
+          Mostrando {firstVisible}-{lastVisible} de {proposals.length} propostas
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
+            disabled={page <= 1}
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            Anterior
+          </button>
+          <span className="min-w-20 text-center text-sm font-black text-slate-600">
+            {page}/{totalPages}
+          </span>
+          <button
+            className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
+            disabled={page >= totalPages}
+            type="button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+          >
+            Proxima
+          </button>
+        </div>
+      </div>
+
       <div className="grid gap-3 lg:grid-cols-2">
         {proposals.length ? (
-          proposals.map((proposal) => (
+          visibleProposals.map((proposal) => (
             <ProposalCard
               key={proposal.id}
               proposal={proposal}
@@ -2354,6 +2391,16 @@ function TemplatesView({
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
+  const totalPages = Math.max(1, Math.ceil(proposalTemplates.length / pageSize));
+  const visibleTemplates = proposalTemplates.slice((page - 1) * pageSize, page * pageSize);
+  const firstVisible = proposalTemplates.length ? (page - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(page * pageSize, proposalTemplates.length);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   async function submitImportedTemplate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2412,8 +2459,35 @@ function TemplatesView({
         {customTemplates.length ? <p className="text-sm font-bold text-slate-500">{customTemplates.length} template(s) importado(s) salvos.</p> : null}
       </form>
 
+      <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-bold text-slate-600">
+          Mostrando {firstVisible}-{lastVisible} de {proposalTemplates.length} templates
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
+            disabled={page <= 1}
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            Anterior
+          </button>
+          <span className="min-w-20 text-center text-sm font-black text-slate-600">
+            {page}/{totalPages}
+          </span>
+          <button
+            className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
+            disabled={page >= totalPages}
+            type="button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+          >
+            Proxima
+          </button>
+        </div>
+      </div>
+
       <div className="grid gap-3 lg:grid-cols-2">
-        {proposalTemplates.map((template) => (
+        {visibleTemplates.map((template) => (
           <article className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10" key={template.id}>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -2444,6 +2518,30 @@ function TemplatesView({
             </button>
           </article>
         ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-bold text-slate-600">
+          Pagina {page} de {totalPages}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
+            disabled={page <= 1}
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            Anterior
+          </button>
+          <button
+            className="min-h-10 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-40"
+            disabled={page >= totalPages}
+            type="button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+          >
+            Proxima
+          </button>
+        </div>
       </div>
     </section>
   );
