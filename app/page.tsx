@@ -806,6 +806,12 @@ export default function Home() {
     setNotice("Proposta duplicada.");
   }
 
+  async function confirmPixPayment(id: string) {
+    const result = await apiPost<Proposal>(`/api/proposals/${id}/confirm-pix`, {});
+    setProposals((current) => current.map((item) => (item.id === id ? result : item)));
+    setNotice("Pagamento PIX confirmado. Cliente notificado por e-mail.");
+  }
+
   function copyProposalLink(slug?: string) {
     if (!slug) return;
     const url = `${window.location.origin}/p/${slug}`;
@@ -1025,6 +1031,7 @@ export default function Home() {
                 notice={notice}
                 onNotice={setNotice}
                 onCopyLink={copyProposalLink}
+                onConfirmPix={confirmPixPayment}
                 onDuplicate={duplicateProposal}
                 onRemove={removeProposal}
                 onResend={resendProposal}
@@ -1659,6 +1666,7 @@ function DashboardView({
 function ProposalsView({
   notice,
   onCopyLink,
+  onConfirmPix,
   onDuplicate,
   onNewProposal,
   onNotice,
@@ -1669,6 +1677,7 @@ function ProposalsView({
 }: {
   notice: string | null;
   onCopyLink: (slug?: string) => void;
+  onConfirmPix: (id: string) => void;
   onDuplicate: (id: string) => void;
   onNewProposal: () => void;
   onNotice: (message: string | null) => void;
@@ -1735,6 +1744,7 @@ function ProposalsView({
         <ProposalDetailPanel
           proposal={selectedProposal}
           onClose={() => setSelectedProposalId(null)}
+          onConfirmPix={() => onConfirmPix(selectedProposal.id)}
           onCopyLink={() => onCopyLink(selectedProposal.publicSlug)}
           onDuplicate={() => onDuplicate(selectedProposal.id)}
           onRemove={() => {
@@ -3788,17 +3798,17 @@ function AuthScreen() {
     {
       icon: Send,
       title: "Pare de parecer barato",
-      description: "Troque o orçamento seco por uma proposta com contexto, valor percebido e próximo passo claro para o cliente aceitar.",
+      description: "Mostre uma proposta profissional e aumente a confiança do cliente.",
     },
     {
       icon: FolderKanban,
       title: "Mostre por que custa isso",
-      description: "Portfólio, depoimentos, escopo e condições aparecem antes do cliente reduzir tudo a uma comparação de preço.",
+      description: "Apresente serviço, portfólio, prazo e condições de forma clara.",
     },
     {
       icon: CheckCircle2,
       title: "Tire o sim do improviso",
-      description: "O cliente visualiza, baixa PDF e aceita no link. Você acompanha o que foi enviado, visto e aprovado.",
+      description: "Envie proposta por link, PDF e WhatsApp com aparência profissional.",
     },
   ];
   const salesProof = [
@@ -3807,11 +3817,11 @@ function AuthScreen() {
     { value: "WhatsApp", label: "com link, PDF e portfólio" },
   ];
   const dealLeaks = [
-    "O cliente recebe um orçamento simples, deixa para depois e esquece.",
-    "Sua proposta se perde no WhatsApp entre mensagens, áudios e cobranças.",
-    "O PDF não mostra o valor real do seu trabalho e parece amador.",
-    "O cliente compara só preço porque não entendeu sua entrega completa.",
-    "Você precisa cobrar resposta toda hora sem saber se a pessoa abriu.",
+    "O cliente recebe um orçamento simples e não entende o valor.",
+    "Sua proposta se perde no WhatsApp entre mensagens e áudios.",
+    "O PDF não mostra o valor real do seu trabalho.",
+    "O cliente compara só preço porque não viu a entrega completa.",
+    "Você precisa explicar tudo de novo sobre prazo, serviço e condições.",
   ];
   const objections = [
     "Seu trabalho ganha uma apresentação que sustenta preço.",
@@ -3884,13 +3894,13 @@ function AuthScreen() {
     },
     {
       code: "premium_site",
-      name: "Premium com Site",
+      name: "Premium — FechaPro pronto para vender",
       price: "R$ 1.500",
       priceSuffix: "/ano na oferta até 03/06",
       promoPrice: "De R$ 2.997/ano ou R$ 300/mês + R$ 997 implantação",
       badge: "Implantação pronta",
-      cta: "Quero minha estrutura pronta",
-      detail: "Para quem quer receber o FechaPro pronto para usar, com primeiras propostas criadas, kit de mensagens, artes de divulgação e acompanhamento inicial.",
+      cta: "Quero o Premium pronto",
+      detail: "Ideal para quem quer receber tudo configurado, com primeiras propostas criadas, kit de mensagens, artes de divulgação e acompanhamento inicial para começar a vender mais rápido.",
       items: ["12 meses de FechaPro", "Mini site profissional", "FechaPro configurado", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para abordar clientes", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
     },
   ];
@@ -4063,10 +4073,10 @@ function AuthScreen() {
                 Para prestadores de serviço
               </p>
               <h1 className="mt-5 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Crie propostas profissionais em minutos e feche mais clientes pelo WhatsApp.
+                Transforme orçamentos simples em propostas profissionais e feche mais clientes pelo WhatsApp.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                O FechaPro transforma seu orçamento em uma proposta profissional, com link, PDF, portfólio e aceite online, pronta para enviar no WhatsApp.
+                Com o FechaPro, você cria propostas bonitas, envia por link, gera PDF, recebe aceite online e passa mais confiança para o cliente fechar.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
                 <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano.</p>
@@ -4289,44 +4299,96 @@ function AuthScreen() {
               Quero melhorar meus orçamentos
             </a>
           </div>
-          <div className="grid gap-4 lg:grid-cols-[1fr_0.78fr]">
-            <div className="rounded-lg border border-black/10 bg-slate-50 p-4 shadow-xl shadow-slate-900/10">
-              <div className="rounded-lg bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-3 border-b border-black/10 pb-4">
+          <div className="grid gap-4 lg:grid-cols-[1fr_0.72fr]">
+            {/* Mockup fiel ao preview real da proposta */}
+            <div className="overflow-hidden rounded-xl border border-black/10 shadow-xl shadow-slate-900/10">
+              {/* Barra superior */}
+              <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Preview</p>
+                <p className="text-sm font-black text-white">Proposta para cliente</p>
+              </div>
+              {/* Corpo do card */}
+              <div className="bg-white p-4">
+                {/* Avatar + nome */}
+                <div className="flex items-center gap-3 border-b border-black/8 pb-4">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-green-700 text-sm font-black text-white">AL</span>
                   <div>
-                    <p className="text-xs font-black uppercase text-blue-700">Proposta online</p>
-                    <h3 className="mt-1 text-xl font-black">Identidade visual completa</h3>
+                    <p className="text-sm font-black leading-tight">Amanda Leandro Soares do Carmo</p>
+                    <p className="text-xs font-bold text-blue-700">Proposta comercial</p>
                   </div>
-                  <span className="rounded-lg bg-green-100 px-3 py-2 text-xs font-black text-green-800">Pronta para aceite</span>
                 </div>
-                <div className="mt-5 grid gap-3 text-sm font-bold text-slate-700 sm:grid-cols-3">
-                  <span className="rounded-lg bg-slate-100 p-3">Valor<br /><strong className="text-slate-950">R$ 1.200</strong></span>
-                  <span className="rounded-lg bg-slate-100 p-3">Prazo<br /><strong className="text-slate-950">7 dias</strong></span>
-                  <span className="rounded-lg bg-slate-100 p-3">Pagamento<br /><strong className="text-slate-950">50/50</strong></span>
+                {/* Campos comerciais */}
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className="font-black uppercase text-slate-400">Serviço</p>
+                    <p className="mt-0.5 font-black text-slate-900">Identidade visual</p>
+                  </div>
+                  <div>
+                    <p className="font-black uppercase text-slate-400">Investimento</p>
+                    <p className="mt-0.5 font-black text-slate-900">R$ 1.200</p>
+                  </div>
+                  <div className="mt-2">
+                    <p className="font-black uppercase text-slate-400">Prazo</p>
+                    <p className="mt-0.5 font-black text-slate-900">7 dias úteis</p>
+                  </div>
+                  <div className="mt-2">
+                    <p className="font-black uppercase text-slate-400">Pagamento</p>
+                    <p className="mt-0.5 font-black text-slate-900">50% antecipado</p>
+                  </div>
                 </div>
-                <ul className="mt-5 grid gap-2">
-                  {["Escopo claro do serviço", "Portfólio e depoimentos", "PDF profissional", "Botão de aceite online"].map((item) => (
-                    <li className="flex items-center gap-2 text-sm font-bold text-slate-700" key={item}>
-                      <CheckCircle2 className="shrink-0 text-green-600" size={18} />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <button className="mt-5 grid min-h-11 w-full place-items-center rounded-lg bg-green-600 font-black text-white" type="button">
-                  Aceitar proposta
-                </button>
+                {/* Inclui */}
+                <div className="mt-4">
+                  <p className="text-xs font-black text-slate-900">Inclui</p>
+                  <ul className="mt-1.5 grid gap-1">
+                    {["Logo principal", "Paleta de cores", "Tipografia", "Modelos de posts"].map((item) => (
+                      <li className="flex items-center gap-2 text-xs font-bold text-slate-700" key={item}>
+                        <CheckCircle2 className="shrink-0 text-green-600" size={13} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {/* Portfólio colorido */}
+                <div className="mt-4 grid grid-cols-3 gap-1.5 overflow-hidden rounded-lg">
+                  <div className="flex h-12 items-end bg-gradient-to-br from-blue-900 to-blue-700 p-1.5">
+                    <span className="text-[10px] font-black text-white">Logo</span>
+                  </div>
+                  <div className="flex h-12 items-end bg-gradient-to-br from-green-500 to-green-700 p-1.5">
+                    <span className="text-[10px] font-black text-white">Social</span>
+                  </div>
+                  <div className="flex h-12 items-end bg-gradient-to-br from-slate-700 to-slate-900 p-1.5">
+                    <span className="text-[10px] font-black text-white">Web</span>
+                  </div>
+                </div>
+                {/* Depoimento */}
+                <div className="mt-4 border-l-2 border-green-500 pl-3">
+                  <p className="text-xs font-bold italic leading-5 text-slate-700">"Excelente entrega, muito profissional e antes do prazo."</p>
+                  <p className="mt-1 text-[10px] font-black text-green-700">Cliente verificado</p>
+                </div>
+                {/* Botões */}
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-green-600 text-xs font-black text-white" type="button">
+                    <Send size={11} />
+                    Aceitar proposta
+                  </button>
+                  <button className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-black/15 text-xs font-black text-slate-700" type="button">
+                    <FileDown size={11} />
+                    Gerar PDF
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="grid gap-4">
+            {/* Cards laterais */}
+            <div className="grid gap-4 content-start">
               <article className="rounded-lg border border-black/10 bg-slate-950 p-5 text-white">
                 <MessageSquareQuote className="text-green-300" size={24} />
                 <h3 className="mt-3 text-lg font-black">Link no WhatsApp</h3>
-                <p className="mt-2 text-sm leading-6 text-white/70">Envie uma mensagem curta com o link da proposta, sem depender de texto solto para explicar tudo.</p>
+                <p className="mt-2 text-sm leading-6 text-white/70">Envie um link direto para o cliente ver a proposta completa, sem texto solto ou áudio explicando tudo.</p>
               </article>
               <article className="rounded-lg border border-black/10 bg-slate-50 p-5">
                 <FileDown className="text-green-700" size={24} />
-                <h3 className="mt-3 text-lg font-black">PDF para guardar</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">A proposta fica disponível online e também pode ser baixada em PDF pelo cliente.</p>
+                <h3 className="mt-3 text-lg font-black">PDF profissional</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">O cliente baixa, guarda e consulta quando quiser. Sem perder no histórico do WhatsApp.</p>
               </article>
             </div>
           </div>
@@ -4403,7 +4465,7 @@ function AuthScreen() {
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {plans.map((plan) => (
               <article className={`fp-landing-plan motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
-                plan.name === "Premium com Site"
+                plan.name === "Premium — FechaPro pronto para vender"
                   ? "motion-pulse-soft border-green-300 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.03]"
                   : plan.name === "Start"
                     ? "border-green-400 bg-white text-slate-950"
@@ -4414,7 +4476,7 @@ function AuthScreen() {
                     {plan.badge}
                   </span>
                 ) : null}
-                <p className={`text-sm font-black uppercase ${plan.name === "Premium com Site" ? "text-green-700" : "text-blue-700"}`}>{plan.name}</p>
+                <p className={`text-sm font-black uppercase ${plan.name === "Premium — FechaPro pronto para vender" ? "text-green-700" : "text-blue-700"}`}>{plan.name}</p>
                 <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
                 <span className="mt-1 block text-slate-600">{plan.priceSuffix}</span>
                 {plan.promoPrice ? <strong className="mt-3 block text-xl text-slate-950">{plan.promoPrice}</strong> : null}
@@ -4429,7 +4491,7 @@ function AuthScreen() {
                 </ul>
                 <a
                   className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.name === "Premium com Site" ? "bg-slate-950 text-white" : "bg-green-600 text-white"
+                    plan.name === "Premium — FechaPro pronto para vender" ? "bg-slate-950 text-white" : "bg-green-600 text-white"
                   }`}
                   href={`/checkout/cadastro/${plan.code}`}
                 >
@@ -4950,6 +5012,7 @@ function ColorTile({ index, label }: { index: number; label: string }) {
 
 function ProposalDetailPanel({
   onClose,
+  onConfirmPix,
   onCopyLink,
   onDuplicate,
   onRemove,
@@ -4958,6 +5021,7 @@ function ProposalDetailPanel({
   proposal,
 }: {
   onClose: () => void;
+  onConfirmPix: () => void;
   onCopyLink: () => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -4999,6 +5063,78 @@ function ProposalDetailPanel({
           <DetailLine label="Inclui" value={proposal.included.length ? proposal.included.join(", ") : "Itens ainda não informados"} />
           <DetailLine label="Observações" value={proposal.notes || "Sem observações"} />
         </div>
+
+        {proposal.checkoutMode ? (
+          <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+            <p className="text-xs font-black uppercase text-slate-500">Pagamento</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DetailLine label="Modo" value={proposal.checkoutMode === "pix" ? "PIX direto" : "Mercado Pago"} />
+              <DetailLine label="Status" value={paymentStatusLabel(proposal.paymentStatus)} />
+              {proposal.paymentMethod ? (
+                <DetailLine label="Metodo" value={paymentMethodLabel(proposal.paymentMethod)} />
+              ) : null}
+              {proposal.paymentPaidAt ? (
+                <DetailLine label="Confirmado em" value={formatDateTime(proposal.paymentPaidAt)} />
+              ) : null}
+            </div>
+            {proposal.providerReceiptUrl ? (
+              <a
+                className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-blue-700"
+                href={proposal.providerReceiptUrl}
+                target="_blank"
+              >
+                <FileDown size={14} />
+                Ver comprovante
+              </a>
+            ) : null}
+            {proposal.checkoutMode === "pix" && proposal.paymentStatus !== "paid" ? (
+              <button
+                className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
+                type="button"
+                onClick={onConfirmPix}
+              >
+                <CheckCircle2 size={14} />
+                Confirmar recebimento do PIX
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {proposal.status === "accepted" ? (
+          <div className="rounded-lg border border-green-700/20 bg-green-50 p-4">
+            <p className="text-xs font-black uppercase text-green-700">Proximos passos</p>
+            <p className="mt-2 text-sm font-bold leading-6 text-green-900">
+              {proposal.acceptedBy || proposal.clientName} aceitou a proposta
+              {proposal.acceptedAt ? ` em ${formatDateTime(proposal.acceptedAt)}` : ""}.
+            </p>
+            <div className="mt-3 grid gap-2">
+              <button
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black"
+                type="button"
+                onClick={onDuplicate}
+              >
+                <Files size={15} />
+                Criar proposta de continuidade
+              </button>
+              {proposal.publicSlug ? (
+                <a
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black"
+                  href={`/p/${proposal.publicSlug}`}
+                  target="_blank"
+                >
+                  <Eye size={15} />
+                  Ver aceite do cliente
+                </a>
+              ) : null}
+            </div>
+            <ul className="mt-3 grid gap-1 text-xs font-bold leading-6 text-green-900/80">
+              <li>• Entre em contato para confirmar inicio do servico</li>
+              {proposal.clientEmail ? <li>• E-mail do cliente: {proposal.clientEmail}</li> : null}
+              <li>• Combine forma e data de pagamento se ainda nao realizado</li>
+              <li>• Crie nova proposta para proxima etapa quando necessario</li>
+            </ul>
+          </div>
+        ) : null}
 
         <div className="grid gap-2 sm:grid-cols-3">
           {proposal.publicSlug ? (
@@ -5367,6 +5503,7 @@ function proposalTimeline(proposal: Proposal) {
   const viewed = Number(proposal.viewCount || 0) > 0 || ["viewed", "awaiting_response", "accepted", "declined"].includes(proposal.status);
   const paid = proposal.paymentStatus === "paid" || proposal.paymentStatus === "PAID";
   const expired = proposal.status === "expired";
+  const clicks = Number(proposal.whatsappClickCount || 0);
 
   return [
     {
@@ -5381,18 +5518,20 @@ function proposalTimeline(proposal: Proposal) {
     },
     {
       title: "Cliente visualizou",
-      description: viewed ? `${proposal.viewCount || 1} visualização(ões) registrada(s).` : "Aguardando a primeira visualização.",
+      description: viewed
+        ? `${proposal.viewCount || 1} visualização(ões)${clicks > 0 ? ` · ${clicks} clique(s) no WhatsApp` : ""}.`
+        : "Aguardando a primeira visualização.",
       done: viewed,
     },
     {
-      title: "Decisao do cliente",
+      title: "Decisão do cliente",
       description:
         proposal.status === "accepted"
-          ? `Aceita por ${proposal.acceptedBy || proposal.clientName}${proposal.acceptedAt ? ` em ${formatDateTime(proposal.acceptedAt)}` : ""}.`
+          ? `Aceita por ${proposal.acceptedBy || proposal.clientName}${proposal.acceptedEmail ? ` (${proposal.acceptedEmail})` : ""}${proposal.acceptedAt ? ` em ${formatDateTime(proposal.acceptedAt)}` : ""}.`
           : proposal.status === "declined"
-            ? `Recusada${proposal.declinedReason ? `: ${proposal.declinedReason}` : "."}`
+            ? `Recusada${proposal.declinedAt ? ` em ${formatDateTime(proposal.declinedAt)}` : ""}${proposal.declinedReason ? `. Motivo: ${proposal.declinedReason}` : "."}`
             : proposal.status === "awaiting_response"
-              ? "Cliente clicou no WhatsApp para tirar dúvida ou negociar."
+              ? "Cliente entrou em contato pelo WhatsApp."
               : expired
               ? `Expirada em ${formatDateOnly(proposal.validUntil)}.`
               : "Ainda aguardando aceite ou recusa.",
@@ -5401,11 +5540,42 @@ function proposalTimeline(proposal: Proposal) {
     {
       title: "Pagamento",
       description: paid
-        ? `Pagamento confirmado${proposal.paymentPaidAt ? ` em ${formatDateTime(proposal.paymentPaidAt)}` : ""}.`
-        : "Pagamento ainda não confirmado.",
+        ? `Confirmado${proposal.paymentPaidAt ? ` em ${formatDateTime(proposal.paymentPaidAt)}` : ""}${proposal.paymentMethod ? ` via ${paymentMethodLabel(proposal.paymentMethod)}` : ""}.`
+        : proposal.paymentStatus === "pending"
+          ? "Pagamento em processamento."
+          : proposal.paymentStatus === "failed"
+            ? "Pagamento falhou ou foi cancelado."
+            : "Aguardando confirmação de pagamento.",
       done: paid,
     },
   ];
+}
+
+function paymentMethodLabel(method: string) {
+  const labels: Record<string, string> = {
+    pix: "PIX",
+    credit_card: "Cartão de crédito",
+    credit: "Cartão de crédito",
+    debit_card: "Cartão de débito",
+    debit: "Cartão de débito",
+    ticket: "Boleto",
+    boleto: "Boleto",
+    signal_30: "Entrada de 30%",
+    signal_50: "Entrada de 50%",
+    full: "Valor total",
+  };
+  return labels[method] || method;
+}
+
+function paymentStatusLabel(status?: string | null) {
+  const labels: Record<string, string> = {
+    not_started: "Nenhum pagamento",
+    open: "Aguardando pagamento",
+    pending: "Em processamento",
+    paid: "Confirmado",
+    failed: "Falhou ou cancelado",
+  };
+  return status ? (labels[status] || status) : "Nenhum pagamento";
 }
 
 async function apiGet<T>(url: string): Promise<T> {

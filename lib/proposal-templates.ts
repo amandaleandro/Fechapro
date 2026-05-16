@@ -147,6 +147,62 @@ const templateSeeds: TemplateSeed[] = [
       ["Coffee break", "Coffee break corporativo", 1500, "Conforme data", ["Cardapio combinado", "Preparo", "Montagem", "Bebidas", "Itens descartaveis"]],
     ].map(toService),
   },
+  {
+    niche: "Marketing digital",
+    services: [
+      ["Gestao de trafego pago", "Gestao de anuncios no Google e Meta Ads", 1400, "Mensal", ["Briefing estrategico", "Configuracao de campanhas", "Gestao e otimizacao mensal", "Relatorio quinzenal", "Suporte por WhatsApp"]],
+      ["Lancamento de produto", "Estrategia e execucao de lancamento digital", 3200, "30 dias", ["Planejamento de lancamento", "Sequencia de e-mails", "Roteiro de conteudo", "Configuracao de campanhas", "Acompanhamento durante o lancamento"]],
+      ["Consultoria de performance", "Auditoria e consultoria em trafego pago", 1800, "15 dias uteis", ["Auditoria das contas de anuncios", "Analise de metricas", "Relatorio de oportunidades", "Plano de acao", "Reuniao de devolutiva"]],
+    ].map(toService),
+  },
+  {
+    niche: "Advocacia",
+    services: [
+      ["Consultoria juridica", "Consultoria juridica personalizada", 600, "5 dias uteis", ["Analise do caso", "Parecer juridico escrito", "Orientacao sobre direitos", "Indicacao de proximo passo", "Confidencialidade garantida"]],
+      ["Elaboracao de contrato", "Elaboracao de contrato personalizado", 900, "7 dias uteis", ["Levantamento das clausulas necessarias", "Minuta do contrato", "1 rodada de ajustes", "Versao final em PDF", "Orientacao de uso"]],
+      ["Acompanhamento de processo", "Acompanhamento processual mensal", 1200, "Mensal", ["Acompanhamento do andamento", "Atualizacoes periodicas", "Analise de documentos", "Orientacao estrategica", "Relatorio mensal"]],
+    ].map(toService),
+  },
+  {
+    niche: "Contabilidade",
+    services: [
+      ["Abertura de empresa", "Abertura de CNPJ e registro empresarial", 1500, "20 dias uteis", ["Orientacao sobre tipo societario", "Elaboracao de contrato social", "Registro na Junta Comercial", "Inscricao estadual e municipal", "Configuracao fiscal inicial"]],
+      ["Contabilidade mensal MEI", "Servicos contabeis para MEI", 120, "Mensal", ["Declaracao anual DASN-SIMEI", "Orientacao sobre limite de faturamento", "Emissao de DAS mensal", "Controle basico de faturamento", "Suporte por WhatsApp"]],
+      ["BPO financeiro", "Gestao financeira terceirizada", 2200, "Mensal", ["Conciliacao bancaria", "Contas a pagar e receber", "Relatorio de fluxo de caixa", "DRE mensal simplificado", "Reuniao de acompanhamento"]],
+    ].map(toService),
+  },
+  {
+    niche: "Psicologia",
+    services: [
+      ["Psicoterapia individual", "Acompanhamento psicoterapeuta semanal", 220, "Sessao de 50 minutos", ["Acolhimento inicial", "Escuta qualificada", "Trabalho terapeutico", "Sigilo profissional garantido", "Atendimento presencial ou online"]],
+      ["Pacote de sessoes", "Pacote de sessoes de psicoterapia", 800, "4 semanas", ["4 sessoes individuais", "Continuidade do processo terapeutico", "Suporte entre sessoes combinado", "Orientacoes de autocuidado", "Relatorio de evolucao"]],
+      ["Orientacao profissional", "Orientacao e aconselhamento profissional", 650, "3 encontros", ["Avaliacao de perfil", "3 encontros de orientacao", "Exercicios de autoconhecimento", "Mapeamento de habilidades", "Plano de acao pessoal"]],
+    ].map(toService),
+  },
+  {
+    niche: "Coaching",
+    services: [
+      ["Coaching individual", "Processo de coaching individual", 2500, "8 semanas", ["Sessao de diagnóstico", "8 sessoes de coaching", "Ferramentas de autoconhecimento", "Plano de metas personalizado", "Suporte entre sessoes"]],
+      ["Mentoria de negocios", "Mentoria para empreendedores", 1800, "4 semanas", ["Diagnostico do negocio", "4 encontros de mentoria", "Ferramentas de gestao", "Plano de acao", "Acompanhamento por mensagem"]],
+      ["Workshop corporativo", "Workshop de desenvolvimento de equipe", 3500, "1 dia", ["Planejamento do conteudo", "Dinamicas e atividades", "Material de apoio", "Facilitacao do workshop", "Relatorio de resultados"]],
+    ].map(toService),
+  },
+  {
+    niche: "Nutricao",
+    services: [
+      ["Plano alimentar", "Plano alimentar personalizado com acompanhamento", 480, "10 dias uteis", ["Anamnese alimentar", "Plano alimentar personalizado", "Lista de substituicoes", "Orientacoes de habitos", "Retorno de acompanhamento"]],
+      ["Reeducacao alimentar", "Programa de reeducacao alimentar mensal", 780, "4 semanas", ["Avaliacao inicial", "Plano alimentar", "2 consultas de acompanhamento", "Ajustes do plano", "Suporte por mensagem"]],
+      ["Consultoria para atletas", "Nutricao esportiva personalizada", 650, "15 dias uteis", ["Avaliacao de composicao corporal", "Plano alimentar periodizado", "Suplementacao orientada", "Estrategias pre e pos-treino", "Retorno quinzenal"]],
+    ].map(toService),
+  },
+  {
+    niche: "Odontologia",
+    services: [
+      ["Clareamento dental", "Clareamento dental profissional", 900, "2 sessoes", ["Avaliacao inicial", "Moldagem para moldeiras", "2 sessoes de clareamento", "Gel de manutencao", "Orientacoes de pos-tratamento"]],
+      ["Protocolo de limpeza", "Limpeza e profilaxia dental", 280, "1 consulta", ["Avaliacao bucal", "Remocao de tartaro", "Polimento", "Aplicacao de fluor", "Orientacao de escovacao"]],
+      ["Restauracao estetica", "Restauracao em resina composta", 450, "1 a 2 consultas", ["Avaliacao e planejamento", "Anestesia local", "Restauracao em resina", "Acabamento e polimento", "Orientacoes de cuidado"]],
+    ].map(toService),
+  },
 ];
 
 const templateLevels = [

@@ -227,6 +227,30 @@ export async function sendProposalDeclinedToClientEmail(clientEmail: string, cli
   );
 }
 
+export async function sendPixPaymentConfirmedToClientEmail(clientEmail: string, clientName: string, ownerName: string, serviceName: string, slug: string) {
+  const link = `${APP_URL}/p/${slug}`;
+  const safeClientName = escapeHtml(clientName);
+  const safeOwnerName = escapeHtml(ownerName);
+  const safeServiceName = escapeHtml(serviceName);
+
+  await sendEmail(
+    clientEmail,
+    `Pagamento PIX confirmado - ${serviceName}`,
+    emailTemplate({
+      title: "Pagamento confirmado",
+      preheader: `${ownerName} confirmou o recebimento do PIX para ${serviceName}.`,
+      intro: `Ola, ${safeClientName}!`,
+      body: `
+        <p><strong>${safeOwnerName}</strong> confirmou o recebimento do seu pagamento via PIX para <strong>${safeServiceName}</strong>.</p>
+        <p>O atendimento está confirmado. Em breve o profissional entrará em contato para combinar os próximos passos.</p>
+      `,
+      buttonLabel: "Ver proposta",
+      buttonUrl: link,
+      footer: "Este email confirma o pagamento PIX registrado pelo FechaPro.",
+    })
+  );
+}
+
 export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerName: string, clientName: string, serviceName: string, intent: string, slug: string) {
   const link = `${APP_URL}/p/${slug}`;
   const safeOwnerName = escapeHtml(ownerName);
