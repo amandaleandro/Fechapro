@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ url: checkout.url });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Nao foi possivel criar o pagamento.";
+      const message = error instanceof Error ? error.message : "Não foi possível criar o pagamento.";
       return jsonError(message, 502);
     }
   }

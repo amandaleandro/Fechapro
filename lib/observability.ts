@@ -87,7 +87,7 @@ async function checkMercadoPago(): Promise<ServiceCheck> {
   if (!config.hasAccessToken) {
     return {
       status: "degraded",
-      message: "MERCADO_PAGO_ACCESS_TOKEN nao configurado.",
+      message: "MERCADO_PAGO_ACCESS_TOKEN não configurado.",
       meta: {
         sandbox: config.sandbox,
         hasWebhookSecret: config.hasWebhookSecret,

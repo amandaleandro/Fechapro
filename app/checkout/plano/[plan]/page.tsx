@@ -57,7 +57,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                   {hasSetup
-                    ? "Na oferta ate 03/06, o Premium com Site anual sai por R$ 1.500. A alternativa mensal e R$ 300/mes + R$ 997 de implantacao."
+                    ? "Na oferta até 03/06, o Premium com Site anual sai por R$ 1.500. A alternativa mensal é R$ 300/mês + R$ 997 de implantação."
                     : "Revise o resumo antes de seguir para o Mercado Pago. Assim que o pagamento for confirmado, o FechaPro atualiza sua assinatura."}
                 </p>
               </div>
@@ -65,7 +65,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
                 <CheckoutMetric label={hasSetup ? "Alternativa mensal" : "Mensalidade recorrente"} value={recurringPrice} />
-                <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mes`} />
+                <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mês`} />
               </div>
 
               <div className="rounded-lg border border-black/10 bg-slate-50 p-4">
@@ -82,15 +82,15 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
               <div className="grid gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4 sm:grid-cols-3">
                 <TrustItem title="Pagamento externo" text="Cartao e Pix ficam no ambiente Mercado Pago." />
-                <TrustItem title="Acesso ao plano" text="O plano muda para ativo apos confirmacao." />
-                <TrustItem title="Controle no painel" text="Uso, limites e creditos aparecem em Planos." />
+                <TrustItem title="Acesso ao plano" text="O plano muda para ativo após confirmação." />
+                <TrustItem title="Controle no painel" text="Uso, limites e créditos aparecem em Planos." />
               </div>
             </div>
           </article>
 
           <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Oferta anual ate 03/06" : "Assinatura mensal"}</p>
+              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Oferta anual até 03/06" : "Assinatura mensal"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{recurringPrice}</strong>
               {hasSetup ? (
                 <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">
@@ -106,7 +106,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
             <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-700">
               <CheckoutLine label="Ambiente" value="Mercado Pago" />
-              <CheckoutLine label="Cartao" value="Nao armazenado" />
+              <CheckoutLine label="Cartão" value="Não armazenado" />
               <CheckoutLine label="Status" value={active ? "Plano ativo" : "Aguardando pagamento/liberacao"} />
             </div>
 

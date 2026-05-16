@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (existing) {
-    return jsonError("E-mail ja cadastrado.", 409);
+    return jsonError("E-mail já cadastrado.", 409);
   }
 
   const user = await prisma.$transaction(async (tx) => {

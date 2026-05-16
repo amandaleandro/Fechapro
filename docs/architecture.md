@@ -8,14 +8,14 @@ O FechaPro é uma plataforma para prestadores de serviço criarem propostas come
 
 - **User:** dono da conta.
 - **BrandProfile:** dados comerciais, logo, cores, chave PIX e canais de contato.
-- **ClientAsset:** clientes cadastrados pelo usuario.
+- **ClientAsset:** clientes cadastrados pelo usuário.
 - **ServiceAsset:** serviços e pacotes reutilizáveis.
 - **PortfolioAsset:** imagens e trabalhos anteriores usados nas propostas.
 - **TestimonialAsset:** depoimentos reutilizaveis.
 - **ProposalAsset:** proposta comercial publicada, com valores, prazo, validade, status e link público.
 - **PlanSubscription:** plano ativo, limites e informacoes de assinatura.
 
-Observacao: `ProposalAsset.checkoutMode` define se a proposta usa Mercado Pago ou PIX direto.
+Observação: `ProposalAsset.checkoutMode` define se a proposta usa Mercado Pago ou PIX direto.
 
 ## Status De Proposta
 
@@ -26,10 +26,10 @@ Observacao: `ProposalAsset.checkoutMode` define se a proposta usa Mercado Pago o
 
 ## Fluxo Principal
 
-1. Usuario cria conta.
+1. Usuário cria conta.
 2. Configura marca, logo, cores e dados de contato.
 3. Cadastra clientes, serviços, portfólio e depoimentos.
-4. Cria proposta manualmente, por template ou com ajuda da IA.
+4. Cria proposta manualmente ou por template.
 5. Compartilha link público com o cliente.
 6. Cliente visualiza, baixa PDF, inicia pagamento, aceita ou recusa.
 7. Painel atualiza status, visualizacoes, aceite e valor comercial.
@@ -47,9 +47,9 @@ Historicamente o fluxo de pagamento foi descrito aqui como AbacatePay, mas a imp
 - a proposta cria um checkout no provedor quando usa Mercado Pago;
 - o cliente e redirecionado para Mercado Pago, ou ve QR Code/copia e cola quando usa PIX direto;
 - o webhook confirma pagamentos intermediados pelo Mercado Pago;
-- a proposta registra status, provedor, recibo e data de pagamento quando ha confirmacao automatica.
+- a proposta registra status, provedor, recibo e data de pagamento quando há confirmação automática.
 
-Implementacao atual: planos, creditos de artes e checkout intermediado de propostas usam Mercado Pago, com confirmacao pelo webhook `/api/webhooks/mercadopago`. Propostas tambem podem usar PIX direto quando o profissional cadastra `pixKey` em `BrandProfile` e salva a proposta com `checkoutMode = "pix"`; nesse caso o checkout publico gera payload EMV PIX, QR Code e codigo copia e cola, mas a confirmacao fica fora do webhook automatico.
+Implementação atual: planos, créditos de artes e checkout intermediado de propostas usam Mercado Pago, com confirmação pelo webhook `/api/webhooks/mercadopago`. Propostas também podem usar PIX direto quando o profissional cadastra `pixKey` em `BrandProfile` e salva a proposta com `checkoutMode = "pix"`; nesse caso o checkout público gera payload EMV PIX, QR Code e código copia e cola, mas a confirmação fica fora do webhook automático.
 
 ## IA
 

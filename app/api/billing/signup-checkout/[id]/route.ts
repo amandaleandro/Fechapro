@@ -13,7 +13,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   });
 
   if (!checkout) {
-    return NextResponse.json({ error: "Pagamento nao encontrado." }, { status: 404 });
+    return NextResponse.json({ error: "Pagamento não encontrado." }, { status: 404 });
   }
 
   return NextResponse.json({

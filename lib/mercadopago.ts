@@ -4,7 +4,7 @@ const MERCADO_PAGO_BASE = "https://api.mercadopago.com";
 
 function accessToken() {
   const token = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
-  if (!token) throw new Error("MERCADO_PAGO_ACCESS_TOKEN nao configurado.");
+  if (!token) throw new Error("MERCADO_PAGO_ACCESS_TOKEN não configurado.");
   return token;
 }
 
@@ -73,7 +73,7 @@ export async function checkMercadoPagoConnection() {
       ok: false,
       status: null,
       totalCount: null,
-      error: "MERCADO_PAGO_ACCESS_TOKEN nao configurado.",
+      error: "MERCADO_PAGO_ACCESS_TOKEN não configurado.",
     };
   }
 
@@ -86,14 +86,14 @@ export async function checkMercadoPagoConnection() {
       ok: res.ok,
       status: res.status,
       totalCount: typeof data?.id === "number" ? 1 : null,
-      error: res.ok ? null : data?.message || "Nao foi possivel conectar ao Mercado Pago.",
+      error: res.ok ? null : data?.message || "Não foi possível conectar ao Mercado Pago.",
     };
   } catch (error) {
     return {
       ok: false,
       status: null,
       totalCount: null,
-      error: error instanceof Error ? error.message : "Nao foi possivel conectar ao Mercado Pago.",
+      error: error instanceof Error ? error.message : "Não foi possível conectar ao Mercado Pago.",
     };
   }
 }
@@ -147,7 +147,7 @@ async function createPreference(input: {
   });
 
   const url = preferenceUrl(preference);
-  if (!url) throw new Error("Mercado Pago nao retornou URL de checkout.");
+  if (!url) throw new Error("Mercado Pago não retornou URL de checkout.");
   return { externalReference: input.externalReference, id: preference.id, url };
 }
 
@@ -226,7 +226,7 @@ async function createSubscriptionCheckout(input: {
     status: "pending",
   });
 
-  if (!subscription.init_point) throw new Error("Mercado Pago nao retornou URL de assinatura.");
+  if (!subscription.init_point) throw new Error("Mercado Pago não retornou URL de assinatura.");
   return {
     externalReference: input.externalReference,
     id: subscription.id,
@@ -250,7 +250,7 @@ export async function createArtPackCheckout(input: {
   const referenceId = crypto.randomUUID();
   return createPreference({
     amountCents: pack.priceCents,
-    description: `${pack.name}: ${pack.credits} creditos extras para criacao de artes de divulgacao no FechaPro.`,
+    description: `${pack.name}: ${pack.credits} créditos extras para criação de artes de divulgação no FechaPro.`,
     externalReference: `art_pack:${input.userId}:${pack.code}:${referenceId}`,
     origin: input.origin,
     payerEmail: input.userEmail,

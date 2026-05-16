@@ -25,11 +25,11 @@ export function SignupCheckoutClient({ plan }: { plan: PlanCode }) {
       });
       const data = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
       if (!response.ok || !data?.url) {
-        throw new Error(data?.error || "Nao foi possivel abrir o pagamento.");
+        throw new Error(data?.error || "Não foi possível abrir o pagamento.");
       }
       window.location.href = data.url;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel abrir o pagamento.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível abrir o pagamento.");
       setLoading(false);
     }
   }

@@ -43,9 +43,9 @@ const templateSeeds: TemplateSeed[] = [
   {
     niche: "Fotografia",
     services: [
-      ["Ensaio profissional", "Ensaio fotografico profissional", 900, "7 dias uteis apos o ensaio", ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online", "Entrega digital"]],
-      ["Fotos de produto", "Fotografia de produto", 850, "8 dias uteis", ["Briefing visual", "Ate 20 produtos", "Fotos tratadas", "Entrega digital", "Uso comercial basico"]],
-      ["Cobertura de evento", "Cobertura fotografica de evento", 1600, "10 dias uteis apos evento", ["Cobertura de ate 4 horas", "Selecao de fotos", "Tratamento basico", "Galeria online", "Entrega digital"]],
+      ["Ensaio profissional", "Ensaio fotográfico profissional", 900, "7 dias úteis após o ensaio", ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online", "Entrega digital"]],
+      ["Fotos de produto", "Fotografia de produto", 850, "8 dias úteis", ["Briefing visual", "Até 20 produtos", "Fotos tratadas", "Entrega digital", "Uso comercial básico"]],
+      ["Cobertura de evento", "Cobertura fotográfica de evento", 1600, "10 dias úteis após evento", ["Cobertura de até 4 horas", "Seleção de fotos", "Tratamento básico", "Galeria online", "Entrega digital"]],
     ].map(toService),
   },
   {
@@ -69,7 +69,7 @@ const templateSeeds: TemplateSeed[] = [
     services: [
       ["Instalacao e manutencao", "Servico tecnico especializado", 850, "5 dias uteis", ["Visita tecnica", "Diagnostico", "Instalacao ou manutencao", "Teste final", "Garantia de 30 dias"]],
       ["Manutencao preventiva", "Manutencao preventiva", 420, "2 dias uteis", ["Checklist tecnico", "Limpeza basica", "Ajustes necessarios", "Teste de funcionamento", "Relatorio simples"]],
-      ["Atendimento emergencial", "Atendimento tecnico emergencial", 300, "Ate 24 horas", ["Triagem", "Deslocamento local", "Diagnostico", "Solucao inicial", "Orientacoes ao cliente"]],
+      ["Atendimento emergencial", "Atendimento técnico emergencial", 300, "Até 24 horas", ["Triagem", "Deslocamento local", "Diagnóstico", "Solução inicial", "Orientações ao cliente"]],
     ].map(toService),
   },
   {
@@ -84,8 +84,8 @@ const templateSeeds: TemplateSeed[] = [
   {
     niche: "Casa e reforma",
     services: [
-      ["Instalacao residencial", "Instalacao e revisao eletrica", 450, "1 dia util apos aprovacao", ["Visita tecnica", "Diagnostico", "Instalacao ou reparo", "Teste de seguranca", "Garantia de 30 dias"]],
-      ["Reparo e acabamento", "Servico de alvenaria e acabamento", 1200, "5 dias uteis", ["Avaliacao do local", "Preparacao da area", "Execucao do reparo", "Acabamento", "Limpeza basica"]],
+      ["Instalação residencial", "Instalação e revisão elétrica", 450, "1 dia útil após aprovação", ["Visita técnica", "Diagnóstico", "Instalação ou reparo", "Teste de segurança", "Garantia de 30 dias"]],
+      ["Reparo e acabamento", "Serviço de alvenaria e acabamento", 1200, "5 dias úteis", ["Avaliação do local", "Preparação da área", "Execução do reparo", "Acabamento", "Limpeza básica"]],
       ["Pintura residencial", "Pintura de ambiente residencial", 950, "4 dias uteis", ["Protecao do ambiente", "Preparacao de parede", "Pintura", "Acabamento", "Limpeza basica"]],
       ["Instalacao hidraulica", "Reparo e instalacao hidraulica", 380, "1 dia util", ["Diagnostico", "Reparo ou instalacao", "Teste de vazamento", "Orientacoes", "Garantia de 30 dias"]],
     ].map(toService),
@@ -109,7 +109,7 @@ const templateSeeds: TemplateSeed[] = [
   {
     niche: "Tecnologia",
     services: [
-      ["Site one page", "Criacao de site one page", 1800, "15 dias uteis", ["Briefing", "Layout responsivo", "Pagina publicada", "Formulario de contato", "Ajustes finais"]],
+      ["Site one page", "Criação de site one page", 1800, "15 dias úteis", ["Briefing", "Layout responsivo", "Página publicada", "Formulário de contato", "Ajustes finais"]],
       ["Landing page", "Landing page de vendas", 1400, "10 dias uteis", ["Copy base", "Layout responsivo", "Formulario", "Integracao simples", "Publicacao"]],
       ["Manutencao de computador", "Formatacao e otimizacao de computador", 250, "2 dias uteis", ["Backup orientado", "Formatacao", "Instalacao basica", "Atualizacoes", "Teste final"]],
       ["Automacao simples", "Automacao de processo com planilha", 900, "12 dias uteis", ["Mapeamento do processo", "Planilha estruturada", "Automacoes basicas", "Teste", "Treinamento rapido"]],

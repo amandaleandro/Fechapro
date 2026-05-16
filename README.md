@@ -146,7 +146,7 @@ Para ativar:
 https://seu-dominio.com/api/webhooks/mercadopago
 ```
 
-Nas propostas, o profissional tambem pode escolher PIX direto. Para isso, cadastre a chave PIX na tela **Marca** e selecione **PIX direto para minha chave** ao criar a proposta. O cliente vera QR Code e codigo copia e cola no checkout da proposta. A confirmacao desse PIX direto deve ser combinada com o cliente, pois o FechaPro apenas exibe a chave configurada.
+Nas propostas, o profissional também pode escolher PIX direto. Para isso, cadastre a chave PIX na tela **Marca** e selecione **PIX direto para minha chave** ao criar a proposta. O cliente verá QR Code e código copia e cola no checkout da proposta. A confirmação desse PIX direto deve ser combinada com o cliente, pois o FechaPro apenas exibe a chave configurada.
 
 ## IA
 

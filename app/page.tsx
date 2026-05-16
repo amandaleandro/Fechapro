@@ -41,7 +41,7 @@ import {
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 import { findProposalTemplate, proposalTemplates as readyProposalTemplates, type ProposalTemplate } from "@/lib/proposal-templates";
 
-type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "account";
+type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "support" | "account";
 type ProposalStatus = "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
 
 type Client = {
@@ -255,6 +255,7 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
   { id: "arts", label: "Artes de divulgação", icon: Palette },
   { id: "templates", label: "Templates", icon: Layers3 },
   { id: "plans", label: "Planos", icon: CreditCard },
+  { id: "support", label: "Suporte", icon: HelpCircle },
   { id: "account", label: "Conta", icon: UserCircle },
 ];
 
@@ -463,7 +464,7 @@ const proposalTemplates: ProposalTemplate[] = [
     deadline: "5 dias uteis",
     payment: "40% entrada e 60% na entrega",
     included: ["Avaliação do local", "Preparação da área", "Execução do reparo", "Acabamento", "Limpeza básica"],
-    notes: "Nao inclui compra de materiais, cacamba ou alteracoes de escopo.",
+    notes: "Não inclui compra de materiais, caçamba ou alterações de escopo.",
   },
   {
     id: "diarista",
@@ -1092,6 +1093,9 @@ export default function Home() {
             {activeView === "plans" ? (
               <PlansView billing={billing} notice={notice} onNotice={setNotice} />
             ) : null}
+            {activeView === "support" ? (
+              <SupportView session={session} />
+            ) : null}
             {activeView === "account" ? (
               <AccountView session={session} onChange={setSession} />
             ) : null}
@@ -1151,7 +1155,7 @@ function PushNotificationPanel({ onNotice }: { onNotice: (message: string | null
       const permissionResult = await Notification.requestPermission();
       setPermission(permissionResult);
       if (permissionResult !== "granted") {
-        onNotice("Notificacoes bloqueadas no navegador. Ative a permissao para receber alertas.");
+        onNotice("Notificações bloqueadas no navegador. Ative a permissão para receber alertas.");
         return;
       }
 
@@ -1171,9 +1175,9 @@ function PushNotificationPanel({ onNotice }: { onNotice: (message: string | null
         }));
 
       await apiPost("/api/push/subscriptions", { subscription: subscription.toJSON() });
-      onNotice("Notificacoes push ativadas para propostas visualizadas, aceitas, recusadas e pagas.");
+      onNotice("Notificações push ativadas para propostas visualizadas, aceitas, recusadas e pagas.");
     } catch (error) {
-      onNotice(error instanceof Error ? error.message : "Nao foi possivel ativar notificacoes push.");
+      onNotice(error instanceof Error ? error.message : "Não foi possível ativar notificações push.");
     } finally {
       setLoading(false);
     }
@@ -1184,7 +1188,7 @@ function PushNotificationPanel({ onNotice }: { onNotice: (message: string | null
   return (
     <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
       <div>
-        <p className="text-xs font-black uppercase text-blue-700">Notificacoes</p>
+        <p className="text-xs font-black uppercase text-blue-700">Notificações</p>
         <h2 className="mt-1 text-lg font-black">Alertas push de propostas</h2>
         <p className="mt-1 text-sm font-bold text-slate-500">
           Receba aviso quando uma proposta for visualizada, aceita, recusada ou paga.
@@ -1406,7 +1410,7 @@ function DashboardView({
         <div>
           <SectionHeading eyebrow="Indicacoes" title="Ganhe crescimento com seus clientes" />
           <p className="mt-2 leading-7 text-slate-600">
-            Compartilhe o FechaPro com outro profissional. Quando o programa de indicacao estiver ativo, essa area vira o controle de meses gratis e descontos.
+            Compartilhe o FechaPro com outro profissional. Quando o programa de indicação estiver ativo, essa área vira o controle de meses grátis e descontos.
           </p>
         </div>
         <button
@@ -1415,7 +1419,7 @@ function DashboardView({
           onClick={() => {
             const inviteLink = getPublicAppUrl();
             navigator.clipboard.writeText(`Conhece o FechaPro? Estou usando para enviar propostas profissionais e acompanhar aceite dos clientes: ${inviteLink}`);
-            onNotice("Mensagem de indicacao copiada.");
+            onNotice("Mensagem de indicação copiada.");
           }}
         >
           <Copy size={16} />
@@ -2445,14 +2449,14 @@ function TemplatesView({
     setSaving(true);
     try {
       const response = await fetch("/api/proposal-templates", { method: "POST", body: data });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel importar o template."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível importar o template."));
       const template = (await response.json()) as ProposalTemplate;
       onTemplateCreated(template);
       setUploadForm({ title: "", niche: "", serviceName: "", price: 0, deadline: "", payment: "", included: "", notes: "" });
       setFile(null);
       onUseTemplate(template);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel importar o template.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível importar o template.");
     } finally {
       setSaving(false);
     }
@@ -2552,7 +2556,7 @@ function TemplatesView({
 
       <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-slate-600">
-          Pagina {page} de {totalPages}
+          Página {page} de {totalPages}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -2637,7 +2641,7 @@ function MarketingArtsView({
   const requestSummary = [
     form.serviceName ? `Oferta: ${form.serviceName}` : null,
     selectedBrief ? `Tipo: ${selectedBrief.label}` : null,
-    form.audience ? `Publico: ${form.audience}` : null,
+    form.audience ? `Público: ${form.audience}` : null,
     form.callToAction ? `Chamada: ${form.callToAction}` : null,
   ].filter(Boolean);
 
@@ -2649,7 +2653,7 @@ function MarketingArtsView({
       return;
     }
     if (remaining < formatsToGenerate.length) {
-      setError(`Voce precisa de ${formatsToGenerate.length} credito(s) para solicitar essa opcao.`);
+      setError(`Você precisa de ${formatsToGenerate.length} crédito(s) para solicitar essa opção.`);
       return;
     }
 
@@ -2703,7 +2707,7 @@ function MarketingArtsView({
       setFiles([]);
       setBackgroundFileIndex(0);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel solicitar a arte.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível solicitar a arte.");
     } finally {
       setCreating(false);
     }
@@ -2730,7 +2734,7 @@ function MarketingArtsView({
         </div>
 
         <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-black text-slate-700">
-          Uso atual: {used}/{limit} artes este mes
+          Uso atual: {used}/{limit} artes este mês
           <div className="mt-3 h-3 overflow-hidden rounded-full bg-white">
             <div
               className="h-full rounded-full bg-green-600"
@@ -2738,7 +2742,7 @@ function MarketingArtsView({
             />
           </div>
           <p className="mt-2 text-xs font-bold text-slate-500">
-            {limit ? `${remaining} credito(s) restantes neste ciclo.` : "Disponivel a partir do plano Profissional e pacote de artes."}
+            {limit ? `${remaining} crédito(s) restantes neste ciclo.` : "Disponível a partir do plano Profissional e pacote de artes."}
           </p>
         </div>
 
@@ -2750,7 +2754,7 @@ function MarketingArtsView({
               <span className="grid size-7 place-items-center rounded-full bg-green-600 text-sm font-black text-white">1</span>
               <div>
                 <h3 className="font-black text-slate-900">Pedido</h3>
-                <p className="text-xs font-bold text-slate-500">Diga onde a arte sera usada e como voce quer encontra-la depois.</p>
+                <p className="text-xs font-bold text-slate-500">Diga onde a arte será usada e como você quer encontrá-la depois.</p>
               </div>
             </div>
 
@@ -2764,7 +2768,7 @@ function MarketingArtsView({
               >
                 {formatOptions.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label} - {option.credits} credito{option.credits > 1 ? "s" : ""}
+                    {option.label} - {option.credits} crédito{option.credits > 1 ? "s" : ""}
                   </option>
                 ))}
               </select>
@@ -2817,14 +2821,14 @@ function MarketingArtsView({
             <TextAreaField
               label="Texto do pedido"
               maxLength={400}
-              placeholder="Ex: Marmita grande com suco por R$ 22 hoje. Pedido pelo WhatsApp. Entrega ate 14h."
+              placeholder="Ex: Marmita grande com suco por R$ 22 hoje. Pedido pelo WhatsApp. Entrega até 14h."
               required
               rows={4}
               value={form.objective}
               onChange={(value) => setForm({ ...form, objective: value })}
             />
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="Cidade ou publico" maxLength={120} placeholder="Uberlandia, noivas, lojas..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
+              <TextField label="Cidade ou público" maxLength={120} placeholder="Uberlândia, noivas, lojas..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
               <TextField label="Chamada da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
             </div>
           </div>
@@ -2882,7 +2886,7 @@ function MarketingArtsView({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-black text-slate-700">Resumo do envio</span>
               <span className={`rounded-full px-3 py-1 text-xs font-black ${remaining >= formatsToGenerate.length ? "bg-green-100 text-green-800" : "bg-rose-100 text-rose-800"}`}>
-                {selectedFormat.credits} credito{selectedFormat.credits > 1 ? "s" : ""}
+                {selectedFormat.credits} crédito{selectedFormat.credits > 1 ? "s" : ""}
               </span>
             </div>
             <p className="mt-2 text-xs font-bold leading-5 text-slate-500">
@@ -3060,11 +3064,11 @@ function PlansView({
       });
       const data = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
       if (!response.ok || !data?.url) {
-        throw new Error(data?.error || "Nao foi possivel abrir o pagamento.");
+        throw new Error(data?.error || "Não foi possível abrir o pagamento.");
       }
       window.location.href = data.url;
     } catch (caught) {
-      setPaymentError(caught instanceof Error ? caught.message : "Nao foi possivel abrir o pagamento.");
+      setPaymentError(caught instanceof Error ? caught.message : "Não foi possível abrir o pagamento.");
       setPayingArtPack(null);
     }
   }
@@ -3104,7 +3108,7 @@ function PlansView({
             {`/${billing.usage.proposalLimit} propostas este mês`}
           </span>
           <span className="mt-1 block">
-            Artes de divulgação: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mes
+            Artes de divulgação: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mês
           </span>
           <span className="mt-1 block">
             Créditos extras de artes: {billing.usage.artCreditBalance}
@@ -3362,6 +3366,142 @@ function AccountView({
       </aside>
     </section>
   );
+}
+
+type SupportMessage = {
+  id: string;
+  role: "user" | "admin" | string;
+  body: string;
+  createdAt: string;
+};
+
+type SupportThread = {
+  id: string;
+  subject: string;
+  status: string;
+  messages: SupportMessage[];
+};
+
+function SupportView({ session }: { session: { name: string; email: string } }) {
+  const [thread, setThread] = useState<SupportThread | null>(null);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadSupport() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiGet<{ thread: SupportThread | null }>("/api/support");
+      setThread(data.thread);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o suporte.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadSupport();
+  }, []);
+
+  async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!message.trim()) return;
+    setSending(true);
+    setError(null);
+    try {
+      const data = await apiPost<{ thread: SupportThread }>("/api/support", {
+        message,
+        subject: `Atendimento de ${session.name}`,
+      });
+      setThread(data.thread);
+      setMessage("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel enviar sua mensagem.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <section className="grid gap-5 lg:grid-cols-[1fr_0.42fr]">
+      <div className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase text-blue-700">Suporte</p>
+            <h2 className="mt-1 text-2xl font-black">Fale com o administrador</h2>
+            <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-slate-600">
+              Envie sua duvida, erro ou pedido de ajuda. A resposta aparece aqui na conversa.
+            </p>
+          </div>
+          <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadSupport}>
+            <RotateCcw size={15} />
+            Atualizar
+          </button>
+        </div>
+
+        {error ? <FormError message={error} /> : null}
+
+        <div className="grid min-h-[320px] content-start gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+          {loading ? (
+            <p className="text-sm font-bold text-slate-500">Carregando conversa...</p>
+          ) : thread?.messages.length ? (
+            thread.messages.map((item) => (
+              <div className={`max-w-[86%] rounded-lg p-3 ${item.role === "admin" ? "justify-self-start bg-white" : "justify-self-end bg-green-600 text-white"}`} key={item.id}>
+                <p className="text-xs font-black uppercase opacity-75">{item.role === "admin" ? "Administrador" : "Voce"}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm font-bold leading-6">{item.body}</p>
+                <p className="mt-2 text-[11px] font-bold opacity-70">{formatDateTime(item.createdAt)}</p>
+              </div>
+            ))
+          ) : (
+            <div className="grid place-items-center rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
+              <HelpCircle className="text-blue-700" size={28} />
+              <p className="mt-3 font-black">Nenhuma mensagem ainda</p>
+              <p className="mt-1 max-w-md text-sm font-bold leading-6 text-slate-500">
+                Conte o que tentou fazer e, se apareceu erro, envie a mensagem que apareceu.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <form className="grid gap-3" onSubmit={sendMessage}>
+          <textarea
+            className="min-h-28 rounded-lg border border-black/10 bg-white p-3 font-bold outline-green-700"
+            placeholder="Escreva sua mensagem para o suporte"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={sending || !message.trim()} type="submit">
+            <Send size={17} />
+            {sending ? "Enviando..." : "Enviar mensagem"}
+          </button>
+        </form>
+      </div>
+
+      <aside className="grid content-start gap-4">
+        <div className="rounded-lg border border-blue-700/20 bg-blue-50 p-5">
+          <p className="text-xs font-black uppercase text-blue-800">Para agilizar</p>
+          <ul className="mt-3 grid gap-2 text-sm font-bold leading-6 text-blue-950">
+            <li>Informe o que tentou fazer.</li>
+            <li>Diga se apareceu alguma mensagem de erro.</li>
+            <li>Conte em qual tela estava usando o sistema.</li>
+          </ul>
+        </div>
+        <div className="rounded-lg border border-black/10 bg-white p-5">
+          <p className="text-xs font-black uppercase text-slate-500">Status</p>
+          <p className="mt-2 text-lg font-black">{thread ? supportStatusLabel(thread.status) : "Sem conversa aberta"}</p>
+        </div>
+      </aside>
+    </section>
+  );
+}
+
+function supportStatusLabel(status: string) {
+  if (status === "answered") return "Respondido";
+  if (status === "closed") return "Encerrado";
+  return "Aberto";
 }
 
 function AccountStatusItem({ detail, done, label }: { detail: string; done: boolean; label: string }) {
@@ -3737,7 +3877,7 @@ function AuthScreen() {
       name: "Pro",
       price: "R$ 197",
       priceSuffix: "/mês ou R$ 1.497/ano",
-      badge: "Mais escolhido",
+      badge: "Melhor custo-benefício",
       cta: "Quero o plano Pro",
       detail: "Para quem quer proposta profissional e artes para divulgar melhor.",
       items: ["120 propostas por mês", "Tudo do Start", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
@@ -3748,9 +3888,9 @@ function AuthScreen() {
       price: "R$ 1.500",
       priceSuffix: "/ano na oferta até 03/06",
       promoPrice: "De R$ 2.997/ano ou R$ 300/mês + R$ 997 implantação",
-      badge: "Melhor oferta de lançamento",
+      badge: "Implantação pronta",
       cta: "Quero minha estrutura pronta",
-      detail: "Para empresas que querem presença profissional, proposta bonita e divulgação pronta para começar a vender melhor.",
+      detail: "Para quem quer receber o FechaPro pronto para usar, com primeiras propostas criadas, kit de mensagens, artes de divulgação e acompanhamento inicial.",
       items: ["12 meses de FechaPro", "Mini site profissional", "FechaPro configurado", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para abordar clientes", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
     },
   ];
@@ -3759,7 +3899,7 @@ function AuthScreen() {
     { icon: FileDown, title: "PDF da proposta", text: "Seu cliente pode baixar e visualizar sua proposta com mais confiança." },
     { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre seus serviços, fotos e provas de que você entrega um bom trabalho." },
     { icon: Megaphone, title: "Artes para divulgar", text: "Tenha materiais prontos para postar e chamar mais atenção, conforme o plano." },
-    { icon: LayoutDashboard, title: "Premium com Site", text: "Na oferta de lançamento, você recebe o FechaPro por 12 meses, mini site e configuração inicial." },
+    { icon: LayoutDashboard, title: "Premium com Site", text: "Receba sua estrutura pronta para começar a vender em até 7 dias, com implantação, propostas iniciais e orientação." },
   ];
   const faqs = [
     {
@@ -3776,7 +3916,7 @@ function AuthScreen() {
     },
     {
       question: "Qual plano devo escolher para vender mais rápido?",
-      answer: "O Premium com Site anual por R$ 1.500 é a melhor escolha para quem quer receber sistema, mini site, primeiras propostas, portfólio, aceite online, PDF e treinamento.",
+      answer: "O Premium com Site anual por R$ 1.500 é a melhor escolha para quem quer receber o FechaPro pronto para usar, com mini site, primeiras propostas, kit de mensagens, artes de divulgação, aceite online, PDF e acompanhamento inicial.",
     },
     {
       question: "Qual é o limite do site?",
@@ -3938,7 +4078,7 @@ function AuthScreen() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Quero vender mais
+                  Quero criar propostas profissionais
                 </a>
                 <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
                   Ver planos
@@ -4116,6 +4256,15 @@ function AuthScreen() {
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O processo é direto: informe cliente, serviço, valor e prazo; adicione provas do seu trabalho; envie o link pelo WhatsApp.
             </p>
+            <div className="mt-6 hidden items-end gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 md:flex">
+              <Image className="h-40 w-auto shrink-0 object-contain" src="/landing/fe-sozinha.png" alt="Fe, mascote do FechaPro" width={160} height={220} />
+              <div className="pb-2">
+                <p className="text-xs font-black uppercase text-green-700">Guiado pela Fe</p>
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                  Primeiro você monta a proposta. Depois envia o link. A partir daí, fica mais fácil para o cliente entender, confiar e responder.
+                </p>
+              </div>
+            </div>
           </div>
           <div className="grid gap-3">
             {steps.map((step, index) => (
@@ -4124,6 +4273,62 @@ function AuthScreen() {
                 <p className="self-center text-base font-black leading-6 sm:text-lg sm:leading-7">{step}</p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="fp-landing-band bg-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-xs font-black uppercase text-blue-700">Prova visual</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Veja como sua proposta pode ficar.</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+              O cliente recebe um link organizado, entende o que está incluso, baixa o PDF se quiser e aceita online quando estiver pronto para fechar.
+            </p>
+            <a className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-5 font-black text-white" href="#planos">
+              Quero melhorar meus orçamentos
+            </a>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[1fr_0.78fr]">
+            <div className="rounded-lg border border-black/10 bg-slate-50 p-4 shadow-xl shadow-slate-900/10">
+              <div className="rounded-lg bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3 border-b border-black/10 pb-4">
+                  <div>
+                    <p className="text-xs font-black uppercase text-blue-700">Proposta online</p>
+                    <h3 className="mt-1 text-xl font-black">Identidade visual completa</h3>
+                  </div>
+                  <span className="rounded-lg bg-green-100 px-3 py-2 text-xs font-black text-green-800">Pronta para aceite</span>
+                </div>
+                <div className="mt-5 grid gap-3 text-sm font-bold text-slate-700 sm:grid-cols-3">
+                  <span className="rounded-lg bg-slate-100 p-3">Valor<br /><strong className="text-slate-950">R$ 1.200</strong></span>
+                  <span className="rounded-lg bg-slate-100 p-3">Prazo<br /><strong className="text-slate-950">7 dias</strong></span>
+                  <span className="rounded-lg bg-slate-100 p-3">Pagamento<br /><strong className="text-slate-950">50/50</strong></span>
+                </div>
+                <ul className="mt-5 grid gap-2">
+                  {["Escopo claro do serviço", "Portfólio e depoimentos", "PDF profissional", "Botão de aceite online"].map((item) => (
+                    <li className="flex items-center gap-2 text-sm font-bold text-slate-700" key={item}>
+                      <CheckCircle2 className="shrink-0 text-green-600" size={18} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <button className="mt-5 grid min-h-11 w-full place-items-center rounded-lg bg-green-600 font-black text-white" type="button">
+                  Aceitar proposta
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-4">
+              <article className="rounded-lg border border-black/10 bg-slate-950 p-5 text-white">
+                <MessageSquareQuote className="text-green-300" size={24} />
+                <h3 className="mt-3 text-lg font-black">Link no WhatsApp</h3>
+                <p className="mt-2 text-sm leading-6 text-white/70">Envie uma mensagem curta com o link da proposta, sem depender de texto solto para explicar tudo.</p>
+              </article>
+              <article className="rounded-lg border border-black/10 bg-slate-50 p-5">
+                <FileDown className="text-green-700" size={24} />
+                <h3 className="mt-3 text-lg font-black">PDF para guardar</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">A proposta fica disponível online e também pode ser baixada em PDF pelo cliente.</p>
+              </article>
+            </div>
           </div>
         </div>
       </section>
@@ -4251,6 +4456,17 @@ function AuthScreen() {
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               Alguns pontos importantes sobre uso, pagamento, limites e configuração inicial.
             </p>
+            <div className="mt-6 hidden rounded-lg border border-black/10 bg-slate-50 p-4 md:block">
+              <div className="flex items-end gap-4">
+                <Image className="h-36 w-auto shrink-0 object-contain" src="/landing/fe-sozinha.png" alt="Fe, mascote do FechaPro" width={140} height={200} />
+                <div className="pb-2">
+                  <p className="text-xs font-black uppercase text-green-700">Ainda ficou com dúvida?</p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                    A Fe te ajuda a escolher o plano mais alinhado com seu momento.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="grid gap-3">
             {faqs.map((faq) => (
@@ -4298,8 +4514,8 @@ const currentUpdates = [
   {
     icon: FileText,
     title: "PDF mais limpo",
-    description: "A proposta em PDF ganhou capa mais organizada, resumo direto e tabela de servicos mais facil de ler.",
-    tag: "Disponivel",
+    description: "A proposta em PDF ganhou capa mais organizada, resumo direto e tabela de serviços mais fácil de ler.",
+    tag: "Disponível",
   },
   {
     icon: QrCode,
@@ -4310,7 +4526,7 @@ const currentUpdates = [
   {
     icon: CreditCard,
     title: "Checkout por escolha",
-    description: "O cliente ve o fluxo certo: QR Code e copia e cola para PIX direto, ou PIX, cartao e boleto pelo Mercado Pago.",
+    description: "O cliente vê o fluxo certo: QR Code e copia e cola para PIX direto, ou PIX, cartão e boleto pelo Mercado Pago.",
     tag: "Ativo",
   },
 ];
@@ -4318,7 +4534,7 @@ const currentUpdates = [
 const upcomingFeatures = [
   "Confirmacao automatica para pagamentos PIX diretos.",
   "Mais detalhes de acompanhamento depois que o cliente abre, aceita ou paga a proposta.",
-  "Novas opcoes para transformar propostas aceitas em proximos passos de atendimento.",
+  "Novas opções para transformar propostas aceitas em próximos passos de atendimento.",
   "Mais modelos de proposta por nicho com textos prontos para vender.",
 ];
 

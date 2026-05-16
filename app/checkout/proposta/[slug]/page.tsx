@@ -62,7 +62,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                   {wantsPix
-                    ? `Escaneie o QR Code ou copie o codigo PIX para pagar diretamente para ${brandName}.`
+                    ? `Escaneie o QR Code ou copie o código PIX para pagar diretamente para ${brandName}.`
                     : "Escolha uma forma de pagamento no Mercado Pago para concluir em ambiente seguro."}
                 </p>
               </div>
@@ -84,13 +84,13 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
                 {wantsPix ? (
                   <>
                     <TrustItem icon={QrCode} title="QR Code PIX" text="O pagamento vai direto para a chave configurada pelo profissional." />
-                    <TrustItem icon={Copy} title="Copia e cola" text="Use o codigo PIX no app do banco quando preferir." />
+                    <TrustItem icon={Copy} title="Copia e cola" text="Use o código PIX no app do banco quando preferir." />
                     <TrustItem icon={MessageCircle} title="Comprovante" text="Depois do pagamento, combine o envio do comprovante com o profissional." />
                   </>
                 ) : (
                   <>
-                    <TrustItem icon={ShieldCheck} title="Ambiente seguro" text="Dados de cartao nao passam pelo FechaPro." />
-                    <TrustItem icon={CreditCard} title="Pix, boleto ou cartao" text="Opcoes conforme disponibilidade do Mercado Pago." />
+                    <TrustItem icon={ShieldCheck} title="Ambiente seguro" text="Dados de cartão não passam pelo FechaPro." />
+                    <TrustItem icon={CreditCard} title="Pix, boleto ou cartão" text="Opções conforme disponibilidade do Mercado Pago." />
                     <TrustItem icon={MessageCircle} title="Fluxo comercial" text="A proposta continua aberta para aceite e contato." />
                   </>
                 )}
@@ -103,7 +103,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
               <p className="text-xs font-black uppercase text-blue-700">{wantsPix ? "Pague com PIX" : "Escolha como pagar"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{money.format(proposal.price)}</strong>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                {wantsPix ? `Use o PIX abaixo para pagar o valor da proposta diretamente para ${brandName}.` : "Selecione uma opcao. O link sera gerado na hora e a confirmacao atualiza a proposta."}
+                {wantsPix ? `Use o PIX abaixo para pagar o valor da proposta diretamente para ${brandName}.` : "Selecione uma opção. O link será gerado na hora e a confirmação atualiza a proposta."}
               </p>
             </div>
 
@@ -112,7 +112,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
                 {["Pix", "Cartao", "Boleto"].map((item) => (
                   <div className="flex items-center justify-between gap-3 text-sm font-black" key={item}>
                     <span>{item}</span>
-                    <span className="text-green-700">Disponivel</span>
+                    <span className="text-green-700">Disponível</span>
                   </div>
                 ))}
               </div>
@@ -135,7 +135,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
                   </div>
                 ) : wantsPix ? (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-900">
-                    O profissional ainda nao cadastrou uma chave PIX. Volte para a proposta e combine o pagamento pelo contato informado.
+                    O profissional ainda não cadastrou uma chave PIX. Volte para a proposta e combine o pagamento pelo contato informado.
                   </div>
                 ) : null}
                 {!wantsPix ? (
@@ -148,7 +148,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
               </div>
             )}
             <p className="text-center text-xs font-bold leading-5 text-slate-500">
-              {wantsPix ? "O FechaPro apenas mostra a chave PIX configurada. A confirmacao do pagamento deve ser combinada com o profissional." : "Finalizacao pelo Mercado Pago. O FechaPro nao armazena dados de cartao."}
+              {wantsPix ? "O FechaPro apenas mostra a chave PIX configurada. A confirmação do pagamento deve ser combinada com o profissional." : "Finalização pelo Mercado Pago. O FechaPro não armazena dados de cartão."}
             </p>
           </aside>
         </div>

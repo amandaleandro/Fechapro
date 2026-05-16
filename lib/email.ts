@@ -50,14 +50,14 @@ export async function sendWelcomeEmail(to: string, name: string) {
     to,
     "Bem-vindo ao FechaPro",
     emailTemplate({
-      title: "Sua conta FechaPro esta pronta",
-      preheader: "Comece criando sua marca, seus servicos e sua primeira proposta.",
+      title: "Sua conta FechaPro está pronta",
+      preheader: "Comece criando sua marca, seus serviços e sua primeira proposta.",
       heroImageUrl: `${APP_URL}/email/email-bemvindo.png`,
       heroImageAlt: "Bem-vindo ao FechaPro: guia rapido para comecar",
       intro: `Ola, ${escapeHtml(name)}!`,
       body: `
-        <p>Que bom ter voce por aqui. O FechaPro foi criado para transformar orcamentos soltos em propostas bonitas, claras e prontas para fechar negocio.</p>
-        <p>Para comecar bem, configure sua marca, cadastre seus servicos principais e gere sua primeira proposta com link publico, PDF e aceite digital.</p>
+        <p>Que bom ter você por aqui. O FechaPro foi criado para transformar orçamentos soltos em propostas bonitas, claras e prontas para fechar negócio.</p>
+        <p>Para começar bem, configure sua marca, cadastre seus serviços principais e gere sua primeira proposta com link público, PDF e aceite digital.</p>
       `,
       buttonLabel: "Abrir painel",
       buttonUrl: APP_URL,
@@ -80,7 +80,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
       `,
       buttonLabel: "Redefinir senha",
       buttonUrl: link,
-      footer: "Se voce nao solicitou a redefinicao, ignore este email.",
+      footer: "Se você não solicitou a redefinição, ignore este email.",
     })
   );
 }
@@ -93,18 +93,18 @@ export async function sendProposalSentToClientEmail(clientEmail: string, clientN
 
   await sendEmail(
     clientEmail,
-    `${ownerName} enviou uma proposta para voce - FechaPro`,
+    `${ownerName} enviou uma proposta para você - FechaPro`,
     emailTemplate({
-      title: "Voce recebeu uma proposta",
-      preheader: `${ownerName} preparou uma proposta de ${serviceName} para voce.`,
+      title: "Você recebeu uma proposta",
+      preheader: `${ownerName} preparou uma proposta de ${serviceName} para você.`,
       intro: `Ola, ${safeClientName}!`,
       body: `
-        <p><strong>${safeOwnerName}</strong> preparou uma proposta de <strong>${safeServiceName}</strong> especialmente para voce.</p>
+        <p><strong>${safeOwnerName}</strong> preparou uma proposta de <strong>${safeServiceName}</strong> especialmente para você.</p>
         <p>Acesse o link para visualizar os detalhes, baixar o PDF e registrar sua resposta.</p>
       `,
       buttonLabel: "Ver proposta",
       buttonUrl: link,
-      footer: "Este email foi enviado porque voce recebeu uma proposta comercial via FechaPro.",
+      footer: "Este email foi enviado porque você recebeu uma proposta comercial via FechaPro.",
     })
   );
 }
@@ -170,7 +170,7 @@ export async function sendProposalAcceptedToClientEmail(clientEmail: string, cli
       intro: `Ola, ${safeClientName}!`,
       body: `
         <p>Confirmamos o aceite da proposta de <strong>${safeServiceName}</strong>, enviada por <strong>${safeOwnerName}</strong>.</p>
-        <p>O responsavel pela proposta tambem foi notificado e deve entrar em contato para combinar os proximos passos.</p>
+        <p>O responsável pela proposta também foi notificado e deve entrar em contato para combinar os próximos passos.</p>
       `,
       buttonLabel: "Ver proposta",
       buttonUrl: link,
@@ -195,7 +195,7 @@ export async function sendProposalDeclinedEmail(ownerEmail: string, ownerName: s
       body: `
         <p><strong>${safeClientName}</strong> recusou sua proposta de <strong>${safeServiceName}</strong>.</p>
         ${safeReason ? `<p><strong>Motivo informado:</strong> ${safeReason}</p>` : ""}
-        <p>Voce pode revisar a proposta e enviar uma nova versao pelo FechaPro.</p>
+        <p>Você pode revisar a proposta e enviar uma nova versão pelo FechaPro.</p>
       `,
     })
   );
@@ -218,7 +218,7 @@ export async function sendProposalDeclinedToClientEmail(clientEmail: string, cli
       body: `
         <p>Registramos sua recusa da proposta de <strong>${safeServiceName}</strong>, enviada por <strong>${safeOwnerName}</strong>.</p>
         ${safeReason ? `<p><strong>Motivo informado:</strong> ${safeReason}</p>` : ""}
-        <p>O responsavel pela proposta tambem foi notificado.</p>
+        <p>O responsável pela proposta também foi notificado.</p>
       `,
       buttonLabel: "Ver proposta",
       buttonUrl: link,
@@ -243,7 +243,7 @@ export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerN
       intro: `Ola, ${safeOwnerName}!`,
       body: `
         <p><strong>${safeClientName}</strong> ${intentLabel} na proposta de <strong>${safeServiceName}</strong>.</p>
-        <p>Responda enquanto o interesse ainda esta quente.</p>
+        <p>Responda enquanto o interesse ainda está quente.</p>
       `,
       buttonLabel: "Ver proposta",
       buttonUrl: link,

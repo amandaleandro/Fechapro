@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   if (!(await verifyTurnstile(body.turnstileToken || null))) {
-    return jsonError("Nao foi possivel validar a protecao anti-bot.", 400);
+    return jsonError("Não foi possível validar a proteção anti-bot.", 400);
   }
 
   const checkoutId = body.checkoutId?.trim();
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
   const signupPayment = await prisma.signupPayment.findUnique({ where: { id: checkoutId } });
   if (!signupPayment || signupPayment.status !== "paid" || signupPayment.claimedAt) {
-    return jsonError("Pagamento do plano ainda nao confirmado ou ja utilizado.", 402);
+    return jsonError("Pagamento do plano ainda não confirmado ou já utilizado.", 402);
   }
   if (signupPayment.email && signupPayment.email.toLowerCase() !== email) {
     return jsonError("Use o mesmo e-mail informado no pagamento da assinatura.", 409);
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return jsonError("E-mail ja cadastrado.", 409);
+    return jsonError("E-mail já cadastrado.", 409);
   }
 
   const user = await prisma.$transaction(async (tx) => {

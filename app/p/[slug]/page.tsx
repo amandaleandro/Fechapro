@@ -166,7 +166,7 @@ export default async function PublicProposalPage({
                   Aceite online
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
-                  Atendimento em ate 24h
+                  Atendimento em até 24h
                 </span>
               </div>
 
@@ -324,7 +324,7 @@ export default async function PublicProposalPage({
 
         {services.length ? (
           <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
-            <p className="text-xs font-black uppercase text-blue-700">Servicos</p>
+            <p className="text-xs font-black uppercase text-blue-700">Serviços</p>
             <h2 className="mt-1 text-2xl font-black">Outras formas de contratar</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {services.map((service) => (

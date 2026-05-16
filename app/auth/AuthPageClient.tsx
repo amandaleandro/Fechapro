@@ -149,7 +149,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
                 Escolher plano
               </Link>
               <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-semibold leading-6 text-green-900">
-                Depois do pagamento, voce volta para esta tela para finalizar nome, e-mail e senha.
+                Depois do pagamento, você volta para esta tela para finalizar nome, e-mail e senha.
               </div>
             </div>
           ) : (

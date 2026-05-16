@@ -131,7 +131,7 @@ export async function POST(request: Request) {
         `Formato: ${artFormats[format].label}`,
         `Pedido: ${objective}`,
         serviceName ? `Servico/produto: ${serviceName}` : "",
-        audience ? `Cidade/publico: ${audience}` : "",
+        audience ? `Cidade/público: ${audience}` : "",
         callToAction ? `CTA: ${callToAction}` : "",
         referenceImageUrls.length ? `Referencias: ${referenceImageUrls.join(", ")}` : "",
         useImageAsBackground ? "Cliente pediu para usar uma referencia como fundo." : "",
@@ -676,7 +676,7 @@ async function createPolishedFallbackArt(input: {
   const priceBlock = price
     ? `
       <text x="${margin}" y="${priceY}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 104 : 76}" font-weight="900">${escapeXml(price)}</text>
-      <text x="${margin + (isStory ? 360 : 265)}" y="${priceY}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 44 : 32}" font-weight="500">/mes</text>
+      <text x="${margin + (isStory ? 360 : 265)}" y="${priceY}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 44 : 32}" font-weight="500">/mês</text>
     `
     : "";
 
@@ -930,7 +930,7 @@ function buildEditorialCards(copy: SalesCopy) {
     if (lower.includes("botao")) return ["Botão", "WhatsApp"];
     if (lower.includes("confianca")) return ["Mais", "confianca"];
     if (lower.includes("campanha")) return ["Campanhas", "ativas"];
-    if (lower.includes("publico")) return ["Público", "certo"];
+    if (lower.includes("publico") || lower.includes("público")) return ["Público", "certo"];
     const words = wrapTitle(benefit, 20);
     return [words[0] || benefit, words[1] || "profissional"];
   });

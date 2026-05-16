@@ -17,7 +17,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!imageUrl) return jsonError("Envie a imagem da arte pronta.", 400);
 
   const item = await prisma.marketingArtAsset.findUnique({ where: { id } });
-  if (!item) return jsonError("Pedido de arte nao encontrado.", 404);
+  if (!item) return jsonError("Pedido de arte não encontrado.", 404);
 
   const updated = await prisma.marketingArtAsset.update({
     where: { id },

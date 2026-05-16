@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, ImageIcon, KeyRound, PauseCircle, RefreshCcw, RotateCcw, Search, ShieldCheck, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
 
 type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
 
@@ -84,6 +84,29 @@ type AdminMarketingArt = {
   };
 };
 
+type AdminSupportThread = {
+  id: string;
+  subject: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    brandProfile: {
+      businessName: string;
+      whatsapp: string | null;
+    } | null;
+  };
+  messages: Array<{
+    id: string;
+    role: string;
+    body: string;
+    createdAt: string;
+  }>;
+};
+
 const statuses = ["active", "trial", "blocked", "pending", "paused", "canceled"];
 
 const statusLabels: Record<string, string> = {
@@ -102,6 +125,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [arts, setArts] = useState<AdminMarketingArt[]>([]);
+  const [supportThreads, setSupportThreads] = useState<AdminSupportThread[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
@@ -118,10 +142,10 @@ export default function AdminPage() {
     setError(null);
     try {
       const response = await fetch("/api/admin/users", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar o painel."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível carregar o painel."));
       setData((await response.json()) as AdminPayload);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o painel.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível carregar o painel.");
     } finally {
       setLoading(false);
     }
@@ -130,20 +154,31 @@ export default function AdminPage() {
   async function loadArts() {
     try {
       const response = await fetch("/api/admin/marketing-arts", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar os pedidos de arte."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível carregar os pedidos de arte."));
       setArts((await response.json()) as AdminMarketingArt[]);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar os pedidos de arte.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível carregar os pedidos de arte.");
     }
   }
 
   async function loadMetrics() {
     try {
       const response = await fetch("/api/admin/metrics", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar as metricas."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível carregar as métricas."));
       setMetrics((await response.json()) as AdminMetrics);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar as metricas.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível carregar as métricas.");
+    }
+  }
+
+  async function loadSupportThreads() {
+    try {
+      const response = await fetch("/api/admin/support", { cache: "no-store" });
+      if (!response.ok) throw new Error(await readApiError(response, "NÃ£o foi possÃ­vel carregar o suporte."));
+      const payload = (await response.json()) as { threads: AdminSupportThread[] };
+      setSupportThreads(payload.threads);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "NÃ£o foi possÃ­vel carregar o suporte.");
     }
   }
 
@@ -151,6 +186,7 @@ export default function AdminPage() {
     loadUsers();
     loadArts();
     loadMetrics();
+    loadSupportThreads();
   }, []);
 
   async function uploadArt(item: AdminMarketingArt, file: File, caption: string, whatsappMessage: string) {
@@ -161,18 +197,18 @@ export default function AdminPage() {
       const uploadData = new FormData();
       uploadData.append("file", file);
       const uploadResponse = await fetch("/api/uploads", { method: "POST", body: uploadData });
-      if (!uploadResponse.ok) throw new Error(await readApiError(uploadResponse, "Nao foi possivel enviar a imagem."));
+      if (!uploadResponse.ok) throw new Error(await readApiError(uploadResponse, "Não foi possível enviar a imagem."));
       const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
       const response = await fetch(`/api/admin/marketing-arts/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ caption, imageUrl: uploadResult.imageUrl, whatsappMessage }),
       });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel anexar a arte."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível anexar a arte."));
       setNotice(`Arte de ${item.user.name} enviada para aprovacao.`);
       await loadArts();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel anexar a arte.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível anexar a arte.");
     } finally {
       setSavingId(null);
     }
@@ -198,11 +234,11 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, status }),
       });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel atualizar o plano."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível atualizar o plano."));
       setNotice(`Assinatura de ${user.name} atualizada.`);
       await loadUsers();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel atualizar o plano.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível atualizar o plano.");
     } finally {
       setSavingId(null);
     }
@@ -219,14 +255,34 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel criar o usuario."));
-      setNotice(`Usuario ${newUser.name} criado e liberado pelo admin.`);
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível criar o usuário."));
+      setNotice(`Usuário ${newUser.name} criado e liberado pelo admin.`);
       setNewUser({ email: "", name: "", password: "", plan: "start", status: "active" });
       await loadUsers();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel criar o usuario.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível criar o usuário.");
     } finally {
       setCreatingUser(false);
+    }
+  }
+
+  async function answerSupport(thread: AdminSupportThread, message: string) {
+    setSavingId(thread.id);
+    setNotice(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ threadId: thread.id, message, status: "answered" }),
+      });
+      if (!response.ok) throw new Error(await readApiError(response, "NÃ£o foi possÃ­vel responder o suporte."));
+      setNotice(`Resposta enviada para ${thread.user.name}.`);
+      await loadSupportThreads();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "NÃ£o foi possÃ­vel responder o suporte.");
+    } finally {
+      setSavingId(null);
     }
   }
 
@@ -249,7 +305,7 @@ export default function AdminPage() {
               Use esta tela para liberar clientes sem pagamento confirmado, reativar assinaturas atrasadas ou bloquear acessos.
             </p>
           </div>
-          <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={() => { loadUsers(); loadMetrics(); }}>
+          <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={() => { loadUsers(); loadMetrics(); loadSupportThreads(); }}>
             <RefreshCcw size={17} />
             Atualizar
           </button>
@@ -259,6 +315,33 @@ export default function AdminPage() {
           <AdminStat icon={UserCog} label="Usuarios" value={String(totalUsers)} />
           <AdminStat icon={CheckCircle2} label="Liberados" value={String(activeUsers)} />
           <AdminStat icon={ShieldCheck} label="Bloqueados" value={String(blockedUsers)} />
+        </section>
+
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase text-blue-700">Suporte ao usuÃ¡rio</p>
+              <h2 className="text-2xl font-black">Chat com clientes</h2>
+              <p className="mt-1 text-sm font-bold text-slate-600">
+                Responda as mensagens enviadas pela aba Suporte do painel do cliente.
+              </p>
+            </div>
+            <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadSupportThreads}>
+              <RefreshCcw size={15} />
+              Atualizar suporte
+            </button>
+          </div>
+          {supportThreads.length ? (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {supportThreads.map((thread) => (
+                <AdminSupportCard key={thread.id} thread={thread} saving={savingId === thread.id} onAnswer={answerSupport} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+              Nenhuma conversa de suporte aberta ainda.
+            </div>
+          )}
         </section>
 
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
@@ -313,10 +396,10 @@ export default function AdminPage() {
           <form className="grid gap-4 rounded-lg border border-green-700/20 bg-green-50 p-4" onSubmit={createUser}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase text-green-700">Criar usuario manual</p>
+                <p className="text-xs font-black uppercase text-green-700">Criar usuário manual</p>
                 <h2 className="text-2xl font-black">Acesso sem pagamento</h2>
                 <p className="mt-1 text-sm font-bold text-slate-600">
-                  Cadastre nome, e-mail e senha para entregar o login ao cliente. O plano fica com provedor admin e nao passa pelo checkout.
+                  Cadastre nome, e-mail e senha para entregar o login ao cliente. O plano fica com provedor admin e não passa pelo checkout.
                 </p>
               </div>
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-green-700">
@@ -374,7 +457,7 @@ export default function AdminPage() {
 
             <button className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60 sm:w-fit" disabled={creatingUser || !data?.plans.length} type="submit">
               <UserPlus size={17} />
-              {creatingUser ? "Criando usuario..." : "Criar usuario liberado"}
+              {creatingUser ? "Criando usuário..." : "Criar usuário liberado"}
             </button>
           </form>
 
@@ -393,8 +476,8 @@ export default function AdminPage() {
               <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-left text-sm">
                 <thead className="text-xs font-black uppercase text-slate-500">
                   <tr>
-                    <th className="px-3 py-2">Usuario</th>
-                    <th className="px-3 py-2">Uso do mes</th>
+                    <th className="px-3 py-2">Usuário</th>
+                    <th className="px-3 py-2">Uso do mês</th>
                     <th className="px-3 py-2">Totais</th>
                     <th className="px-3 py-2">Plano</th>
                     <th className="px-3 py-2">Status</th>
@@ -532,7 +615,7 @@ function AdminArtCard({
       </div>
       <div className="grid gap-2 text-sm leading-6 text-slate-700">
         <p><span className="font-black">Formato:</span> {item.format.replace("_", " ")}</p>
-        <p><span className="font-black">Servico:</span> {item.serviceName || "Nao informado"}</p>
+        <p><span className="font-black">Serviço:</span> {item.serviceName || "Não informado"}</p>
         <p><span className="font-black">Pedido:</span> {item.objective}</p>
         {item.referenceImageUrl ? (
           <a className="inline-flex items-center gap-2 text-sm font-black text-blue-700" href={item.referenceImageUrl} target="_blank" rel="noreferrer">
@@ -565,6 +648,90 @@ function AdminArtCard({
       </button>
     </article>
   );
+}
+
+function AdminSupportCard({
+  onAnswer,
+  saving,
+  thread,
+}: {
+  onAnswer: (thread: AdminSupportThread, message: string) => void;
+  saving: boolean;
+  thread: AdminSupportThread;
+}) {
+  const [message, setMessage] = useState("");
+  const lastMessage = thread.messages[thread.messages.length - 1];
+
+  return (
+    <article className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-black">{thread.user.name}</p>
+          <p className="mt-1 text-xs font-bold text-slate-500">
+            {thread.user.brandProfile?.businessName || thread.user.email}
+          </p>
+        </div>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-black uppercase ${supportStatusClass(thread.status)}`}>
+          <HelpCircle size={13} />
+          {supportStatusLabel(thread.status)}
+        </span>
+      </div>
+
+      <div className="grid max-h-72 gap-2 overflow-y-auto rounded-lg border border-black/10 bg-white p-3">
+        {thread.messages.map((item) => (
+          <div className={`max-w-[88%] rounded-lg p-3 ${item.role === "admin" ? "justify-self-end bg-green-600 text-white" : "justify-self-start bg-slate-100 text-slate-900"}`} key={item.id}>
+            <p className="text-[11px] font-black uppercase opacity-75">{item.role === "admin" ? "Admin" : "Cliente"}</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm font-bold leading-6">{item.body}</p>
+            <p className="mt-2 text-[11px] font-bold opacity-70">{formatDateTime(item.createdAt)}</p>
+          </div>
+        ))}
+      </div>
+
+      {lastMessage ? (
+        <p className="text-xs font-bold text-slate-500">
+          Ultima mensagem em {formatDateTime(lastMessage.createdAt)}
+        </p>
+      ) : null}
+
+      <textarea
+        className="min-h-24 rounded-lg border border-black/10 bg-white p-3 text-sm font-bold outline-green-700"
+        placeholder="Responder ao cliente"
+        value={message}
+        onChange={(event) => setMessage(event.target.value)}
+      />
+      <button
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60"
+        disabled={saving || !message.trim()}
+        type="button"
+        onClick={() => {
+          onAnswer(thread, message);
+          setMessage("");
+        }}
+      >
+        <Send size={15} />
+        {saving ? "Enviando..." : "Responder"}
+      </button>
+    </article>
+  );
+}
+
+function supportStatusLabel(status: string) {
+  if (status === "answered") return "Respondido";
+  if (status === "closed") return "Encerrado";
+  return "Aberto";
+}
+
+function supportStatusClass(status: string) {
+  if (status === "answered") return "bg-green-50 text-green-700";
+  if (status === "closed") return "bg-slate-200 text-slate-700";
+  return "bg-amber-50 text-amber-700";
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
 function adminArtStatusLabel(source: string) {
