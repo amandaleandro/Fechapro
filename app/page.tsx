@@ -3662,15 +3662,16 @@ function AuthScreen() {
     },
   ];
   const salesProof = [
-    { value: "Mais valor", label: "antes de falar sobre preço" },
-    { value: "Menos atrito", label: "para o cliente aprovar" },
-    { value: "1 link", label: "com tudo que vende seu serviço" },
+    { value: "Mais valor", label: "antes da comparação de preço" },
+    { value: "Aceite online", label: "para fechar com menos atrito" },
+    { value: "WhatsApp", label: "com link, PDF e portfólio" },
   ];
   const dealLeaks = [
-    "Você explica tudo pelo WhatsApp, mas o cliente só lembra do preço.",
-    "Seu PDF parece mais simples do que a qualidade real do seu trabalho.",
-    "O cliente pede desconto porque não entendeu tudo que está incluso.",
-    "Você envia proposta e fica sem saber se a pessoa abriu, leu ou esqueceu.",
+    "O cliente recebe um orçamento simples, deixa para depois e esquece.",
+    "Sua proposta se perde no WhatsApp entre mensagens, áudios e cobranças.",
+    "O PDF não mostra o valor real do seu trabalho e parece amador.",
+    "O cliente compara só preço porque não entendeu sua entrega completa.",
+    "Você precisa cobrar resposta toda hora sem saber se a pessoa abriu.",
   ];
   const objections = [
     "Seu trabalho ganha uma apresentação que sustenta preço.",
@@ -3682,7 +3683,7 @@ function AuthScreen() {
     "Adicione as provas que aumentam confiança: marca, portfólio, depoimentos e escopo.",
     "Envie um link que conduz o cliente para visualizar, baixar PDF e aceitar.",
   ];
-  const niches = ["Social media", "Designer", "Fotógrafo", "Arquiteto", "Consultor", "Técnico de ar-condicionado", "Marceneiro", "Gestor de tráfego", "Estética", "Eventos"];
+  const niches = ["Designer", "Fotógrafo", "Arquiteto", "Consultor", "Técnico de ar-condicionado", "Marceneiro", "Estética", "Eventos", "Reformas", "Serviços digitais"];
   const landingExamples = [
     {
       niche: "Designer",
@@ -3728,8 +3729,8 @@ function AuthScreen() {
       price: "R$ 97",
       priceSuffix: "/mês ou R$ 897/ano",
       cta: "Quero começar",
-      detail: "Para criar propostas profissionais e enviar para clientes sem gastar muito.",
-      items: ["20 propostas por mês", "5 artes de divulgação por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
+      detail: "Para quem quer começar a enviar propostas melhores pelo WhatsApp.",
+      items: ["20 propostas por mês", "5 artes para divulgar por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
     {
       code: "pro",
@@ -3738,8 +3739,8 @@ function AuthScreen() {
       priceSuffix: "/mês ou R$ 1.497/ano",
       badge: "Mais escolhido",
       cta: "Quero o plano Pro",
-      detail: "Para vender com uma apresentação mais profissional, completa e frequente.",
-      items: ["120 propostas por mês", "Tudo do Start", "Templates mais completos", "Personalização visual", "Portfólio e proposta mais bonitos", "10 artes de divulgação por mês", "Suporte melhor"],
+      detail: "Para quem quer proposta profissional e artes para divulgar melhor.",
+      items: ["120 propostas por mês", "Tudo do Start", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
     },
     {
       code: "premium_site",
@@ -3748,9 +3749,9 @@ function AuthScreen() {
       priceSuffix: "/ano na oferta até 03/06",
       promoPrice: "De R$ 2.997/ano ou R$ 300/mês + R$ 997 implantação",
       badge: "Melhor oferta de lançamento",
-      cta: "Quero garantir a oferta",
-      detail: "Condição especial de lançamento para os primeiros clientes: FechaPro por 12 meses com mini site profissional e configuração inicial.",
-      items: ["12 meses de FechaPro", "Mini site profissional de até 5 seções", "Propostas profissionais", "PDF da proposta", "Aceite online", "Portfólio", "Botão de WhatsApp", "Primeiras propostas criadas", "Treinamento rápido", "20 imagens por mês"],
+      cta: "Quero minha estrutura pronta",
+      detail: "Para empresas que querem presença profissional, proposta bonita e divulgação pronta para começar a vender melhor.",
+      items: ["12 meses de FechaPro", "Mini site profissional", "FechaPro configurado", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para abordar clientes", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
     },
   ];
   const practicalValue = [
@@ -3919,31 +3920,28 @@ function AuthScreen() {
           <div className="grid flex-1 content-end gap-6 pb-6 pt-12 sm:gap-8 sm:pb-8 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="max-w-3xl">
               <p className="fp-landing-kicker inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
-                Propostas, PDF e aceite em um link
+                Para prestadores de serviço
               </p>
               <h1 className="mt-5 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Organize propostas comerciais sem depender de arquivo solto e mensagem perdida.
+                Crie propostas profissionais em minutos e feche mais clientes pelo WhatsApp.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                O FechaPro ajuda prestadores de serviço a montar proposta com escopo, valor, prazo, portfólio, PDF, aceite e acompanhamento de status.
+                O FechaPro transforma seu orçamento em uma proposta profissional, com link, PDF, portfólio e aceite online, pronta para enviar no WhatsApp.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
                 <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano.</p>
-                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Inclui 12 meses de FechaPro, mini site profissional, configuração inicial e 20 imagens por mês.</p>
+                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Inclui implantação pronta, primeiras propostas criadas, kit de mensagens e artes para divulgar melhor.</p>
               </div>
               <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-white/80">
-                Um painel simples para enviar, acompanhar e reaproveitar informações de clientes, serviços e propostas.
+                Uma estrutura simples para parecer mais profissional, explicar melhor seu valor e facilitar o sim do cliente.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Ver planos
+                  Quero vender mais
                 </a>
                 <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
-                  Quero tudo pronto
-                </a>
-                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="/interesse">
-                  Tenho interesse
+                  Ver planos
                 </a>
               </div>
             </div>
@@ -3987,7 +3985,7 @@ function AuthScreen() {
               <div className="rounded-lg border border-white/15 bg-slate-950/60 p-4">
                 <p className="text-xs font-black uppercase text-green-200">Para o cliente</p>
                 <p className="mt-2 text-sm font-bold leading-6 text-white/80">
-                  Escopo, valor, prazo e próximos passos ficam em uma única página.
+                  Escopo, valor, prazo, PDF e botão de aceite ficam em uma única página pronta para enviar no WhatsApp.
                 </p>
               </div>
             </div>
@@ -4011,9 +4009,9 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-rose-700">Problema comum</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quando a proposta fica espalhada, o cliente demora mais para decidir.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Você pode estar perdendo vendas porque sua proposta não passa confiança.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Conversas por WhatsApp ajudam, mas não substituem uma proposta clara. O FechaPro coloca os dados importantes em um formato fácil de revisar, aprovar e guardar.
+              Conversas por WhatsApp ajudam, mas não substituem uma apresentação clara. O FechaPro coloca o valor do seu trabalho em um formato fácil de revisar, aprovar e guardar.
             </p>
           </div>
           <div className="grid gap-3">
@@ -4031,9 +4029,9 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Simulador</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Veja o impacto de recuperar propostas que ficam sem resposta.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Recuperar apenas uma proposta por mês já pode pagar o FechaPro.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Ajuste o volume de propostas, o ticket médio e uma estimativa conservadora de vendas que poderiam voltar para a conversa.
+              Ajuste o volume de propostas, o ticket médio e uma estimativa conservadora de vendas que poderiam voltar para a conversa com uma apresentação mais clara.
             </p>
           </div>
 
@@ -4073,7 +4071,7 @@ function AuthScreen() {
                 <p className="text-xs font-black uppercase text-green-300">Potencial estimado</p>
                 <strong className="mt-2 block text-3xl font-black sm:text-4xl">{money.format(estimatedMonthlyUpside)}</strong>
                 <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-                  Se {clampedRescuedDeals} proposta(s) por mês forem recuperadas, essa é a receita que pode voltar para negociação.
+                  Exemplo simples: se {clampedRescuedDeals} proposta(s) por mês forem recuperadas, esse valor pode voltar para negociação com link, PDF, portfólio e aceite online.
                 </p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
@@ -4088,17 +4086,17 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-300">Recursos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Proposta, PDF, histórico e materiais de apoio no mesmo fluxo.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Proposta bonita, PDF, WhatsApp e aceite no mesmo lugar.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Você monta a proposta, envia o link, acompanha visualizações e mantém os dados organizados para usar de novo.
+              Você monta a proposta, envia o link pelo WhatsApp, acompanha visualizações e deixa o cliente com um caminho claro para aceitar.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: FileText, title: "Propostas profissionais com link", text: "Organize valor, prazo, escopo, observações e aceite em uma página profissional para enviar ao cliente." },
+              { icon: FileText, title: "Propostas profissionais com link", text: "Mostre valor, prazo, escopo, portfólio e próximos passos em uma página profissional para enviar ao cliente." },
               { icon: FileDown, title: "PDF da proposta", text: "O cliente pode visualizar online e baixar uma versão em PDF com mais confiança." },
               { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre trabalhos anteriores e provas sociais dentro da própria proposta." },
-              { icon: Megaphone, title: "Materiais para vender melhor", text: "Tenha propostas, portfólio, mensagens e artes de apoio conforme o plano escolhido." },
+              { icon: Megaphone, title: "Artes para divulgar", text: "Tenha materiais prontos para postar, chamar atenção e puxar novas conversas pelo WhatsApp." },
             ].map((feature) => (
               <article className="fp-landing-dark-card motion-lift rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
                 <feature.icon className="text-green-300" size={24} />
@@ -4113,10 +4111,10 @@ function AuthScreen() {
       <section className="fp-landing-band fp-landing-muted bg-slate-100" id="como-funciona">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-blue-700">Fluxo</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Da criação ao aceite, sem sair do painel.</h2>
+            <p className="text-xs font-black uppercase text-blue-700">Como funciona</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Do orçamento simples ao aceite online.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              O processo fica dividido em etapas objetivas: cliente, serviço, condições, envio, acompanhamento e aceite.
+              O processo é direto: informe cliente, serviço, valor e prazo; adicione provas do seu trabalho; envie o link pelo WhatsApp.
             </p>
           </div>
           <div className="grid gap-3">
@@ -4162,9 +4160,9 @@ function AuthScreen() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase text-blue-700">Na prática</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Um padrão melhor para enviar propostas todo dia.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Um jeito mais profissional de pedir o sim do cliente.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              A ideia é reduzir retrabalho: cadastrar serviços, reaproveitar dados, gerar PDF e manter o cliente em um link organizado.
+              Em vez de mandar só preço, você apresenta escopo, prazo, provas, PDF e botão de aceite em um link organizado.
             </p>
           </div>
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -4183,17 +4181,17 @@ function AuthScreen() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase text-green-300">Planos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha como quer começar.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha o melhor caminho para vender com mais confiança.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Três caminhos simples: começar com propostas, vender com uma apresentação mais completa ou receber tudo configurado para usar.
+              Três caminhos simples: começar com propostas melhores, divulgar com mais força ou receber sua estrutura pronta para usar.
             </p>
           </div>
 
           <div className="fp-landing-offer motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
             <p className="text-xs font-black uppercase text-green-200">Oferta de lançamento até 03/06</p>
-            <h3 className="mt-2 text-2xl font-black">Premium com Site anual por R$ 1.500.</h3>
+            <h3 className="mt-2 text-2xl font-black">Implantação pronta + primeiras propostas criadas + kit de mensagens para vender mais rápido.</h3>
             <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-white/82">
-              Condição especial para os primeiros clientes: 12 meses de FechaPro, mini site profissional, propostas, PDF, aceite online, portfólio, WhatsApp, configuração inicial, primeiras propostas, treinamento rápido e 20 imagens por mês.
+              No Premium com Site, a equipe monta sua estrutura inicial: mini site, FechaPro configurado, portfólio organizado, propostas, PDF, aceite online, artes mensais e calendário de divulgação de 7 dias.
             </p>
           </div>
 
@@ -4239,7 +4237,7 @@ function AuthScreen() {
           <div className="mt-8 rounded-lg border border-white/15 bg-white/8 p-5">
             <p className="text-xs font-black uppercase text-green-300">Você não precisa saber mexer com tecnologia</p>
             <p className="mt-2 text-sm font-bold leading-6 text-white/78 sm:text-base sm:leading-7">
-              A equipe do FechaPro te ajuda na configuração inicial, cadastro e primeiros passos, de acordo com o plano escolhido.
+              No Premium com Site, a gente monta tudo para você começar do jeito certo. Nos demais planos, você usa modelos prontos para enviar propostas profissionais pelo WhatsApp.
             </p>
           </div>
         </div>
@@ -4269,7 +4267,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-100">Comece pelo próximo envio</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Transforme sua próxima proposta em um link claro, revisável e pronto para aceite.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Transforme seu próximo orçamento em uma proposta profissional pronta para fechar.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="#planos">
             Escolher plano
