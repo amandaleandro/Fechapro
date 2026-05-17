@@ -3898,9 +3898,9 @@ function AuthScreen() {
       price: "R$ 1.500",
       priceSuffix: "/ano na oferta até 03/06",
       promoPrice: "De R$ 2.997/ano ou R$ 300/mês + R$ 997 implantação",
-      badge: "Implantação pronta",
+      badge: "Indicado para vender rápido",
       cta: "Quero o Premium pronto",
-      detail: "Ideal para quem quer receber tudo configurado, com primeiras propostas criadas, kit de mensagens, artes de divulgação e acompanhamento inicial para começar a vender mais rápido.",
+      detail: "Para quem quer receber o FechaPro pronto, com primeiras propostas criadas, kit de mensagens e acompanhamento inicial para vender mais rápido.",
       items: ["12 meses de FechaPro", "Mini site profissional", "FechaPro configurado", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para abordar clientes", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
     },
   ];
@@ -3926,7 +3926,7 @@ function AuthScreen() {
     },
     {
       question: "Qual plano devo escolher para vender mais rápido?",
-      answer: "O Premium com Site anual por R$ 1.500 é a melhor escolha para quem quer receber o FechaPro pronto para usar, com mini site, primeiras propostas, kit de mensagens, artes de divulgação, aceite online, PDF e acompanhamento inicial.",
+      answer: "O Premium com Site (R$ 1.500/ano) é a melhor opção: você recebe tudo configurado — mini site, primeiras propostas criadas, kit de mensagens, artes mensais e acompanhamento inicial para começar a vender mais rápido.",
     },
     {
       question: "Qual é o limite do site?",
@@ -4072,7 +4072,7 @@ function AuthScreen() {
               <p className="fp-landing-kicker inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
                 Para prestadores de serviço
               </p>
-              <h1 className="mt-5 max-w-xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+              <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Transforme orçamentos simples em propostas profissionais e feche mais clientes pelo WhatsApp.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
@@ -4088,7 +4088,7 @@ function AuthScreen() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Quero criar propostas profissionais
+                  Quero começar agora
                 </a>
                 <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
                   Ver planos
@@ -4545,7 +4545,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-100">Comece pelo próximo envio</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Transforme seu próximo orçamento em uma proposta profissional pronta para fechar.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Transforme seu próximo orçamento em uma proposta profissional e aumente suas chances de fechar.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="#planos">
             Escolher plano
