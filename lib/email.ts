@@ -32,6 +32,8 @@ type EmailTemplateOptions = {
   body: string;
   buttonLabel?: string;
   buttonUrl?: string;
+  secondaryButtonLabel?: string;
+  secondaryButtonUrl?: string;
   footer?: string;
 };
 
@@ -46,6 +48,8 @@ export async function sendEmail(to: string, subject: string, html: string) {
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {
+  const manualUrl = `${APP_URL}/manual/manual-fechapro-primeiro-acesso.pdf`;
+
   await sendEmail(
     to,
     "Bem-vindo ao FechaPro",
@@ -61,6 +65,8 @@ export async function sendWelcomeEmail(to: string, name: string) {
       `,
       buttonLabel: "Abrir painel",
       buttonUrl: APP_URL,
+      secondaryButtonLabel: "Abrir manual de primeiro acesso",
+      secondaryButtonUrl: manualUrl,
       footer: "Este email confirma a criacao da sua conta FechaPro.",
     })
   );
@@ -275,7 +281,7 @@ export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerN
   );
 }
 
-function emailTemplate({ title, preheader, heroImageUrl, heroImageAlt, intro, body, buttonLabel, buttonUrl, footer }: EmailTemplateOptions) {
+function emailTemplate({ title, preheader, heroImageUrl, heroImageAlt, intro, body, buttonLabel, buttonUrl, secondaryButtonLabel, secondaryButtonUrl, footer }: EmailTemplateOptions) {
   const safeTitle = escapeHtml(title);
   const safePreheader = escapeHtml(preheader);
   const heroImage = heroImageUrl
@@ -295,6 +301,15 @@ function emailTemplate({ title, preheader, heroImageUrl, heroImageAlt, intro, bo
             <a href="${escapeHtml(buttonUrl)}" style="display:inline-block;border-radius:8px;background:#106b5b;color:#ffffff;font-size:15px;font-weight:700;line-height:1;text-decoration:none;padding:14px 22px">
               ${escapeHtml(buttonLabel)}
             </a>
+            ${
+              secondaryButtonLabel && secondaryButtonUrl
+                ? `
+                  <a href="${escapeHtml(secondaryButtonUrl)}" style="display:inline-block;margin-left:10px;border-radius:8px;border:1px solid #106b5b;color:#106b5b;background:#ffffff;font-size:15px;font-weight:700;line-height:1;text-decoration:none;padding:13px 20px">
+                    ${escapeHtml(secondaryButtonLabel)}
+                  </a>
+                `
+                : ""
+            }
           </td>
         </tr>
       `
