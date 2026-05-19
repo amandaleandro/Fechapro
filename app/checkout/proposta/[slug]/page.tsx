@@ -69,14 +69,14 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Cliente" value={proposal.clientName} />
-                <CheckoutMetric label="Servico" value={proposal.serviceName} />
+                <CheckoutMetric label="Serviço" value={proposal.serviceName} />
                 <CheckoutMetric label="Valor total" value={money.format(proposal.price)} />
               </div>
 
               <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
                 <CheckoutLine label="Empresa" value={brandName} />
                 <CheckoutLine label="Prazo" value={proposal.deadline || "A combinar"} />
-                <CheckoutLine label="Condicao combinada" value={proposal.payment || "A combinar"} />
+                <CheckoutLine label="Condição combinada" value={proposal.payment || "A combinar"} />
                 <CheckoutLine label="Status" value={paid ? "Pagamento confirmado" : "Aguardando pagamento"} />
               </div>
 
@@ -109,7 +109,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
 
             {!wantsPix ? (
               <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3">
-                {["Pix", "Cartao", "Boleto"].map((item) => (
+                {["Pix", "Cartão", "Boleto"].map((item) => (
                   <div className="flex items-center justify-between gap-3 text-sm font-black" key={item}>
                     <span>{item}</span>
                     <span className="text-green-700">Disponível</span>

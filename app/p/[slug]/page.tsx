@@ -126,7 +126,7 @@ export default async function PublicProposalPage({
 
         {query.error === "whatsapp" ? (
           <div className="rounded-lg border border-amber-700/20 bg-amber-50 p-4 text-amber-900 shadow-xl shadow-slate-900/5">
-            <strong>WhatsApp indisponivel.</strong>
+            <strong>WhatsApp indisponível.</strong>
             <p className="mt-1 text-sm">O profissional ainda não configurou um número de WhatsApp para esta proposta.</p>
           </div>
         ) : null}
@@ -319,7 +319,7 @@ export default async function PublicProposalPage({
                     <img alt="" className="h-44 w-full object-cover" src={item.imageUrl} />
                   ) : (
                     <div className="grid h-44 place-items-center font-black text-white" style={{ background: brandColor }}>
-                      {item.category || "Portfolio"}
+                      {item.category || "Portfólio"}
                     </div>
                   )}
                   <div className="p-3">
