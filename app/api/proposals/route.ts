@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     return jsonError("Informe o nome do cliente.");
   }
 
-  if (!serviceName) return jsonError("Informe o serviÃ§o da proposta.");
+  if (!serviceName) return jsonError("Informe o serviço da proposta.");
   if (!Number.isFinite(price) || price <= 0) return jsonError("Informe um valor maior que zero.");
   if (!deadline) return jsonError("Informe o prazo da proposta.");
   if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade inválida.");

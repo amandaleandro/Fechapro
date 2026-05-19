@@ -174,11 +174,11 @@ export default function AdminPage() {
   async function loadSupportThreads() {
     try {
       const response = await fetch("/api/admin/support", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readApiError(response, "NÃ£o foi possÃ­vel carregar o suporte."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível carregar o suporte."));
       const payload = (await response.json()) as { threads: AdminSupportThread[] };
       setSupportThreads(payload.threads);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "NÃ£o foi possÃ­vel carregar o suporte.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível carregar o suporte.");
     }
   }
 
@@ -276,11 +276,11 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ threadId: thread.id, message, status: "answered" }),
       });
-      if (!response.ok) throw new Error(await readApiError(response, "NÃ£o foi possÃ­vel responder o suporte."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível responder o suporte."));
       setNotice(`Resposta enviada para ${thread.user.name}.`);
       await loadSupportThreads();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "NÃ£o foi possÃ­vel responder o suporte.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível responder o suporte.");
     } finally {
       setSavingId(null);
     }
@@ -320,7 +320,7 @@ export default function AdminPage() {
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">Suporte ao usuÃ¡rio</p>
+              <p className="text-xs font-black uppercase text-blue-700">Suporte ao usuário</p>
               <h2 className="text-2xl font-black">Chat com clientes</h2>
               <p className="mt-1 text-sm font-bold text-slate-600">
                 Responda as mensagens enviadas pela aba Suporte do painel do cliente.

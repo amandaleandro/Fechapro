@@ -218,7 +218,7 @@ const keys = {
   services: "fechapro_services_v1",
   portfolio: "fechapro_portfolio_v1",
   testimonials: "fechapro_testimonials_v1",
-  updatesModal: "fechapro_updates_modal_v2",
+  updatesModal: "fechapro_updates_modal_v3",
 };
 
 function getPublicAppUrl() {
@@ -1592,13 +1592,18 @@ function DashboardView({
                   </span>
                 ) : null}
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2">
                 {services.map((service) => {
                   const checked = selectedServiceNames().includes(service.name);
                   return (
-                    <label className="flex min-h-12 items-center gap-3 rounded-lg border border-black/10 bg-white p-3 text-sm font-bold text-slate-700" key={service.id}>
+                    <label
+                      className={`grid min-h-14 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 text-sm font-bold text-slate-700 ${
+                        checked ? "border-green-600 bg-green-50 shadow-sm" : "border-black/10 bg-white"
+                      }`}
+                      key={service.id}
+                    >
                       <input
-                        className="h-4 w-4 accent-green-700"
+                        className="h-4 w-4 shrink-0 accent-green-700"
                         type="checkbox"
                         checked={checked}
                         onChange={(event) => {
@@ -1610,9 +1615,14 @@ function DashboardView({
                           );
                         }}
                       />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-black text-slate-900">{service.name}</span>
-                        <span className="block text-xs text-slate-500">{money.format(service.price)}</span>
+                      <span className="min-w-0">
+                        <span className="block font-black leading-5 text-slate-900">{service.name}</span>
+                        {service.includes.length ? (
+                          <span className="mt-0.5 line-clamp-2 block text-xs leading-4 text-slate-500">{service.includes.slice(0, 3).join(", ")}</span>
+                        ) : null}
+                      </span>
+                      <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700">
+                        {money.format(service.price)}
                       </span>
                     </label>
                   );
@@ -3817,7 +3827,7 @@ function BrandView({
           <TextField label="Site" placeholder="https://..." type="url" value={form.website || ""} onChange={(value) => setForm({ ...form, website: value })} />
           <TextAreaField label="Bio curta" maxLength={500} rows={3} value={form.bio || ""} onChange={(value) => setForm({ ...form, bio: value })} />
           <div className="mt-2 rounded-lg border border-black/10 bg-slate-50 p-3">
-            <p className="text-xs font-black uppercase text-blue-700">PersonalizaÃ§Ã£o da proposta</p>
+            <p className="text-xs font-black uppercase text-blue-700">Personalização da proposta</p>
             <div className="mt-3 grid gap-3">
               <label className="grid gap-2 text-sm font-extrabold text-slate-600">
                 Estilo visual
@@ -3829,17 +3839,17 @@ function BrandView({
                   <option value="executive">Executivo</option>
                   <option value="creative">Criativo</option>
                   <option value="premium">Premium</option>
-                  <option value="technical">TÃ©cnico</option>
+                  <option value="technical">Técnico</option>
                 </select>
               </label>
               <TextAreaField label="Texto de abertura" maxLength={700} rows={3} value={form.proposalIntro || ""} onChange={(value) => setForm({ ...form, proposalIntro: value })} />
               <TextAreaField label="Texto de encerramento" maxLength={700} rows={3} value={form.proposalClosing || ""} onChange={(value) => setForm({ ...form, proposalClosing: value })} />
-              <TextAreaField label="Termos padrÃ£o" maxLength={1200} rows={4} value={form.proposalTerms || ""} onChange={(value) => setForm({ ...form, proposalTerms: value })} />
+              <TextAreaField label="Termos padrão" maxLength={1200} rows={4} value={form.proposalTerms || ""} onChange={(value) => setForm({ ...form, proposalTerms: value })} />
               <TextAreaField label="FAQ personalizado" maxLength={1200} placeholder={"Uma pergunta? | Uma resposta\nOutra pergunta? | Outra resposta"} rows={4} value={form.proposalFaq || ""} onChange={(value) => setForm({ ...form, proposalFaq: value })} />
               <div className="grid gap-2 sm:grid-cols-2">
-                <ToggleField label="Mostrar portfÃ³lio" checked={form.showPortfolio} onChange={(checked) => setForm({ ...form, showPortfolio: checked })} />
+                <ToggleField label="Mostrar portfólio" checked={form.showPortfolio} onChange={(checked) => setForm({ ...form, showPortfolio: checked })} />
                 <ToggleField label="Mostrar depoimentos" checked={form.showTestimonials} onChange={(checked) => setForm({ ...form, showTestimonials: checked })} />
-                <ToggleField label="Mostrar outros serviÃ§os" checked={form.showServices} onChange={(checked) => setForm({ ...form, showServices: checked })} />
+                <ToggleField label="Mostrar outros serviços" checked={form.showServices} onChange={(checked) => setForm({ ...form, showServices: checked })} />
                 <ToggleField label="Mostrar FAQ" checked={form.showFaq} onChange={(checked) => setForm({ ...form, showFaq: checked })} />
               </div>
             </div>
@@ -4893,8 +4903,8 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
 const currentUpdates = [
   {
     icon: FileText,
-    title: "PDF mais limpo",
-    description: "A proposta em PDF ganhou capa mais organizada, resumo direto e tabela de serviços mais fácil de ler.",
+    title: "PDF mais profissional",
+    description: "A proposta em PDF ganhou capa organizada, resumo direto, dados de pagamento e tabela de serviços mais fácil de ler.",
     tag: "Disponível",
   },
   {
@@ -4905,17 +4915,27 @@ const currentUpdates = [
   },
   {
     icon: CreditCard,
-    title: "Checkout por escolha",
+    title: "Pagamento por escolha",
     description: "O cliente vê o fluxo certo: QR Code e copia e cola para PIX direto, ou PIX, cartão e boleto pelo Mercado Pago.",
     tag: "Ativo",
+  },
+  {
+    icon: Palette,
+    title: "Artes de divulgação",
+    description: "Solicite artes com briefing, acompanhe a aprovação, copie legenda e baixe o material final quando estiver liberado.",
+    tag: "Novo",
   },
 ];
 
 const upcomingFeatures = [
-  "Confirmacao automatica para pagamentos PIX diretos.",
-  "Mais detalhes de acompanhamento depois que o cliente abre, aceita ou paga a proposta.",
-  "Novas opções para transformar propostas aceitas em próximos passos de atendimento.",
-  "Mais modelos de proposta por nicho com textos prontos para vender.",
+  "Confirmação automática para pagamentos PIX diretos, quando houver integração bancária disponível.",
+  "Linha do tempo mais detalhada com abertura, aceite, recusa, pagamento, cliques no WhatsApp e histórico de follow-up.",
+  "Editor de proposta com blocos extras para bônus, garantias, comparativo de planos e próximos passos.",
+  "Envio de proposta por e-mail com mensagem pronta e registro do envio no histórico comercial.",
+  "Agenda de follow-up para lembrar quando chamar clientes que visualizaram e ainda não responderam.",
+  "Mais modelos de proposta por nicho com textos prontos para vender e variações de layout.",
+  "Relatórios por período com taxa de aceite, valor aprovado, valor em aberto e desempenho por serviço.",
+  "Área de próximos passos depois do aceite, com checklist de início do atendimento e arquivos solicitados ao cliente.",
 ];
 
 function ProductUpdatesModal({
@@ -5021,7 +5041,7 @@ function ProductUpdatesModal({
           </section>
 
           <section className="rounded-lg border border-black/10 p-4">
-            <p className="text-xs font-black uppercase text-blue-700">Próximas features</p>
+            <p className="text-xs font-black uppercase text-blue-700">Futuras implementações</p>
             <div className="mt-3 grid gap-2">
               {nextFeatures.map((feature) => (
                 <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>

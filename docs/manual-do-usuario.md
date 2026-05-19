@@ -429,7 +429,31 @@ O status passa a indicar aceite, e a linha do tempo mostra os dados registrados.
 **As artes de divulgação são ilimitadas?**  
 Não. Elas seguem o limite do plano ou os créditos extras comprados.
 
-## 24. Resumo do fluxo recomendado
+## 24. Novidades e futuras implementações
+
+A tela de novidades mostra melhorias recentes e recursos planejados para próximas versões. Ela ajuda você a saber o que já está disponível e o que ainda está em desenvolvimento.
+
+Novidades recentes:
+
+- **PDF mais profissional:** capa organizada, resumo da proposta, tabela de serviços e dados de pagamento mais fáceis de entender.
+- **PIX direto na proposta:** opção para mostrar QR Code e código copia e cola usando a chave PIX cadastrada em **Marca**.
+- **Pagamento por escolha:** em cada proposta, você pode escolher Mercado Pago ou PIX direto.
+- **Artes de divulgação:** solicitação com briefing, aprovação, legenda, mensagem para WhatsApp e download da arte final.
+
+Futuras implementações previstas:
+
+- confirmação automática para pagamentos PIX diretos, quando houver integração bancária disponível;
+- linha do tempo mais detalhada com abertura, aceite, recusa, pagamento, cliques no WhatsApp e histórico de follow-up;
+- editor de proposta com blocos extras para bônus, garantias, comparativo de planos e próximos passos;
+- envio de proposta por e-mail com mensagem pronta e registro do envio no histórico comercial;
+- agenda de follow-up para lembrar quando chamar clientes que visualizaram e ainda não responderam;
+- mais modelos de proposta por nicho, com textos prontos para vender e variações de layout;
+- relatórios por período com taxa de aceite, valor aprovado, valor em aberto e desempenho por serviço;
+- área de próximos passos depois do aceite, com checklist de início do atendimento e arquivos solicitados ao cliente.
+
+Essas implementações podem mudar de ordem ou formato conforme testes, integrações disponíveis e necessidades dos usuários.
+
+## 25. Resumo do fluxo recomendado
 
 1. Configure sua marca.
 2. Cadastre serviços, portfólio e depoimentos.
