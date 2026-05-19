@@ -211,7 +211,120 @@ const templateLevels = [
   { id: "completo", label: "Completo", multiplier: 1.45, prefix: "Pacote completo", extra: "Inclui acompanhamento mais proximo e maior detalhamento da entrega." },
 ];
 
-export const proposalTemplates: ProposalTemplate[] = templateSeeds.flatMap((seed) =>
+const multiServiceTemplates: ProposalTemplate[] = [
+  {
+    id: "multi-servicos-identidade-social-media",
+    niche: "Pacotes com varios servicos",
+    title: "Identidade visual + social media",
+    serviceName: "Pacote identidade visual + social media",
+    price: 3200,
+    deadline: "20 dias uteis para implantacao + 30 dias de conteudo",
+    payment: "40% entrada, 30% na aprovacao da identidade e 30% na entrega dos conteudos",
+    included: [
+      "Identidade visual completa - logo, paleta, tipografia e mini manual",
+      "Padronizacao de Instagram - foto de perfil, destaques e bio comercial",
+      "12 posts para feed com legendas estrategicas",
+      "8 stories editaveis para divulgacao",
+      "Calendario editorial de 30 dias",
+      "1 rodada de ajustes por etapa aprovada",
+    ],
+    notes: "Proposta indicada para negocios que precisam organizar a marca e iniciar divulgacao com materiais prontos. Valores podem mudar conforme volume de pecas, urgencia e complexidade da identidade visual.",
+  },
+  {
+    id: "multi-servicos-site-trafego-conteudo",
+    niche: "Pacotes com varios servicos",
+    title: "Site + trafego pago + conteudo inicial",
+    serviceName: "Pacote presenca digital completa",
+    price: 4800,
+    deadline: "30 dias uteis",
+    payment: "40% entrada, 30% no layout aprovado e 30% antes da publicacao",
+    included: [
+      "Landing page ou site one page responsivo",
+      "Copy base para apresentacao da oferta",
+      "Formulario de contato ou botao de WhatsApp",
+      "Configuracao inicial de Meta Ads ou Google Ads",
+      "5 criativos simples para campanha",
+      "Relatorio inicial com proximos passos",
+    ],
+    notes: "Investimento de midia paga nao incluso. Hospedagem, dominio, ferramentas externas e taxas de plataforma devem ser combinados separadamente quando necessario.",
+  },
+  {
+    id: "multi-servicos-evento-completo",
+    niche: "Pacotes com varios servicos",
+    title: "Evento completo",
+    serviceName: "Pacote cerimonial + decoracao + buffet",
+    price: 7200,
+    deadline: "Conforme data do evento",
+    payment: "30% para reserva da data, 40% ate 15 dias antes e 30% na semana do evento",
+    included: [
+      "Planejamento e roteiro do evento",
+      "Cerimonial e coordenacao no dia",
+      "Decoracao personalizada conforme briefing",
+      "Buffet para quantidade combinada de convidados",
+      "Checklist de fornecedores e cronograma",
+      "Montagem, acompanhamento e desmontagem dos itens contratados",
+    ],
+    notes: "Proposta sujeita a disponibilidade de agenda, local do evento, numero de convidados e itens extras. Transporte, locacoes especiais e equipe adicional podem ser orcados a parte.",
+  },
+  {
+    id: "multi-servicos-reforma-residencial",
+    niche: "Pacotes com varios servicos",
+    title: "Reforma residencial completa",
+    serviceName: "Pacote eletrica + hidraulica + pintura + acabamento",
+    price: 6800,
+    deadline: "15 a 25 dias uteis apos aprovacao",
+    payment: "40% entrada para inicio, 30% no meio da execucao e 30% na entrega",
+    included: [
+      "Visita tecnica e levantamento das necessidades",
+      "Revisao eletrica dos pontos combinados",
+      "Reparo ou instalacao hidraulica dos pontos combinados",
+      "Servicos de alvenaria e acabamento leve",
+      "Pintura dos ambientes definidos no escopo",
+      "Teste final, limpeza basica e garantia de 30 dias",
+    ],
+    notes: "Materiais, descarte de entulho, deslocamento fora da area atendida e alteracoes de escopo devem ser aprovados antes da execucao.",
+  },
+  {
+    id: "multi-servicos-consultoria-implantacao",
+    niche: "Pacotes com varios servicos",
+    title: "Diagnostico + plano de acao + acompanhamento",
+    serviceName: "Pacote consultoria de implantacao",
+    price: 3900,
+    deadline: "6 semanas",
+    payment: "50% na contratacao e 50% na metade do projeto",
+    included: [
+      "Diagnostico inicial do negocio ou processo",
+      "Mapeamento de gargalos e prioridades",
+      "Plano de acao com etapas, prazos e responsaveis",
+      "4 encontros online de acompanhamento",
+      "Modelos de planilhas ou documentos de apoio",
+      "Resumo final com recomendacoes para continuidade",
+    ],
+    notes: "Este pacote combina estrategia e acompanhamento pratico. Implementacoes tecnicas, ferramentas pagas e demandas fora do plano de acao podem ser contratadas separadamente.",
+  },
+  {
+    id: "multi-servicos-beleza-dia-especial",
+    niche: "Pacotes com varios servicos",
+    title: "Dia especial de beleza",
+    serviceName: "Pacote cabelo + maquiagem + unhas",
+    price: 780,
+    deadline: "Atendimento em ate 5 horas",
+    payment: "50% para reservar horario e 50% no atendimento",
+    included: [
+      "Analise inicial do visual desejado",
+      "Penteado ou finalizacao de cabelo",
+      "Maquiagem social ou festa",
+      "Manicure e esmaltação",
+      "Preparacao e orientacoes de manutencao",
+      "Registro simples do resultado final, quando autorizado",
+    ],
+    notes: "Proposta indicada para eventos, ensaios e datas especiais. Deslocamento, extensoes, acessorios e procedimentos extras podem alterar o valor.",
+  },
+];
+
+export const proposalTemplates: ProposalTemplate[] = [
+  ...multiServiceTemplates,
+  ...templateSeeds.flatMap((seed) =>
   seed.services.flatMap((service, serviceIndex) =>
     templateLevels.map((level) => {
       const price = roundPrice(service.price * level.multiplier);
@@ -228,7 +341,8 @@ export const proposalTemplates: ProposalTemplate[] = templateSeeds.flatMap((seed
       };
     })
   )
-);
+  ),
+];
 
 function toService(values: Array<string | number | string[]>) {
   const [title, serviceName, price, deadline, included] = values;

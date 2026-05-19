@@ -72,6 +72,15 @@ model BrandProfile {
   email          String?
   website        String?
   bio            String?
+  proposalStyle  String   @default("executive")
+  proposalIntro  String?
+  proposalClosing String?
+  proposalTerms  String?
+  proposalFaq    String?
+  showPortfolio  Boolean  @default(true)
+  showTestimonials Boolean @default(true)
+  showServices   Boolean  @default(true)
+  showFaq        Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)

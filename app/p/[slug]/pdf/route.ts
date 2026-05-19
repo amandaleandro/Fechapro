@@ -64,6 +64,15 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
     brandInstagram: brand?.instagram || "",
     brandWebsite: brand?.website || "",
     brandBio: brand?.bio || "",
+    proposalStyle: brand?.proposalStyle || "modern",
+    proposalIntro: brand?.proposalIntro || "",
+    proposalClosing: brand?.proposalClosing || "",
+    proposalTerms: brand?.proposalTerms || "",
+    proposalFaq: brand?.proposalFaq || "",
+    showPortfolio: brand?.showPortfolio !== false,
+    showTestimonials: brand?.showTestimonials !== false,
+    showServices: brand?.showServices !== false,
+    showFaq: brand?.showFaq !== false,
     logoUrl: brand?.logoUrl || "",
     status: proposal.status,
     acceptedBy: proposal.acceptedBy || "",
@@ -110,16 +119,32 @@ async function renderPdf(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   drawSummary(doc, data);
   drawScope(doc, data);
   drawNotes(doc, data);
-  await drawPortfolio(doc, data);
-  drawTestimonials(doc, data);
+  drawCustomTextBlock(doc, "Mensagem", "Antes de decidir", data.proposalClosing, data.brandColor);
+  if (data.showPortfolio) await drawPortfolio(doc, data);
+  drawCustomTextBlock(doc, "Termos comerciais", "Condições", data.proposalTerms, data.brandColor);
+  if (data.showTestimonials) drawTestimonials(doc, data);
+  if (data.showFaq) drawFaq(doc, data);
   drawDecision(doc, data);
   drawFooter(doc, data);
   drawPageNumbers(doc);
 }
 
 async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
-  doc.rect(0, 0, PAGE.width, 250).fill(data.brandSecondaryColor);
+  const style = getPdfProposalStyle(data.proposalStyle);
+  doc.rect(0, 0, PAGE.width, 250).fill(style.coverColor(data));
   doc.rect(0, 0, PAGE.width, 7).fill(data.brandColor);
+  if (style.accent === "creative") {
+    doc.circle(PAGE.width - 54, 66, 94).fill(data.brandAccentColor);
+    doc.circle(PAGE.width - 116, 22, 58).fill(data.brandColor);
+  }
+  if (style.accent === "premium") {
+    doc.rect(PAGE.width - 154, 0, 154, 250).fill(data.brandColor);
+    doc.rect(PAGE.width - 104, 0, 104, 250).fill(data.brandAccentColor);
+  }
+  if (style.accent === "technical") {
+    for (let x = 0; x < PAGE.width; x += 34) doc.rect(x, 0, 0.35, 250).fill("#334155");
+    for (let y = 0; y < 250; y += 34) doc.rect(0, y, PAGE.width, 0.35).fill("#334155");
+  }
 
   const logo = await readImageFromUrl(data.logoUrl);
   if (logo) {
@@ -133,7 +158,7 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     });
   }
 
-  doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text("PROPOSTA COMERCIAL", MARGIN + 60, 38, {
+  doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text(style.eyebrow, MARGIN + 60, 38, {
     characterSpacing: 1.1,
   });
   doc.fillColor("#FFFFFF").fontSize(13).text(data.brandName, MARGIN + 60, 53, {
@@ -144,14 +169,14 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
 
   drawStatusPill(doc, data.status, PAGE.width - MARGIN - 132, 42, 132, data.brandColor);
 
-  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(28).text(`Proposta para ${data.clientName}`, MARGIN, 104, {
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(style.titleSize).text(`Proposta para ${data.clientName}`, MARGIN, 104, {
     width: CONTENT_WIDTH,
     height: 76,
     lineGap: 1,
     ellipsis: true,
   });
   doc.fillColor("#CBD5E1").font("Helvetica").fontSize(10.5).text(
-    data.brandBio || `Preparada por ${data.ownerName} com escopo, investimento, prazo e aceite em um único documento.`,
+    data.proposalIntro || data.brandBio || `Preparada por ${data.ownerName} com escopo, investimento, prazo e aceite em um único documento.`,
     MARGIN,
     188,
     { width: CONTENT_WIDTH, height: 34, lineGap: 3, ellipsis: true },
@@ -218,6 +243,40 @@ function drawNotes(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     lineGap: 4,
   });
   doc.y += height + 18;
+}
+
+function drawCustomTextBlock(doc: PDFKit.PDFDocument, title: string, eyebrow: string, text: string, brandColor: string) {
+  if (!text) return;
+  ensureSpace(doc, 105);
+  sectionTitle(doc, title, eyebrow, brandColor);
+  const height = Math.max(68, doc.heightOfString(text, { width: CONTENT_WIDTH - 28, lineGap: 4 }) + 28);
+  ensureSpace(doc, height + 8);
+  doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 8).fill(SOFT);
+  doc.fillColor("#475569").font("Helvetica").fontSize(10.5).text(text, MARGIN + 14, doc.y + 22, {
+    width: CONTENT_WIDTH - 28,
+    lineGap: 4,
+  });
+  doc.y += height + 18;
+}
+
+function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+  const items = parseCustomFaq(data.proposalFaq);
+  if (!items.length) return;
+  ensureSpace(doc, 130);
+  sectionTitle(doc, "Perguntas frequentes", "FAQ", data.brandColor);
+  items.forEach(([question, answer]) => {
+    const height = Math.max(58, doc.heightOfString(`${question}\n${answer}`, { width: CONTENT_WIDTH - 28, lineGap: 3 }) + 24);
+    ensureSpace(doc, height + 10);
+    doc.roundedRect(MARGIN, doc.y + 6, CONTENT_WIDTH, height, 8).fill(SOFT);
+    doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text(question, MARGIN + 14, doc.y + 18, {
+      width: CONTENT_WIDTH - 28,
+    });
+    doc.fillColor("#475569").font("Helvetica").fontSize(9.5).text(answer, MARGIN + 14, doc.y + 34, {
+      width: CONTENT_WIDTH - 28,
+      lineGap: 3,
+    });
+    doc.y += height + 14;
+  });
 }
 
 function drawServicesTable(doc: PDFKit.PDFDocument, items: string[], brandColor: string) {
@@ -470,6 +529,39 @@ function normalizeColor(color: string, fallback = "#22C55E") {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
 }
 
+function getPdfProposalStyle(style: string) {
+  if (style === "creative") {
+    return {
+      accent: "creative",
+      eyebrow: "PROPOSTA CRIATIVA",
+      titleSize: 30,
+      coverColor: (proposal: ProposalPdfData) => proposal.brandSecondaryColor,
+    };
+  }
+  if (style === "premium") {
+    return {
+      accent: "premium",
+      eyebrow: "PROPOSTA PREMIUM",
+      titleSize: 28,
+      coverColor: (proposal: ProposalPdfData) => proposal.brandSecondaryColor,
+    };
+  }
+  if (style === "technical" || style === "classic") {
+    return {
+      accent: "technical",
+      eyebrow: "PROPOSTA TÉCNICA",
+      titleSize: 26,
+      coverColor: (proposal: ProposalPdfData) => proposal.brandSecondaryColor,
+    };
+  }
+  return {
+    accent: "executive",
+    eyebrow: "PROPOSTA EXECUTIVA",
+    titleSize: 28,
+    coverColor: (proposal: ProposalPdfData) => proposal.brandSecondaryColor,
+  };
+}
+
 function initials(value: string) {
   const words = value.trim().split(/\s+/).slice(0, 2);
   return words.map((word) => word[0]?.toUpperCase()).join("") || "FP";
@@ -479,6 +571,13 @@ function formatDate(date: string) {
   const [year, month, day] = date.split("-");
   if (!year || !month || !day) return date;
   return `${day}/${month}/${year}`;
+}
+
+function parseCustomFaq(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.split("|").map((part) => part.trim()))
+    .filter((parts): parts is [string, string] => Boolean(parts[0] && parts[1]));
 }
 
 function labelStatus(status: string) {
@@ -514,6 +613,15 @@ type ProposalPdfData = {
   brandInstagram: string;
   brandWebsite: string;
   brandBio: string;
+  proposalStyle: string;
+  proposalIntro: string;
+  proposalClosing: string;
+  proposalTerms: string;
+  proposalFaq: string;
+  showPortfolio: boolean;
+  showTestimonials: boolean;
+  showServices: boolean;
+  showFaq: boolean;
   logoUrl: string;
   status: string;
   acceptedBy: string;

@@ -81,6 +81,8 @@ export default async function PublicProposalPage({
   const brandColor = brand?.primaryColor || "#22C55E";
   const brandSecondaryColor = brand?.secondaryColor || "#0F172A";
   const brandAccentColor = brand?.accentColor || "#2563EB";
+  const proposalStyle = getProposalStyle(brand?.proposalStyle || "modern");
+  const customFaq = parseCustomFaq(brand?.proposalFaq || "");
   const expired = Boolean(proposal.validUntil && proposal.validUntil < new Date().toISOString().slice(0, 10));
   const hasDecision = expired || currentStatus === "accepted" || currentStatus === "declined";
   const validUntilLabel = proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar";
@@ -92,7 +94,7 @@ export default async function PublicProposalPage({
   const wantsPix = proposal.checkoutMode === "pix";
 
   return (
-    <main className="mobile-safe-bottom min-h-screen bg-[var(--ui-bg)] pb-20 text-slate-900">
+    <main className={`mobile-safe-bottom min-h-screen pb-20 text-slate-900 ${proposalStyle.pageClass}`}>
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
@@ -136,7 +138,7 @@ export default async function PublicProposalPage({
           </div>
         ) : null}
 
-        <header className="overflow-hidden rounded-lg text-white shadow-xl shadow-slate-900/10" style={{ background: brandSecondaryColor }}>
+        <header className={`overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${brandColor}, ${brandAccentColor})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
             <div>
@@ -150,31 +152,31 @@ export default async function PublicProposalPage({
                   </div>
                 )}
                 <div>
-                  <p className="text-xs font-black uppercase" style={{ color: brandAccentColor }}>Proposta comercial online</p>
+                  <p className="text-xs font-black uppercase" style={{ color: brandAccentColor }}>{proposalStyle.eyebrow}</p>
                   <strong>{brandName}</strong>
                 </div>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-2">
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-green-200">
-                  Link interativo
+                  {proposalStyle.badges[0]}
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase" style={{ color: brandAccentColor }}>
-                  PDF disponível
+                  {proposalStyle.badges[1]}
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
-                  Aceite online
+                  {proposalStyle.badges[2]}
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
-                  Atendimento em até 24h
+                  {proposalStyle.badges[3]}
                 </span>
               </div>
 
               <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-6xl">
                 Proposta para {proposal.clientName}
               </h1>
-              <p className="mt-4 max-w-2xl leading-7 text-white/75">
-                {brand?.bio || "Uma proposta organizada com escopo, investimento, prazo, portfólio e aceite em um único link."}
+              <p className="mt-4 max-w-2xl whitespace-pre-line leading-7 text-white/75">
+                {brand?.proposalIntro || brand?.bio || "Uma proposta organizada com escopo, investimento, prazo, portfólio e aceite em um único link."}
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 {!hasDecision ? (
@@ -188,7 +190,7 @@ export default async function PublicProposalPage({
               </div>
             </div>
 
-            <aside className="grid content-between gap-4 rounded-lg bg-white p-4 text-slate-950">
+            <aside className={`grid content-between gap-4 bg-white p-4 text-slate-950 ${proposalStyle.radiusClass}`}>
               <div>
                 <span className="inline-flex rounded-lg px-3 py-1 text-xs font-black uppercase text-white" style={{ background: statusColor(currentStatus, expired) }}>
                   {expired ? "Vencida" : labelStatus(currentStatus)}
@@ -214,13 +216,21 @@ export default async function PublicProposalPage({
           </div>
         </header>
 
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-5">
+        <section className={`grid gap-3 border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-5 ${proposalStyle.radiusClass}`}>
           <PreviewBox label="Serviço" value={proposal.serviceName} />
           <PreviewBox label="Prazo" value={proposal.deadline} />
           <PreviewBox label="Pagamento" value={proposal.payment || "A combinar"} />
           <PreviewBox label="Visualizações" value={String(currentViewCount)} />
           <PreviewBox label="Cliques WhatsApp" value={String(proposal.whatsappClickCount)} />
         </section>
+
+        {brand?.proposalClosing ? (
+          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            <p className="text-xs font-black uppercase text-blue-700">Mensagem</p>
+            <h2 className="mt-1 text-2xl font-black">Antes de decidir</h2>
+            <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">{brand.proposalClosing}</p>
+          </section>
+        ) : null}
 
         <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start">
           <div className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
@@ -297,7 +307,7 @@ export default async function PublicProposalPage({
           </aside>
         </section>
 
-        {portfolio.length ? (
+        {brand?.showPortfolio !== false && portfolio.length ? (
           <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Prova visual</p>
             <h2 className="mt-1 text-2xl font-black">Portfólio relacionado</h2>
@@ -322,7 +332,7 @@ export default async function PublicProposalPage({
           </section>
         ) : null}
 
-        {services.length ? (
+        {brand?.showServices !== false && services.length ? (
           <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Serviços</p>
             <h2 className="mt-1 text-2xl font-black">Outras formas de contratar</h2>
@@ -339,7 +349,7 @@ export default async function PublicProposalPage({
           </section>
         ) : null}
 
-        {testimonials.length ? (
+        {brand?.showTestimonials !== false && testimonials.length ? (
           <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Prova social</p>
             <h2 className="mt-1 text-2xl font-black">Depoimentos</h2>
@@ -357,15 +367,24 @@ export default async function PublicProposalPage({
           </section>
         ) : null}
 
+        {brand?.proposalTerms ? (
+          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            <p className="text-xs font-black uppercase text-blue-700">Condições</p>
+            <h2 className="mt-1 text-2xl font-black">Termos comerciais</h2>
+            <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">{brand.proposalTerms}</p>
+          </section>
+        ) : null}
+
+        {brand?.showFaq !== false ? (
         <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
           <p className="text-xs font-black uppercase text-blue-700">FAQ</p>
           <h2 className="mt-1 text-2xl font-black">Perguntas frequentes</h2>
           <div className="mt-4 grid gap-3">
-            {[
+            {(customFaq.length ? customFaq : [
               ["Como aprovo?", "Use o aceite digital nesta página para registrar nome, e-mail, data e hora."],
               ["Posso tirar dúvidas?", "Sim. Use o botão de WhatsApp para conversar antes de aprovar."],
               ["O que acontece depois?", "O profissional recebe a confirmação e combina os próximos passos do serviço."],
-            ].map(([question, answer]) => (
+            ]).map(([question, answer]) => (
               <details className="rounded-lg border border-black/10 bg-slate-50 p-4" key={question}>
                 <summary className="cursor-pointer font-black">{question}</summary>
                 <p className="mt-2 leading-7 text-slate-600">{answer}</p>
@@ -373,6 +392,7 @@ export default async function PublicProposalPage({
             ))}
           </div>
         </section>
+        ) : null}
 
         <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="status">
           <div className="grid gap-3 sm:grid-cols-3">
@@ -503,6 +523,54 @@ function getDaysLeft(date: string) {
   today.setHours(0, 0, 0, 0);
   const target = new Date(`${date}T00:00:00`);
   return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+}
+
+function getProposalStyle(style: string) {
+  if (style === "creative") {
+    return {
+      pageClass: "bg-rose-50",
+      radiusClass: "rounded-2xl",
+      headerClass: "border border-white/10",
+      eyebrow: "Proposta criativa",
+      badges: ["Apresentação visual", "PDF de impacto", "Aceite fácil", "Contato direto"],
+      headerBackground: (secondary: string, primary: string, accent: string) => `radial-gradient(circle at 12% 20%, ${accent} 0, transparent 28%), linear-gradient(135deg, ${secondary}, ${primary})`,
+    };
+  }
+  if (style === "premium") {
+    return {
+      pageClass: "bg-slate-950",
+      radiusClass: "rounded-lg",
+      headerClass: "border border-white/15",
+      eyebrow: "Proposta premium",
+      badges: ["Experiência completa", "PDF premium", "Aceite online", "Próximos passos"],
+      headerBackground: (secondary: string, primary: string, accent: string) => `linear-gradient(135deg, ${secondary}, ${primary} 58%, ${accent})`,
+    };
+  }
+  if (style === "technical" || style === "classic") {
+    return {
+      pageClass: "bg-stone-50",
+      radiusClass: "rounded-none",
+      headerClass: "border-y border-black/10",
+      eyebrow: "Proposta técnica",
+      badges: ["Escopo claro", "PDF objetivo", "Aceite registrado", "Condições definidas"],
+      headerBackground: (secondary: string) => secondary,
+    };
+  }
+  return {
+    pageClass: "bg-[var(--ui-bg)]",
+    radiusClass: "rounded-lg",
+    headerClass: "",
+    eyebrow: "Proposta executiva",
+    badges: ["Link interativo", "PDF disponível", "Aceite online", "Atendimento em até 24h"],
+    headerBackground: (secondary: string) => secondary,
+  };
+}
+
+function parseCustomFaq(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.split("|").map((part) => part.trim()))
+    .filter((parts): parts is [string, string] => Boolean(parts[0] && parts[1]));
 }
 
 function labelStatus(status: string) {

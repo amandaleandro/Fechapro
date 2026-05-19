@@ -56,14 +56,22 @@ export async function POST(request: Request) {
   const validUntil = cleanOptionalString(body.validUntil);
   const clientEmail = cleanOptionalString(body.clientEmail);
   const checkoutMode = body.checkoutMode === "pix" ? "pix" : "mercadopago";
+  const serviceName = cleanString(body.serviceName || template?.serviceName || "");
+  const price = Number(body.price ?? template?.price ?? 0);
+  const deadline = cleanString(body.deadline || template?.deadline || "");
+  const payment = cleanOptionalString(body.payment || template?.payment || "") || "";
+  const included = Array.isArray(body.included)
+    ? body.included.map((item) => cleanString(item)).filter(Boolean).slice(0, 60)
+    : template?.included || [];
+  const notes = cleanOptionalString(body.notes || template?.notes || "") || "";
 
   if (!clientName) {
-    return jsonError("Cliente e template pronto são obrigatórios.");
+    return jsonError("Informe o nome do cliente.");
   }
 
-  if (!template) {
-    return jsonError("Escolha um template pronto para criar a proposta.");
-  }
+  if (!serviceName) return jsonError("Informe o serviÃ§o da proposta.");
+  if (!Number.isFinite(price) || price <= 0) return jsonError("Informe um valor maior que zero.");
+  if (!deadline) return jsonError("Informe o prazo da proposta.");
   if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade inválida.");
 
   if (clientEmail && !isValidEmail(clientEmail)) {
@@ -111,16 +119,16 @@ export async function POST(request: Request) {
       userId: session.id,
       clientName,
       clientEmail,
-      serviceName: template.serviceName,
-      price: template.price,
-      deadline: template.deadline,
+      serviceName,
+      price,
+      deadline,
       validUntil,
-      payment: template.payment,
+      payment,
       checkoutMode,
-      included: template.included,
-      notes: template.notes,
+      included,
+      notes,
       status: body.status || "sent",
-      publicSlug: slugify(`${clientName}-${template.serviceName}`),
+      publicSlug: slugify(`${clientName}-${serviceName}`),
     },
     include: { user: { select: { name: true } } },
   });

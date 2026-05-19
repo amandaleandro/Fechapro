@@ -1,42 +1,41 @@
 # FechaPro
 
-Plataforma mobile first para prestadores de serviço criarem propostas comerciais profissionais com IA, link público, PDF, aceite do cliente, pagamento online, artes de divulgação e gestão de planos.
+Plataforma mobile first para prestadores de serviço criarem propostas comerciais profissionais com link público, PDF, aceite do cliente, pagamento online, artes de divulgação e gestão de planos.
 
 ## Produto
 
-O FechaPro transforma orçamentos simples em propostas completas, bonitas e fáceis de aprovar. A aplicação reúne cadastro comercial, biblioteca de serviços, portfólio, depoimentos, geração assistida por IA, checkout e acompanhamento do interesse do cliente.
+O FechaPro transforma orçamentos simples em propostas completas, bonitas e fáceis de aprovar. A aplicação reúne cadastro comercial, biblioteca de serviços, clientes, portfólio, depoimentos, templates por nicho, checkout, acompanhamento comercial e suporte.
 
 Principais recursos:
 
-- landing page comercial com planos;
-- cadastro, login e recuperação de senha;
-- onboarding de marca e primeiro serviço;
-- painel com indicadores comerciais e limites do plano;
+- landing page comercial com planos públicos;
+- cadastro, login, recuperação e redefinição de senha;
+- checkout de cadastro e assinatura de planos pelo Mercado Pago;
+- painel com indicadores comerciais, follow-up manual, limites do plano e uso de artes;
 - cadastro de clientes, serviços, portfólio e depoimentos;
-- templates por nicho;
-- geração de proposta com IA e fallback interno;
-- link público da proposta;
-- aceite, recusa, visualizações e clique no WhatsApp;
-- PDF automático;
-- pagamento da proposta pelo Mercado Pago ou PIX direto com QR Code e copia e cola;
-- assinatura de planos e compra de créditos de artes pelo Mercado Pago;
-- artes de divulgação com IA, conforme plano e créditos;
+- templates prontos por nicho e templates importados pelo usuário;
+- criação de propostas com link público, PDF, aceite, recusa e duplicação;
+- contagem de visualizações e cliques no WhatsApp para orientar follow-up manual;
+- pagamento de propostas pelo Mercado Pago ou PIX direto com QR Code e copia e cola;
+- compra de créditos extras de artes pelo Mercado Pago;
+- solicitação e aprovação de artes de divulgação;
 - upload de imagens com remoção de fundo claro para logos;
 - notificações por e-mail e web push;
-- painel admin para liberar, bloquear e acompanhar usuários;
+- aba de suporte para mensagens entre usuário e equipe;
+- painel admin para acompanhar usuários, métricas, artes solicitadas e suporte;
 - Docker com app e Postgres.
 
 ## Stack
 
-- **Aplicação:** Next.js com TypeScript.
+- **Aplicação:** Next.js, React e TypeScript.
 - **UI:** Tailwind CSS e Lucide Icons.
 - **Banco:** Postgres.
 - **ORM:** Prisma.
 - **PDF:** PDFKit.
 - **Imagens:** Sharp.
-- **IA:** OpenAI Responses API e geração de imagem.
 - **Pagamentos:** Mercado Pago.
 - **E-mail:** SMTP ou Resend.
+- **Push:** Web Push com VAPID.
 - **Observabilidade:** Sentry e healthcheck.
 - **Infra local:** Docker Compose.
 
@@ -57,6 +56,7 @@ npm run test
 npm run build
 npm run db:generate
 npm run db:push
+npm run db:studio
 npm run admin:create
 ```
 
@@ -72,7 +72,7 @@ Serviços:
 - Postgres: `localhost:5436`
 - Database: `fechapro`
 - User: `fechapro`
-- Imagens locais: volume Docker `fechapro_uploads`, com URL salva no Postgres
+- Uploads locais: volume Docker `fechapro_uploads`, com URL salva no Postgres
 
 Para aplicar o schema no banco:
 
@@ -113,23 +113,21 @@ ADMIN_EMAILS="admin@fechapro.local"
 ADMIN_EMAIL="admin@fechapro.local"
 ADMIN_PASSWORD="FechaProAdmin123!"
 ADMIN_NAME="Administrador Geral"
-OPENAI_API_KEY=""
-OPENAI_MODEL="gpt-5.4-mini"
-OPENAI_TEXT_MODEL="gpt-5.4-mini"
-OPENAI_IMAGE_MODEL="gpt-image-1.5"
-mercado_pago_access_token=""
-mercado_pago_webhook_secret=""
-mercado_pago_sandbox="true"
+MERCADO_PAGO_ACCESS_TOKEN=""
+MERCADO_PAGO_WEBHOOK_SECRET=""
+MERCADO_PAGO_SANDBOX="true"
 POSTGRES_DB="fechapro"
 POSTGRES_USER="fechapro"
 POSTGRES_PASSWORD="fechapro_dev_password"
 UPLOAD_DIR="/app/uploads"
 APP_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 NEXT_PUBLIC_WHATSAPP_NUMBER=""
 NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE="Olá! Preciso de ajuda com o FechaPro."
 ```
 
-Nunca coloque chaves reais em arquivos versionados.
+Também existem aliases em minúsculas para variáveis do Mercado Pago em alguns ambientes. Prefira manter os nomes do `.env.example` atualizados e nunca coloque chaves reais em arquivos versionados.
 
 ## Pagamentos
 
@@ -137,9 +135,9 @@ O checkout de planos, créditos de artes e propostas usa Mercado Pago.
 
 Para ativar:
 
-- configure `mercado_pago_access_token`;
-- configure `mercado_pago_webhook_secret`;
-- use `mercado_pago_sandbox="true"` em testes e `"false"` em produção;
+- configure `MERCADO_PAGO_ACCESS_TOKEN`;
+- configure `MERCADO_PAGO_WEBHOOK_SECRET`;
+- use `MERCADO_PAGO_SANDBOX="true"` em testes e `"false"` em produção;
 - aponte o webhook no painel do Mercado Pago para:
 
 ```text
@@ -148,11 +146,21 @@ https://seu-dominio.com/api/webhooks/mercadopago
 
 Nas propostas, o profissional também pode escolher PIX direto. Para isso, cadastre a chave PIX na tela **Marca** e selecione **PIX direto para minha chave** ao criar a proposta. O cliente verá QR Code e código copia e cola no checkout da proposta. A confirmação desse PIX direto deve ser combinada com o cliente, pois o FechaPro apenas exibe a chave configurada.
 
-## IA
+## Planos
 
-- Sem `OPENAI_API_KEY`, o gerador de proposta usa um assistente interno de reserva.
-- Com `OPENAI_API_KEY`, a rota `/api/ai/proposal` usa a OpenAI Responses API.
-- Os modelos padrão são configuráveis por `OPENAI_MODEL`, `OPENAI_TEXT_MODEL` e `OPENAI_IMAGE_MODEL`.
+Os planos ficam em `lib/plans.ts`. Atualmente há planos públicos para venda e planos internos/legados que podem continuar associados a contas existentes.
+
+Planos públicos:
+
+- **Start:** 20 propostas por mês e 5 artes por mês.
+- **Pro:** 120 propostas por mês e 10 artes por mês.
+- **Premium com Site:** 600 propostas por mês, 20 artes por mês, implantação/configuração, modelos de mensagens para copiar e adaptar e materiais de apoio.
+
+Pacotes extras de artes:
+
+- **Pacote 5 artes**
+- **Pacote 15 artes**
+- **Pacote 30 artes**
 
 ## E-mail, Push E Suporte
 
@@ -161,6 +169,7 @@ Nas propostas, o profissional também pode escolher PIX direto. Para isso, cadas
 - Para web push, gere chaves VAPID e preencha `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT`.
 - Configure `NEXT_PUBLIC_WHATSAPP_NUMBER` com o número do suporte, somente com dígitos.
 - Ajuste `NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE` para mudar a mensagem preenchida ao abrir o WhatsApp.
+- A aba **Suporte** do painel registra conversas que podem ser respondidas no painel admin.
 
 ## Imagens E Storage
 
@@ -183,16 +192,19 @@ Antes de publicar:
 
 - preencha `.env.production`;
 - defina `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SITE_URL` e `APP_URL` com o domínio real;
+- configure `AUTH_SECRET` forte;
 - rode migrações do Prisma;
 - crie o admin com `npm run admin:create` ou `docker compose exec app node scripts/create-admin.js`;
 - configure o webhook do Mercado Pago;
 - valide SMTP ou Resend;
-- configure Sentry, se for usar monitoramento de erros.
+- configure chaves VAPID se for usar web push;
+- configure Sentry, se for usar monitoramento de erros;
+- use storage externo para uploads de produção.
 
 ## Próximos Ajustes Recomendados
 
 - validar o fluxo completo do Mercado Pago em ambiente real;
 - mover uploads de produção para S3 ou Cloudflare R2;
-- ampliar e-mails transacionais para visualização, aceite, recusa e pagamento;
-- melhorar dashboards de receita e conversão;
-- ampliar testes de checkout, webhook e limites por plano.
+- ampliar testes de checkout, webhook e limites por plano;
+- revisar textos comerciais da landing page conforme a oferta vigente;
+- melhorar dashboards de receita, conversão e acompanhamento manual de follow-up.

@@ -23,6 +23,15 @@ export async function GET() {
       email: session.email,
       website: null,
       bio: null,
+      proposalStyle: "executive",
+      proposalIntro: null,
+      proposalClosing: null,
+      proposalTerms: null,
+      proposalFaq: null,
+      showPortfolio: true,
+      showTestimonials: true,
+      showServices: true,
+      showFaq: true,
     },
   );
 }
@@ -41,6 +50,15 @@ export async function PUT(request: Request) {
     email?: string | null;
     website?: string | null;
     bio?: string | null;
+    proposalStyle?: string | null;
+    proposalIntro?: string | null;
+    proposalClosing?: string | null;
+    proposalTerms?: string | null;
+    proposalFaq?: string | null;
+    showPortfolio?: boolean;
+    showTestimonials?: boolean;
+    showServices?: boolean;
+    showFaq?: boolean;
   };
 
   const businessName = cleanString(body.businessName) || session.name;
@@ -50,6 +68,7 @@ export async function PUT(request: Request) {
   const instagram = clean(body.instagram);
   const email = clean(body.email) || session.email;
   const website = clean(body.website);
+  const proposalStyle = ["executive", "creative", "premium", "technical", "modern", "classic"].includes(body.proposalStyle || "") ? body.proposalStyle! : "executive";
 
   if (logoUrl && !isValidHttpUrl(logoUrl) && !logoUrl.startsWith("/")) return jsonError("URL do logo inválida.");
   if (whatsapp && !isValidPhone(whatsapp)) return jsonError("WhatsApp inválido.");
@@ -71,6 +90,15 @@ export async function PUT(request: Request) {
       email,
       website,
       bio: clean(body.bio),
+      proposalStyle,
+      proposalIntro: clean(body.proposalIntro),
+      proposalClosing: clean(body.proposalClosing),
+      proposalTerms: clean(body.proposalTerms),
+      proposalFaq: clean(body.proposalFaq),
+      showPortfolio: body.showPortfolio !== false,
+      showTestimonials: body.showTestimonials !== false,
+      showServices: body.showServices !== false,
+      showFaq: body.showFaq !== false,
     },
     update: {
       businessName,
@@ -84,6 +112,15 @@ export async function PUT(request: Request) {
       email,
       website,
       bio: clean(body.bio),
+      proposalStyle,
+      proposalIntro: clean(body.proposalIntro),
+      proposalClosing: clean(body.proposalClosing),
+      proposalTerms: clean(body.proposalTerms),
+      proposalFaq: clean(body.proposalFaq),
+      showPortfolio: body.showPortfolio !== false,
+      showTestimonials: body.showTestimonials !== false,
+      showServices: body.showServices !== false,
+      showFaq: body.showFaq !== false,
     },
   });
 
