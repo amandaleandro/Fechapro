@@ -97,6 +97,12 @@ export default function RootLayout({
         />
         <Script
           async
+          src="https://cdn.pulse.is/livechat/loader.js"
+          data-live-chat-id="6a0c58ef9aed0e2d4a09ca0d"
+          strategy="afterInteractive"
+        />
+        <Script
+          async
           charSet="UTF-8"
           src="https://web.webpushs.com/js/push/ecfc2beef8970f00c1e3169288f73b2d_1.js"
           strategy="afterInteractive"
