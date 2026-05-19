@@ -114,6 +114,26 @@ export async function POST(request: Request) {
     return jsonError(`Limite mensal do plano ${plan.name} atingido.`, 402);
   }
 
+  const existingService = await prisma.serviceAsset.findFirst({
+    where: {
+      userId: session.id,
+      name: { equals: serviceName, mode: "insensitive" },
+    },
+    select: { id: true },
+  });
+
+  if (!existingService) {
+    await prisma.serviceAsset.create({
+      data: {
+        userId: session.id,
+        name: serviceName,
+        price,
+        deadline,
+        includes: included.slice(0, 30),
+      },
+    });
+  }
+
   const item = await prisma.proposalAsset.create({
     data: {
       userId: session.id,

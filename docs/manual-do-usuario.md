@@ -174,12 +174,12 @@ Os campos **nome_cliente** e **depoimento** são obrigatórios.
 
 Acesse **Painel** para criar uma proposta.
 
-Você pode começar preenchendo os dados da proposta diretamente no painel. Para agilizar, selecione um cliente, serviço ou template já cadastrado quando houver.
+Você pode começar preenchendo os dados da proposta diretamente no painel. Nos campos **Cliente** e **Serviço**, você pode selecionar um cadastro existente ou escrever livremente quando ainda não tiver aquele cliente ou serviço salvo. Para agilizar, selecione um cliente, serviço ou template já cadastrado quando houver.
 
 Campos principais:
 
-- **Cliente:** selecione um cliente salvo ou digite o nome.
-- **Serviço:** selecione um serviço salvo ou digite o nome.
+- **Cliente:** selecione um cliente salvo na lista ou digite o nome de um cliente novo.
+- **Serviço:** selecione um serviço salvo na lista ou digite o nome do serviço manualmente.
 - **Valor:** investimento da proposta.
 - **Prazo:** prazo de entrega.
 - **Validade:** até quando a proposta vale.
@@ -213,7 +213,7 @@ Nesse caso, o cliente recebe uma única proposta, com um único link, um único 
 
 ## 11. Usar templates prontos
 
-Acesse **Templates** para escolher modelos por nicho, como social media, designer, fotografia, arquitetura, consultoria, serviço técnico e outros.
+Acesse **Templates** para escolher modelos por nicho, como social media, designer, fotografia, arquitetura, consultoria, serviço técnico, mecânica automotiva, lava jato, auto elétrica, estética automotiva e outros.
 
 Para usar:
 

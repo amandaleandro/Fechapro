@@ -73,6 +73,40 @@ const templateSeeds: TemplateSeed[] = [
     ].map(toService),
   },
   {
+    niche: "Mecanica automotiva",
+    services: [
+      ["Revisao preventiva", "Revisao preventiva automotiva", 480, "1 dia util", ["Checklist mecanico", "Verificacao de fluidos", "Inspecao de freios e suspensao", "Scanner basico", "Relatorio do veiculo"]],
+      ["Troca de oleo e filtros", "Troca de oleo e filtros", 260, "Atendimento em 2 horas", ["Oleo conforme especificacao", "Filtro de oleo", "Verificacao de filtros adicionais", "Conferencia de vazamentos", "Registro da quilometragem"]],
+      ["Freios e suspensao", "Manutencao de freios e suspensao", 850, "1 a 2 dias uteis", ["Diagnostico inicial", "Desmontagem e inspecao", "Substituicao de pecas combinadas", "Teste de rodagem", "Garantia de 30 dias"]],
+      ["Diagnostico completo", "Diagnostico mecanico completo", 350, "Atendimento em 3 horas", ["Scanner automotivo", "Analise de ruidos", "Verificacao de motor", "Teste de funcionamento", "Orcamento detalhado dos reparos"]],
+    ].map(toService),
+  },
+  {
+    niche: "Lava jato",
+    services: [
+      ["Lavagem completa", "Lavagem completa de veiculo", 90, "Atendimento em 1 hora", ["Lavagem externa", "Aspiracao interna", "Limpeza de painel", "Pretinho nos pneus", "Finalizacao basica"]],
+      ["Lavagem detalhada", "Lavagem detalhada automotiva", 180, "Atendimento em 2 horas", ["Pre-lavagem", "Lavagem tecnica", "Limpeza interna detalhada", "Limpeza de rodas e caixas", "Finalizacao com cera liquida"]],
+      ["Higienizacao interna", "Higienizacao interna automotiva", 320, "Atendimento em 4 horas", ["Aspiracao profunda", "Limpeza de bancos", "Limpeza de carpetes", "Higienizacao de painel e portas", "Orientacao de secagem"]],
+      ["Plano mensal de lavagem", "Plano mensal de lavagem automotiva", 280, "4 atendimentos mensais", ["4 lavagens completas", "Agendamento prioritario", "Aspiracao interna", "Finalizacao dos pneus", "Controle dos atendimentos"]],
+    ].map(toService),
+  },
+  {
+    niche: "Auto eletrica",
+    services: [
+      ["Diagnostico eletrico", "Diagnostico eletrico automotivo", 280, "Atendimento em 2 horas", ["Scanner e testes eletricos", "Verificacao de bateria", "Analise de alternador", "Teste de fusivel e rele", "Relatorio do problema"]],
+      ["Instalacao de acessorios", "Instalacao de acessorios automotivos", 420, "1 dia util", ["Briefing do acessorio", "Instalacao eletrica", "Organizacao de chicote", "Teste de funcionamento", "Orientacao de uso"]],
+      ["Bateria e alternador", "Manutencao de bateria e alternador", 520, "1 dia util", ["Teste de carga", "Verificacao de cabos", "Diagnostico do alternador", "Substituicao combinada", "Garantia de 30 dias"]],
+    ].map(toService),
+  },
+  {
+    niche: "Estetica automotiva",
+    services: [
+      ["Polimento tecnico", "Polimento tecnico automotivo", 650, "1 a 2 dias uteis", ["Lavagem tecnica", "Descontaminacao da pintura", "Polimento em etapas", "Protecao final", "Orientacoes de manutencao"]],
+      ["Vitrificacao de pintura", "Vitrificacao automotiva", 1200, "2 dias uteis", ["Lavagem tecnica", "Descontaminacao", "Polimento preparatorio", "Aplicacao de vitrificador", "Cura e entrega orientada"]],
+      ["Revitalizacao de farol", "Revitalizacao de farois", 180, "Atendimento em 2 horas", ["Lixamento tecnico", "Polimento do farol", "Aplicacao de protecao", "Teste visual", "Orientacoes de cuidado"]],
+    ].map(toService),
+  },
+  {
     niche: "Beleza",
     services: [
       ["Pacote de unhas", "Manicure e alongamento", 160, "Atendimento em 2 horas", ["Cutilagem", "Esmaltacao", "Alongamento ou manutencao", "Finalizacao hidratante", "Garantia de 7 dias"]],
@@ -319,6 +353,24 @@ const multiServiceTemplates: ProposalTemplate[] = [
       "Registro simples do resultado final, quando autorizado",
     ],
     notes: "Proposta indicada para eventos, ensaios e datas especiais. Deslocamento, extensoes, acessorios e procedimentos extras podem alterar o valor.",
+  },
+  {
+    id: "multi-servicos-automotivo-revisao-lavagem",
+    niche: "Pacotes com varios servicos",
+    title: "Revisao + lavagem detalhada",
+    serviceName: "Pacote revisao mecanica + cuidado automotivo",
+    price: 980,
+    deadline: "1 a 2 dias uteis",
+    payment: "50% na aprovacao e 50% na retirada do veiculo",
+    included: [
+      "Checklist mecanico preventivo",
+      "Scanner basico e verificacao de fluidos",
+      "Inspecao de freios, suspensao e itens de seguranca",
+      "Lavagem tecnica externa",
+      "Aspiracao e limpeza interna detalhada",
+      "Relatorio do veiculo com recomendacoes",
+    ],
+    notes: "Pecas, oleo, filtros, produtos premium, servicos adicionais e reparos identificados no diagnostico devem ser aprovados separadamente antes da execucao.",
   },
 ];
 

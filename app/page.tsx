@@ -710,6 +710,7 @@ export default function Home() {
       const result = await apiPost<Proposal & { clientEmailSent?: boolean }>("/api/proposals", {
         ...draft,
         clientEmail: draft.clientEmail?.trim() || "",
+        included: cleanIncludedItems(draft.included),
         status,
       });
       setProposals((current) => [result, ...current]);
@@ -1310,7 +1311,8 @@ function DashboardView({
   onNotice: (message: string | null) => void;
   proposalTemplates: ProposalTemplate[];
 }) {
-  const includedItems = draft.included.length ? draft.included : ["Itens da proposta aparecem aqui."];
+  const includedItems = cleanIncludedItems(draft.included);
+  const previewIncludedItems = includedItems.length ? includedItems : ["Itens da proposta aparecem aqui."];
   const acceptedValue = proposals
     .filter((proposal) => proposal.status === "accepted")
     .reduce((sum, proposal) => sum + proposal.price, 0);
@@ -1657,15 +1659,7 @@ function DashboardView({
             maxLength={1200}
             placeholder={"Logo\nPaleta de cores\n5 modelos de posts"}
             value={draft.included.join("\n")}
-            onChange={(value) =>
-              onDraftChange(
-                "included",
-                value
-                  .split("\n")
-                  .map((item) => item.trim())
-                  .filter(Boolean),
-              )
-            }
+            onChange={(value) => onDraftChange("included", value.split("\n"))}
           />
 
           <TextAreaField
@@ -1722,7 +1716,7 @@ function DashboardView({
             <div>
               <h3 className="font-black">Inclui</h3>
               <ul className="mt-2 list-disc pl-5 text-slate-600">
-                {includedItems.map((item, index) => (
+                {previewIncludedItems.map((item, index) => (
                   <li key={`${item}-${index}`}>{item}</li>
                 ))}
               </ul>
@@ -5797,6 +5791,10 @@ function validateProposalDraft(draft: ProposalDraft) {
   if (draft.validUntil && !isValidDateOnly(draft.validUntil)) return "Informe uma data de validade válida.";
   if (draft.clientEmail?.trim() && !isValidEmail(draft.clientEmail.trim())) return "Informe um e-mail de cliente válido.";
   return null;
+}
+
+function cleanIncludedItems(items: string[]) {
+  return items.map((item) => item.trim()).filter(Boolean);
 }
 
 function formatDateOnly(value?: string | null) {
