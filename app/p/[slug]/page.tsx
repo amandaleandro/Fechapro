@@ -142,12 +142,14 @@ export default async function PublicProposalPage({
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${brandColor}, ${brandAccentColor})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {brand?.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img alt="" className="h-12 w-12 rounded-lg object-cover" src={brand.logoUrl} />
+                  <span className="grid h-16 w-24 place-items-center overflow-hidden rounded-lg bg-white p-1.5 shadow-sm ring-1 ring-white/70 sm:h-20 sm:w-32">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img alt="" className="h-full w-full object-contain" src={brand.logoUrl} />
+                  </span>
                 ) : (
-                  <div className="grid h-12 w-12 place-items-center rounded-lg font-black text-white" style={{ background: brandColor }}>
+                  <div className="grid h-16 w-16 place-items-center rounded-lg font-black text-white sm:h-20 sm:w-20" style={{ background: brandColor }}>
                     FP
                   </div>
                 )}

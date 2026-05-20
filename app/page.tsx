@@ -113,6 +113,8 @@ type Proposal = {
   deadline: string;
   validUntil: string;
   payment: string;
+  documentType: "auto" | "budget" | "commercial_proposal" | "technical_proposal" | "care_plan" | "event_proposal";
+  segment: "auto" | "home_reform" | "automotive" | "beauty" | "health" | "business" | "events" | "technology" | "education" | "food" | "pet" | "general";
   included: string[];
   notes: string;
   status: ProposalStatus;
@@ -237,6 +239,8 @@ const blankDraft: ProposalDraft = {
   deadline: "",
   validUntil: nextWeekDate(),
   payment: "",
+  documentType: "auto",
+  segment: "auto",
   checkoutMode: "mercadopago",
   included: [],
   notes: "",
@@ -260,6 +264,30 @@ const statusConfig: Partial<Record<
   declined: { label: "Recusado", icon: ThumbsDown, className: "bg-rose-700 text-white" },
   expired: { label: "Expirado", icon: RotateCcw, className: "bg-orange-600 text-white" },
 };
+
+const documentTypeOptions: Array<{ value: ProposalDraft["documentType"]; label: string }> = [
+  { value: "auto", label: "Automatico pelo segmento" },
+  { value: "budget", label: "Orcamento" },
+  { value: "commercial_proposal", label: "Proposta comercial" },
+  { value: "technical_proposal", label: "Proposta tecnica" },
+  { value: "care_plan", label: "Plano de cuidado" },
+  { value: "event_proposal", label: "Proposta de evento" },
+];
+
+const proposalSegmentOptions: Array<{ value: ProposalDraft["segment"]; label: string }> = [
+  { value: "auto", label: "Automatico pelo servico" },
+  { value: "home_reform", label: "Casa, obra e reforma" },
+  { value: "automotive", label: "Automotivo" },
+  { value: "beauty", label: "Beleza e estetica" },
+  { value: "health", label: "Saude e bem-estar" },
+  { value: "business", label: "Consultoria, juridico e negocios" },
+  { value: "events", label: "Eventos e fotografia" },
+  { value: "technology", label: "Tecnologia, design e marketing" },
+  { value: "education", label: "Aulas e educacao" },
+  { value: "food", label: "Gastronomia" },
+  { value: "pet", label: "Pet" },
+  { value: "general", label: "Servico geral" },
+];
 
 const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }> = [
   { id: "dashboard", label: "Painel", icon: LayoutDashboard },
@@ -1311,6 +1339,7 @@ function DashboardView({
   onNotice: (message: string | null) => void;
   proposalTemplates: ProposalTemplate[];
 }) {
+  const [includedText, setIncludedText] = useState(() => draft.included.join("\n"));
   const includedItems = cleanIncludedItems(draft.included);
   const previewIncludedItems = includedItems.length ? includedItems : ["Itens da proposta aparecem aqui."];
   const acceptedValue = proposals
@@ -1333,6 +1362,11 @@ function DashboardView({
       ["active", "trial"].includes(billing.subscription.status) &&
       ["mercadopago", "admin"].includes(billing.subscription.provider || ""),
   );
+
+  useEffect(() => {
+    const nextIncludedText = draft.included.join("\n");
+    setIncludedText((current) => (current === nextIncludedText ? current : nextIncludedText));
+  }, [draft.included]);
 
   function chooseService(serviceName: string) {
     const service = services.find((item) => item.name === serviceName);
@@ -1552,6 +1586,33 @@ function DashboardView({
             </label>
           </div>
 
+          <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+              Tipo do documento
+              <select
+                className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                value={draft.documentType}
+                onChange={(event) => onDraftChange("documentType", event.target.value as ProposalDraft["documentType"])}
+              >
+                {documentTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+              Segmento visual
+              <select
+                className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                value={draft.segment}
+                onChange={(event) => onDraftChange("segment", event.target.value as ProposalDraft["segment"])}
+              >
+                {proposalSegmentOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <SelectField
               label="Cliente"
@@ -1658,8 +1719,11 @@ function DashboardView({
             label="Itens inclusos"
             maxLength={1200}
             placeholder={"Logo\nPaleta de cores\n5 modelos de posts"}
-            value={draft.included.join("\n")}
-            onChange={(value) => onDraftChange("included", value.split("\n"))}
+            value={includedText}
+            onChange={(value) => {
+              setIncludedText(value);
+              onDraftChange("included", value.split("\n"));
+            }}
           />
 
           <TextAreaField
@@ -3667,6 +3731,10 @@ function AccountStatusItem({ detail, done, label }: { detail: string; done: bool
   );
 }
 
+function isValidLogoUrl(value: string) {
+  return isValidHttpUrl(value) || value.startsWith("/");
+}
+
 function BrandView({
   brand,
   onChange,
@@ -3715,8 +3783,8 @@ function BrandView({
       setError("Informe o nome comercial.");
       return;
     }
-    if (form.logoUrl?.trim() && !isValidHttpUrl(form.logoUrl.trim())) {
-      setError("Informe uma URL de logo válida começando com http:// ou https://.");
+    if (form.logoUrl?.trim() && !isValidLogoUrl(form.logoUrl.trim())) {
+      setError("Informe uma URL de logo válida ou mantenha o caminho interno salvo pelo sistema.");
       return;
     }
     if (form.whatsapp?.trim() && !isValidPhone(form.whatsapp.trim())) {
@@ -3784,7 +3852,7 @@ function BrandView({
               O FechaPro pode remover fundo branco ou claro do logo.
             </span>
           </label>
-          <TextField label="URL do logo" placeholder="Opcional: https://..." type="url" value={form.logoUrl || ""} onChange={(value) => setForm({ ...form, logoUrl: value })} />
+          <TextField label="URL do logo" placeholder="Opcional: https://... ou /api/uploads/..." value={form.logoUrl || ""} onChange={(value) => setForm({ ...form, logoUrl: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Cor principal
             <input
@@ -4144,11 +4212,11 @@ function AuthScreen() {
   const plans = [
     {
       code: "start",
-      name: "Start",
+      name: "Inicial",
       price: "R$ 97",
       priceSuffix: "/mês ou R$ 897/ano",
-      cta: "Começar com Start",
-      detail: "Para parar de mandar orçamento simples e começar a enviar propostas com link, PDF e aceite.",
+      cta: "Criar proposta profissional",
+      detail: "Para quem quer parar de mandar orçamento simples e começar a enviar link, PDF e aceite online.",
       items: ["20 propostas por mês", "5 artes para divulgar por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
     {
@@ -4157,9 +4225,9 @@ function AuthScreen() {
       price: "R$ 197",
       priceSuffix: "/mês ou R$ 1.497/ano",
       badge: "Mais escolhido",
-      cta: "Quero o plano Pro",
-      detail: "Para quem vende todo dia e quer se destacar da concorrência.",
-      items: ["120 propostas por mês", "Tudo do Start", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
+      cta: "Quero vender com Pro",
+      detail: "Para quem vende com frequência e quer propostas mais completas, visuais e fáceis de acompanhar.",
+      items: ["120 propostas por mês", "Tudo do Inicial", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
     },
     {
       code: "premium_site",
@@ -4167,9 +4235,9 @@ function AuthScreen() {
       price: "12x de R$ 125",
       priceSuffix: "Premium com Site por R$ 1.500/ano até 03/06",
       promoPrice: "De R$ 2.997",
-      badge: "Mais vendido na oferta",
+      badge: "Melhor escolha",
       cta: "Quero o Premium pronto — oferta até 03/06",
-      detail: "Receba o FechaPro configurado, site pronto, primeiras propostas criadas e kit de mensagens para copiar e adaptar, sem precisar fazer tudo sozinho.",
+      detail: "Melhor escolha para quem quer presença profissional completa: proposta, site, implantação e materiais para vender melhor.",
       items: ["12 meses de FechaPro", "Mini site profissional", "Implantação e configuração inicial", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para copiar e adaptar", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
     },
   ];
@@ -4388,10 +4456,10 @@ function AuthScreen() {
                 Para prestadores que vendem pelo WhatsApp
               </p>
               <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Pare de mandar orçamento solto no WhatsApp. Envie uma proposta profissional e feche mais clientes.
+                Pare de perder vendas mandando só preço no WhatsApp.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                Com o FechaPro você cria uma proposta bonita com sua marca, portfólio, PDF e botão de aceite, e envia o link direto pelo WhatsApp em menos de 5 minutos.
+                Envie propostas profissionais com link, PDF, aceite online e botão para fechar. Seu orçamento também precisa vender.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
                 <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano, menos que muitos serviços fechados com uma única proposta.</p>
@@ -4403,7 +4471,7 @@ function AuthScreen() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Criar minha primeira proposta
+                  Quero ver como fica minha proposta
                 </a>
                 <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#como-funciona">
                   Ver como funciona na prática
@@ -4465,7 +4533,7 @@ function AuthScreen() {
             <p className="text-xs font-black uppercase text-blue-700">Simulador</p>
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quanto você pode estar perdendo por mês com orçamento simples?</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Ajuste os números e veja o potencial de recuperação quando uma proposta deixa de parecer mensagem solta e passa a vender valor.
+              Se você perde apenas 2 orçamentos por mês por parecer simples demais, o FechaPro já pode estar se pagando.
             </p>
           </div>
 
@@ -4505,7 +4573,7 @@ function AuthScreen() {
                 <p className="text-xs font-black uppercase text-green-300">Potencial estimado</p>
                 <strong className="mt-2 block text-3xl font-black sm:text-4xl">{money.format(estimatedMonthlyUpside)}</strong>
                 <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-                  Exemplo simples: se {clampedRescuedDeals} proposta(s) por mês forem recuperadas, esse valor pode voltar para negociação com link, PDF, portfólio e aceite online.
+                  Se {clampedRescuedDeals} orçamento(s) deixarem de virar comparação de preço e voltarem para negociação, esse é o valor que pode entrar de novo no jogo.
                 </p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
@@ -4607,21 +4675,32 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Prova visual</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">A diferença entre mandar preço e apresentar uma venda.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Antes era só “Fica R$ 850”. Agora é uma proposta que ajuda a vender.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O cliente recebe um link organizado, entende o que está incluso, vê provas do seu trabalho, baixa o PDF se quiser e aceita online quando estiver pronto para fechar.
             </p>
-            <a className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-5 font-black text-white" href="#planos">
-              Quero propostas assim
-            </a>
+            <div className="mt-6 grid gap-3">
+              <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
+                <p className="text-xs font-black uppercase text-rose-700">Antes</p>
+                <p className="mt-2 text-2xl font-black text-rose-950">“Fica R$ 850.”</p>
+                <p className="mt-2 text-sm font-bold leading-6 text-rose-900/80">Sem contexto, sem prova, sem escopo claro e fácil de comparar pelo menor preço.</p>
+              </div>
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                <p className="text-xs font-black uppercase text-green-700">Depois</p>
+                <p className="mt-2 text-sm font-black leading-6 text-green-950">Proposta com logo, fotos, itens inclusos, prazo, valor, PDF e botão de aceite.</p>
+              </div>
+              <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-5 font-black text-white" href="#planos">
+                Criar minha proposta profissional
+              </a>
+            </div>
           </div>
           <div className="grid gap-4 lg:grid-cols-[1fr_0.72fr]">
             {/* Mockup fiel ao preview real da proposta */}
             <div className="overflow-hidden rounded-xl border border-black/10 shadow-xl shadow-slate-900/10">
               {/* Barra superior */}
               <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Preview</p>
-                <p className="text-sm font-black text-white">Proposta para cliente</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Depois</p>
+                <p className="text-sm font-black text-white">Proposta profissional para o cliente</p>
               </div>
               {/* Corpo do card */}
               <div className="bg-white p-4">
@@ -4764,15 +4843,15 @@ function AuthScreen() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase text-green-300">Planos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha quanto tempo você quer economizar.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha como seu orçamento vai começar a vender.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Você pode começar montando por conta própria ou pegar o Premium e receber a estrutura pronta para vender com aparência profissional.
+              Do primeiro link profissional à presença completa com site, implantação e materiais para vender melhor.
             </p>
           </div>
 
           <div className="fp-landing-offer motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
-            <p className="text-xs font-black uppercase text-green-200">Oferta de lançamento até 03/06</p>
-            <h3 className="mt-2 text-2xl font-black">O pacote Premium foi feito para você comprar hoje e parar de adiar sua estrutura comercial.</h3>
+            <p className="text-xs font-black uppercase text-green-200">Condição especial de lançamento</p>
+            <h3 className="mt-2 text-2xl font-black">Os primeiros clientes recebem implantação, primeiras propostas criadas, kit de mensagens e apoio para começar a vender melhor já na primeira semana.</h3>
             <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-white/82">
               Por R$ 1.500/ano, você leva 12 meses de FechaPro, mini site profissional, implantação, portfólio organizado, primeiras propostas, PDF, aceite online, 20 artes por mês, calendário de divulgação e mensagens prontas para copiar, adaptar e enviar.
             </p>
@@ -4786,7 +4865,7 @@ function AuthScreen() {
               <article className={`fp-landing-plan motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
                 plan.name === "Premium — FechaPro pronto para vender"
                   ? "motion-pulse-soft border-green-300 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.03]"
-                  : plan.name === "Start"
+                  : plan.name === "Inicial"
                     ? "border-green-400 bg-white text-slate-950"
                     : "border-blue-300 bg-white text-slate-950"
               }`} key={plan.name}>
@@ -5768,6 +5847,8 @@ function parsePrompt(prompt: string): ProposalDraft {
     deadline: deadlineMatch ? deadlineMatch[1].trim() : "",
     validUntil: nextWeekDate(),
     payment: prompt.toLowerCase().includes("50") ? "50% na entrada e 50% na entrega" : "A combinar",
+    documentType: "auto",
+    segment: "auto",
     included: ["Diagnóstico inicial", "Execução do serviço principal", "Ajustes combinados em proposta", "Entrega final organizada"],
     notes: "Proposta válida até a data informada. Alterações de escopo podem gerar novo orçamento.",
   };

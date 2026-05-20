@@ -25,6 +25,8 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
       deadline: source.deadline,
       validUntil: source.validUntil,
       payment: source.payment,
+      documentType: source.documentType,
+      segment: source.segment,
       checkoutMode: source.checkoutMode,
       included: source.included,
       notes: source.notes,

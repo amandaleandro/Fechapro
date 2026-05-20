@@ -11,6 +11,9 @@ import { cleanOptionalString, cleanString, isValidDateOnly, isValidEmail } from 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const allowedDocumentTypes = new Set(["auto", "budget", "commercial_proposal", "technical_proposal", "care_plan", "event_proposal"]);
+const allowedSegments = new Set(["auto", "home_reform", "automotive", "beauty", "health", "business", "events", "technology", "education", "food", "pet", "general"]);
+
 export async function GET() {
   const session = await requireSession();
 
@@ -39,6 +42,8 @@ export async function POST(request: Request) {
     deadline?: string;
     validUntil?: string;
     payment?: string;
+    documentType?: string;
+    segment?: string;
     checkoutMode?: string;
     included?: string[];
     notes?: string;
@@ -60,6 +65,8 @@ export async function POST(request: Request) {
   const price = Number(body.price ?? template?.price ?? 0);
   const deadline = cleanString(body.deadline || template?.deadline || "");
   const payment = cleanOptionalString(body.payment || template?.payment || "") || "";
+  const documentType = allowedDocumentTypes.has(body.documentType || "") ? body.documentType! : "auto";
+  const segment = allowedSegments.has(body.segment || "") ? body.segment! : "auto";
   const included = Array.isArray(body.included)
     ? body.included.map((item) => cleanString(item)).filter(Boolean).slice(0, 60)
     : template?.included || [];
@@ -144,6 +151,8 @@ export async function POST(request: Request) {
       deadline,
       validUntil,
       payment,
+      documentType,
+      segment,
       checkoutMode,
       included,
       notes,

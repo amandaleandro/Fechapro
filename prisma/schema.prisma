@@ -140,6 +140,8 @@ model ProposalAsset {
   deadline              String
   validUntil            String?
   payment               String?
+  documentType          String         @default("auto")
+  segment               String         @default("auto")
   included              String[]       @default([])
   clientEmail           String?
   notes                 String?
