@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const allowedDocumentTypes = new Set(["auto", "budget", "commercial_proposal", "technical_proposal", "care_plan", "event_proposal"]);
-const allowedSegments = new Set(["auto", "home_reform", "automotive", "beauty", "health", "business", "events", "technology", "education", "food", "pet", "general"]);
+const allowedSegments = new Set(["auto", "home_reform", "automotive", "beauty", "health", "business", "events", "technology", "education", "food", "pet", "real_estate", "fashion_retail", "transport", "finance", "industry", "agriculture", "tourism", "security", "general"]);
 
 export async function GET() {
   const session = await requireSession();

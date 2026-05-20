@@ -82,6 +82,7 @@ export default async function PublicProposalPage({
   const brandSecondaryColor = brand?.secondaryColor || "#0F172A";
   const brandAccentColor = brand?.accentColor || "#2563EB";
   const proposalStyle = getProposalStyle(brand?.proposalStyle || "modern");
+  const segmentStyle = getPublicSegmentStyle(proposal.segment || "auto", proposal.serviceName, proposal.included, proposal.notes || "", brandColor, brandSecondaryColor, brandAccentColor);
   const customFaq = parseCustomFaq(brand?.proposalFaq || "");
   const expired = Boolean(proposal.validUntil && proposal.validUntil < new Date().toISOString().slice(0, 10));
   const hasDecision = expired || currentStatus === "accepted" || currentStatus === "declined";
@@ -94,7 +95,7 @@ export default async function PublicProposalPage({
   const wantsPix = proposal.checkoutMode === "pix";
 
   return (
-    <main className={`mobile-safe-bottom min-h-screen pb-20 text-slate-900 ${proposalStyle.pageClass}`}>
+    <main className={`mobile-safe-bottom min-h-screen pb-20 text-slate-900 ${segmentStyle.pageClass}`}>
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
@@ -138,8 +139,8 @@ export default async function PublicProposalPage({
           </div>
         ) : null}
 
-        <header className={`overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
-          <div className="h-2" style={{ background: `linear-gradient(90deg, ${brandColor}, ${brandAccentColor})` }} />
+        <header className={`overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
+          <div className="h-2" style={{ background: `linear-gradient(90deg, ${segmentStyle.primary}, ${segmentStyle.accent})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
             <div>
               <div className="flex items-center gap-4">
@@ -149,21 +150,24 @@ export default async function PublicProposalPage({
                     <img alt="" className="h-full w-full object-contain" src={brand.logoUrl} />
                   </span>
                 ) : (
-                  <div className="grid h-16 w-16 place-items-center rounded-lg font-black text-white sm:h-20 sm:w-20" style={{ background: brandColor }}>
+                  <div className="grid h-16 w-16 place-items-center rounded-lg font-black text-white sm:h-20 sm:w-20" style={{ background: segmentStyle.primary }}>
                     FP
                   </div>
                 )}
                 <div>
-                  <p className="text-xs font-black uppercase" style={{ color: brandAccentColor }}>{proposalStyle.eyebrow}</p>
+                  <p className="text-xs font-black uppercase" style={{ color: segmentStyle.accent }}>{segmentStyle.eyebrow}</p>
                   <strong>{brandName}</strong>
                 </div>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-2">
+                <span className="inline-flex rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: segmentStyle.primary }}>
+                  {segmentStyle.segmentName}
+                </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-green-200">
                   {proposalStyle.badges[0]}
                 </span>
-                <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase" style={{ color: brandAccentColor }}>
+                <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase" style={{ color: segmentStyle.accent }}>
                   {proposalStyle.badges[1]}
                 </span>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
@@ -178,11 +182,11 @@ export default async function PublicProposalPage({
                 Proposta para {proposal.clientName}
               </h1>
               <p className="mt-4 max-w-2xl whitespace-pre-line leading-7 text-white/75">
-                {brand?.proposalIntro || brand?.bio || "Uma proposta organizada com escopo, investimento, prazo, portfólio e aceite em um único link."}
+                {brand?.proposalIntro || brand?.bio || segmentStyle.intro}
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 {!hasDecision ? (
-                  <a className="inline-flex min-h-12 items-center justify-center rounded-lg px-5 font-black text-slate-950" href="#aceite" style={{ background: brandColor }}>
+                  <a className="inline-flex min-h-12 items-center justify-center rounded-lg px-5 font-black text-slate-950" href="#aceite" style={{ background: segmentStyle.accent }}>
                     Aceitar proposta
                   </a>
                 ) : null}
@@ -566,6 +570,253 @@ function getProposalStyle(style: string) {
     badges: ["Link interativo", "PDF disponível", "Aceite online", "Atendimento em até 24h"],
     headerBackground: (secondary: string) => secondary,
   };
+}
+
+function getPublicSegmentStyle(
+  segment: string,
+  serviceName: string,
+  included: string[],
+  notes: string,
+  primary: string,
+  secondary: string,
+  accent: string,
+) {
+  const text = stripAccents(`${serviceName} ${included.join(" ")} ${notes}`).toLowerCase();
+  const base = {
+    pageClass: "bg-[var(--ui-bg)]",
+    primary,
+    accent,
+    segmentName: "Servico profissional",
+    eyebrow: "Proposta profissional",
+    intro: "Uma proposta organizada com escopo, investimento, prazo, portfólio e aceite em um único link.",
+    headerBackground: `linear-gradient(135deg, ${secondary}, ${primary})`,
+  };
+
+  if (segment === "home_reform" || hasAny(text, ["pintura", "reforma", "obra", "eletrica", "hidraulica", "instalacao", "acabamento", "alvenaria", "marcenaria", "moveis planejados", "movel planejado", "sob medida"])) {
+    return {
+      ...base,
+      pageClass: "bg-slate-100",
+      primary,
+      accent: "#FACC15",
+      segmentName: "Casa e reforma",
+      eyebrow: "Orcamento de obra",
+      intro: "Escopo visual, etapas claras, materiais combinados e valor total para aprovar com segurança.",
+      headerBackground: `linear-gradient(135deg, ${secondary} 0%, #111827 52%, ${primary} 100%)`,
+    };
+  }
+  if (segment === "automotive" || hasAny(text, ["mecanica", "automotiva", "veiculo", "carro", "lavagem", "polimento", "freio", "scanner"])) {
+    return {
+      ...base,
+      pageClass: "bg-zinc-100",
+      primary: accent,
+      accent: "#F97316",
+      segmentName: "Automotivo",
+      eyebrow: "Orcamento automotivo",
+      intro: "Diagnóstico, itens inclusos, prazo e condição de pagamento apresentados de forma objetiva.",
+      headerBackground: `linear-gradient(135deg, #111827, ${secondary} 55%, ${accent})`,
+    };
+  }
+  if (segment === "beauty" || hasAny(text, ["beleza", "manicure", "unha", "sobrancelha", "cabelo", "maquiagem", "estetica"])) {
+    return {
+      ...base,
+      pageClass: "bg-pink-50",
+      primary: accent,
+      accent: "#F9A8D4",
+      segmentName: "Beleza e estetica",
+      eyebrow: "Proposta de cuidado",
+      intro: "Atendimento personalizado, procedimento, cuidados e próximos passos em uma apresentação leve.",
+      headerBackground: `linear-gradient(135deg, #831843, ${accent} 58%, #F9A8D4)`,
+    };
+  }
+  if (segment === "health" || hasAny(text, ["saude", "nutricao", "psicologia", "pilates", "personal", "treino", "terapia", "consulta"])) {
+    return {
+      ...base,
+      pageClass: "bg-emerald-50",
+      primary,
+      accent: "#A7F3D0",
+      segmentName: "Saude e bem-estar",
+      eyebrow: "Plano de cuidado",
+      intro: "Plano claro, acolhedor e organizado para entender o atendimento e aprovar com tranquilidade.",
+      headerBackground: `linear-gradient(135deg, #064E3B, ${primary})`,
+    };
+  }
+  if (segment === "business" || hasAny(text, ["consultoria", "advocacia", "juridic", "contabilidade", "contrato", "cnpj", "mentoria"])) {
+    return {
+      ...base,
+      pageClass: "bg-slate-50",
+      primary: secondary,
+      accent: primary,
+      segmentName: "Negocios",
+      eyebrow: "Proposta comercial",
+      intro: "Escopo, entregáveis, condições e decisão comercial apresentados com clareza executiva.",
+      headerBackground: `linear-gradient(135deg, ${secondary}, #1E293B 58%, ${primary})`,
+    };
+  }
+  if (segment === "events" || hasAny(text, ["evento", "fotografia", "cerimonial", "buffet", "decoracao", "festa", "casamento", "som", "sonorizacao", "iluminacao", "audiovisual", "dj", "microfone"])) {
+    return {
+      ...base,
+      pageClass: "bg-amber-50",
+      primary: accent,
+      accent: "#FDE68A",
+      segmentName: "Eventos",
+      eyebrow: "Proposta de evento",
+      intro: "Planejamento, itens contratados, data, produção e próximos passos reunidos para aprovar sem ruído.",
+      headerBackground: `linear-gradient(135deg, #78350F, ${accent})`,
+    };
+  }
+  if (segment === "technology" || hasAny(text, ["site", "landing", "software", "sistema", "marketing", "design", "social media", "trafego", "conteudo"])) {
+    return {
+      ...base,
+      pageClass: "bg-blue-50",
+      primary: accent,
+      accent: "#93C5FD",
+      segmentName: "Digital",
+      eyebrow: "Proposta digital",
+      intro: "Estratégia, produção, entregáveis e revisão organizados para facilitar a aprovação do projeto.",
+      headerBackground: `linear-gradient(135deg, #172554, ${secondary} 45%, ${accent})`,
+    };
+  }
+  if (segment === "education" || hasAny(text, ["aula", "curso", "educacao", "reforco", "treinamento", "workshop"])) {
+    return {
+      ...base,
+      pageClass: "bg-violet-50",
+      primary: accent,
+      accent: "#DDD6FE",
+      segmentName: "Educacao",
+      eyebrow: "Plano de aprendizado",
+      intro: "Conteudo, encontros, materiais e acompanhamento reunidos para aprovar o plano com clareza.",
+      headerBackground: `linear-gradient(135deg, #4C1D95, ${secondary} 55%, ${accent})`,
+    };
+  }
+  if (segment === "food" || hasAny(text, ["bolo", "buffet", "marmita", "coffee", "cardapio", "gastronomia", "comida", "doces"])) {
+    return {
+      ...base,
+      pageClass: "bg-orange-50",
+      primary: accent,
+      accent: "#FED7AA",
+      segmentName: "Gastronomia",
+      eyebrow: "Proposta de pedido",
+      intro: "Cardapio, quantidade, preparo, entrega e condicoes combinadas para aprovar sem duvidas.",
+      headerBackground: `linear-gradient(135deg, #7C2D12, ${accent})`,
+    };
+  }
+  if (segment === "pet" || hasAny(text, ["pet", "banho", "tosa", "adestramento", "veterinario", "dog", "gato"])) {
+    return {
+      ...base,
+      pageClass: "bg-teal-50",
+      primary,
+      accent: "#99F6E4",
+      segmentName: "Pet",
+      eyebrow: "Plano de cuidado pet",
+      intro: "Atendimento, cuidados, orientacoes e valores organizados para o tutor aprovar com tranquilidade.",
+      headerBackground: `linear-gradient(135deg, #134E4A, ${primary})`,
+    };
+  }
+  if (segment === "real_estate" || hasAny(text, ["imovel", "imobiliaria", "condominio", "locacao", "vistoria", "administracao", "sindico"])) {
+    return {
+      ...base,
+      pageClass: "bg-stone-50",
+      primary: secondary,
+      accent: "#D6D3D1",
+      segmentName: "Imoveis",
+      eyebrow: "Proposta imobiliaria",
+      intro: "Escopo, imovel atendido, responsabilidades e condicoes comerciais apresentados com objetividade.",
+      headerBackground: `linear-gradient(135deg, #292524, ${secondary} 58%, ${primary})`,
+    };
+  }
+  if (segment === "fashion_retail" || hasAny(text, ["moda", "loja", "varejo", "colecao", "vitrine", "ecommerce", "roupa", "calcado"])) {
+    return {
+      ...base,
+      pageClass: "bg-rose-50",
+      primary: accent,
+      accent: "#FDA4AF",
+      segmentName: "Moda e varejo",
+      eyebrow: "Proposta comercial",
+      intro: "Produtos, campanha, loja, prazos e entregas alinhados em uma proposta pronta para decisao.",
+      headerBackground: `linear-gradient(135deg, #881337, ${secondary} 48%, ${accent})`,
+    };
+  }
+  if (segment === "transport" || hasAny(text, ["transporte", "frete", "logistica", "entrega", "mudanca", "rota", "motoboy"])) {
+    return {
+      ...base,
+      pageClass: "bg-cyan-50",
+      primary: secondary,
+      accent: "#A5F3FC",
+      segmentName: "Transporte",
+      eyebrow: "Proposta logistica",
+      intro: "Rota, prazo, volume, operacao e condicoes de pagamento definidos para aprovar o atendimento.",
+      headerBackground: `linear-gradient(135deg, #164E63, ${secondary} 52%, ${primary})`,
+    };
+  }
+  if (segment === "finance" || hasAny(text, ["financeiro", "seguro", "credito", "investimento", "consorcio", "planejamento financeiro"])) {
+    return {
+      ...base,
+      pageClass: "bg-emerald-50",
+      primary: secondary,
+      accent: "#BBF7D0",
+      segmentName: "Financeiro",
+      eyebrow: "Proposta financeira",
+      intro: "Objetivo, analise, entregaveis e proximos passos organizados para uma decisao segura.",
+      headerBackground: `linear-gradient(135deg, #052E16, ${secondary} 58%, ${primary})`,
+    };
+  }
+  if (segment === "industry" || hasAny(text, ["industrial", "industria", "maquina", "equipamento", "manutencao", "usinagem", "solda"])) {
+    return {
+      ...base,
+      pageClass: "bg-neutral-100",
+      primary: secondary,
+      accent: "#FCD34D",
+      segmentName: "Industria",
+      eyebrow: "Proposta tecnica",
+      intro: "Diagnostico, execucao, materiais, seguranca e entrega tecnica apresentados com precisao.",
+      headerBackground: `linear-gradient(135deg, #171717, ${secondary} 54%, ${primary})`,
+    };
+  }
+  if (segment === "agriculture" || hasAny(text, ["agro", "rural", "fazenda", "plantio", "irrigacao", "maquina agricola", "pecuaria"])) {
+    return {
+      ...base,
+      pageClass: "bg-lime-50",
+      primary,
+      accent: "#BEF264",
+      segmentName: "Agro",
+      eyebrow: "Proposta rural",
+      intro: "Area atendida, insumos, operacao, prazo e suporte descritos para aprovar com seguranca.",
+      headerBackground: `linear-gradient(135deg, #365314, ${primary})`,
+    };
+  }
+  if (segment === "tourism" || hasAny(text, ["turismo", "viagem", "hospedagem", "hotel", "pousada", "roteiro", "excursao"])) {
+    return {
+      ...base,
+      pageClass: "bg-sky-50",
+      primary: accent,
+      accent: "#BAE6FD",
+      segmentName: "Turismo",
+      eyebrow: "Proposta de experiencia",
+      intro: "Roteiro, hospedagem, datas, inclusos e condicoes reunidos para aprovar a experiencia.",
+      headerBackground: `linear-gradient(135deg, #0C4A6E, ${secondary} 48%, ${accent})`,
+    };
+  }
+  if (segment === "security" || hasAny(text, ["seguranca", "camera", "alarme", "monitoramento", "cftv", "portaria", "controle de acesso"])) {
+    return {
+      ...base,
+      pageClass: "bg-slate-100",
+      primary: secondary,
+      accent: "#FBBF24",
+      segmentName: "Seguranca",
+      eyebrow: "Proposta de protecao",
+      intro: "Diagnostico, equipamentos, instalacao, treinamento e suporte organizados para aprovar o projeto.",
+      headerBackground: `linear-gradient(135deg, #020617, ${secondary} 50%, ${primary})`,
+    };
+  }
+  return base;
+}
+
+function stripAccents(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function hasAny(value: string, keywords: string[]) {
+  return keywords.some((keyword) => value.includes(keyword));
 }
 
 function parseCustomFaq(value: string) {

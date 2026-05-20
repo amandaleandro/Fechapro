@@ -119,28 +119,36 @@ async function createProposalPdf(data: ProposalPdfData) {
 }
 
 async function renderPdf(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+  const design = getSegmentDesign(data);
   doc.addPage();
-  await drawBudgetCover(doc, data);
+  await drawBudgetCover(doc, data, design);
   doc.addPage();
   doc.y = MARGIN;
-  drawSummary(doc, data);
-  drawScope(doc, data);
-  drawPayment(doc, data);
-  drawNotes(doc, data);
-  drawCustomTextBlock(doc, "Mensagem", "Antes de decidir", data.proposalClosing, data.brandColor);
-  if (data.showPortfolio) await drawPortfolio(doc, data);
-  drawCustomTextBlock(doc, "Termos comerciais", "Condições", data.proposalTerms, data.brandColor);
-  if (data.showTestimonials) drawTestimonials(doc, data);
-  if (data.showFaq) drawFaq(doc, data);
-  drawDecision(doc, data);
-  drawFooter(doc, data);
+  drawDocumentHeader(doc, data, design);
+  drawSummary(doc, data, design);
+  drawScope(doc, data, design);
+  drawPayment(doc, data, design);
+  drawNotes(doc, data, design);
+  drawCustomTextBlock(doc, "Mensagem", "Antes de decidir", data.proposalClosing, design);
+  if (data.showPortfolio) await drawPortfolio(doc, data, design);
+  drawCustomTextBlock(doc, "Termos comerciais", "Condições", data.proposalTerms, design);
+  if (data.showTestimonials) drawTestimonials(doc, data, design);
+  if (data.showFaq) drawFaq(doc, data, design);
+  drawDecision(doc, data, design);
+  drawFooter(doc, data, design);
   drawPageNumbers(doc);
 }
 
-async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
-  const design = getSegmentDesign(data);
+async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   const topY = 28;
-  const logoSize = 78;
+  const brandColumnX = MARGIN;
+  const brandColumnWidth = 160;
+  const logoBoxWidth = 116;
+  const logoBoxHeight = 64;
+  const logoBoxX = brandColumnX + (brandColumnWidth - logoBoxWidth) / 2;
+  const logoBoxY = topY + 14;
+  const logoSize = 64;
+  const logoFallbackX = brandColumnX + (brandColumnWidth - logoSize) / 2;
   const dividerX = MARGIN + 160;
   const titleX = dividerX + 26;
   const imageY = 176;
@@ -149,33 +157,43 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   const imageH = 116;
 
   doc.rect(0, 0, PAGE.width, PAGE.height).fill("#FFFFFF");
-  doc.rect(MARGIN, 18, CONTENT_WIDTH, 2).fill(LINE);
-  doc.rect(MARGIN, topY + 126, CONTENT_WIDTH, 1.4).fill(design.primary);
+  doc.rect(0, 0, PAGE.width, 24).fill(design.primary);
+  doc.rect(0, 24, PAGE.width, 4).fill(design.accent);
+  doc.rect(MARGIN, topY + 126, CONTENT_WIDTH, 1.4).fill(design.accent);
+  doc.roundedRect(PAGE.width - MARGIN - 104, 43, 104, 24, 12).fill(design.soft);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(7.5).text(design.segmentName.toUpperCase(), PAGE.width - MARGIN - 92, 51, {
+    width: 80,
+    align: "center",
+    height: 9,
+    ellipsis: true,
+  });
 
   const logo = await readImageFromUrl(data.logoUrl);
   if (logo) {
-    doc.roundedRect(MARGIN + 26, topY + 8, 108, 72, 8).fill("#FFFFFF");
-    const didDrawLogo = drawPdfImage(doc, logo, MARGIN + 30, topY + 12, {
-      fit: [100, 64],
+    doc.roundedRect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 8).fillAndStroke("#FFFFFF", "#E2E8F0");
+    const didDrawLogo = drawPdfImage(doc, logo, logoBoxX + 8, logoBoxY + 8, {
+      fit: [logoBoxWidth - 16, logoBoxHeight - 16],
       align: "center",
       valign: "center",
-      width: 100,
-      height: 64,
+      width: logoBoxWidth - 16,
+      height: logoBoxHeight - 16,
     });
-    if (!didDrawLogo) drawServiceMark(doc, data.brandName, MARGIN + 40, topY + 8, logoSize, design.primary);
+    if (!didDrawLogo) drawServiceMark(doc, data.brandName, logoFallbackX, logoBoxY, logoSize, design.primary);
   } else {
-    drawServiceMark(doc, data.brandName, MARGIN + 40, topY + 8, logoSize, design.primary);
+    drawServiceMark(doc, data.brandName, logoFallbackX, logoBoxY, logoSize, design.primary);
   }
 
-  doc.fillColor(INK).font("Helvetica-Bold").fontSize(18).text(data.brandName.toUpperCase(), MARGIN, topY + 88, {
-    width: 160,
+  doc.fillColor(INK).font("Helvetica-Bold").fontSize(17).text(data.brandName.toUpperCase(), brandColumnX, topY + 88, {
+    width: brandColumnWidth,
     align: "center",
     height: 22,
     ellipsis: true,
   });
-  doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(8).text("SERVICOS", MARGIN, topY + 110, {
-    width: 160,
+  doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(8).text(design.brandCaption.toUpperCase(), brandColumnX, topY + 110, {
+    width: brandColumnWidth,
     align: "center",
+    height: 10,
+    ellipsis: true,
   });
 
   doc.rect(dividerX, topY + 12, 1.2, 112).fill("#CBD5E1");
@@ -186,11 +204,16 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     ellipsis: true,
   });
   drawSmallIconLabel(doc, "DATA:", data.createdAt, titleX, topY + 68, design.primary);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text(design.promise.toUpperCase(), titleX, topY + 82, {
+    width: CONTENT_WIDTH - 188,
+    height: 10,
+    ellipsis: true,
+  });
   doc.fillColor("#334155").font("Helvetica").fontSize(10.2).text(
     data.proposalIntro || design.intro(data),
     titleX,
-    topY + 91,
-    { width: CONTENT_WIDTH - 188, height: 34, lineGap: 3, ellipsis: true },
+    topY + 96,
+    { width: CONTENT_WIDTH - 188, height: 28, lineGap: 3, ellipsis: true },
   );
 
   const images = data.portfolio.slice(0, 2);
@@ -376,8 +399,24 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   });
 }
 
-function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
-  sectionTitle(doc, "Resumo da proposta", "Informações principais", data.brandColor);
+function drawDocumentHeader(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
+  doc.rect(0, 0, PAGE.width, 18).fill(design.primary);
+  doc.rect(0, 18, PAGE.width, 4).fill(design.accent);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text(design.segmentName.toUpperCase(), MARGIN, MARGIN - 16, {
+    width: 160,
+    height: 10,
+    ellipsis: true,
+  });
+  doc.fillColor(MUTED).font("Helvetica").fontSize(8).text(data.brandName, PAGE.width - MARGIN - 210, MARGIN - 16, {
+    width: 210,
+    align: "right",
+    height: 10,
+    ellipsis: true,
+  });
+}
+
+function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
+  sectionTitle(doc, "Resumo da proposta", "Informações principais", design);
 
   const items: Array<[string, string]> = [
     ["Serviço", data.serviceName],
@@ -393,8 +432,9 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   items.forEach(([label, value], index) => {
     const x = MARGIN + (index % 2) * (cardWidth + 12);
     const y = startY + Math.floor(index / 2) * (cardHeight + 12);
-    doc.rect(x, y, cardWidth, cardHeight).fillAndStroke(SOFT, LINE);
-    doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(8).text(label.toUpperCase(), x + 14, y + 13);
+    doc.roundedRect(x, y, cardWidth, cardHeight, 8).fillAndStroke(index === 0 ? design.soft : "#FFFFFF", LINE);
+    doc.rect(x, y, 5, cardHeight).fill(index === 0 ? design.primary : design.accent);
+    doc.fillColor(index === 0 ? design.primary : MUTED).font("Helvetica-Bold").fontSize(8).text(label.toUpperCase(), x + 14, y + 13);
     doc.fillColor(INK).fontSize(12).text(value || "A combinar", x + 14, y + 30, {
       width: cardWidth - 28,
       ellipsis: true,
@@ -527,7 +567,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
   const selectedSegment = data.segment || "auto";
   const base = {
     primary: data.brandColor,
+    accent: data.brandAccentColor,
     soft: "#F8FAFC",
+    segmentName: "Servico",
+    brandCaption: "Servicos",
+    promise: "Escopo claro e valor organizado",
     documentTitle: "ORCAMENTO",
     referenceLabel: "Referencia:",
     scopeLabel: "SERVICO SOLICITADO",
@@ -548,11 +592,15 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     ],
   };
 
-  if (selectedSegment === "home_reform" || hasAny(text, ["pintura", "reforma", "alvenaria", "eletrica", "hidraulica", "instalacao", "acabamento", "obra", "marcenaria", "gesso"])) {
+  if (selectedSegment === "home_reform" || hasAny(text, ["pintura", "reforma", "alvenaria", "eletrica", "hidraulica", "instalacao", "acabamento", "obra", "marcenaria", "gesso", "moveis planejados", "movel planejado", "sob medida"])) {
     return {
       ...base,
       primary: data.brandColor,
+      accent: "#111827",
       soft: "#F1F5F9",
+      segmentName: "Reforma",
+      brandCaption: "Obra e servicos",
+      promise: "Execucao organizada e acabamento profissional",
       icon: "bucket",
       fallbackImageLabel: "Antes e depois do ambiente",
       detailTitle: "MATERIAL USADO",
@@ -571,7 +619,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandAccentColor,
+      accent: "#0F172A",
       soft: "#F8FAFC",
+      segmentName: "Automotivo",
+      brandCaption: "Auto service",
+      promise: "Diagnostico, cuidado e entrega conferida",
       icon: "car",
       referenceLabel: "Veiculo/cliente:",
       detailTitle: "DIAGNOSTICO",
@@ -592,7 +644,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandAccentColor,
+      accent: "#BE185D",
       soft: "#FDF2F8",
+      segmentName: "Beleza",
+      brandCaption: "Beauty service",
+      promise: "Atendimento personalizado e acabamento bonito",
       icon: "spark",
       documentTitle: "PROPOSTA",
       detailTitle: "CUIDADOS",
@@ -613,7 +669,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandColor,
+      accent: "#047857",
       soft: "#ECFDF5",
+      segmentName: "Cuidado",
+      brandCaption: "Saude e bem-estar",
+      promise: "Acompanhamento claro e orientacao profissional",
       icon: "heart",
       documentTitle: "PLANO DE CUIDADO",
       detailTitle: "ACOMPANHAMENTO",
@@ -634,7 +694,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandSecondaryColor,
+      accent: data.brandColor,
       soft: "#F8FAFC",
+      segmentName: "Negocios",
+      brandCaption: "Consultoria",
+      promise: "Clareza comercial para decidir com seguranca",
       icon: "briefcase",
       documentTitle: "PROPOSTA COMERCIAL",
       detailTitle: "ESCOPO",
@@ -651,11 +715,15 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     };
   }
 
-  if (selectedSegment === "events" || hasAny(text, ["evento", "cerimonial", "buffet", "decoracao", "festa", "casamento", "coffee break", "fotografia"])) {
+  if (selectedSegment === "events" || hasAny(text, ["evento", "cerimonial", "buffet", "decoracao", "festa", "casamento", "coffee break", "fotografia", "som", "sonorizacao", "iluminacao", "audiovisual", "dj", "microfone"])) {
     return {
       ...base,
       primary: data.brandAccentColor,
+      accent: "#D97706",
       soft: "#FFFBEB",
+      segmentName: "Evento",
+      brandCaption: "Eventos",
+      promise: "Organizacao para cada detalhe da data",
       icon: "calendar",
       documentTitle: "PROPOSTA EVENTO",
       referenceLabel: "Evento/cliente:",
@@ -677,7 +745,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandAccentColor,
+      accent: "#1D4ED8",
       soft: "#EFF6FF",
+      segmentName: "Digital",
+      brandCaption: "Digital studio",
+      promise: "Estrategia, design e entrega bem definidos",
       icon: "screen",
       documentTitle: "PROPOSTA COMERCIAL",
       detailTitle: "ENTREGAVEIS",
@@ -698,7 +770,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandAccentColor,
+      accent: "#7C3AED",
       soft: "#F5F3FF",
+      segmentName: "Educacao",
+      brandCaption: "Aulas",
+      promise: "Plano de aprendizado objetivo e acompanhado",
       icon: "briefcase",
       documentTitle: "PROPOSTA",
       detailTitle: "APRENDIZADO",
@@ -719,7 +795,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandAccentColor,
+      accent: "#EA580C",
       soft: "#FFF7ED",
+      segmentName: "Gastronomia",
+      brandCaption: "Gastronomia",
+      promise: "Pedido organizado do preparo a entrega",
       icon: "calendar",
       documentTitle: "ORCAMENTO",
       detailTitle: "PREPARO",
@@ -740,7 +820,11 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     return {
       ...base,
       primary: data.brandColor,
+      accent: "#0F766E",
       soft: "#F0FDFA",
+      segmentName: "Pet",
+      brandCaption: "Pet care",
+      promise: "Cuidado responsavel e atendimento tranquilo",
       icon: "heart",
       documentTitle: "ORCAMENTO",
       detailTitle: "CUIDADO PET",
@@ -753,6 +837,207 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
         ["Atendimento", proposal.serviceName, "Incluso"],
         ["Cuidados", proposal.included[0] || "Cuidados conforme pacote contratado", "Incluso"],
         ["Orientacoes", "Recomendacoes finais para o tutor", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "real_estate" || hasAny(text, ["imovel", "imobiliaria", "condominio", "locacao", "vistoria", "administracao", "sindico"])) {
+    return {
+      ...base,
+      primary: data.brandSecondaryColor,
+      accent: "#57534E",
+      soft: "#FAFAF9",
+      segmentName: "Imoveis",
+      brandCaption: "Imoveis e condominios",
+      promise: "Escopo, responsabilidades e condicoes bem definidos",
+      icon: "briefcase",
+      documentTitle: "PROPOSTA COMERCIAL",
+      detailTitle: "ESCOPO IMOBILIARIO",
+      fallbackImageLabel: "Imovel ou condominio",
+      defaultNote: "Responsabilidades, documentos e prazos seguem as condicoes combinadas.",
+      secondaryNote: "Taxas, deslocamentos, certidoes ou demandas extras podem ser cobrados a parte.",
+      footerLine: "Gestao imobiliaria com clareza para decidir.",
+      rows: (proposal) => [
+        ["Diagnostico", "Levantamento do imovel, condominio ou necessidade", "Incluso"],
+        ["Servico", proposal.serviceName, "Incluso"],
+        ["Documentos", proposal.included[0] || "Materiais e registros combinados", "Incluso"],
+        ["Devolutiva", "Relatorio, orientacao ou acompanhamento final", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "fashion_retail" || hasAny(text, ["moda", "loja", "varejo", "colecao", "vitrine", "ecommerce", "roupa", "calcado"])) {
+    return {
+      ...base,
+      primary: data.brandAccentColor,
+      accent: "#E11D48",
+      soft: "#FFF1F2",
+      segmentName: "Varejo",
+      brandCaption: "Moda e varejo",
+      promise: "Produto, campanha e entrega alinhados",
+      icon: "spark",
+      documentTitle: "PROPOSTA COMERCIAL",
+      detailTitle: "ENTREGAS",
+      fallbackImageLabel: "Colecao ou loja",
+      defaultNote: "Itens, quantidades e prazos seguem a disponibilidade e briefing aprovado.",
+      secondaryNote: "Producoes, fornecedores externos e urgencias podem alterar o valor.",
+      footerLine: "Varejo organizado para vender melhor.",
+      rows: (proposal) => [
+        ["Briefing", "Objetivo comercial, produto e referencias", "Incluso"],
+        ["Execucao", proposal.serviceName, "Incluso"],
+        ["Materiais", proposal.included[0] || "Itens e entregaveis combinados", "Incluso"],
+        ["Finalizacao", "Entrega, ajustes ou orientacoes de uso", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "transport" || hasAny(text, ["transporte", "frete", "logistica", "entrega", "mudanca", "rota", "motoboy"])) {
+    return {
+      ...base,
+      primary: data.brandSecondaryColor,
+      accent: "#0891B2",
+      soft: "#ECFEFF",
+      segmentName: "Logistica",
+      brandCaption: "Transporte",
+      promise: "Rota, prazo e operacao definidos",
+      icon: "car",
+      documentTitle: "ORCAMENTO",
+      referenceLabel: "Rota/cliente:",
+      detailTitle: "OPERACAO",
+      fallbackImageLabel: "Rota ou carga",
+      defaultNote: "Coleta, entrega, volume e janelas de horario devem ser confirmados previamente.",
+      secondaryNote: "Pedagios, ajudantes, espera e mudancas de rota podem alterar o valor.",
+      footerLine: "Entrega organizada do ponto inicial ao destino.",
+      rows: (proposal) => [
+        ["Coleta", "Alinhamento de origem, destino, volume e horario", "Incluso"],
+        ["Transporte", proposal.serviceName, "Incluso"],
+        ["Operacao", proposal.included[0] || "Itens e cuidados combinados", "Incluso"],
+        ["Entrega", "Confirmacao, comprovante ou orientacao final", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "finance" || hasAny(text, ["financeiro", "seguro", "credito", "investimento", "consorcio", "planejamento financeiro"])) {
+    return {
+      ...base,
+      primary: data.brandSecondaryColor,
+      accent: "#15803D",
+      soft: "#F0FDF4",
+      segmentName: "Financeiro",
+      brandCaption: "Financas e seguros",
+      promise: "Analise clara para decisao segura",
+      icon: "briefcase",
+      documentTitle: "PROPOSTA COMERCIAL",
+      detailTitle: "ANALISE",
+      fallbackImageLabel: "Planejamento financeiro",
+      defaultNote: "Recomendacoes dependem das informacoes fornecidas e das condicoes vigentes.",
+      secondaryNote: "Produtos financeiros, taxas, apolices e terceiros seguem regras proprias.",
+      footerLine: "Decisoes financeiras com orientacao clara.",
+      rows: (proposal) => [
+        ["Diagnostico", "Levantamento do objetivo, perfil e informacoes iniciais", "Incluso"],
+        ["Analise", proposal.serviceName, "Incluso"],
+        ["Entregaveis", proposal.included[0] || "Relatorio, proposta ou orientacoes combinadas", "Incluso"],
+        ["Acompanhamento", "Devolutiva e proximos passos", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "industry" || hasAny(text, ["industrial", "industria", "maquina", "equipamento", "manutencao", "usinagem", "solda"])) {
+    return {
+      ...base,
+      primary: data.brandSecondaryColor,
+      accent: "#CA8A04",
+      soft: "#FEFCE8",
+      segmentName: "Industria",
+      brandCaption: "Tecnico industrial",
+      promise: "Diagnostico, execucao e entrega tecnica",
+      icon: "bucket",
+      documentTitle: "PROPOSTA TECNICA",
+      detailTitle: "ESCOPO TECNICO",
+      fallbackImageLabel: "Equipamento ou area tecnica",
+      defaultNote: "Execucao sujeita a disponibilidade do equipamento, acesso e condicoes de seguranca.",
+      secondaryNote: "Pecas, paradas adicionais e adequacoes devem ser aprovadas separadamente.",
+      footerLine: "Execucao tecnica com seguranca e controle.",
+      rows: (proposal) => [
+        ["Inspecao", "Avaliacao inicial, risco e acesso tecnico", "Incluso"],
+        ["Execucao", proposal.serviceName, "Incluso"],
+        ["Materiais", proposal.included[0] || "Materiais ou pecas conforme escopo", "Incluso"],
+        ["Teste", "Conferencia, registro e orientacao final", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "agriculture" || hasAny(text, ["agro", "rural", "fazenda", "plantio", "irrigacao", "maquina agricola", "pecuaria"])) {
+    return {
+      ...base,
+      primary: data.brandColor,
+      accent: "#65A30D",
+      soft: "#F7FEE7",
+      segmentName: "Agro",
+      brandCaption: "Agro e rural",
+      promise: "Operacao rural planejada e acompanhada",
+      icon: "bucket",
+      documentTitle: "PROPOSTA",
+      detailTitle: "OPERACAO RURAL",
+      fallbackImageLabel: "Area rural",
+      defaultNote: "Prazos podem variar conforme clima, acesso, area atendida e disponibilidade de insumos.",
+      secondaryNote: "Insumos, equipamentos e deslocamentos extras devem ser aprovados previamente.",
+      footerLine: "Atendimento rural com planejamento e controle.",
+      rows: (proposal) => [
+        ["Levantamento", "Area, necessidade, periodo e condicoes de acesso", "Incluso"],
+        ["Servico", proposal.serviceName, "Incluso"],
+        ["Insumos", proposal.included[0] || "Itens e materiais combinados", "Incluso"],
+        ["Acompanhamento", "Orientacao, registro ou retorno conforme escopo", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "tourism" || hasAny(text, ["turismo", "viagem", "hospedagem", "hotel", "pousada", "roteiro", "excursao"])) {
+    return {
+      ...base,
+      primary: data.brandAccentColor,
+      accent: "#0284C7",
+      soft: "#F0F9FF",
+      segmentName: "Turismo",
+      brandCaption: "Turismo e hospedagem",
+      promise: "Experiencia organizada do roteiro a reserva",
+      icon: "calendar",
+      documentTitle: "PROPOSTA",
+      detailTitle: "EXPERIENCIA",
+      fallbackImageLabel: "Destino ou hospedagem",
+      defaultNote: "Valores e disponibilidade podem variar ate a confirmacao da reserva.",
+      secondaryNote: "Taxas, transporte, passeios opcionais e politicas de cancelamento devem ser confirmados.",
+      footerLine: "Experiencias planejadas para aproveitar melhor.",
+      rows: (proposal) => [
+        ["Briefing", "Datas, perfil, preferencias e quantidade de pessoas", "Incluso"],
+        ["Experiencia", proposal.serviceName, "Incluso"],
+        ["Inclusos", proposal.included[0] || "Itens e reservas combinados", "Incluso"],
+        ["Suporte", "Orientacoes e confirmacoes finais", "Incluso"],
+      ],
+    };
+  }
+
+  if (selectedSegment === "security" || hasAny(text, ["seguranca", "camera", "alarme", "monitoramento", "cftv", "portaria", "controle de acesso"])) {
+    return {
+      ...base,
+      primary: data.brandSecondaryColor,
+      accent: "#D97706",
+      soft: "#FFFBEB",
+      segmentName: "Seguranca",
+      brandCaption: "Protecao",
+      promise: "Projeto, instalacao e suporte definidos",
+      icon: "briefcase",
+      documentTitle: "PROPOSTA TECNICA",
+      detailTitle: "PROJETO",
+      fallbackImageLabel: "Sistema de seguranca",
+      defaultNote: "Equipamentos, pontos de instalacao e acesso ao local devem ser confirmados antes da execucao.",
+      secondaryNote: "Infraestrutura, cabos, licencas e equipamentos extras podem alterar o valor.",
+      footerLine: "Protecao planejada com instalacao e suporte.",
+      rows: (proposal) => [
+        ["Diagnostico", "Levantamento de risco, local e pontos de cobertura", "Incluso"],
+        ["Instalacao", proposal.serviceName, "Incluso"],
+        ["Equipamentos", proposal.included[0] || "Itens e materiais combinados", "Incluso"],
+        ["Treinamento", "Teste, configuracao e orientacao de uso", "Incluso"],
       ],
     };
   }
@@ -779,21 +1064,21 @@ function hasAny(value: string, keywords: string[]) {
   return keywords.some((keyword) => value.includes(keyword));
 }
 
-function drawScope(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+function drawScope(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   if (!data.showServices) return;
   ensureSpace(doc, 170);
-  sectionTitle(doc, "Serviços inclusos", "Escopo de entrega", data.brandColor);
+  sectionTitle(doc, "Serviços inclusos", "Escopo de entrega", design);
 
   const items = data.included.length ? data.included : ["Serviço conforme combinado."];
-  drawServicesTable(doc, items, data.brandColor);
+  drawServicesTable(doc, items, design);
 }
 
-function drawPayment(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+function drawPayment(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   ensureSpace(doc, 118);
-  sectionTitle(doc, "Condição comercial", "Pagamento e aceite", data.brandColor);
+  sectionTitle(doc, "Condição comercial", "Pagamento e aceite", design);
   const y = doc.y + 8;
-  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 86, 8).fillAndStroke("#FFFFFF", LINE);
-  doc.rect(MARGIN, y, 6, 86).fill(data.brandColor);
+  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 86, 8).fillAndStroke(design.soft, LINE);
+  doc.rect(MARGIN, y, 6, 86).fill(design.primary);
 
   drawInlineMetric(doc, "Forma de pagamento", data.payment, MARGIN + 20, y + 18, 260);
   drawInlineMetric(doc, "Recebimento", paymentMethodLabel(data.paymentMethod), MARGIN + 302, y + 18, 180);
@@ -806,13 +1091,13 @@ function drawPayment(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   doc.y = y + 106;
 }
 
-function drawNotes(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+function drawNotes(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   if (!data.notes) return;
   ensureSpace(doc, 105);
-  sectionTitle(doc, "Observações", "Condições", data.brandColor);
+  sectionTitle(doc, "Observações", "Condições", design);
   const height = Math.max(68, doc.heightOfString(data.notes, { width: CONTENT_WIDTH - 28, lineGap: 4 }) + 28);
   ensureSpace(doc, height + 8);
-  doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 8).fill(SOFT);
+  doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 8).fill(design.soft);
   doc.fillColor("#475569").font("Helvetica").fontSize(10.5).text(data.notes, MARGIN + 14, doc.y + 22, {
     width: CONTENT_WIDTH - 28,
     lineGap: 4,
@@ -820,13 +1105,13 @@ function drawNotes(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   doc.y += height + 18;
 }
 
-function drawCustomTextBlock(doc: PDFKit.PDFDocument, title: string, eyebrow: string, text: string, brandColor: string) {
+function drawCustomTextBlock(doc: PDFKit.PDFDocument, title: string, eyebrow: string, text: string, design: PdfSegmentDesign) {
   if (!text) return;
   ensureSpace(doc, 105);
-  sectionTitle(doc, title, eyebrow, brandColor);
+  sectionTitle(doc, title, eyebrow, design);
   const height = Math.max(68, doc.heightOfString(text, { width: CONTENT_WIDTH - 28, lineGap: 4 }) + 28);
   ensureSpace(doc, height + 8);
-  doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 8).fill(SOFT);
+  doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 8).fill(design.soft);
   doc.fillColor("#475569").font("Helvetica").fontSize(10.5).text(text, MARGIN + 14, doc.y + 22, {
     width: CONTENT_WIDTH - 28,
     lineGap: 4,
@@ -834,15 +1119,15 @@ function drawCustomTextBlock(doc: PDFKit.PDFDocument, title: string, eyebrow: st
   doc.y += height + 18;
 }
 
-function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   const items = parseCustomFaq(data.proposalFaq);
   if (!items.length) return;
   ensureSpace(doc, 130);
-  sectionTitle(doc, "Perguntas frequentes", "FAQ", data.brandColor);
+  sectionTitle(doc, "Perguntas frequentes", "FAQ", design);
   items.forEach(([question, answer]) => {
     const height = Math.max(66, doc.heightOfString(`${question}\n${answer}`, { width: CONTENT_WIDTH - 28, lineGap: 3 }) + 32);
     ensureSpace(doc, height + 10);
-    doc.roundedRect(MARGIN, doc.y + 6, CONTENT_WIDTH, height, 8).fill(SOFT);
+    doc.roundedRect(MARGIN, doc.y + 6, CONTENT_WIDTH, height, 8).fill(design.soft);
     doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text(question, MARGIN + 14, doc.y + 18, {
       width: CONTENT_WIDTH - 28,
     });
@@ -854,12 +1139,12 @@ function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   });
 }
 
-function drawServicesTable(doc: PDFKit.PDFDocument, items: string[], brandColor: string) {
+function drawServicesTable(doc: PDFKit.PDFDocument, items: string[], design: PdfSegmentDesign) {
   const numberWidth = 62;
   const serviceWidth = CONTENT_WIDTH - numberWidth;
   const rowX = MARGIN;
 
-  drawServicesTableHeader(doc, brandColor, rowX, numberWidth, serviceWidth);
+  drawServicesTableHeader(doc, design, rowX, numberWidth, serviceWidth);
 
   items.forEach((item, index) => {
     const descriptionHeight = doc.heightOfString(item, {
@@ -871,15 +1156,15 @@ function drawServicesTable(doc: PDFKit.PDFDocument, items: string[], brandColor:
     if (doc.y + rowHeight > PAGE_BOTTOM) {
       doc.addPage();
       doc.y = MARGIN;
-      drawServicesTableHeader(doc, brandColor, rowX, numberWidth, serviceWidth);
+      drawServicesTableHeader(doc, design, rowX, numberWidth, serviceWidth);
     }
 
     const y = doc.y;
-    doc.rect(rowX, y, CONTENT_WIDTH, rowHeight).fill(index % 2 === 0 ? "#FFFFFF" : SOFT);
+    doc.rect(rowX, y, CONTENT_WIDTH, rowHeight).fill(index % 2 === 0 ? "#FFFFFF" : design.soft);
     doc.rect(rowX, y, CONTENT_WIDTH, 1).fill(LINE);
     doc.rect(rowX + numberWidth, y, 1, rowHeight).fill(LINE);
 
-    doc.fillColor(brandColor).font("Helvetica-Bold").fontSize(10).text(String(index + 1).padStart(2, "0"), rowX, y + 16, {
+    doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(10).text(String(index + 1).padStart(2, "0"), rowX, y + 16, {
       width: numberWidth,
       align: "center",
     });
@@ -897,13 +1182,14 @@ function drawServicesTable(doc: PDFKit.PDFDocument, items: string[], brandColor:
 
 function drawServicesTableHeader(
   doc: PDFKit.PDFDocument,
-  brandColor: string,
+  design: PdfSegmentDesign,
   x: number,
   numberWidth: number,
   serviceWidth: number,
 ) {
   const headerHeight = 34;
-  doc.rect(x, doc.y, CONTENT_WIDTH, headerHeight).fill(brandColor);
+  doc.rect(x, doc.y, CONTENT_WIDTH, headerHeight).fill(design.primary);
+  doc.rect(x, doc.y + headerHeight - 4, CONTENT_WIDTH, 4).fill(design.accent);
   doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8).text("ITEM", x, doc.y + 13, {
     width: numberWidth,
     align: "center",
@@ -914,10 +1200,10 @@ function drawServicesTableHeader(
   doc.y += headerHeight;
 }
 
-async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   if (!data.portfolio.length) return;
   ensureSpace(doc, 200);
-  sectionTitle(doc, "Portfólio relacionado", "Prova visual", data.brandColor);
+  sectionTitle(doc, "Portfólio relacionado", "Prova visual", design);
 
   const cardWidth = (CONTENT_WIDTH - 18) / 2;
   const cardHeight = 132;
@@ -933,8 +1219,8 @@ async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     if (image) {
       drawPdfImage(doc, image, x + 10, y + 10, { fit: [cardWidth - 20, 78], align: "center", valign: "center" });
     } else {
-      doc.roundedRect(x + 10, y + 10, cardWidth - 20, 78, 6).fill("#E0F2FE");
-      doc.fillColor(data.brandColor).font("Helvetica-Bold").fontSize(12).text(item.category || "Portfólio", x + 10, y + 43, {
+      doc.roundedRect(x + 10, y + 10, cardWidth - 20, 78, 6).fill(design.soft);
+      doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(12).text(item.category || "Portfólio", x + 10, y + 43, {
         align: "center",
         width: cardWidth - 20,
       });
@@ -954,17 +1240,17 @@ async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   }
 }
 
-function drawTestimonials(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+function drawTestimonials(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   if (!data.testimonials.length) return;
   ensureSpace(doc, 140);
-  sectionTitle(doc, "Depoimentos", "Prova social", data.brandColor);
+  sectionTitle(doc, "Depoimentos", "Prova social", design);
 
   data.testimonials.forEach((item) => {
     const quote = `"${item.quote}"`;
     const height = Math.max(64, doc.heightOfString(quote, { width: CONTENT_WIDTH - 42, lineGap: 3 }) + 38);
     ensureSpace(doc, height + 12);
-    doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 8).fill(SOFT);
-    doc.rect(MARGIN, doc.y + 8, 4, height).fill(data.brandColor);
+    doc.roundedRect(MARGIN, doc.y + 8, CONTENT_WIDTH, height, 8).fill(design.soft);
+    doc.rect(MARGIN, doc.y + 8, 4, height).fill(design.primary);
     doc.fillColor("#475569").font("Helvetica").fontSize(10).text(quote, MARGIN + 18, doc.y + 22, {
       width: CONTENT_WIDTH - 42,
       lineGap: 3,
@@ -979,12 +1265,12 @@ function drawTestimonials(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   });
 }
 
-function drawDecision(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+function drawDecision(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   ensureSpace(doc, 120);
   const y = doc.y + 8;
   doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 104, 8).fill(data.brandSecondaryColor);
-  doc.rect(MARGIN, y, 6, 104).fill(data.brandColor);
-  doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text("STATUS DA PROPOSTA", MARGIN + 18, y + 18);
+  doc.rect(MARGIN, y, 6, 104).fill(design.accent);
+  doc.fillColor(design.accent).font("Helvetica-Bold").fontSize(8).text("STATUS DA PROPOSTA", MARGIN + 18, y + 18);
   doc.fillColor("#FFFFFF").fontSize(18).text(labelStatus(data.status), MARGIN + 18, y + 34);
 
   let detail = "Para aceitar, acesse o link da proposta e confirme pelo botão de aceite.";
@@ -1005,13 +1291,14 @@ function drawDecision(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   doc.y = y + 122;
 }
 
-function drawFooter(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+function drawFooter(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   const pageRange = doc.bufferedPageRange();
   for (let index = pageRange.start; index < pageRange.start + pageRange.count; index++) {
     doc.switchToPage(index);
     const y = PAGE.height - 92;
     doc.rect(MARGIN, y, CONTENT_WIDTH, 1).fill(LINE);
-    doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(8).text("CONTATO", MARGIN, y + 14);
+    doc.rect(MARGIN, y + 4, 70, 2).fill(design.accent);
+    doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text("CONTATO", MARGIN, y + 14);
     const contacts = [
       data.brandEmail ? `E-mail: ${data.brandEmail}` : "",
       data.brandWhatsapp ? `WhatsApp: ${data.brandWhatsapp}` : "",
@@ -1038,8 +1325,11 @@ function drawPageNumbers(doc: PDFKit.PDFDocument) {
   }
 }
 
-function sectionTitle(doc: PDFKit.PDFDocument, title: string, eyebrow: string, color = "#2563EB") {
+function sectionTitle(doc: PDFKit.PDFDocument, title: string, eyebrow: string, designOrColor: PdfSegmentDesign | string = "#2563EB") {
+  const color = typeof designOrColor === "string" ? designOrColor : designOrColor.primary;
+  const accent = typeof designOrColor === "string" ? designOrColor : designOrColor.accent;
   ensureSpace(doc, 70);
+  doc.rect(MARGIN, doc.y - 4, 34, 3).fill(accent);
   doc.fillColor(color).font("Helvetica-Bold").fontSize(8).text(eyebrow.toUpperCase(), MARGIN, doc.y, {
     characterSpacing: 0.8,
   });
@@ -1290,7 +1580,11 @@ type PdfSegmentIcon = "bucket" | "car" | "spark" | "heart" | "briefcase" | "cale
 
 type PdfSegmentDesign = {
   primary: string;
+  accent: string;
   soft: string;
+  segmentName: string;
+  brandCaption: string;
+  promise: string;
   documentTitle: string;
   referenceLabel: string;
   scopeLabel: string;

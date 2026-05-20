@@ -114,7 +114,7 @@ type Proposal = {
   validUntil: string;
   payment: string;
   documentType: "auto" | "budget" | "commercial_proposal" | "technical_proposal" | "care_plan" | "event_proposal";
-  segment: "auto" | "home_reform" | "automotive" | "beauty" | "health" | "business" | "events" | "technology" | "education" | "food" | "pet" | "general";
+  segment: "auto" | "home_reform" | "automotive" | "beauty" | "health" | "business" | "events" | "technology" | "education" | "food" | "pet" | "real_estate" | "fashion_retail" | "transport" | "finance" | "industry" | "agriculture" | "tourism" | "security" | "general";
   included: string[];
   notes: string;
   status: ProposalStatus;
@@ -286,6 +286,14 @@ const proposalSegmentOptions: Array<{ value: ProposalDraft["segment"]; label: st
   { value: "education", label: "Aulas e educacao" },
   { value: "food", label: "Gastronomia" },
   { value: "pet", label: "Pet" },
+  { value: "real_estate", label: "Imoveis e condominios" },
+  { value: "fashion_retail", label: "Moda, loja e varejo" },
+  { value: "transport", label: "Transporte e logistica" },
+  { value: "finance", label: "Financeiro e seguros" },
+  { value: "industry", label: "Industria e manutencao" },
+  { value: "agriculture", label: "Agro e rural" },
+  { value: "tourism", label: "Turismo e hospedagem" },
+  { value: "security", label: "Seguranca" },
   { value: "general", label: "Servico geral" },
 ];
 
