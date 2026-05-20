@@ -1,4 +1,5 @@
 import { artPacks, type ArtPackCode, type PlanCode, plans } from "@/lib/plans";
+import { productionEnv } from "@/lib/security-env";
 
 const MERCADO_PAGO_BASE = "https://api.mercadopago.com";
 
@@ -105,7 +106,7 @@ function preferenceUrl(preference: MercadoPagoPreference) {
 
 function notificationUrl(origin: string) {
   const url = new URL("/api/webhooks/mercadopago", publicOrigin(origin));
-  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
+  const secret = productionEnv("MERCADO_PAGO_WEBHOOK_SECRET");
   if (secret) url.searchParams.set("secret", secret);
   return url.toString();
 }
@@ -268,7 +269,7 @@ export async function getMercadoPagoSubscription(preapprovalId: string) {
 }
 
 export function verifyMercadoPagoWebhook(url: string) {
-  const expected = process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
+  const expected = productionEnv("MERCADO_PAGO_WEBHOOK_SECRET");
   if (!expected) return;
   const received = new URL(url).searchParams.get("secret");
   if (received !== expected) throw new Error("Token do webhook invalido.");

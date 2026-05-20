@@ -617,6 +617,7 @@ export default function Home() {
   const [dark, setDark] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState<ProposalDraft>(blankDraft);
+  const [editingProposalId, setEditingProposalId] = useState<string | null>(null);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -743,6 +744,21 @@ export default function Home() {
     }
 
     try {
+      if (editingProposalId) {
+        const result = await apiPatch<Proposal>(`/api/proposals/${editingProposalId}`, {
+          ...draft,
+          clientEmail: draft.clientEmail?.trim() || "",
+          included: cleanIncludedItems(draft.included),
+          status,
+        });
+        setProposals((current) => current.map((item) => (item.id === result.id ? result : item)));
+        setNotice("Proposta atualizada com sucesso.");
+        setActiveView("proposals");
+        setEditingProposalId(null);
+        setDraft({ ...blankDraft, validUntil: nextWeekDate() });
+        return result;
+      }
+
       const result = await apiPost<Proposal & { clientEmailSent?: boolean }>("/api/proposals", {
         ...draft,
         clientEmail: draft.clientEmail?.trim() || "",
@@ -857,7 +873,33 @@ export default function Home() {
   async function duplicateProposal(id: string) {
     const copy = await apiPost<Proposal>(`/api/proposals/${id}/duplicate`, {});
     setProposals((current) => [copy, ...current]);
-    setNotice("Proposta duplicada.");
+    editProposal(copy);
+    setNotice("Proposta duplicada como rascunho. Ajuste os dados e salve quando estiver pronta.");
+  }
+
+  function proposalToDraft(proposal: Proposal): ProposalDraft {
+    return {
+      templateId: "",
+      clientName: proposal.clientName,
+      clientEmail: proposal.clientEmail || "",
+      serviceName: proposal.serviceName,
+      price: proposal.price,
+      deadline: proposal.deadline,
+      validUntil: proposal.validUntil || "",
+      payment: proposal.payment || "",
+      documentType: proposal.documentType || "auto",
+      segment: proposal.segment || "auto",
+      checkoutMode: proposal.checkoutMode || "mercadopago",
+      included: proposal.included || [],
+      notes: proposal.notes || "",
+    };
+  }
+
+  function editProposal(proposal: Proposal) {
+    setDraft(proposalToDraft(proposal));
+    setEditingProposalId(proposal.id);
+    setActiveView("dashboard");
+    setTimeout(() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
   async function confirmPixPayment(id: string) {
@@ -1054,6 +1096,7 @@ export default function Home() {
             accepted={accepted}
             clients={clients}
             draft={draft}
+            isEditingProposal={Boolean(editingProposalId)}
             brand={
               brand || {
                 businessName: session.name,
@@ -1088,6 +1131,7 @@ export default function Home() {
             onProposalRemove={removeProposal}
             onProposalResend={resendProposal}
             onProposalDuplicate={duplicateProposal}
+            onProposalEdit={editProposal}
             onProposalPdf={saveProposalAndOpenPdf}
             openValue={openValue}
             portfolio={portfolio}
@@ -1105,11 +1149,16 @@ export default function Home() {
                 onCopyLink={copyProposalLink}
                 onConfirmPix={confirmPixPayment}
                 onDuplicate={duplicateProposal}
+                onEdit={editProposal}
                 onRemove={removeProposal}
                 onResend={resendProposal}
                 onStatusChange={changeProposalStatus}
                 proposals={proposals}
-                onNewProposal={() => setActiveView("dashboard")}
+                onNewProposal={() => {
+                  setEditingProposalId(null);
+                  setDraft({ ...blankDraft, validUntil: nextWeekDate() });
+                  setActiveView("dashboard");
+                }}
               />
             ) : null}
 
@@ -1307,8 +1356,10 @@ function DashboardView({
   brand,
   clients,
   draft,
+  isEditingProposal,
   onDraftChange,
   onProposalDuplicate,
+  onProposalEdit,
   onProposalRemove,
   onProposalResend,
   onProposalPdf,
@@ -1329,8 +1380,10 @@ function DashboardView({
   brand: BrandProfile;
   clients: Client[];
   draft: ProposalDraft;
+  isEditingProposal: boolean;
   onDraftChange: <K extends keyof ProposalDraft>(key: K, value: ProposalDraft[K]) => void;
   onProposalDuplicate: (id: string) => void;
+  onProposalEdit: (proposal: Proposal) => void;
   onProposalRemove: (id: string) => void;
   onProposalResend: (id: string) => void;
   onProposalPdf: () => void | Promise<void>;
@@ -1564,7 +1617,7 @@ function DashboardView({
             onProposalSave();
           }}
         >
-          <SectionHeading eyebrow="Nova proposta" title="Dados principais" />
+          <SectionHeading eyebrow={isEditingProposal ? "Editar proposta" : "Nova proposta"} title="Dados principais" />
 
           <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3">
             <label className="grid gap-2 text-sm font-extrabold text-slate-600">
@@ -1745,7 +1798,7 @@ function DashboardView({
 
           <div className="grid gap-3 sm:grid-cols-3">
             <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
-              Salvar proposta
+              {isEditingProposal ? "Atualizar proposta" : "Salvar proposta"}
             </button>
             <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
               Salvar rascunho
@@ -1846,6 +1899,7 @@ function DashboardView({
                 onStatusChange={(status) => onStatusChange(proposal.id, status)}
                 onResend={() => onProposalResend(proposal.id)}
                 onDuplicate={() => onProposalDuplicate(proposal.id)}
+                onEdit={() => onProposalEdit(proposal)}
               />
             ))
           ) : (
@@ -1864,6 +1918,7 @@ function ProposalsView({
   onCopyLink,
   onConfirmPix,
   onDuplicate,
+  onEdit,
   onNewProposal,
   onNotice,
   onRemove,
@@ -1875,6 +1930,7 @@ function ProposalsView({
   onCopyLink: (slug?: string) => void;
   onConfirmPix: (id: string) => void;
   onDuplicate: (id: string) => void;
+  onEdit: (proposal: Proposal) => void;
   onNewProposal: () => void;
   onNotice: (message: string | null) => void;
   onRemove: (id: string) => void;
@@ -1943,6 +1999,7 @@ function ProposalsView({
           onConfirmPix={() => onConfirmPix(selectedProposal.id)}
           onCopyLink={() => onCopyLink(selectedProposal.publicSlug)}
           onDuplicate={() => onDuplicate(selectedProposal.id)}
+          onEdit={() => onEdit(selectedProposal)}
           onRemove={() => {
             if (window.confirm("Remover esta proposta?")) {
               onRemove(selectedProposal.id);
@@ -1992,6 +2049,7 @@ function ProposalsView({
               onStatusChange={(status) => onStatusChange(proposal.id, status)}
               onResend={() => onResend(proposal.id)}
               onDuplicate={() => onDuplicate(proposal.id)}
+              onEdit={() => onEdit(proposal)}
               onOpenDetail={() => setSelectedProposalId(proposal.id)}
             />
           ))
@@ -5434,6 +5492,7 @@ function ProposalDetailPanel({
   onConfirmPix,
   onCopyLink,
   onDuplicate,
+  onEdit,
   onRemove,
   onResend,
   onStatusChange,
@@ -5443,6 +5502,7 @@ function ProposalDetailPanel({
   onConfirmPix: () => void;
   onCopyLink: () => void;
   onDuplicate: () => void;
+  onEdit: () => void;
   onRemove: () => void;
   onResend: () => void;
   onStatusChange: (status: ProposalStatus) => void;
@@ -5622,6 +5682,10 @@ function ProposalDetailPanel({
                 Reenviar
               </button>
             ) : null}
+            <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={onEdit}>
+              <Settings size={15} />
+              Editar
+            </button>
             <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={onDuplicate}>
               <Files size={15} />
               Duplicar
@@ -5649,6 +5713,7 @@ function DetailLine({ label, value }: { label: string; value: string }) {
 function ProposalCard({
   onCopyLink,
   onDuplicate,
+  onEdit,
   onOpenDetail,
   onRemove,
   onResend,
@@ -5657,6 +5722,7 @@ function ProposalCard({
 }: {
   onCopyLink: () => void;
   onDuplicate: () => void;
+  onEdit?: () => void;
   onOpenDetail?: () => void;
   onRemove: () => void;
   onResend: () => void;
@@ -5758,6 +5824,16 @@ function ProposalCard({
           >
             <FileText size={15} />
             Detalhes
+          </button>
+        ) : null}
+        {onEdit ? (
+          <button
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+            type="button"
+            onClick={onEdit}
+          >
+            <Settings size={15} />
+            Editar
           </button>
         ) : null}
         <button

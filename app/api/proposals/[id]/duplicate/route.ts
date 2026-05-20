@@ -30,7 +30,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
       checkoutMode: source.checkoutMode,
       included: source.included,
       notes: source.notes,
-      status: "sent",
+      status: "draft",
       publicSlug: slugify(`${source.clientName}-${source.serviceName}`),
     },
   });

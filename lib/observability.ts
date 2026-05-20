@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { checkMercadoPagoConnection, mercadoPagoEnvironment } from "@/lib/mercadopago";
+import { productionEnv } from "@/lib/security-env";
 
 type CheckStatus = "ok" | "degraded" | "down";
 
@@ -31,7 +32,7 @@ export function isObservabilityEnabled() {
 }
 
 export function isAuthorizedHealthRequest(request: Request) {
-  const token = process.env.HEALTHCHECK_TOKEN?.trim();
+  const token = productionEnv("HEALTHCHECK_TOKEN");
   if (!token) return true;
 
   const authorization = request.headers.get("authorization");

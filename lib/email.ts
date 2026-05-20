@@ -37,14 +37,46 @@ type EmailTemplateOptions = {
   footer?: string;
 };
 
-export async function sendEmail(to: string, subject: string, html: string) {
+type SendEmailOptions = {
+  replyTo?: string;
+  listUnsubscribeUrl?: string;
+};
+
+type MarketingEmailKey =
+  | "activationDay1"
+  | "activationDay3"
+  | "proposalFollowUp"
+  | "upgradeNudge"
+  | "weeklyDigest"
+  | "winBack"
+  | "trialEnding"
+  | "newFeature";
+
+type MarketingEmailContext = {
+  name: string;
+  businessName?: string | null;
+  proposalCount?: number;
+  acceptedProposalCount?: number;
+  planName?: string;
+  featureName?: string;
+  unsubscribeToken?: string;
+};
+
+type MarketingEmailDefinition = {
+  subject: string;
+  template: EmailTemplateOptions;
+};
+
+export async function sendEmail(to: string, subject: string, html: string, options: SendEmailOptions = {}) {
+  const headers = options.listUnsubscribeUrl ? { "List-Unsubscribe": `<${options.listUnsubscribeUrl}>` } : undefined;
+
   if (smtpTransporter) {
-    await smtpTransporter.sendMail({ from: FROM, to, subject, html }).catch(() => null);
+    await smtpTransporter.sendMail({ from: FROM, to, subject, html, replyTo: options.replyTo, headers }).catch(() => null);
     return;
   }
 
   if (!resend) return;
-  await resend.emails.send({ from: FROM, to, subject, html }).catch(() => null);
+  await resend.emails.send({ from: FROM, to, subject, html, replyTo: options.replyTo, headers }).catch(() => null);
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {
@@ -69,6 +101,24 @@ export async function sendWelcomeEmail(to: string, name: string) {
       secondaryButtonUrl: manualUrl,
       footer: "Este email confirma a criacao da sua conta FechaPro.",
     })
+  );
+}
+
+export async function sendMarketingEmail(to: string, key: MarketingEmailKey, context: MarketingEmailContext) {
+  const definition = marketingEmailDefinition(key, context);
+  const unsubscribeUrl = context.unsubscribeToken ? `${APP_URL}/api/marketing/unsubscribe?token=${encodeURIComponent(context.unsubscribeToken)}` : undefined;
+  const footer = unsubscribeUrl
+    ? `${definition.template.footer || "Voce recebeu este email porque tem uma conta FechaPro."} Para sair dos emails de marketing, acesse: ${unsubscribeUrl}`
+    : definition.template.footer;
+
+  await sendEmail(
+    to,
+    definition.subject,
+    emailTemplate({
+      ...definition.template,
+      footer,
+    }),
+    { listUnsubscribeUrl: unsubscribeUrl }
   );
 }
 
@@ -355,6 +405,140 @@ function emailTemplate({ title, preheader, heroImageUrl, heroImageAlt, intro, bo
       </body>
     </html>
   `;
+}
+
+function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmailContext): MarketingEmailDefinition {
+  const firstName = escapeHtml(context.name.trim().split(/\s+/)[0] || "tudo bem");
+  const businessName = context.businessName ? escapeHtml(context.businessName) : "sua marca";
+  const proposalCount = context.proposalCount ?? 0;
+  const acceptedProposalCount = context.acceptedProposalCount ?? 0;
+  const planName = escapeHtml(context.planName || "um plano maior");
+  const featureName = escapeHtml(context.featureName || "uma novidade");
+
+  const definitions: Record<MarketingEmailKey, MarketingEmailDefinition> = {
+    activationDay1: {
+      subject: "Seu primeiro fechamento começa pela primeira proposta",
+      template: {
+        title: "Crie sua primeira proposta no FechaPro",
+        preheader: "Configure sua marca, cadastre um servico e envie um link profissional hoje.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>O jeito mais rapido de sentir valor no FechaPro e criar uma proposta real, mesmo que seja para um cliente em negociacao.</p>
+          <p>Comece por tres passos: ajuste a identidade de <strong>${businessName}</strong>, cadastre seu servico principal e gere o link da proposta para enviar no WhatsApp ou email.</p>
+        `,
+        buttonLabel: "Criar proposta",
+        buttonUrl: `${APP_URL}/?view=proposals`,
+        footer: "Email de onboarding do FechaPro.",
+      },
+    },
+    activationDay3: {
+      subject: "Seu painel fica melhor quando sua marca aparece",
+      template: {
+        title: "Deixe suas propostas com cara de marca",
+        preheader: "Logo, cores, WhatsApp e PIX deixam cada proposta pronta para vender.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>Uma proposta com identidade clara passa mais confianca antes mesmo do cliente ler o preco.</p>
+          <p>Complete logo, cores, WhatsApp, portfolio e depoimentos para transformar cada link em uma experiencia comercial mais forte.</p>
+        `,
+        buttonLabel: "Configurar marca",
+        buttonUrl: `${APP_URL}/?view=brand`,
+        footer: "Email de ativacao do FechaPro.",
+      },
+    },
+    proposalFollowUp: {
+      subject: "Uma proposta enviada merece acompanhamento",
+      template: {
+        title: "Acompanhe suas propostas abertas",
+        preheader: "Veja visualizacoes, respostas e pagamentos para priorizar o proximo contato.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>Voce ja criou <strong>${proposalCount}</strong> proposta${proposalCount === 1 ? "" : "s"} no FechaPro.</p>
+          <p>Abra a lista de propostas para ver quais clientes visualizaram, quais ainda precisam de resposta e onde vale fazer um follow-up agora.</p>
+        `,
+        buttonLabel: "Ver propostas",
+        buttonUrl: `${APP_URL}/?view=proposals`,
+        footer: "Email de acompanhamento comercial do FechaPro.",
+      },
+    },
+    upgradeNudge: {
+      subject: "Hora de acelerar o fluxo comercial?",
+      template: {
+        title: "Recursos extras para vender com mais ritmo",
+        preheader: "Templates, artes, portfolio e limites maiores ajudam quando a operacao cresce.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>Quando propostas passam a fazer parte da rotina, pequenos atalhos economizam muito tempo.</p>
+          <p>O plano <strong>${planName}</strong> libera mais estrutura para criar, organizar e acompanhar oportunidades sem montar tudo do zero.</p>
+        `,
+        buttonLabel: "Comparar planos",
+        buttonUrl: `${APP_URL}/?view=plans`,
+        footer: "Email promocional do FechaPro.",
+      },
+    },
+    weeklyDigest: {
+      subject: "Resumo da sua semana no FechaPro",
+      template: {
+        title: "Seu resumo comercial",
+        preheader: "Veja propostas criadas, aceites e proximas acoes recomendadas.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>Nesta semana, seu painel registrou <strong>${proposalCount}</strong> proposta${proposalCount === 1 ? "" : "s"} e <strong>${acceptedProposalCount}</strong> aceite${acceptedProposalCount === 1 ? "" : "s"}.</p>
+          <p>Revise as propostas pendentes e transforme oportunidades paradas em proximos passos claros.</p>
+        `,
+        buttonLabel: "Abrir dashboard",
+        buttonUrl: APP_URL,
+        footer: "Resumo periodico do FechaPro.",
+      },
+    },
+    winBack: {
+      subject: "Suas propostas ainda podem trabalhar por voce",
+      template: {
+        title: "Volte com um proximo envio simples",
+        preheader: "Reative seu painel criando uma proposta ou atualizando seus servicos.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>Se o comercial ficou corrido, retomar pode ser simples: atualize um servico, escolha um template e envie uma proposta nova ainda hoje.</p>
+          <p>O FechaPro guarda sua estrutura para voce nao precisar recomecar.</p>
+        `,
+        buttonLabel: "Retomar painel",
+        buttonUrl: APP_URL,
+        footer: "Email de reativacao do FechaPro.",
+      },
+    },
+    trialEnding: {
+      subject: "Garanta a continuidade do seu FechaPro",
+      template: {
+        title: "Seu acesso precisa de atencao",
+        preheader: "Escolha um plano para manter propostas, templates e acompanhamento ativos.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>Para continuar usando suas propostas, clientes e materiais comerciais sem interrupcao, escolha o plano que combina com sua rotina.</p>
+          <p>Se voce ja tem propostas em negociacao, manter o painel ativo ajuda a acompanhar respostas no momento certo.</p>
+        `,
+        buttonLabel: "Escolher plano",
+        buttonUrl: `${APP_URL}/?view=plans`,
+        footer: "Email sobre continuidade de acesso ao FechaPro.",
+      },
+    },
+    newFeature: {
+      subject: `Novidade no FechaPro: ${featureName}`,
+      template: {
+        title: featureName,
+        preheader: "Uma melhoria nova para deixar seu processo comercial mais simples.",
+        intro: `Ola, ${firstName}!`,
+        body: `
+          <p>Tem recurso novo no FechaPro para ajudar sua rotina comercial a ficar mais leve e organizada.</p>
+          <p>Abra o painel, teste a novidade e veja onde ela pode economizar tempo no seu processo de venda.</p>
+        `,
+        buttonLabel: "Ver novidade",
+        buttonUrl: APP_URL,
+        footer: "Email de novidades do produto FechaPro.",
+      },
+    },
+  };
+
+  return definitions[key];
 }
 
 function escapeHtml(value: string) {

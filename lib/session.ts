@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { productionEnv } from "@/lib/security-env";
 
 const cookieName = "fechapro_session";
-const secret = process.env.AUTH_SECRET || "fechapro_dev_secret_change_me";
+const secret = productionEnv("AUTH_SECRET", "fechapro_dev_secret_change_me");
 
 export type SessionUser = {
   id: string;

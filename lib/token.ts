@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
+import { productionEnv } from "@/lib/security-env";
 
-const secret = process.env.AUTH_SECRET || "fechapro_dev_secret_change_me";
+const secret = productionEnv("AUTH_SECRET", "fechapro_dev_secret_change_me");
 const TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export function createResetToken(userId: string, passwordHash: string): string {

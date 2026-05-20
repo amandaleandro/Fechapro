@@ -1,6 +1,8 @@
+import { productionEnv } from "@/lib/security-env";
+
 export async function verifyTurnstile(token: string | null): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true; // skip if not configured
+  const secret = productionEnv("TURNSTILE_SECRET_KEY");
+  if (!secret) return true; // skip only in development/test when not configured
 
   if (!token) return false;
 
