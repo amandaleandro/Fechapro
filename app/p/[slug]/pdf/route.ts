@@ -157,10 +157,13 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
   const imageH = 116;
 
   doc.rect(0, 0, PAGE.width, PAGE.height).fill("#FFFFFF");
+  doc.rect(0, 28, PAGE.width, 190).fill("#F8FAFC");
+  doc.circle(PAGE.width - 44, 102, 96).fill(design.soft);
+  doc.circle(PAGE.width - 86, 78, 42).fill("#FFFFFF");
   doc.rect(0, 0, PAGE.width, 24).fill(design.primary);
   doc.rect(0, 24, PAGE.width, 4).fill(design.accent);
   doc.rect(MARGIN, topY + 126, CONTENT_WIDTH, 1.4).fill(design.accent);
-  doc.roundedRect(PAGE.width - MARGIN - 104, 43, 104, 24, 12).fill(design.soft);
+  doc.roundedRect(PAGE.width - MARGIN - 104, 43, 104, 24, 12).fillAndStroke("#FFFFFF", "#E2E8F0");
   doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(7.5).text(design.segmentName.toUpperCase(), PAGE.width - MARGIN - 92, 51, {
     width: 80,
     align: "center",
@@ -219,6 +222,7 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
   const images = data.portfolio.slice(0, 2);
   for (let index = 0; index < 2; index++) {
     const x = MARGIN + index * (imageW + imageGap);
+    doc.roundedRect(x + 2, imageY + 3, imageW, imageH, 8).fill("#CBD5E1");
     doc.roundedRect(x, imageY, imageW, imageH, 8).fill("#F1F5F9");
     const item = images[index];
     const image = await readImageFromUrl(item?.imageUrl || "");
@@ -400,6 +404,8 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
 }
 
 function drawDocumentHeader(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
+  doc.rect(0, 0, PAGE.width, PAGE.height).fill("#FFFFFF");
+  doc.rect(MARGIN - 12, MARGIN + 18, 2, PAGE.height - 150).fill("#EEF2F7");
   doc.rect(0, 0, PAGE.width, 18).fill(design.primary);
   doc.rect(0, 18, PAGE.width, 4).fill(design.accent);
   doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text(design.segmentName.toUpperCase(), MARGIN, MARGIN - 16, {
@@ -432,6 +438,7 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pdf
   items.forEach(([label, value], index) => {
     const x = MARGIN + (index % 2) * (cardWidth + 12);
     const y = startY + Math.floor(index / 2) * (cardHeight + 12);
+    doc.roundedRect(x + 2, y + 2, cardWidth, cardHeight, 8).fill("#E2E8F0");
     doc.roundedRect(x, y, cardWidth, cardHeight, 8).fillAndStroke(index === 0 ? design.soft : "#FFFFFF", LINE);
     doc.rect(x, y, 5, cardHeight).fill(index === 0 ? design.primary : design.accent);
     doc.fillColor(index === 0 ? design.primary : MUTED).font("Helvetica-Bold").fontSize(8).text(label.toUpperCase(), x + 14, y + 13);
@@ -524,9 +531,11 @@ function drawBudgetDetailsTable(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
   const rowHeight = 24;
   const rows = design.rows(data);
 
+  doc.roundedRect(MARGIN + 2, y + 3, CONTENT_WIDTH, rowHeight * 6, 6).fill("#E2E8F0");
   doc.roundedRect(MARGIN, y, CONTENT_WIDTH, rowHeight * 6, 6).fillAndStroke("#FFFFFF", LINE);
-  doc.rect(MARGIN, y, CONTENT_WIDTH, rowHeight).fill(design.soft);
-  doc.fillColor(INK).font("Helvetica-Bold").fontSize(8).text("DESCRICAO", MARGIN + 12, y + 9);
+  doc.rect(MARGIN, y, CONTENT_WIDTH, rowHeight).fill(design.primary);
+  doc.rect(MARGIN, y + rowHeight - 4, CONTENT_WIDTH, 4).fill(design.accent);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8).text("DESCRICAO", MARGIN + 12, y + 9);
   doc.text("DETALHES", MARGIN + columns[0] + 12, y + 9);
   doc.text("VALOR (R$)", MARGIN + columns[0] + columns[1] + 12, y + 9);
   doc.rect(MARGIN + columns[0], y, 1, rowHeight * 5).fill(LINE);
@@ -542,6 +551,7 @@ function drawBudgetDetailsTable(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
 
   const totalY = y + rowHeight * 5;
   doc.rect(MARGIN, totalY, CONTENT_WIDTH, rowHeight).fill("#F8FAFC");
+  doc.rect(MARGIN, totalY, 6, rowHeight).fill(design.accent);
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text("VALOR TOTAL", MARGIN + 12, totalY + 8);
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(16).text(data.price, MARGIN + columns[0] + columns[1] + 2, totalY + 5, {
     width: columns[2] - 14,
@@ -1268,6 +1278,7 @@ function drawTestimonials(doc: PDFKit.PDFDocument, data: ProposalPdfData, design
 function drawDecision(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   ensureSpace(doc, 120);
   const y = doc.y + 8;
+  doc.roundedRect(MARGIN + 3, y + 4, CONTENT_WIDTH, 104, 8).fill("#CBD5E1");
   doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 104, 8).fill(data.brandSecondaryColor);
   doc.rect(MARGIN, y, 6, 104).fill(design.accent);
   doc.fillColor(design.accent).font("Helvetica-Bold").fontSize(8).text("STATUS DA PROPOSTA", MARGIN + 18, y + 18);

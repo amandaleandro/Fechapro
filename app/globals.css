@@ -610,6 +610,97 @@ select:focus {
   background: var(--landing-green-strong) !important;
 }
 
+.fp-proposal-page,
+.fp-checkout-page {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 18rem),
+    radial-gradient(circle at 14% 0%, rgba(20, 122, 76, 0.08), transparent 24rem),
+    var(--ui-bg);
+}
+
+.fp-proposal-hero,
+.fp-checkout-hero {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16) !important;
+}
+
+.fp-proposal-hero::after,
+.fp-checkout-hero::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 34%),
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.2), transparent 18rem);
+}
+
+.fp-proposal-hero > *,
+.fp-checkout-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.fp-proposal-price-card,
+.fp-checkout-paybox {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12) !important;
+}
+
+.fp-proposal-summary,
+.fp-proposal-panel,
+.fp-proposal-accept,
+.fp-checkout-topbar,
+.fp-checkout-details,
+.fp-checkout-trust {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 14px 34px rgba(15, 23, 42, 0.07) !important;
+}
+
+.fp-proposal-summary,
+.fp-checkout-details {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.9)) !important;
+}
+
+.fp-proposal-metric,
+.fp-checkout-metric {
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.fp-proposal-panel,
+.fp-proposal-accept {
+  position: relative;
+  overflow: hidden;
+}
+
+.fp-proposal-panel::before,
+.fp-proposal-accept::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: linear-gradient(180deg, var(--brand-600), var(--info-700));
+  opacity: 0.85;
+}
+
+.fp-proposal-mobile-bar {
+  box-shadow: 0 -14px 34px rgba(15, 23, 42, 0.14) !important;
+}
+
+.fp-checkout-page {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), transparent 16rem),
+    radial-gradient(circle at 82% 0%, rgba(37, 99, 235, 0.08), transparent 22rem),
+    var(--ui-bg);
+}
+
+.fp-checkout-trust {
+  background:
+    linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(239, 246, 255, 0.86)) !important;
+}
+
 [data-theme="dark"] :is(.bg-white, .bg-white\/95) {
   background-color: var(--app-surface) !important;
 }

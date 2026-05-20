@@ -36,9 +36,9 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
   const pixQrUrl = pixPayload ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixPayload)}` : null;
 
   return (
-    <main className="min-h-screen bg-[var(--ui-bg)] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">
+    <main className="fp-checkout-page min-h-screen bg-[var(--ui-bg)] px-4 py-4 text-slate-950 sm:px-6 sm:py-6">
       <section className="mx-auto grid w-full max-w-6xl gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10">
+        <header className="fp-checkout-topbar flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10">
           <a className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-black text-slate-600 hover:text-slate-950" href={`/p/${proposal.publicSlug}`}>
             <ArrowLeft size={16} />
             Voltar para proposta
@@ -52,7 +52,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
         </header>
 
         <div className="grid gap-5 lg:grid-cols-[1fr_0.72fr] lg:items-start">
-          <article className="overflow-hidden rounded-lg bg-white shadow-xl shadow-slate-900/10">
+          <article className="fp-checkout-hero overflow-hidden rounded-lg bg-white shadow-xl shadow-slate-900/10">
             <div className="h-2" style={{ background: brandColor }} />
             <div className="grid gap-5 p-5 sm:p-7">
               <div>
@@ -73,14 +73,14 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
                 <CheckoutMetric label="Valor total" value={money.format(proposal.price)} />
               </div>
 
-              <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+              <div className="fp-checkout-details grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
                 <CheckoutLine label="Empresa" value={brandName} />
                 <CheckoutLine label="Prazo" value={proposal.deadline || "A combinar"} />
                 <CheckoutLine label="Condição combinada" value={proposal.payment || "A combinar"} />
                 <CheckoutLine label="Status" value={paid ? "Pagamento confirmado" : "Aguardando pagamento"} />
               </div>
 
-              <div className="grid gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4 sm:grid-cols-3">
+              <div className="fp-checkout-trust grid gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4 sm:grid-cols-3">
                 {wantsPix ? (
                   <>
                     <TrustItem icon={QrCode} title="QR Code PIX" text="O pagamento vai direto para a chave configurada pelo profissional." />
@@ -98,7 +98,7 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
             </div>
           </article>
 
-          <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
+          <aside className="fp-checkout-paybox grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
               <p className="text-xs font-black uppercase text-blue-700">{wantsPix ? "Pague com PIX" : "Escolha como pagar"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{money.format(proposal.price)}</strong>
@@ -191,7 +191,7 @@ function PaymentForm({
 
 function CheckoutMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-black/10 bg-slate-50 p-4">
+    <div className="fp-checkout-metric rounded-lg border border-black/10 bg-slate-50 p-4">
       <p className="text-xs font-black uppercase text-slate-500">{label}</p>
       <strong className="mt-1 block leading-6">{value}</strong>
     </div>

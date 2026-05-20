@@ -95,7 +95,7 @@ export default async function PublicProposalPage({
   const wantsPix = proposal.checkoutMode === "pix";
 
   return (
-    <main className={`mobile-safe-bottom min-h-screen pb-20 text-slate-900 ${segmentStyle.pageClass}`}>
+    <main className={`fp-proposal-page mobile-safe-bottom min-h-screen pb-20 text-slate-900 ${segmentStyle.pageClass}`}>
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
@@ -139,7 +139,7 @@ export default async function PublicProposalPage({
           </div>
         ) : null}
 
-        <header className={`overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
+        <header className={`fp-proposal-hero overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${segmentStyle.primary}, ${segmentStyle.accent})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
             <div>
@@ -196,7 +196,7 @@ export default async function PublicProposalPage({
               </div>
             </div>
 
-            <aside className={`grid content-between gap-4 bg-white p-4 text-slate-950 ${proposalStyle.radiusClass}`}>
+            <aside className={`fp-proposal-price-card grid content-between gap-4 bg-white p-4 text-slate-950 ${proposalStyle.radiusClass}`}>
               <div>
                 <span className="inline-flex rounded-lg px-3 py-1 text-xs font-black uppercase text-white" style={{ background: statusColor(currentStatus, expired) }}>
                   {expired ? "Vencida" : labelStatus(currentStatus)}
@@ -222,7 +222,7 @@ export default async function PublicProposalPage({
           </div>
         </header>
 
-        <section className={`grid gap-3 border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-5 ${proposalStyle.radiusClass}`}>
+        <section className={`fp-proposal-summary grid gap-3 border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-5 ${proposalStyle.radiusClass}`}>
           <PreviewBox label="Serviço" value={proposal.serviceName} />
           <PreviewBox label="Prazo" value={proposal.deadline} />
           <PreviewBox label="Pagamento" value={proposal.payment || "A combinar"} />
@@ -239,7 +239,7 @@ export default async function PublicProposalPage({
         ) : null}
 
         <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start">
-          <div className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+          <div className="fp-proposal-panel grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <section>
               <p className="text-xs font-black uppercase text-blue-700">Escopo</p>
               <h2 className="mt-1 text-2xl font-black">Itens inclusos</h2>
@@ -264,7 +264,7 @@ export default async function PublicProposalPage({
           </div>
 
           <aside className="grid gap-4">
-            <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Pagamento</p>
               <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : wantsPix ? "Pague com PIX" : "Pague com PIX ou cartão"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
@@ -285,7 +285,7 @@ export default async function PublicProposalPage({
               )}
             </section>
 
-            <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Próximos passos</p>
               <ol className="mt-4 grid gap-3">
                 {["Aceite a proposta pelo formulário abaixo.", "O profissional recebe a confirmação.", "O projeto segue com briefing, pagamento e execução combinados."].map((item, index) => (
@@ -297,7 +297,7 @@ export default async function PublicProposalPage({
               </ol>
             </section>
 
-            <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Contato</p>
               <div className="mt-3 grid gap-2 text-sm font-bold text-slate-600">
                 {brand?.email ? <p>E-mail: {brand.email}</p> : null}
@@ -314,7 +314,7 @@ export default async function PublicProposalPage({
         </section>
 
         {brand?.showPortfolio !== false && portfolio.length ? (
-          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+          <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Prova visual</p>
             <h2 className="mt-1 text-2xl font-black">Portfólio relacionado</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -339,7 +339,7 @@ export default async function PublicProposalPage({
         ) : null}
 
         {brand?.showServices !== false && services.length ? (
-          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+          <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Serviços</p>
             <h2 className="mt-1 text-2xl font-black">Outras formas de contratar</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -356,7 +356,7 @@ export default async function PublicProposalPage({
         ) : null}
 
         {brand?.showTestimonials !== false && testimonials.length ? (
-          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+          <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Prova social</p>
             <h2 className="mt-1 text-2xl font-black">Depoimentos</h2>
             <div className="mt-4 grid gap-3">
@@ -374,7 +374,7 @@ export default async function PublicProposalPage({
         ) : null}
 
         {brand?.proposalTerms ? (
-          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+          <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Condições</p>
             <h2 className="mt-1 text-2xl font-black">Termos comerciais</h2>
             <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">{brand.proposalTerms}</p>
@@ -400,7 +400,7 @@ export default async function PublicProposalPage({
         </section>
         ) : null}
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="status">
+        <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="status">
           <div className="grid gap-3 sm:grid-cols-3">
             <PreviewBox label="Status" value={expired ? "Vencida" : labelStatus(currentStatus)} />
             <PreviewBox label="Pagamento" value={proposal.paymentStatus === "paid" ? "Confirmado" : "Pendente"} />
@@ -421,7 +421,7 @@ export default async function PublicProposalPage({
         </section>
 
         {!hasDecision ? (
-          <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="aceite">
+          <section className="fp-proposal-accept grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="aceite">
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Aceite digital</p>
               <h2 className="mt-1 text-2xl font-black">Pronto para seguir?</h2>
@@ -483,7 +483,7 @@ export default async function PublicProposalPage({
         ) : null}
       </article>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-2xl shadow-slate-950/15 backdrop-blur sm:hidden">
+      <div className="fp-proposal-mobile-bar fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-2xl shadow-slate-950/15 backdrop-blur sm:hidden">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2">
           <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-3 text-center text-sm font-black text-slate-800" href={`/p/${proposal.publicSlug}/pdf`}>
             PDF
@@ -499,7 +499,7 @@ export default async function PublicProposalPage({
 
 function PreviewBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-black/10 p-4">
+    <div className="fp-proposal-metric rounded-lg border border-black/10 p-4">
       <dt className="text-xs font-black uppercase text-slate-500">{label}</dt>
       <dd className="mt-1 font-black">{value}</dd>
     </div>
