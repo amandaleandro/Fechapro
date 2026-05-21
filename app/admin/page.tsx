@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, LayoutTemplate, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Trash2, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
 
 type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
 
@@ -129,6 +129,7 @@ export default function AdminPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
+  const [seedingDemo, setSeedingDemo] = useState(false);
   const [newUser, setNewUser] = useState({
     email: "",
     name: "",
@@ -244,7 +245,7 @@ export default function AdminPage() {
     }
   }
 
-  async function createUser(event: React.FormEvent<HTMLFormElement>) {
+  async function createUser(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     setCreatingUser(true);
     setNotice(null);
@@ -263,6 +264,38 @@ export default function AdminPage() {
       setError(caught instanceof Error ? caught.message : "Não foi possível criar o usuário.");
     } finally {
       setCreatingUser(false);
+    }
+  }
+
+  async function seedDemoProposals(replace: boolean) {
+    setSeedingDemo(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/seed-demo-proposals${replace ? "?replace=1" : ""}`, { method: "POST" });
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível criar as propostas demo."));
+      const result = (await response.json()) as { created: number };
+      setNotice(`${result.created} propostas demo criadas no perfil do admin.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível criar as propostas demo.");
+    } finally {
+      setSeedingDemo(false);
+    }
+  }
+
+  async function clearDemoProposals() {
+    setSeedingDemo(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/seed-demo-proposals", { method: "DELETE" });
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível remover as propostas demo."));
+      const result = (await response.json()) as { deleted: number };
+      setNotice(`${result.deleted} propostas demo removidas.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível remover as propostas demo.");
+    } finally {
+      setSeedingDemo(false);
     }
   }
 
@@ -498,6 +531,44 @@ export default function AdminPage() {
               </table>
             </div>
           )}
+        </section>
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+          <div>
+            <p className="text-xs font-black uppercase text-purple-700">Propostas demonstração</p>
+            <h2 className="text-2xl font-black">Demo por nicho</h2>
+            <p className="mt-1 text-sm font-bold text-slate-600">
+              Cria 20 propostas de demonstração no perfil do admin, cobrindo nichos variados com status diferentes (enviadas, visualizadas, aceitas, recusadas). Use para apresentar a plataforma para novos clientes.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-purple-700 px-4 text-sm font-black text-white disabled:opacity-60"
+              disabled={seedingDemo}
+              type="button"
+              onClick={() => seedDemoProposals(false)}
+            >
+              <LayoutTemplate size={16} />
+              {seedingDemo ? "Criando..." : "Criar propostas demo"}
+            </button>
+            <button
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-purple-700 px-4 text-sm font-black text-white disabled:opacity-60"
+              disabled={seedingDemo}
+              type="button"
+              onClick={() => seedDemoProposals(true)}
+            >
+              <RefreshCcw size={16} />
+              {seedingDemo ? "Recriando..." : "Recriar (apaga e recria)"}
+            </button>
+            <button
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-rose-700/30 bg-rose-50 px-4 text-sm font-black text-rose-700 disabled:opacity-60"
+              disabled={seedingDemo}
+              type="button"
+              onClick={clearDemoProposals}
+            >
+              <Trash2 size={16} />
+              {seedingDemo ? "Removendo..." : "Remover todas as demos"}
+            </button>
+          </div>
         </section>
       </div>
     </main>

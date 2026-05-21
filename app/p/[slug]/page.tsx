@@ -153,7 +153,7 @@ export default async function PublicProposalPage({
             <div>
               <div className="flex items-center gap-4">
                 {brand?.logoUrl ? (
-                  <span className="fp-proposal-logo-frame grid place-items-center overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-white/70">
+                  <span className="fp-proposal-logo-frame grid place-items-center overflow-hidden rounded-lg shadow-sm ring-1 ring-white/70">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img alt="" className="fp-proposal-logo-image object-contain" src={brand.logoUrl} />
                   </span>
