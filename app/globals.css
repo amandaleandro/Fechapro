@@ -613,8 +613,9 @@ select:focus {
 .fp-proposal-page,
 .fp-checkout-page {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 18rem),
-    radial-gradient(circle at 14% 0%, rgba(20, 122, 76, 0.08), transparent 24rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), transparent 22rem),
+    radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--proposal-primary, #147a4c) 12%, transparent), transparent 28rem),
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--proposal-accent, #2563eb) 10%, transparent), transparent 26rem),
     var(--ui-bg);
 }
 
@@ -632,8 +633,9 @@ select:focus {
   pointer-events: none;
   content: "";
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 34%),
-    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.2), transparent 18rem);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 31%),
+    linear-gradient(90deg, rgba(2, 6, 23, 0), rgba(2, 6, 23, 0.18)),
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.22), transparent 18rem);
 }
 
 .fp-proposal-hero > *,
@@ -646,6 +648,23 @@ select:focus {
 .fp-checkout-paybox {
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12) !important;
+}
+
+.fp-proposal-logo-frame {
+  width: clamp(9.5rem, 22vw, 12rem);
+  height: clamp(4.25rem, 9vw, 5rem);
+  padding: 0.65rem 0.9rem;
+}
+
+.fp-proposal-logo-image {
+  width: 100%;
+  height: 100%;
+}
+
+.fp-proposal-service-brief {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.07)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 16px 36px rgba(2, 6, 23, 0.12);
 }
 
 .fp-proposal-summary,
@@ -669,6 +688,42 @@ select:focus {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
+.fp-proposal-scope-item {
+  background: rgba(248, 250, 252, 0.82);
+}
+
+.fp-proposal-price-media {
+  aspect-ratio: 1.28;
+  background:
+    linear-gradient(135deg, var(--proposal-secondary, #0f172a), var(--proposal-primary, #16a34a));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.fp-proposal-message {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--proposal-primary, #16a34a) 8%, #ffffff), #ffffff 42%, color-mix(in srgb, var(--proposal-accent, #2563eb) 8%, #ffffff)) !important;
+}
+
+.fp-proposal-message::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  content: "";
+  background: var(--proposal-primary, #16a34a);
+}
+
+.fp-proposal-portfolio-item {
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.fp-proposal-portfolio-item:hover {
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14);
+  transform: translateY(-2px);
+}
+
 .fp-proposal-panel,
 .fp-proposal-accept {
   position: relative;
@@ -681,7 +736,7 @@ select:focus {
   inset: 0 auto 0 0;
   width: 4px;
   content: "";
-  background: linear-gradient(180deg, var(--brand-600), var(--info-700));
+  background: linear-gradient(180deg, var(--proposal-primary, var(--brand-600)), var(--proposal-accent, var(--info-700)));
   opacity: 0.85;
 }
 

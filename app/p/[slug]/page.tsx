@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { CSSProperties } from "react";
 import { prisma } from "@/lib/prisma";
 import { sendProposalViewedEmail } from "@/lib/email";
 import { sendProposalPushNotification } from "@/lib/push";
@@ -95,7 +96,14 @@ export default async function PublicProposalPage({
   const wantsPix = proposal.checkoutMode === "pix";
 
   return (
-    <main className={`fp-proposal-page mobile-safe-bottom min-h-screen pb-20 text-slate-900 ${segmentStyle.pageClass}`}>
+    <main
+      className={`fp-proposal-page mobile-safe-bottom min-h-screen pb-20 text-slate-900 ${segmentStyle.pageClass}`}
+      style={{
+        "--proposal-primary": segmentStyle.primary,
+        "--proposal-accent": segmentStyle.accent,
+        "--proposal-secondary": brandSecondaryColor,
+      } as CSSProperties}
+    >
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
@@ -145,9 +153,9 @@ export default async function PublicProposalPage({
             <div>
               <div className="flex items-center gap-4">
                 {brand?.logoUrl ? (
-                  <span className="grid h-16 w-24 place-items-center overflow-hidden rounded-lg bg-white p-1.5 shadow-sm ring-1 ring-white/70 sm:h-20 sm:w-32">
+                  <span className="fp-proposal-logo-frame grid place-items-center overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-white/70">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt="" className="h-full w-full object-contain" src={brand.logoUrl} />
+                    <img alt="" className="fp-proposal-logo-image object-contain" src={brand.logoUrl} />
                   </span>
                 ) : (
                   <div className="grid h-16 w-16 place-items-center rounded-lg font-black text-white sm:h-20 sm:w-20" style={{ background: segmentStyle.primary }}>
@@ -181,6 +189,15 @@ export default async function PublicProposalPage({
               <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-6xl">
                 Proposta para {proposal.clientName}
               </h1>
+              <div className="fp-proposal-service-brief mt-5 max-w-2xl rounded-lg border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                <p className="text-xs font-black uppercase text-white/60">Serviço proposto</p>
+                <strong className="mt-1 block text-xl font-black text-white sm:text-2xl">{proposal.serviceName}</strong>
+                <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold text-white/80">
+                  <span>Prazo: {proposal.deadline}</span>
+                  <span aria-hidden="true">|</span>
+                  <span>Pagamento: {proposal.payment || "A combinar"}</span>
+                </div>
+              </div>
               <p className="mt-4 max-w-2xl whitespace-pre-line leading-7 text-white/75">
                 {brand?.proposalIntro || brand?.bio || segmentStyle.intro}
               </p>
@@ -198,6 +215,17 @@ export default async function PublicProposalPage({
 
             <aside className={`fp-proposal-price-card grid content-between gap-4 bg-white p-4 text-slate-950 ${proposalStyle.radiusClass}`}>
               <div>
+                <div className="fp-proposal-price-media mb-4 overflow-hidden rounded-lg">
+                  {portfolio[0]?.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt="" className="h-full w-full object-cover" src={portfolio[0].imageUrl} />
+                  ) : (
+                    <div className="grid h-full content-between p-4 text-white">
+                      <span className="text-xs font-black uppercase text-white/70">{segmentStyle.segmentName}</span>
+                      <strong className="text-lg font-black leading-tight">{proposal.serviceName}</strong>
+                    </div>
+                  )}
+                </div>
                 <span className="inline-flex rounded-lg px-3 py-1 text-xs font-black uppercase text-white" style={{ background: statusColor(currentStatus, expired) }}>
                   {expired ? "Vencida" : labelStatus(currentStatus)}
                 </span>
@@ -207,6 +235,11 @@ export default async function PublicProposalPage({
                   Validade: {validUntilLabel}
                   {daysLeft !== null && daysLeft >= 0 ? ` (${daysLeft === 0 ? "vence hoje" : `${daysLeft} dias`})` : ""}
                 </p>
+                <div className="mt-5 grid gap-2 border-t border-black/10 pt-4 text-sm">
+                  <HeroDetail label="Cliente" value={proposal.clientName} />
+                  <HeroDetail label="Entrega" value={proposal.deadline} />
+                  <HeroDetail label="Canal" value="Link online + PDF" />
+                </div>
               </div>
               <div className="grid gap-2">
                 {!hasDecision ? (
@@ -231,7 +264,7 @@ export default async function PublicProposalPage({
         </section>
 
         {brand?.proposalClosing ? (
-          <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+          <section className="fp-proposal-message rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Mensagem</p>
             <h2 className="mt-1 text-2xl font-black">Antes de decidir</h2>
             <p className="mt-3 whitespace-pre-line leading-7 text-slate-700">{brand.proposalClosing}</p>
@@ -245,7 +278,7 @@ export default async function PublicProposalPage({
               <h2 className="mt-1 text-2xl font-black">Itens inclusos</h2>
               <ul className="mt-4 grid gap-3">
                 {(proposal.included.length ? proposal.included : ["Serviço conforme combinado."]).map((item, index) => (
-                  <li className="grid grid-cols-[auto_1fr] gap-3 leading-7 text-slate-700" key={`${item}-${index}`}>
+                  <li className="fp-proposal-scope-item grid grid-cols-[auto_1fr] gap-3 rounded-lg border border-black/10 p-3 leading-7 text-slate-700" key={`${item}-${index}`}>
                     <span className="mt-1 grid size-6 place-items-center rounded-full text-xs font-black text-white" style={{ background: brandColor }}>
                       OK
                     </span>
@@ -319,7 +352,7 @@ export default async function PublicProposalPage({
             <h2 className="mt-1 text-2xl font-black">Portfólio relacionado</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {portfolio.map((item) => (
-                <div className="overflow-hidden rounded-lg border border-black/10 bg-white" key={item.id}>
+                <div className="fp-proposal-portfolio-item overflow-hidden rounded-lg border border-black/10 bg-white" key={item.id}>
                   {item.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img alt="" className="h-44 w-full object-cover" src={item.imageUrl} />
@@ -502,6 +535,15 @@ function PreviewBox({ label, value }: { label: string; value: string }) {
     <div className="fp-proposal-metric rounded-lg border border-black/10 p-4">
       <dt className="text-xs font-black uppercase text-slate-500">{label}</dt>
       <dd className="mt-1 font-black">{value}</dd>
+    </div>
+  );
+}
+
+function HeroDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[auto_1fr] gap-2">
+      <span className="font-black uppercase text-slate-400">{label}</span>
+      <strong className="min-w-0 text-right text-slate-800">{value}</strong>
     </div>
   );
 }
