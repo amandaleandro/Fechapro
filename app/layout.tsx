@@ -83,30 +83,6 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-        <Script
-          async
-          src="https://fbstore.sendpulse.com/loader.js"
-          data-sp-widget-id="d39043bd-90c0-4449-9068-4842ba31a5d1"
-          strategy="afterInteractive"
-        />
-        <Script
-          async
-          src="https://spxl.supportsrc.com/pulsepix.js"
-          data-project-id="8832afcc-ef64-4bd3-8f63-f182a986f7d0"
-          strategy="afterInteractive"
-        />
-        <Script
-          async
-          src="https://cdn.pulse.is/livechat/loader.js"
-          data-live-chat-id="6a0c58ef9aed0e2d4a09ca0d"
-          strategy="afterInteractive"
-        />
-        <Script
-          async
-          charSet="UTF-8"
-          src="https://web.webpushs.com/js/push/ecfc2beef8970f00c1e3169288f73b2d_1.js"
-          strategy="afterInteractive"
-        />
       </head>
       <body>
         {children}

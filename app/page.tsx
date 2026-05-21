@@ -5067,14 +5067,14 @@ const currentUpdates = [
 ];
 
 const upcomingFeatures = [
-  "Confirmação automática para pagamentos PIX diretos, quando houver integração bancária disponível.",
-  "Linha do tempo mais detalhada com abertura, aceite, recusa, pagamento, cliques no WhatsApp e histórico de follow-up.",
-  "Editor de proposta com blocos extras para bônus, garantias, comparativo de planos e próximos passos.",
-  "Envio de proposta por e-mail com mensagem pronta e registro do envio no histórico comercial.",
-  "Agenda de follow-up para lembrar quando chamar clientes que visualizaram e ainda não responderam.",
-  "Mais modelos de proposta por nicho com textos prontos para vender e variações de layout.",
-  "Relatórios por período com taxa de aceite, valor aprovado, valor em aberto e desempenho por serviço.",
-  "Área de próximos passos depois do aceite, com checklist de início do atendimento e arquivos solicitados ao cliente.",
+  "Fechar pelo WhatsApp: ações em 1 clique.",
+  "Reengajamento automático para quem abriu e não respondeu.",
+  "Timeline única: abertura → aceite → pagamento → chat.",
+  "Editor rápido com bônus, garantias e comparação de planos.",
+  "Templates por nicho prontos para converter.",
+  "Relatórios de conversão e receita por serviço.",
+  "Portal do cliente: status, arquivos e checklist.",
+  "Envio por e‑mail com registro no histórico.",
 ];
 
 function ProductUpdatesModal({
@@ -5116,6 +5116,22 @@ function ProductUpdatesModal({
   updates.splice(0, updates.length, ...currentUpdates);
   nextFeatures.splice(0, nextFeatures.length, ...upcomingFeatures);
 
+  const [ctaVariant, setCtaVariant] = useState<"A" | "B">("A");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = "fechapro_updates_cta_variant";
+    const stored = localStorage.getItem(key);
+    if (stored === "A" || stored === "B") {
+      setCtaVariant(stored as "A" | "B");
+      return;
+    }
+    const newV = Math.random() < 0.5 ? "A" : "B";
+    localStorage.setItem(key, newV);
+    setCtaVariant(newV);
+  }, []);
+
+  const primaryCta = ctaVariant === "A" ? "Enviar proposta por WhatsApp" : "Fechar a venda agora";
+
   return (
     <div
       aria-labelledby="updates-modal-title"
@@ -5128,7 +5144,7 @@ function ProductUpdatesModal({
           <div className="min-w-0">
             <p className="text-xs font-black uppercase text-green-700">Novidades do FechaPro</p>
             <h2 id="updates-modal-title" className="mt-1 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              Atualizações para vender com mais clareza
+              Funções novas para fechar mais rápido
             </h2>
           </div>
           <button
@@ -5180,14 +5196,43 @@ function ProductUpdatesModal({
           </section>
 
           <section className="rounded-lg border border-black/10 p-4">
-            <p className="text-xs font-black uppercase text-blue-700">Futuras implementações</p>
-            <div className="mt-3 grid gap-2">
-              {nextFeatures.map((feature) => (
-                <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
-                  <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
-                  <span>{feature}</span>
+            <p className="text-xs font-black uppercase text-blue-700">Próximas features</p>
+            <div className="mt-3 grid gap-4">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Agora</p>
+                <div className="mt-2 grid gap-2">
+                  {nextFeatures.slice(0, 2).map((feature) => (
+                    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
+                      <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Em seguida</p>
+                <div className="mt-2 grid gap-2">
+                  {nextFeatures.slice(2, 5).map((feature) => (
+                    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
+                      <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Depois</p>
+                <div className="mt-2 grid gap-2">
+                  {nextFeatures.slice(5).map((feature) => (
+                    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
+                      <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
 
