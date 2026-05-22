@@ -1648,11 +1648,11 @@ async function readImageFromUrl(url: string) {
 
   let image: Buffer | null = null;
   let contentType = "";
+  const uploadFilename = localUploadFilename(url);
 
-  if (url.startsWith("/api/uploads/")) {
-    const filename = path.basename(url);
-    image = await readLocalUploadFile(filename);
-    contentType = imageContentTypeFromFilename(filename);
+  if (uploadFilename) {
+    image = await readLocalUploadFile(uploadFilename);
+    contentType = imageContentTypeFromFilename(uploadFilename);
   } else if (url.startsWith("http://") || url.startsWith("https://")) {
     try {
       const response = await fetch(url);
@@ -1678,6 +1678,16 @@ async function readImageFromUrl(url: string) {
   }
 
   return image ? normalizePdfImage(image, contentType) : null;
+}
+
+function localUploadFilename(url: string) {
+  try {
+    const parsed = new URL(url, "http://local.fechapro");
+    if (!parsed.pathname.startsWith("/api/uploads/")) return "";
+    return path.basename(parsed.pathname);
+  } catch {
+    return "";
+  }
 }
 
 function drawPdfImage(

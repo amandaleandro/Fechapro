@@ -9,6 +9,7 @@ O FechaPro é um sistema para transformar orçamentos simples em propostas comer
 - cadastrar clientes, serviços, portfólio e depoimentos;
 - configurar sua marca, logo, cores e contatos;
 - criar propostas com valor, prazo, pagamento e itens inclusos;
+- escolher tipo de documento e segmento visual para apresentar cada proposta;
 - gerar link público da proposta para enviar ao cliente;
 - baixar a proposta em PDF;
 - escolher recebimento por Mercado Pago ou PIX direto em cada proposta;
@@ -195,6 +196,13 @@ Depois de revisar, clique em:
 - **Salvar rascunho:** guarda a proposta sem marcar como enviada.
 - **Gerar PDF:** baixa uma versão em PDF quando a proposta já está pronta.
 
+Antes de preencher cliente e serviço, você também pode escolher:
+
+- **Tipo do documento:** automático pelo segmento, orçamento, proposta comercial, proposta técnica, plano de cuidado ou proposta de evento.
+- **Segmento visual:** automático pelo serviço ou um segmento específico, como casa e reforma, automotivo, beleza, saúde, negócios, eventos, digital, educação, gastronomia e outros.
+
+Essas escolhas ajustam a apresentação do link público e do PDF. Se deixar em automático, o FechaPro tenta combinar o formato com o serviço e os itens informados.
+
 ### Criar proposta com vários serviços
 
 Se o cliente quiser um orçamento com vários serviços diferentes na mesma proposta, use a área **Serviços cadastrados na proposta** no criador de proposta.
@@ -244,6 +252,7 @@ Em cada proposta você pode:
 - clicar em **Copiar link** para enviar pelo WhatsApp, e-mail ou outro canal;
 - abrir **Detalhes** para ver informações completas;
 - **Duplicar** uma proposta para reaproveitar como base;
+- **Editar** uma proposta salva para corrigir dados, escopo, documento, segmento ou recebimento;
 - **Reenviar** quando uma proposta estiver expirada ou recusada;
 - **Remover** quando não quiser mais manter o registro.
 
@@ -268,6 +277,7 @@ Na tela **Propostas**, você pode alterar status manualmente quando precisar aju
 O cliente abre a proposta pelo link público. Nessa página ele consegue ver:
 
 - nome da empresa;
+- apresentação visual adaptada ao segmento escolhido ou identificado;
 - cliente e serviço;
 - valor, prazo e forma de pagamento;
 - itens inclusos;
@@ -421,7 +431,7 @@ Sim. Cadastre a chave PIX em **Marca** e escolha PIX direto ao criar a proposta.
 Sim. Quando a proposta usa Mercado Pago, o cliente segue para o checkout e a confirmação pode ser registrada automaticamente pelo webhook.
 
 **Posso alterar uma proposta depois de salvar?**  
-Você pode acompanhar, duplicar, reenviar, remover e alterar status. Para uma nova versão com mudanças, use **Duplicar** e ajuste os dados antes de enviar.
+Sim. Use **Editar** para atualizar uma proposta existente. Use **Duplicar** quando quiser criar uma nova versão separada para reaproveitar como base.
 
 **O que acontece quando o cliente aceita?**  
 O status passa a indicar aceite, e a linha do tempo mostra os dados registrados.
@@ -435,7 +445,9 @@ A tela de novidades mostra melhorias recentes e recursos planejados para próxim
 
 Novidades recentes:
 
-- **PDF mais profissional:** capa organizada, resumo da proposta, tabela de serviços e dados de pagamento mais fáceis de entender.
+- **Proposta e PDF por segmento:** escolha tipo de documento e segmento visual para deixar link e PDF mais alinhados ao serviço.
+- **Edição de proposta salva:** ajuste dados, escopo, documento, segmento e forma de recebimento sem recriar a proposta.
+- **Templates mais completos e vários serviços:** use modelos por nicho ou marque serviços cadastrados para somar valores e itens em uma única proposta.
 - **PIX direto na proposta:** opção para mostrar QR Code e código copia e cola usando a chave PIX cadastrada em **Marca**.
 - **Pagamento por escolha:** em cada proposta, você pode escolher Mercado Pago ou PIX direto.
 - **Artes de divulgação:** solicitação com briefing, aprovação, legenda, mensagem para WhatsApp e download da arte final.
@@ -447,7 +459,7 @@ Futuras implementações previstas:
 - editor de proposta com blocos extras para bônus, garantias, comparativo de planos e próximos passos;
 - envio de proposta por e-mail com mensagem pronta e registro do envio no histórico comercial;
 - agenda de follow-up para lembrar quando chamar clientes que visualizaram e ainda não responderam;
-- mais modelos de proposta por nicho, com textos prontos para vender e variações de layout;
+- mais variações de documentos e layouts para nichos específicos;
 - relatórios por período com taxa de aceite, valor aprovado, valor em aberto e desempenho por serviço;
 - área de próximos passos depois do aceite, com checklist de início do atendimento e arquivos solicitados ao cliente.
 

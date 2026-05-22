@@ -371,16 +371,16 @@ const tourSteps: TourStep[] = [
   {
     view: "dashboard",
     eyebrow: "Comece por aqui",
-    title: "Crie propostas em poucos minutos",
-    description: "O painel junta dados do cliente, serviço, valor, prazo e preview para você montar uma proposta profissional sem sair da tela.",
-    checklist: ["Organize o texto da proposta", "Escolha cliente e serviço cadastrados", "Salve ou gere o PDF quando estiver pronto"],
+    title: "Monte a proposta e escolha como receber",
+    description: "O painel junta cliente, serviço, modelo, valor, prazo, escopo e recebimento para você criar a proposta profissional sem sair da tela.",
+    checklist: ["Use cliente, serviço ou template cadastrado", "Escolha PIX direto ou Mercado Pago", "Salve, envie ou gere o PDF quando estiver pronto"],
   },
   {
     view: "proposals",
     eyebrow: "Controle comercial",
-    title: "Acompanhe cada proposta enviada",
-    description: "Aqui ficam os links públicos, PDF, status, reenvio, duplicação e detalhes com linha do tempo para entender o que aconteceu com cada venda.",
-    checklist: ["Abra a proposta online", "Copie o link para WhatsApp ou e-mail", "Use Detalhes para ver visualizações, aceite e pagamento"],
+    title: "Acompanhe link, PDF e pagamento",
+    description: "Aqui ficam as propostas enviadas com link público, PDF, status, reenvio, duplicação e detalhes para entender o que aconteceu com cada venda.",
+    checklist: ["Copie o link para WhatsApp ou e-mail", "Abra o PDF profissional do documento", "Veja visualizações, aceite e pagamento nos detalhes"],
   },
   {
     view: "clients",
@@ -404,18 +404,39 @@ const tourSteps: TourStep[] = [
     checklist: ["Envie imagens dos melhores trabalhos", "Agrupe por categoria", "Use imagens relacionadas ao serviço vendido"],
   },
   {
+    view: "testimonials",
+    eyebrow: "Prova social",
+    title: "Leve depoimentos para a proposta",
+    description: "Depoimentos cadastrados ajudam o cliente a validar sua entrega antes de aceitar a proposta online.",
+    checklist: ["Cadastre falas curtas e reais", "Informe autor e empresa quando fizer sentido", "Mantenha provas alinhadas ao serviço vendido"],
+  },
+  {
     view: "brand",
     eyebrow: "Identidade da empresa",
-    title: "Personalize logo, contatos e cores",
-    description: "A marca configurada aparece nas propostas online e no PDF. Isso faz cada orçamento parecer uma apresentação profissional.",
-    checklist: ["Adicione logo", "Configure WhatsApp e e-mail comercial", "Escolha cores da empresa"],
+    title: "Configure marca, contatos e PIX",
+    description: "Logo, cores, contatos, textos e chave PIX da marca aparecem no fluxo certo da proposta online e do PDF.",
+    checklist: ["Adicione logo e contatos comerciais", "Cadastre a chave PIX para recebimento direto", "Ajuste textos e blocos exibidos na proposta"],
+  },
+  {
+    view: "arts",
+    eyebrow: "Divulgação",
+    title: "Peça artes para vender seus serviços",
+    description: "As artes de divulgação usam briefing e referências para transformar serviços, promoções e agenda aberta em materiais aprováveis.",
+    checklist: ["Escolha formato e objetivo", "Acompanhe legenda e aprovação", "Baixe o material final quando estiver liberado"],
+  },
+  {
+    view: "templates",
+    eyebrow: "Modelos prontos",
+    title: "Reaproveite templates de proposta",
+    description: "Templates aceleram o preenchimento de serviço, valor, prazo, pagamento, escopo e observações para novos atendimentos.",
+    checklist: ["Comece por um modelo do nicho", "Crie modelos recorrentes da sua oferta", "Leve o template para o gerador e ajuste o cliente"],
   },
   {
     view: "plans",
-    eyebrow: "Pronto para vender",
-    title: "Escolha o plano e valide com clientes reais",
-    description: "Quando o financeiro estiver configurado, esta tela vira o caminho para assinatura e limite de uso por plano.",
-    checklist: ["Revise limite do plano atual", "Teste checkout em ambiente seguro", "Configure o Mercado Pago antes de vender"],
+    eyebrow: "Uso e limites",
+    title: "Revise plano, créditos e assinatura",
+    description: "Planos mostram o acesso atual, limites de propostas, créditos de artes e os caminhos de assinatura conectados ao painel.",
+    checklist: ["Confira os limites do plano atual", "Veja os créditos de artes disponíveis", "Escolha um plano quando precisar ampliar o uso"],
   },
 ];
 
@@ -957,10 +978,11 @@ export default function Home() {
 
   function startTour() {
     if (onboardingIncomplete) {
-      setNotice("Conclua a configuração inicial para liberar o tour guiado.");
+      setNotice("Conclua a configuração inicial para liberar o acesso guiado.");
       return;
     }
     if (!availableTourSteps.length) return;
+    setShowUpdatesModal(false);
     setTourStepIndex(0);
     setActiveView(availableTourSteps[0].view);
   }
@@ -1001,7 +1023,7 @@ export default function Home() {
               </a>
             ) : null}
             <IconButton label="Ver novidades" icon={Megaphone} onClick={() => setShowUpdatesModal(true)} />
-            <IconButton label="Iniciar tour guiado" icon={Sparkles} onClick={startTour} />
+            <IconButton label="Iniciar acesso guiado" icon={Sparkles} onClick={startTour} />
             <IconButton label={dark ? "Usar tema claro" : "Usar tema escuro"} icon={dark ? Sun : Moon} onClick={() => setDark((current) => !current)} />
             <IconButton
               label="Sair"
@@ -1247,7 +1269,7 @@ export default function Home() {
           onNext={() => {
             if ((tourStepIndex ?? 0) >= availableTourSteps.length - 1) {
               setTourStepIndex(null);
-              setNotice("Tour concluído. Agora você já conhece o fluxo principal do FechaPro.");
+              setNotice("Acesso guiado concluído. Agora você já conhece o fluxo principal do FechaPro.");
               return;
             }
             moveTour(1);
@@ -5042,20 +5064,26 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
 const currentUpdates = [
   {
     icon: FileText,
-    title: "PDF mais profissional",
-    description: "A proposta em PDF ganhou capa organizada, resumo direto, dados de pagamento e tabela de serviços mais fácil de ler.",
+    title: "Proposta e PDF por segmento",
+    description: "Escolha tipo de documento e segmento visual para gerar link e PDF com apresentação mais adequada ao serviço.",
     tag: "Disponível",
   },
   {
-    icon: QrCode,
-    title: "PIX direto na proposta",
-    description: "Cadastre sua chave PIX na marca e escolha proposta por proposta se quer receber direto ou pelo Mercado Pago.",
+    icon: Settings,
+    title: "Editar proposta salva",
+    description: "Abra uma proposta já criada, ajuste dados, escopo, documento, segmento e forma de recebimento sem recomeçar.",
+    tag: "Novo",
+  },
+  {
+    icon: Layers3,
+    title: "Templates e vários serviços",
+    description: "Use modelos mais completos por nicho ou marque serviços cadastrados para somar valores e itens em uma proposta.",
     tag: "Novo",
   },
   {
     icon: CreditCard,
-    title: "Pagamento por escolha",
-    description: "O cliente vê o fluxo certo: QR Code e copia e cola para PIX direto, ou PIX, cartão e boleto pelo Mercado Pago.",
+    title: "Recebimento por proposta",
+    description: "Escolha PIX direto com QR Code e copia e cola ou Mercado Pago com PIX, cartão e boleto para cada proposta.",
     tag: "Ativo",
   },
   {
@@ -5071,10 +5099,9 @@ const upcomingFeatures = [
   "Reengajamento automático para quem abriu e não respondeu.",
   "Timeline única: abertura → aceite → pagamento → chat.",
   "Editor rápido com bônus, garantias e comparação de planos.",
-  "Templates por nicho prontos para converter.",
   "Relatórios de conversão e receita por serviço.",
   "Portal do cliente: status, arquivos e checklist.",
-  "Envio por e‑mail com registro no histórico.",
+  "Histórico de e-mails enviados e novos controles de entrega.",
 ];
 
 function ProductUpdatesModal({
@@ -5277,7 +5304,7 @@ function GuidedTour({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">
-              Tour guiado - passo {currentIndex + 1} de {total}
+              Acesso guiado - passo {currentIndex + 1} de {total}
             </p>
             <h2 className="mt-1 text-2xl font-black leading-tight">{step.title}</h2>
             <p className="mt-2 max-w-2xl leading-7 text-slate-600">{step.description}</p>
@@ -5317,7 +5344,7 @@ function GuidedTour({
           </button>
           <div className="flex flex-wrap gap-2">
             <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onClose}>
-              Pular tour
+              Pular acesso
             </button>
             <button className="min-h-11 rounded-lg bg-green-600 px-5 font-black text-white" type="button" onClick={onNext}>
               {isLast ? "Concluir" : "Próximo passo"}

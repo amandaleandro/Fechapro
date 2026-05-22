@@ -13,14 +13,15 @@ Principais recursos:
 - checkout de cadastro e assinatura de planos pelo Mercado Pago;
 - painel com indicadores comerciais, follow-up manual, limites do plano e uso de artes;
 - cadastro de clientes, serviços, portfólio e depoimentos;
-- templates prontos por nicho e templates importados pelo usuário;
-- criação de propostas com link público, PDF, aceite, recusa e duplicação;
+- templates prontos por nicho, pacotes com vários serviços e templates importados pelo usuário;
+- criação e edição de propostas com link público, PDF, aceite, recusa, duplicação e reenvio;
+- escolha de tipo de documento e segmento visual para adaptar o link público e o PDF ao serviço;
 - contagem de visualizações e cliques no WhatsApp para orientar follow-up manual;
 - pagamento de propostas pelo Mercado Pago ou PIX direto com QR Code e copia e cola;
 - compra de créditos extras de artes pelo Mercado Pago;
 - solicitação e aprovação de artes de divulgação;
 - upload de imagens com remoção de fundo claro para logos;
-- notificações por e-mail e web push;
+- e-mails transacionais de proposta, resposta e pagamento, templates de lifecycle marketing e web push;
 - aba de suporte para mensagens entre usuário e equipe;
 - painel admin para acompanhar usuários, métricas, artes solicitadas e suporte;
 - Docker com app e Postgres.
@@ -109,6 +110,9 @@ Use `.env.example` como base e crie seu `.env`.
 ```env
 DATABASE_URL="postgresql://fechapro:fechapro_dev_password@localhost:5436/fechapro?schema=public"
 AUTH_SECRET="troque_por_um_valor_aleatorio_forte_em_producao"
+AUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:3000"
+AUTH_TRUST_HOST="true"
 ADMIN_EMAILS="admin@fechapro.local"
 ADMIN_EMAIL="admin@fechapro.local"
 ADMIN_PASSWORD="FechaProAdmin123!"
@@ -128,6 +132,8 @@ NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE="Olá! Preciso de ajuda com o FechaPro."
 ```
 
 Também existem aliases em minúsculas para variáveis do Mercado Pago em alguns ambientes. Prefira manter os nomes do `.env.example` atualizados e nunca coloque chaves reais em arquivos versionados.
+
+O `.env.example` também inclui configuração de IA, SMTP/Resend, Sentry, healthcheck, storage S3/R2 e Cloudflare Turnstile. Em produção, preencha `HEALTHCHECK_TOKEN`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET_KEY`.
 
 ## Pagamentos
 
@@ -166,6 +172,8 @@ Pacotes extras de artes:
 
 - Configure SMTP com `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` e `EMAIL_FROM`.
 - Opcionalmente, use `RESEND_API_KEY` como alternativa de envio.
+- Os e-mails transacionais cobrem boas-vindas, redefinição de senha, proposta enviada, visualização, aceite, recusa e confirmação de pagamento disponível.
+- Os templates de marketing ficam em `lib/email.ts`; a régua recomendada e os cuidados de descadastro estão em `docs/emails-marketing.md`.
 - Para web push, gere chaves VAPID e preencha `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT`.
 - Configure `NEXT_PUBLIC_WHATSAPP_NUMBER` com o número do suporte, somente com dígitos.
 - Ajuste `NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE` para mudar a mensagem preenchida ao abrir o WhatsApp.
@@ -198,6 +206,8 @@ Antes de publicar:
 - configure o webhook do Mercado Pago;
 - valide SMTP ou Resend;
 - configure chaves VAPID se for usar web push;
+- configure Cloudflare Turnstile para proteger formulários públicos;
+- configure `HEALTHCHECK_TOKEN` para restringir `/api/health`;
 - configure Sentry, se for usar monitoramento de erros;
 - use storage externo para uploads de produção.
 
