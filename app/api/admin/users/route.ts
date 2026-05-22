@@ -107,11 +107,11 @@ export async function POST(request: Request) {
   }
 
   if (!plans[plan]) {
-    return jsonError("Plano invalido.");
+    return jsonError("Plano inválido.");
   }
 
   if (!allowedStatuses.has(status)) {
-    return jsonError("Status invalido.");
+    return jsonError("Status inválido.");
   }
 
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });

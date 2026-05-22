@@ -19,10 +19,10 @@ export async function POST(request: Request) {
   const rows = Array.isArray(body.rows) ? body.rows.slice(0, maxRows + 1) : [];
 
   if (!body.kind || !["clients", "services", "testimonials"].includes(body.kind)) {
-    return jsonError("Tipo de importacao invalido.");
+    return jsonError("Tipo de importação inválido.");
   }
-  if (rows.length < 2) return jsonError("A planilha precisa ter cabecalho e pelo menos uma linha.");
-  if (rows.length > maxRows + 1) return jsonError(`Importe no maximo ${maxRows} linhas por vez.`);
+  if (rows.length < 2) return jsonError("A planilha precisa ter cabeçalho e pelo menos uma linha.");
+  if (rows.length > maxRows + 1) return jsonError(`Importe no máximo ${maxRows} linhas por vez.`);
 
   if (body.kind === "clients") return importClients(session.id, rows);
   if (body.kind === "services") return importServices(session.id, rows);
@@ -40,9 +40,9 @@ async function importClients(userId: string, rows: string[][]) {
       status: cleanOptionalString(row.status) || "lead",
       notes: cleanOptionalString(row.observacoes ?? row.observacao ?? row.notas),
     };
-    if (!item.name) return { error: `Linha ${line}: nome obrigatorio.` };
-    if (item.email && !isValidEmail(item.email)) return { error: `Linha ${line}: e-mail invalido.` };
-    if (item.phone && !isValidPhone(item.phone)) return { error: `Linha ${line}: telefone invalido.` };
+    if (!item.name) return { error: `Linha ${line}: nome obrigatório.` };
+    if (item.email && !isValidEmail(item.email)) return { error: `Linha ${line}: e-mail inválido.` };
+    if (item.phone && !isValidPhone(item.phone)) return { error: `Linha ${line}: telefone inválido.` };
     return { item: { ...item, userId } };
   });
   const created = await prisma.$transaction(items.map((data) => prisma.clientAsset.create({ data: data! })));
@@ -58,8 +58,8 @@ async function importServices(userId: string, rows: string[][]) {
       deadline: cleanOptionalString(row.prazo_padrao ?? row.prazo),
       includes: cleanStringList(String(row.itens_inclusos ?? row.inclusos ?? "").split(/\n|\|/)),
     };
-    if (!item.name) return { error: `Linha ${line}: servico obrigatorio.` };
-    if (item.price === null || item.price < 0) return { error: `Linha ${line}: valor invalido.` };
+    if (!item.name) return { error: `Linha ${line}: serviço obrigatório.` };
+    if (item.price === null || item.price < 0) return { error: `Linha ${line}: valor inválido.` };
     return { item: { ...item, price: item.price, userId } };
   });
   const created = await prisma.$transaction(items.map((data) => prisma.serviceAsset.create({ data: data! })));
@@ -73,7 +73,7 @@ async function importTestimonials(userId: string, rows: string[][]) {
       company: cleanOptionalString(row.empresa),
       quote: cleanString(row.depoimento ?? row.comentario ?? row.quote),
     };
-    if (!item.authorName || !item.quote) return { error: `Linha ${line}: nome e depoimento sao obrigatorios.` };
+    if (!item.authorName || !item.quote) return { error: `Linha ${line}: nome e depoimento são obrigatórios.` };
     return { item: { ...item, userId } };
   });
   const created = await prisma.$transaction(items.map((data) => prisma.testimonialAsset.create({ data: data! })));

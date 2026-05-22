@@ -130,7 +130,7 @@ export async function POST(request: Request) {
       prompt: [
         `Formato: ${artFormats[format].label}`,
         `Pedido: ${objective}`,
-        serviceName ? `Servico/produto: ${serviceName}` : "",
+        serviceName ? `Serviço/produto: ${serviceName}` : "",
         audience ? `Cidade/público: ${audience}` : "",
         callToAction ? `CTA: ${callToAction}` : "",
         referenceImageUrls.length ? `Referencias: ${referenceImageUrls.join(", ")}` : "",

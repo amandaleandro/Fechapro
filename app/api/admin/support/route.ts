@@ -43,13 +43,13 @@ export async function POST(request: Request) {
   const status = cleanString(body.status || "answered").toLowerCase();
 
   if (!threadId || !message) return jsonError("Informe a conversa e a resposta.");
-  if (!["open", "answered", "closed"].includes(status)) return jsonError("Status invalido.");
+  if (!["open", "answered", "closed"].includes(status)) return jsonError("Status inválido.");
 
   const existing = await prisma.supportThread.findUnique({
     where: { id: threadId },
     select: { id: true },
   });
-  if (!existing) return jsonError("Conversa nao encontrada.", 404);
+  if (!existing) return jsonError("Conversa não encontrada.", 404);
 
   const thread = await prisma.$transaction(async (tx) => {
     await tx.supportMessage.create({

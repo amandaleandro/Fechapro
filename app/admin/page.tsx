@@ -206,7 +206,7 @@ export default function AdminPage() {
         body: JSON.stringify({ caption, imageUrl: uploadResult.imageUrl, whatsappMessage }),
       });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível anexar a arte."));
-      setNotice(`Arte de ${item.user.name} enviada para aprovacao.`);
+      setNotice(`Arte de ${item.user.name} enviada para aprovação.`);
       await loadArts();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível anexar a arte.");
@@ -402,7 +402,7 @@ export default function AdminPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Artes solicitadas</p>
-              <h2 className="text-2xl font-black">Upload do agente para aprovacao</h2>
+              <h2 className="text-2xl font-black">Upload do agente para aprovação</h2>
               <p className="mt-1 text-sm font-bold text-slate-600">
                 Os pedidos feitos pelo cliente em Artes de divulgação aparecem aqui. Anexe a arte pronta para enviar ao cliente aprovar.
               </p>
@@ -715,7 +715,7 @@ function AdminArtCard({
       </label>
       <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving || !file} type="button" onClick={() => file && onUpload(item, file, caption, whatsappMessage)}>
         <Upload size={15} />
-        {saving ? "Salvando..." : "Salvar arte e enviar para aprovacao"}
+        {saving ? "Salvando..." : "Salvar arte e enviar para aprovação"}
       </button>
     </article>
   );
@@ -807,7 +807,7 @@ function formatDateTime(value?: string | null) {
 
 function adminArtStatusLabel(source: string) {
   if (source === "approved") return "Aprovada";
-  if (source === "uploaded") return "Aguardando aprovacao";
+  if (source === "uploaded") return "Aguardando aprovação";
   if (source === "requested") return "Solicitada";
   return source || "Em preparo";
 }

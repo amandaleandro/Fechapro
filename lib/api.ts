@@ -5,13 +5,17 @@ export function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export function slugify(input: string) {
-  const base = input
+export function slugBase(input: string) {
+  return input
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 72)
+    .replace(/-+$/g, "") || "proposta";
+}
 
-  return `${base || "proposta"}-${randomBytes(9).toString("base64url")}`;
+export function slugify(input: string) {
+  return `${slugBase(input)}-${randomBytes(6).toString("hex")}`;
 }

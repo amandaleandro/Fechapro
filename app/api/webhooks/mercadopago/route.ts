@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   try {
     verifyMercadoPagoWebhook(request.url);
   } catch {
-    return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+    return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 
   const payload = (await request.json().catch(() => null)) as MercadoPagoWebhookPayload | null;

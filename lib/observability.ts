@@ -77,7 +77,7 @@ async function checkDatabase(): Promise<ServiceCheck> {
     return {
       status: "down",
       latencyMs: Date.now() - started,
-      message: error instanceof Error ? error.message : "Banco indisponivel.",
+      message: error instanceof Error ? error.message : "Banco indisponível.",
     };
   }
 }
@@ -138,7 +138,7 @@ function checkStorage(): ServiceCheck {
 
   return {
     status: hasBucket && hasCredentials ? "ok" : "degraded",
-    message: hasBucket && hasCredentials ? undefined : "Configuracao S3 incompleta.",
+    message: hasBucket && hasCredentials ? undefined : "Configuração S3 incompleta.",
     meta: {
       mode: "s3",
       hasBucket,

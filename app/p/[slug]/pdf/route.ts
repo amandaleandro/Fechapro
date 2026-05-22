@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import { notFound } from "next/navigation";
 import sharp from "sharp";
+import { slugBase } from "@/lib/api";
 import { readLocalUploadFile } from "@/lib/local-upload-file";
 import { prisma } from "@/lib/prisma";
 
@@ -95,7 +96,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="proposta-${proposal.publicSlug}.pdf"`,
+      "Content-Disposition": `inline; filename="${slugBase(`proposta-${proposal.clientName}-${proposal.serviceName}`)}.pdf"`,
       "Cache-Control": "no-store",
     },
   });
@@ -268,7 +269,7 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
     height: 15,
     ellipsis: true,
   });
-  const scopeItems = (data.included.length ? data.included : ["Servico conforme combinado."]).slice(0, 5);
+  const scopeItems = (data.included.length ? data.included : ["Serviço conforme combinado."]).slice(0, 5);
   scopeItems.forEach((item, index) => {
     const y = serviceY + 52 + index * 12;
     doc.circle(MARGIN + 20, y + 3.5, 3.5).fill(design.primary);
@@ -411,7 +412,7 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
     ellipsis: true,
   });
   doc.fillColor("#CBD5E1").font("Helvetica").fontSize(10.5).text(
-    data.proposalIntro || data.brandBio || `Escopo, investimento e prazo organizados para ${data.clientName} decidir com seguranca.`,
+    data.proposalIntro || data.brandBio || `Escopo, investimento e prazo organizados para ${data.clientName} decidir com segurança.`,
     MARGIN,
     300,
     { width: 284, height: 48, lineGap: 3, ellipsis: true },
@@ -605,7 +606,7 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pdf
   doc.roundedRect(MARGIN + 2, startY + 3, featureWidth, 138, 9).fill("#E2E8F0");
   doc.roundedRect(MARGIN, startY, featureWidth, 138, 9).fill(design.soft);
   doc.rect(MARGIN, startY, 6, 138).fill(design.primary);
-  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(7.5).text("SERVICO PROPOSTO", MARGIN + 22, startY + 24);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(7.5).text("SERVIÇO PROPOSTO", MARGIN + 22, startY + 24);
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(13).text(data.serviceName, MARGIN + 22, startY + 44, {
     width: featureWidth - 42,
     height: 58,
@@ -763,24 +764,24 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     primary: data.brandColor,
     accent: data.brandAccentColor,
     soft: "#F8FAFC",
-    segmentName: "Servico",
-    brandCaption: "Servicos",
+    segmentName: "Serviço",
+    brandCaption: "Serviços",
     promise: "Escopo claro e valor organizado",
     documentTitle: "ORCAMENTO",
     referenceLabel: "Referencia:",
-    scopeLabel: "SERVICO SOLICITADO",
-    tableLabel: "DETALHAMENTO DO SERVICO",
-    detailTitle: "DETALHES DO SERVICO",
-    notesTitle: "OBSERVACOES",
-    fallbackImageLabel: "Servico profissional",
+    scopeLabel: "SERVIÇO SOLICITADO",
+    tableLabel: "DETALHAMENTO DO SERVIÇO",
+    detailTitle: "DETALHES DO SERVIÇO",
+    notesTitle: "OBSERVAÇÕES",
+    fallbackImageLabel: "Serviço profissional",
     icon: "bucket" as PdfSegmentIcon,
     intro: (proposal: ProposalPdfData) => `Agradecemos o contato e apresentamos nosso orcamento para ${proposal.serviceName}.`,
-    defaultNote: "Servico realizado com qualidade e acabamento profissional.",
+    defaultNote: "Serviço realizado com qualidade e acabamento profissional.",
     secondaryNote: "Prazo e pagamento conforme combinado com o cliente.",
     footerLine: "Qualidade que transforma seu espaco.",
     rows: (proposal: ProposalPdfData): Array<[string, string, string]> => [
-      ["Preparacao", "Organizacao, protecao da area e alinhamento do servico", "Incluso"],
-      ["Execucao", proposal.serviceName, "Incluso"],
+      ["Preparação", "Organização, proteção da área e alinhamento do serviço", "Incluso"],
+      ["Execução", proposal.serviceName, "Incluso"],
       ["Materiais", proposal.included[0] || "Conforme combinado", "Incluso"],
       ["Mao de obra", "Profissional qualificado", "Incluso"],
     ],
@@ -793,16 +794,16 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       accent: "#111827",
       soft: "#F1F5F9",
       segmentName: "Reforma",
-      brandCaption: "Obra e servicos",
-      promise: "Execucao organizada e acabamento profissional",
+      brandCaption: "Obra e serviços",
+      promise: "Execução organizada e acabamento profissional",
       icon: "bucket",
       fallbackImageLabel: "Antes e depois do ambiente",
       detailTitle: "MATERIAL USADO",
-      defaultNote: "Protecao de pisos, moveis e areas de circulacao inclusa.",
-      secondaryNote: "Limpeza basica e conferencia final ao concluir o servico.",
+      defaultNote: "Proteção de pisos, móveis e áreas de circulação inclusa.",
+      secondaryNote: "Limpeza básica e conferência final ao concluir o serviço.",
       rows: (proposal) => [
-        ["Preparacao", "Limpeza, lixamento leve e protecao das areas", "Incluso"],
-        ["Aplicacao", proposal.serviceName, "Incluso"],
+        ["Preparação", "Limpeza, lixamento leve e proteção das áreas", "Incluso"],
+        ["Aplicação", proposal.serviceName, "Incluso"],
         ["Material", proposal.included[0] || "Material conforme combinado", "Incluso"],
         ["Mao de obra", "Profissional qualificado", "Incluso"],
       ],
@@ -817,19 +818,19 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       soft: "#F8FAFC",
       segmentName: "Automotivo",
       brandCaption: "Auto service",
-      promise: "Diagnostico, cuidado e entrega conferida",
+      promise: "Diagnóstico, cuidado e entrega conferida",
       icon: "car",
       referenceLabel: "Veiculo/cliente:",
-      detailTitle: "DIAGNOSTICO",
+      detailTitle: "DIAGNÓSTICO",
       fallbackImageLabel: "Registro do veiculo",
       defaultNote: "Checklist e testes finais realizados antes da entrega.",
-      secondaryNote: "Pecas adicionais somente com aprovacao previa do cliente.",
-      footerLine: "Cuidado tecnico do diagnostico a entrega.",
+      secondaryNote: "Peças adicionais somente com aprovação prévia do cliente.",
+      footerLine: "Cuidado técnico do diagnóstico à entrega.",
       rows: (proposal) => [
-        ["Diagnostico", "Inspecao inicial e verificacao dos itens combinados", "Incluso"],
-        ["Execucao", proposal.serviceName, "Incluso"],
-        ["Produtos/Pecas", proposal.included[0] || "Conforme aprovacao do cliente", "Incluso"],
-        ["Teste final", "Conferencia, orientacao e registro da entrega", "Incluso"],
+        ["Diagnóstico", "Inspeção inicial e verificação dos itens combinados", "Incluso"],
+        ["Execução", proposal.serviceName, "Incluso"],
+        ["Produtos/Peças", proposal.included[0] || "Conforme aprovação do cliente", "Incluso"],
+        ["Teste final", "Conferência, orientação e registro da entrega", "Incluso"],
       ],
     };
   }
@@ -847,14 +848,14 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       documentTitle: "PROPOSTA",
       detailTitle: "CUIDADOS",
       fallbackImageLabel: "Resultado esperado",
-      defaultNote: "Atendimento personalizado conforme avaliacao e preferencia da cliente.",
-      secondaryNote: "Cuidados pos-procedimento serao orientados na entrega.",
-      footerLine: "Beleza com cuidado, tecnica e acabamento.",
+      defaultNote: "Atendimento personalizado conforme avaliação e preferência da cliente.",
+      secondaryNote: "Cuidados pós-procedimento serão orientados na entrega.",
+      footerLine: "Beleza com cuidado, técnica e acabamento.",
       rows: (proposal) => [
-        ["Avaliacao", "Analise inicial e alinhamento do resultado desejado", "Incluso"],
+        ["Avaliação", "Análise inicial e alinhamento do resultado desejado", "Incluso"],
         ["Procedimento", proposal.serviceName, "Incluso"],
-        ["Produtos", proposal.included[0] || "Produtos profissionais conforme tecnica", "Incluso"],
-        ["Finalizacao", "Orientacoes de cuidado e acabamento final", "Incluso"],
+        ["Produtos", proposal.included[0] || "Produtos profissionais conforme técnica", "Incluso"],
+        ["Finalização", "Orientações de cuidado e acabamento final", "Incluso"],
       ],
     };
   }
@@ -866,19 +867,19 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       accent: "#047857",
       soft: "#ECFDF5",
       segmentName: "Cuidado",
-      brandCaption: "Saude e bem-estar",
-      promise: "Acompanhamento claro e orientacao profissional",
+      brandCaption: "Saúde e bem-estar",
+      promise: "Acompanhamento claro e orientação profissional",
       icon: "heart",
       documentTitle: "PLANO DE CUIDADO",
       detailTitle: "ACOMPANHAMENTO",
       fallbackImageLabel: "Atendimento profissional",
-      defaultNote: "Atendimento conduzido com sigilo, escuta e orientacoes personalizadas.",
-      secondaryNote: "Retornos e ajustes seguem as condicoes combinadas.",
+      defaultNote: "Atendimento conduzido com sigilo, escuta e orientações personalizadas.",
+      secondaryNote: "Retornos e ajustes seguem as condições combinadas.",
       footerLine: "Cuidado profissional com acompanhamento claro.",
       rows: (proposal) => [
-        ["Avaliacao", "Levantamento inicial e entendimento da necessidade", "Incluso"],
+        ["Avaliação", "Levantamento inicial e entendimento da necessidade", "Incluso"],
         ["Atendimento", proposal.serviceName, "Incluso"],
-        ["Orientacoes", proposal.included[0] || "Plano personalizado conforme avaliacao", "Incluso"],
+        ["Orientações", proposal.included[0] || "Plano personalizado conforme avaliação", "Incluso"],
         ["Acompanhamento", "Registro, retorno ou suporte conforme combinado", "Incluso"],
       ],
     };
@@ -892,19 +893,19 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       soft: "#F8FAFC",
       segmentName: "Negocios",
       brandCaption: "Consultoria",
-      promise: "Clareza comercial para decidir com seguranca",
+      promise: "Clareza comercial para decidir com segurança",
       icon: "briefcase",
       documentTitle: "PROPOSTA COMERCIAL",
       detailTitle: "ESCOPO",
       fallbackImageLabel: "Documento profissional",
-      defaultNote: "Informacoes tratadas com confidencialidade e organizacao profissional.",
-      secondaryNote: "Escopo adicional deve ser aprovado antes da execucao.",
-      footerLine: "Clareza comercial para decidir com seguranca.",
+      defaultNote: "Informações tratadas com confidencialidade e organização profissional.",
+      secondaryNote: "Escopo adicional deve ser aprovado antes da execução.",
+      footerLine: "Clareza comercial para decidir com segurança.",
       rows: (proposal) => [
-        ["Diagnostico", "Analise das informacoes e entendimento do cenario", "Incluso"],
+        ["Diagnóstico", "Análise das informações e entendimento do cenário", "Incluso"],
         ["Entrega", proposal.serviceName, "Incluso"],
         ["Documentos", proposal.included[0] || "Materiais e documentos combinados", "Incluso"],
-        ["Reuniao", "Alinhamento, devolutiva ou orientacao final", "Incluso"],
+        ["Reunião", "Alinhamento, devolutiva ou orientação final", "Incluso"],
       ],
     };
   }
@@ -917,20 +918,20 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       soft: "#FFFBEB",
       segmentName: "Evento",
       brandCaption: "Eventos",
-      promise: "Organizacao para cada detalhe da data",
+      promise: "Organização para cada detalhe da data",
       icon: "calendar",
       documentTitle: "PROPOSTA EVENTO",
       referenceLabel: "Evento/cliente:",
       detailTitle: "PRODUCAO",
       fallbackImageLabel: "Referencia visual",
-      defaultNote: "Agenda sujeita a disponibilidade ate confirmacao da proposta.",
+      defaultNote: "Agenda sujeita a disponibilidade até confirmação da proposta.",
       secondaryNote: "Itens extras, deslocamento e equipe adicional podem alterar o valor.",
-      footerLine: "Organizacao para cada detalhe acontecer bem.",
+      footerLine: "Organização para cada detalhe acontecer bem.",
       rows: (proposal) => [
         ["Planejamento", "Briefing, roteiro e alinhamento do evento", "Incluso"],
-        ["Execucao", proposal.serviceName, "Incluso"],
+        ["Execução", proposal.serviceName, "Incluso"],
         ["Estrutura", proposal.included[0] || "Itens combinados para a data", "Incluso"],
-        ["Acompanhamento", "Montagem, suporte e finalizacao conforme escopo", "Incluso"],
+        ["Acompanhamento", "Montagem, suporte e finalização conforme escopo", "Incluso"],
       ],
     };
   }
@@ -952,9 +953,9 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       secondaryNote: "Ferramentas pagas, midia e hospedagem podem ser cobradas a parte.",
       footerLine: "Estrategia, design e entrega em um fluxo claro.",
       rows: (proposal) => [
-        ["Briefing", "Levantamento de objetivo, referencias e conteudo", "Incluso"],
+        ["Briefing", "Levantamento de objetivo, referências e conteúdo", "Incluso"],
         ["Producao", proposal.serviceName, "Incluso"],
-        ["Entregaveis", proposal.included[0] || "Arquivos e materiais finais combinados", "Incluso"],
+        ["Entregáveis", proposal.included[0] || "Arquivos e materiais finais combinados", "Incluso"],
         ["Ajustes", "Rodada de revisao e fechamento da entrega", "Incluso"],
       ],
     };
@@ -966,21 +967,21 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       primary: data.brandAccentColor,
       accent: "#7C3AED",
       soft: "#F5F3FF",
-      segmentName: "Educacao",
+      segmentName: "Educação",
       brandCaption: "Aulas",
       promise: "Plano de aprendizado objetivo e acompanhado",
       icon: "briefcase",
       documentTitle: "PROPOSTA",
       detailTitle: "APRENDIZADO",
       fallbackImageLabel: "Plano de aulas",
-      defaultNote: "Conteudo adaptado ao nivel, objetivo e ritmo do aluno.",
+      defaultNote: "Conteúdo adaptado ao nível, objetivo e ritmo do aluno.",
       secondaryNote: "Materiais, encontros e retornos seguem o plano combinado.",
       footerLine: "Ensino organizado para evoluir com clareza.",
       rows: (proposal) => [
-        ["Diagnostico", "Entendimento do nivel, objetivo e principais dificuldades", "Incluso"],
+        ["Diagnóstico", "Entendimento do nível, objetivo e principais dificuldades", "Incluso"],
         ["Aulas", proposal.serviceName, "Incluso"],
         ["Material", proposal.included[0] || "Material de apoio conforme plano", "Incluso"],
-        ["Acompanhamento", "Exercicios, retornos ou avaliacao de progresso", "Incluso"],
+        ["Acompanhamento", "Exercícios, retornos ou avaliação de progresso", "Incluso"],
       ],
     };
   }
@@ -1000,7 +1001,7 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       fallbackImageLabel: "Referencia do pedido",
       defaultNote: "Pedido preparado conforme cardapio, quantidade e data combinada.",
       secondaryNote: "Entrega, retirada e embalagens especiais devem ser confirmadas.",
-      footerLine: "Sabor, organizacao e entrega no combinado.",
+      footerLine: "Sabor, organização e entrega no combinado.",
       rows: (proposal) => [
         ["Briefing", "Definicao de cardapio, quantidade e preferencias", "Incluso"],
         ["Preparo", proposal.serviceName, "Incluso"],
@@ -1024,13 +1025,13 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       detailTitle: "CUIDADO PET",
       fallbackImageLabel: "Atendimento pet",
       defaultNote: "Atendimento realizado respeitando o comportamento e bem-estar do pet.",
-      secondaryNote: "Servicos extras serao alinhados antes da execucao.",
+      secondaryNote: "Serviços extras serão alinhados antes da execução.",
       footerLine: "Cuidado, carinho e responsabilidade no atendimento.",
       rows: (proposal) => [
-        ["Avaliacao", "Entendimento do porte, rotina e necessidade do pet", "Incluso"],
+        ["Avaliação", "Entendimento do porte, rotina e necessidade do pet", "Incluso"],
         ["Atendimento", proposal.serviceName, "Incluso"],
         ["Cuidados", proposal.included[0] || "Cuidados conforme pacote contratado", "Incluso"],
-        ["Orientacoes", "Recomendacoes finais para o tutor", "Incluso"],
+        ["Orientações", "Recomendações finais para o tutor", "Incluso"],
       ],
     };
   }
@@ -1041,21 +1042,21 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       primary: data.brandSecondaryColor,
       accent: "#57534E",
       soft: "#FAFAF9",
-      segmentName: "Imoveis",
-      brandCaption: "Imoveis e condominios",
-      promise: "Escopo, responsabilidades e condicoes bem definidos",
+      segmentName: "Imóveis",
+      brandCaption: "Imóveis e condomínios",
+      promise: "Escopo, responsabilidades e condições bem definidos",
       icon: "briefcase",
       documentTitle: "PROPOSTA COMERCIAL",
       detailTitle: "ESCOPO IMOBILIARIO",
-      fallbackImageLabel: "Imovel ou condominio",
-      defaultNote: "Responsabilidades, documentos e prazos seguem as condicoes combinadas.",
+      fallbackImageLabel: "Imóvel ou condomínio",
+      defaultNote: "Responsabilidades, documentos e prazos seguem as condições combinadas.",
       secondaryNote: "Taxas, deslocamentos, certidoes ou demandas extras podem ser cobrados a parte.",
-      footerLine: "Gestao imobiliaria com clareza para decidir.",
+      footerLine: "Gestão imobiliária com clareza para decidir.",
       rows: (proposal) => [
-        ["Diagnostico", "Levantamento do imovel, condominio ou necessidade", "Incluso"],
-        ["Servico", proposal.serviceName, "Incluso"],
+        ["Diagnóstico", "Levantamento do imóvel, condomínio ou necessidade", "Incluso"],
+        ["Serviço", proposal.serviceName, "Incluso"],
         ["Documentos", proposal.included[0] || "Materiais e registros combinados", "Incluso"],
-        ["Devolutiva", "Relatorio, orientacao ou acompanhamento final", "Incluso"],
+        ["Devolutiva", "Relatório, orientação ou acompanhamento final", "Incluso"],
       ],
     };
   }
@@ -1078,9 +1079,9 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       footerLine: "Varejo organizado para vender melhor.",
       rows: (proposal) => [
         ["Briefing", "Objetivo comercial, produto e referencias", "Incluso"],
-        ["Execucao", proposal.serviceName, "Incluso"],
+        ["Execução", proposal.serviceName, "Incluso"],
         ["Materiais", proposal.included[0] || "Itens e entregaveis combinados", "Incluso"],
-        ["Finalizacao", "Entrega, ajustes ou orientacoes de uso", "Incluso"],
+        ["Finalização", "Entrega, ajustes ou orientações de uso", "Incluso"],
       ],
     };
   }
@@ -1093,20 +1094,20 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       soft: "#ECFEFF",
       segmentName: "Logistica",
       brandCaption: "Transporte",
-      promise: "Rota, prazo e operacao definidos",
+      promise: "Rota, prazo e operação definidos",
       icon: "car",
       documentTitle: "ORCAMENTO",
       referenceLabel: "Rota/cliente:",
-      detailTitle: "OPERACAO",
+      detailTitle: "OPERAÇÃO",
       fallbackImageLabel: "Rota ou carga",
-      defaultNote: "Coleta, entrega, volume e janelas de horario devem ser confirmados previamente.",
+      defaultNote: "Coleta, entrega, volume e janelas de horário devem ser confirmados previamente.",
       secondaryNote: "Pedagios, ajudantes, espera e mudancas de rota podem alterar o valor.",
       footerLine: "Entrega organizada do ponto inicial ao destino.",
       rows: (proposal) => [
         ["Coleta", "Alinhamento de origem, destino, volume e horario", "Incluso"],
         ["Transporte", proposal.serviceName, "Incluso"],
-        ["Operacao", proposal.included[0] || "Itens e cuidados combinados", "Incluso"],
-        ["Entrega", "Confirmacao, comprovante ou orientacao final", "Incluso"],
+        ["Operação", proposal.included[0] || "Itens e cuidados combinados", "Incluso"],
+        ["Entrega", "Confirmação, comprovante ou orientação final", "Incluso"],
       ],
     };
   }
@@ -1119,19 +1120,19 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       soft: "#F0FDF4",
       segmentName: "Financeiro",
       brandCaption: "Financas e seguros",
-      promise: "Analise clara para decisao segura",
+      promise: "Análise clara para decisão segura",
       icon: "briefcase",
       documentTitle: "PROPOSTA COMERCIAL",
-      detailTitle: "ANALISE",
+      detailTitle: "ANÁLISE",
       fallbackImageLabel: "Planejamento financeiro",
-      defaultNote: "Recomendacoes dependem das informacoes fornecidas e das condicoes vigentes.",
+      defaultNote: "Recomendações dependem das informações fornecidas e das condições vigentes.",
       secondaryNote: "Produtos financeiros, taxas, apolices e terceiros seguem regras proprias.",
-      footerLine: "Decisoes financeiras com orientacao clara.",
+      footerLine: "Decisões financeiras com orientação clara.",
       rows: (proposal) => [
-        ["Diagnostico", "Levantamento do objetivo, perfil e informacoes iniciais", "Incluso"],
-        ["Analise", proposal.serviceName, "Incluso"],
-        ["Entregaveis", proposal.included[0] || "Relatorio, proposta ou orientacoes combinadas", "Incluso"],
-        ["Acompanhamento", "Devolutiva e proximos passos", "Incluso"],
+        ["Diagnóstico", "Levantamento do objetivo, perfil e informações iniciais", "Incluso"],
+        ["Análise", proposal.serviceName, "Incluso"],
+        ["Entregáveis", proposal.included[0] || "Relatório, proposta ou orientações combinadas", "Incluso"],
+        ["Acompanhamento", "Devolutiva e próximos passos", "Incluso"],
       ],
     };
   }
@@ -1142,21 +1143,21 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       primary: data.brandSecondaryColor,
       accent: "#CA8A04",
       soft: "#FEFCE8",
-      segmentName: "Industria",
-      brandCaption: "Tecnico industrial",
-      promise: "Diagnostico, execucao e entrega tecnica",
+      segmentName: "Indústria",
+      brandCaption: "Técnico industrial",
+      promise: "Diagnóstico, execução e entrega técnica",
       icon: "bucket",
-      documentTitle: "PROPOSTA TECNICA",
-      detailTitle: "ESCOPO TECNICO",
-      fallbackImageLabel: "Equipamento ou area tecnica",
-      defaultNote: "Execucao sujeita a disponibilidade do equipamento, acesso e condicoes de seguranca.",
-      secondaryNote: "Pecas, paradas adicionais e adequacoes devem ser aprovadas separadamente.",
-      footerLine: "Execucao tecnica com seguranca e controle.",
+      documentTitle: "PROPOSTA TÉCNICA",
+      detailTitle: "ESCOPO TÉCNICO",
+      fallbackImageLabel: "Equipamento ou área técnica",
+      defaultNote: "Execução sujeita a disponibilidade do equipamento, acesso e condições de segurança.",
+      secondaryNote: "Peças, paradas adicionais e adequações devem ser aprovadas separadamente.",
+      footerLine: "Execução técnica com segurança e controle.",
       rows: (proposal) => [
-        ["Inspecao", "Avaliacao inicial, risco e acesso tecnico", "Incluso"],
-        ["Execucao", proposal.serviceName, "Incluso"],
-        ["Materiais", proposal.included[0] || "Materiais ou pecas conforme escopo", "Incluso"],
-        ["Teste", "Conferencia, registro e orientacao final", "Incluso"],
+        ["Inspeção", "Avaliação inicial, risco e acesso técnico", "Incluso"],
+        ["Execução", proposal.serviceName, "Incluso"],
+        ["Materiais", proposal.included[0] || "Materiais ou peças conforme escopo", "Incluso"],
+        ["Teste", "Conferência, registro e orientação final", "Incluso"],
       ],
     };
   }
@@ -1169,19 +1170,19 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       soft: "#F7FEE7",
       segmentName: "Agro",
       brandCaption: "Agro e rural",
-      promise: "Operacao rural planejada e acompanhada",
+      promise: "Operação rural planejada e acompanhada",
       icon: "bucket",
       documentTitle: "PROPOSTA",
-      detailTitle: "OPERACAO RURAL",
-      fallbackImageLabel: "Area rural",
-      defaultNote: "Prazos podem variar conforme clima, acesso, area atendida e disponibilidade de insumos.",
+      detailTitle: "OPERAÇÃO RURAL",
+      fallbackImageLabel: "Área rural",
+      defaultNote: "Prazos podem variar conforme clima, acesso, área atendida e disponibilidade de insumos.",
       secondaryNote: "Insumos, equipamentos e deslocamentos extras devem ser aprovados previamente.",
       footerLine: "Atendimento rural com planejamento e controle.",
       rows: (proposal) => [
-        ["Levantamento", "Area, necessidade, periodo e condicoes de acesso", "Incluso"],
-        ["Servico", proposal.serviceName, "Incluso"],
+        ["Levantamento", "Área, necessidade, período e condições de acesso", "Incluso"],
+        ["Serviço", proposal.serviceName, "Incluso"],
         ["Insumos", proposal.included[0] || "Itens e materiais combinados", "Incluso"],
-        ["Acompanhamento", "Orientacao, registro ou retorno conforme escopo", "Incluso"],
+        ["Acompanhamento", "Orientação, registro ou retorno conforme escopo", "Incluso"],
       ],
     };
   }
@@ -1199,14 +1200,14 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       documentTitle: "PROPOSTA",
       detailTitle: "EXPERIENCIA",
       fallbackImageLabel: "Destino ou hospedagem",
-      defaultNote: "Valores e disponibilidade podem variar ate a confirmacao da reserva.",
+      defaultNote: "Valores e disponibilidade podem variar até a confirmação da reserva.",
       secondaryNote: "Taxas, transporte, passeios opcionais e politicas de cancelamento devem ser confirmados.",
       footerLine: "Experiencias planejadas para aproveitar melhor.",
       rows: (proposal) => [
         ["Briefing", "Datas, perfil, preferencias e quantidade de pessoas", "Incluso"],
         ["Experiencia", proposal.serviceName, "Incluso"],
         ["Inclusos", proposal.included[0] || "Itens e reservas combinados", "Incluso"],
-        ["Suporte", "Orientacoes e confirmacoes finais", "Incluso"],
+        ["Suporte", "Orientações e confirmações finais", "Incluso"],
       ],
     };
   }
@@ -1217,21 +1218,21 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
       primary: data.brandSecondaryColor,
       accent: "#D97706",
       soft: "#FFFBEB",
-      segmentName: "Seguranca",
+      segmentName: "Segurança",
       brandCaption: "Protecao",
-      promise: "Projeto, instalacao e suporte definidos",
+      promise: "Projeto, instalação e suporte definidos",
       icon: "briefcase",
-      documentTitle: "PROPOSTA TECNICA",
+      documentTitle: "PROPOSTA TÉCNICA",
       detailTitle: "PROJETO",
-      fallbackImageLabel: "Sistema de seguranca",
-      defaultNote: "Equipamentos, pontos de instalacao e acesso ao local devem ser confirmados antes da execucao.",
+      fallbackImageLabel: "Sistema de segurança",
+      defaultNote: "Equipamentos, pontos de instalação e acesso ao local devem ser confirmados antes da execução.",
       secondaryNote: "Infraestrutura, cabos, licencas e equipamentos extras podem alterar o valor.",
-      footerLine: "Protecao planejada com instalacao e suporte.",
+      footerLine: "Proteção planejada com instalação e suporte.",
       rows: (proposal) => [
-        ["Diagnostico", "Levantamento de risco, local e pontos de cobertura", "Incluso"],
-        ["Instalacao", proposal.serviceName, "Incluso"],
+        ["Diagnóstico", "Levantamento de risco, local e pontos de cobertura", "Incluso"],
+        ["Instalação", proposal.serviceName, "Incluso"],
         ["Equipamentos", proposal.included[0] || "Itens e materiais combinados", "Incluso"],
-        ["Treinamento", "Teste, configuracao e orientacao de uso", "Incluso"],
+        ["Treinamento", "Teste, configuração e orientação de uso", "Incluso"],
       ],
     };
   }
@@ -1243,7 +1244,7 @@ function documentTitleFor(documentType: string, fallback: string) {
   const titles: Record<string, string> = {
     budget: "ORCAMENTO",
     commercial_proposal: "PROPOSTA COMERCIAL",
-    technical_proposal: "PROPOSTA TECNICA",
+    technical_proposal: "PROPOSTA TÉCNICA",
     care_plan: "PLANO DE CUIDADO",
     event_proposal: "PROPOSTA EVENTO",
   };
@@ -1322,21 +1323,22 @@ function drawPremiumTextPanel(doc: PDFKit.PDFDocument, text: string, height: num
 function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   const items = parseCustomFaq(data.proposalFaq);
   if (!items.length) return;
-  // Two-column compact FAQ: no boxes, smaller fonts, tighter spacing
   ensureSpace(doc, 40);
   sectionTitle(doc, "Perguntas frequentes", "FAQ", design);
-  const colGap = 18;
+  const colGap = 22;
   const colWidth = (CONTENT_WIDTH - colGap) / 2;
   const startY = doc.y;
   const yCol = [startY, startY];
+  const columnSplit = Math.ceil(items.length / 2);
 
-  for (const [question, answer] of items) {
-    const qHeight = doc.heightOfString(question, { width: colWidth - 12, lineGap: 2 });
-    const aHeight = doc.heightOfString(answer, { width: colWidth - 12, lineGap: 2 });
-    const itemHeight = qHeight + aHeight + 8;
+  items.forEach(([question, answer], index) => {
+    const col = index < columnSplit ? 0 : 1;
+    doc.font("Helvetica-Bold").fontSize(9);
+    const qHeight = doc.heightOfString(question, { width: colWidth - 16, lineGap: 1 });
+    doc.font("Helvetica").fontSize(8);
+    const aHeight = doc.heightOfString(answer, { width: colWidth - 16, lineGap: 2 });
+    const itemHeight = qHeight + aHeight + 9;
 
-    // choose the column with less used height
-    const col = yCol[0] <= yCol[1] ? 0 : 1;
     if (yCol[col] + itemHeight > PAGE_BOTTOM) {
       doc.addPage();
       doc.y = MARGIN;
@@ -1347,15 +1349,19 @@ function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegm
     const x = MARGIN + col * (colWidth + colGap);
     const y = yCol[col];
 
-    // small accent marker
-    doc.roundedRect(x, y, 8, 3, 2).fill(design.accent);
-    doc.fillColor(INK).font("Helvetica-Bold").fontSize(9).text(question, x + 12, y - 2, { width: colWidth - 12 });
-    doc.fillColor("#475569").font("Helvetica").fontSize(8).text(answer, x + 12, y + qHeight + 2, { width: colWidth - 12, lineGap: 2 });
+    doc.roundedRect(x, y + 4, 8, 3, 2).fill(design.accent);
+    doc.fillColor(INK).font("Helvetica-Bold").fontSize(9).text(question, x + 16, y, {
+      width: colWidth - 16,
+      lineGap: 1,
+    });
+    doc.fillColor("#475569").font("Helvetica").fontSize(8).text(answer, x + 16, y + qHeight + 3, {
+      width: colWidth - 16,
+      lineGap: 2,
+    });
 
-    yCol[col] += itemHeight + 8;
-  }
+    yCol[col] += itemHeight + 7;
+  });
 
-  // move doc.y to the lowest column position
   doc.y = Math.max(yCol[0], yCol[1]);
 }
 
@@ -1550,15 +1556,17 @@ function drawPageNumbers(doc: PDFKit.PDFDocument) {
 function sectionTitle(doc: PDFKit.PDFDocument, title: string, eyebrow: string, designOrColor: PdfSegmentDesign | string = "#2563EB") {
   const color = typeof designOrColor === "string" ? designOrColor : designOrColor.primary;
   const accent = typeof designOrColor === "string" ? designOrColor : designOrColor.accent;
-  ensureSpace(doc, 46);
-  doc.rect(MARGIN, doc.y, CONTENT_WIDTH, 1).fill(LINE);
-  doc.rect(MARGIN, doc.y, 42, 2).fill(accent);
-  doc.fillColor(color).font("Helvetica-Bold").fontSize(7).text(eyebrow.toUpperCase(), MARGIN, doc.y + 7, {
+  ensureSpace(doc, 44);
+  const lineY = doc.y + 4;
+  const accentY = lineY + 8;
+  doc.rect(MARGIN, lineY, CONTENT_WIDTH, 1).fill(LINE);
+  doc.rect(MARGIN, accentY, 42, 2).fill(color);
+  doc.fillColor(color).font("Helvetica-Bold").fontSize(7).text(eyebrow.toUpperCase(), MARGIN, accentY + 6, {
     characterSpacing: 0.8,
   });
-  doc.moveDown(0.28);
+  doc.y = accentY + 17;
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(15).text(title, { width: CONTENT_WIDTH });
-  doc.moveDown(0.28);
+  doc.moveDown(0.18);
 }
 
 function drawCoverMetric(doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, width: number, color: string) {

@@ -29,7 +29,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   };
 
   if (body.status !== undefined && !ALLOWED_STATUSES.includes(body.status as AllowedStatus)) {
-    return jsonError("Status invalido.");
+    return jsonError("Status inválido.");
   }
 
   const data: Parameters<typeof prisma.proposalAsset.updateMany>[0]["data"] = {};
@@ -41,7 +41,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
   if (body.serviceName !== undefined) {
     const serviceName = cleanString(body.serviceName);
-    if (!serviceName) return jsonError("Informe o servico da proposta.");
+    if (!serviceName) return jsonError("Informe o serviço da proposta.");
     data.serviceName = serviceName;
   }
   if (body.price !== undefined) {
@@ -61,7 +61,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
   if (body.clientEmail !== undefined) {
     const clientEmail = cleanOptionalString(body.clientEmail);
-    if (clientEmail && !isValidEmail(clientEmail)) return jsonError("E-mail do cliente invalido.");
+    if (clientEmail && !isValidEmail(clientEmail)) return jsonError("E-mail do cliente inválido.");
     data.clientEmail = clientEmail;
   }
   if (body.payment !== undefined) data.payment = cleanOptionalString(body.payment) || "";

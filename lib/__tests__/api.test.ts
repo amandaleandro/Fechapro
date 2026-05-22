@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { slugify } from "../api";
+import { slugBase, slugify } from "../api";
 
 describe("slugify", () => {
   it("converte para lowercase e remove acentos", () => {
@@ -23,9 +23,14 @@ describe("slugify", () => {
     expect(slug1).not.toBe(slug2);
   });
 
-  it("slug tem sufixo aleatorio de exatamente 12 chars base64url", () => {
+  it("slug tem sufixo aleatorio limpo de exatamente 12 chars", () => {
     const slug = slugify("x");
-    // base64url pode conter "-", entao nao usar split("-")
-    expect(slug).toMatch(/^x-[A-Za-z0-9_-]{12}$/);
+    expect(slug).toMatch(/^x-[a-f0-9]{12}$/);
+  });
+});
+
+describe("slugBase", () => {
+  it("gera um nome legivel sem sufixo aleatorio", () => {
+    expect(slugBase("Proposta para Joao: Site & Branding")).toBe("proposta-para-joao-site-branding");
   });
 });

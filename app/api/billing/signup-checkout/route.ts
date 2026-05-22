@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
 
   if (!plan || !plans[plan]?.public) {
-    return jsonError("Plano invalido.");
+    return jsonError("Plano inválido.");
   }
   if (!email || !isValidEmail(email)) {
     return jsonError("Informe um e-mail valido para iniciar a assinatura.");

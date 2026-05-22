@@ -138,7 +138,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
           {isSignup && !checkoutId ? (
             <div className="grid gap-5">
               <div className="space-y-1">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Plano obrigatorio</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Plano obrigatório</p>
                 <h2 className="text-2xl font-extrabold leading-tight text-slate-900">Escolha um plano para liberar o cadastro</h2>
                 <p className="max-w-xl text-sm leading-6 text-slate-500">
                   O acesso é liberado depois da confirmação do pagamento pelo Mercado Pago.

@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   const removeBackground = String(formData.get("removeBackground") || "") === "true";
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Arquivo obrigatorio." }, { status: 400 });
+    return NextResponse.json({ error: "Arquivo obrigatório." }, { status: 400 });
   }
 
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) {

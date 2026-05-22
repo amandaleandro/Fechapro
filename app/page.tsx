@@ -266,35 +266,35 @@ const statusConfig: Partial<Record<
 };
 
 const documentTypeOptions: Array<{ value: ProposalDraft["documentType"]; label: string }> = [
-  { value: "auto", label: "Automatico pelo segmento" },
-  { value: "budget", label: "Orcamento" },
+  { value: "auto", label: "Automático pelo segmento" },
+  { value: "budget", label: "Orçamento" },
   { value: "commercial_proposal", label: "Proposta comercial" },
-  { value: "technical_proposal", label: "Proposta tecnica" },
+  { value: "technical_proposal", label: "Proposta técnica" },
   { value: "care_plan", label: "Plano de cuidado" },
   { value: "event_proposal", label: "Proposta de evento" },
 ];
 
 const proposalSegmentOptions: Array<{ value: ProposalDraft["segment"]; label: string }> = [
-  { value: "auto", label: "Automatico pelo servico" },
+  { value: "auto", label: "Automático pelo serviço" },
   { value: "home_reform", label: "Casa, obra e reforma" },
   { value: "automotive", label: "Automotivo" },
-  { value: "beauty", label: "Beleza e estetica" },
-  { value: "health", label: "Saude e bem-estar" },
-  { value: "business", label: "Consultoria, juridico e negocios" },
+  { value: "beauty", label: "Beleza e estética" },
+  { value: "health", label: "Saúde e bem-estar" },
+  { value: "business", label: "Consultoria, jurídico e negócios" },
   { value: "events", label: "Eventos e fotografia" },
   { value: "technology", label: "Tecnologia, design e marketing" },
-  { value: "education", label: "Aulas e educacao" },
+  { value: "education", label: "Aulas e educação" },
   { value: "food", label: "Gastronomia" },
   { value: "pet", label: "Pet" },
-  { value: "real_estate", label: "Imoveis e condominios" },
+  { value: "real_estate", label: "Imóveis e condomínios" },
   { value: "fashion_retail", label: "Moda, loja e varejo" },
-  { value: "transport", label: "Transporte e logistica" },
+  { value: "transport", label: "Transporte e logística" },
   { value: "finance", label: "Financeiro e seguros" },
-  { value: "industry", label: "Industria e manutencao" },
+  { value: "industry", label: "Indústria e manutenção" },
   { value: "agriculture", label: "Agro e rural" },
   { value: "tourism", label: "Turismo e hospedagem" },
-  { value: "security", label: "Seguranca" },
-  { value: "general", label: "Servico geral" },
+  { value: "security", label: "Segurança" },
+  { value: "general", label: "Serviço geral" },
 ];
 
 const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }> = [
@@ -494,7 +494,7 @@ const proposalTemplates: ProposalTemplate[] = [
     price: 160,
     deadline: "Atendimento em 2 horas",
     payment: "R$ 50 de sinal e restante no atendimento",
-    included: ["Cutilagem", "Esmaltacao", "Alongamento ou manutencao", "Finalizacao hidratante", "Garantia de 7 dias"],
+    included: ["Cutilagem", "Esmaltação", "Alongamento ou manutenção", "Finalização hidratante", "Garantia de 7 dias"],
     notes: "Materiais especiais, nail art e deslocamento podem alterar o valor final.",
   },
   {
@@ -512,9 +512,9 @@ const proposalTemplates: ProposalTemplate[] = [
     id: "pedreiro",
     niche: "Pedreiro",
     title: "Reparo e acabamento",
-    serviceName: "Servico de alvenaria e acabamento",
+    serviceName: "Serviço de alvenaria e acabamento",
     price: 1200,
-    deadline: "5 dias uteis",
+    deadline: "5 dias úteis",
     payment: "40% entrada e 60% na entrega",
     included: ["Avaliação do local", "Preparação da área", "Execução do reparo", "Acabamento", "Limpeza básica"],
     notes: "Não inclui compra de materiais, caçamba ou alterações de escopo.",
@@ -568,7 +568,7 @@ const proposalTemplates: ProposalTemplate[] = [
 const marketingArtBriefs = [
   {
     id: "sell_service",
-    label: "Servico",
+    label: "Serviço",
     objective: "Divulgar um serviço profissional destacando benefício, confiança, atendimento rápido e pedido de orçamento pelo WhatsApp.",
     callToAction: "Peça seu orçamento",
   },
@@ -581,7 +581,7 @@ const marketingArtBriefs = [
   {
     id: "product",
     label: "Produto",
-    objective: "Divulgar um produto com destaque para desejo, beneficio, preco ou condicao especial e chamada para comprar.",
+    objective: "Divulgar um produto com destaque para desejo, benefício, preço ou condição especial e chamada para comprar.",
     callToAction: "Quero comprar",
   },
   {
@@ -808,14 +808,14 @@ export default function Home() {
       apiPost<ServiceItem>("/api/services", {
         name: "Identidade visual",
         price: 1200,
-        deadline: "7 dias uteis",
+        deadline: "7 dias úteis",
         includes: ["Logo", "Paleta de cores", "Tipografia", "5 modelos de posts"],
       }),
       apiPost<ServiceItem>("/api/services", {
-        name: "Gestao de trafego",
+        name: "Gestão de tráfego",
         price: 1800,
         deadline: "30 dias",
-        includes: ["Planejamento", "Campanhas Meta Ads", "Relatorio semanal"],
+        includes: ["Planejamento", "Campanhas Meta Ads", "Relatório semanal"],
       }),
     ]);
     const testimonial = await apiPost<Testimonial>("/api/testimonials", {
@@ -827,7 +827,7 @@ export default function Home() {
         clientName: "Maria Eduarda",
         serviceName: "Identidade visual para loja de roupas",
         price: 1200,
-        deadline: "7 dias uteis",
+        deadline: "7 dias úteis",
         validUntil: nextWeekDate(),
         payment: "50% entrada e 50% entrega",
         included: ["Logo", "Paleta de cores", "Tipografia", "5 modelos de posts"],
@@ -939,7 +939,7 @@ export default function Home() {
           }
         : current,
     );
-      setNotice("Solicitacao enviada. A equipe vai preparar a arte e anexar para sua aprovacao.");
+      setNotice("Solicitação enviada. A equipe vai preparar a arte e anexar para sua aprovação.");
     return item;
   }
 
@@ -1506,8 +1506,8 @@ function DashboardView({
       <section className="grid gap-3 sm:grid-cols-4">
         <Metric label="Clientes visualizaram o link" value={String(totalViews)} />
         <Metric label="Clicaram no WhatsApp" value={String(whatsappClicks)} />
-        <Metric label="Orcamentos enviados" value={String(sent)} />
-        <Metric label="Orcamentos aprovados" value={String(accepted)} />
+        <Metric label="Orçamentos enviados" value={String(sent)} />
+        <Metric label="Orçamentos aprovados" value={String(accepted)} />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
@@ -1567,7 +1567,7 @@ function DashboardView({
                 <div>
                   <strong>{proposal.clientName}</strong>
                   <p className="text-sm font-bold leading-6 text-slate-600">
-                    Proposta enviada ha {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}
+                    Proposta enviada há {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}
                   </p>
                 </div>
                 <button
@@ -1589,7 +1589,7 @@ function DashboardView({
 
       <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
-          <SectionHeading eyebrow="Indicacoes" title="Ganhe crescimento com seus clientes" />
+          <SectionHeading eyebrow="Indicações" title="Ganhe crescimento com seus clientes" />
           <p className="mt-2 leading-7 text-slate-600">
             Compartilhe o FechaPro com outro profissional. Quando o programa de indicação estiver ativo, essa área vira o controle de meses grátis e descontos.
           </p>
@@ -2229,7 +2229,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
     <CrudShell
       eyebrow="Cadastro"
       title="CRM simples"
-      description="Salve contatos, interesse, status e observacoes para retomar conversas e recuperar oportunidades."
+      description="Salve contatos, interesse, status e observações para retomar conversas e recuperar oportunidades."
       form={
         <form
           className="grid gap-3"
@@ -2239,8 +2239,8 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
           <TextField label="Nome" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
           <TextField label="E-mail" autoComplete="email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
           <TextField label="Telefone" autoComplete="tel" maxLength={20} value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
-          <TextField label="Segmento" maxLength={60} placeholder="Moda, estetica, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
-          <TextField label="Servico de interesse" maxLength={90} placeholder="Identidade visual, limpeza, manutencao..." value={form.interestService} onChange={(value) => setForm({ ...form, interestService: value })} />
+          <TextField label="Segmento" maxLength={60} placeholder="Moda, estética, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
+          <TextField label="Serviço de interesse" maxLength={90} placeholder="Identidade visual, limpeza, manutenção..." value={form.interestService} onChange={(value) => setForm({ ...form, interestService: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Status
             <select
@@ -2757,13 +2757,13 @@ function TemplatesView({
         <div className="grid gap-3 sm:grid-cols-2">
           <TextField label="Titulo do template" maxLength={80} required value={uploadForm.title} onChange={(value) => setUploadForm({ ...uploadForm, title: value })} />
           <TextField label="Nicho" maxLength={80} placeholder="Ex: Designer, Manicure, Eletricista" value={uploadForm.niche} onChange={(value) => setUploadForm({ ...uploadForm, niche: value })} />
-          <TextField label="Servico" maxLength={100} required value={uploadForm.serviceName} onChange={(value) => setUploadForm({ ...uploadForm, serviceName: value })} />
+          <TextField label="Serviço" maxLength={100} required value={uploadForm.serviceName} onChange={(value) => setUploadForm({ ...uploadForm, serviceName: value })} />
           <TextField label="Valor" min={1} required step="1" type="number" value={uploadForm.price || ""} onChange={(value) => setUploadForm({ ...uploadForm, price: Number(value || 0) })} />
           <TextField label="Prazo" maxLength={80} required value={uploadForm.deadline} onChange={(value) => setUploadForm({ ...uploadForm, deadline: value })} />
           <TextField label="Pagamento" maxLength={120} value={uploadForm.payment} onChange={(value) => setUploadForm({ ...uploadForm, payment: value })} />
         </div>
         <TextAreaField label="Itens inclusos" maxLength={1200} placeholder={"Um item por linha"} value={uploadForm.included} onChange={(value) => setUploadForm({ ...uploadForm, included: value })} />
-        <TextAreaField label="Observacoes" maxLength={800} rows={3} value={uploadForm.notes} onChange={(value) => setUploadForm({ ...uploadForm, notes: value })} />
+        <TextAreaField label="Observações" maxLength={800} rows={3} value={uploadForm.notes} onChange={(value) => setUploadForm({ ...uploadForm, notes: value })} />
         {error ? <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
         <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
           <FileDown size={18} />
@@ -3008,7 +3008,7 @@ function MarketingArtsView({
           <p className="text-xs font-black uppercase text-blue-700">Artes de divulgação</p>
           <h2 className="text-2xl font-black">Solicitar arte de divulgação</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Preencha o pedido para a equipe preparar a arte. Depois ela anexa a imagem pronta para sua aprovacao.
+            Preencha o pedido para a equipe preparar a arte. Depois ela anexa a imagem pronta para sua aprovação.
           </p>
         </div>
 
@@ -3091,7 +3091,7 @@ function MarketingArtsView({
             ) : null}
 
             <SelectField
-              label="Servico ou produto"
+              label="Serviço ou produto"
               options={services.map((service) => service.name)}
               placeholder="Ex: Marmita grande, manicure, site profissional"
               value={form.serviceName}
@@ -3125,7 +3125,7 @@ function MarketingArtsView({
               }}
             />
             <span className="text-xs font-bold text-slate-500">
-              Opcional. Envie fotos do produto, logo, referencia visual ou imagem que deve entrar na peca.
+              Opcional. Envie fotos do produto, logo, referência visual ou imagem que deve entrar na peça.
             </span>
             {files.length ? (
               <span className="text-xs font-bold text-green-700">
@@ -3174,7 +3174,7 @@ function MarketingArtsView({
           </div>
           <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white shadow-lg shadow-green-900/10 disabled:opacity-60" disabled={creating || limit === 0 || remaining < formatsToGenerate.length} type="submit">
             <Sparkles size={18} />
-            {creating ? "Enviando..." : formatsToGenerate.length > 1 ? "Enviar solicitacoes" : "Enviar solicitacao"}
+            {creating ? "Enviando..." : formatsToGenerate.length > 1 ? "Enviar solicitações" : "Enviar solicitação"}
           </button>
         </form>
       </aside>
@@ -3217,7 +3217,7 @@ function MarketingArtsView({
                         </span>
                       </div>
                       <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
-                        {art.serviceName || "Divulgacao"} | {art.format.replace("_", " ")}
+                        {art.serviceName || "Divulgação"} | {art.format.replace("_", " ")}
                       </p>
                     </div>
                     <p className="line-clamp-2 text-sm leading-6 text-slate-600">{art.objective}</p>
@@ -3297,7 +3297,7 @@ function MarketingArtsView({
 
 function marketingArtStatusLabel(art: MarketingArt) {
   if (marketingArtCanDownload(art)) return "Aprovada";
-  if (art.source === "uploaded") return "Aguardando aprovacao";
+  if (art.source === "uploaded") return "Aguardando aprovação";
   if (art.source === "requested") return "Solicitada";
   return "Em preparo";
 }
@@ -3621,7 +3621,7 @@ function AccountView({
 
         <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-5 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
           <CheckCircle2 size={18} />
-          {saving ? "Salvando..." : "Salvar alteracoes"}
+          {saving ? "Salvando..." : "Salvar alterações"}
         </button>
       </form>
 
@@ -3675,7 +3675,7 @@ function SupportView({ session }: { session: { name: string; email: string } }) 
       const data = await apiGet<{ thread: SupportThread | null }>("/api/support");
       setThread(data.thread);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o suporte.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível carregar o suporte.");
     } finally {
       setLoading(false);
     }
@@ -3698,7 +3698,7 @@ function SupportView({ session }: { session: { name: string; email: string } }) 
       setThread(data.thread);
       setMessage("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel enviar sua mensagem.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível enviar sua mensagem.");
     } finally {
       setSending(false);
     }
@@ -3729,7 +3729,7 @@ function SupportView({ session }: { session: { name: string; email: string } }) 
           ) : thread?.messages.length ? (
             thread.messages.map((item) => (
               <div className={`max-w-[86%] rounded-lg p-3 ${item.role === "admin" ? "justify-self-start bg-white" : "justify-self-end bg-green-600 text-white"}`} key={item.id}>
-                <p className="text-xs font-black uppercase opacity-75">{item.role === "admin" ? "Administrador" : "Voce"}</p>
+                <p className="text-xs font-black uppercase opacity-75">{item.role === "admin" ? "Administrador" : "Você"}</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm font-bold leading-6">{item.body}</p>
                 <p className="mt-2 text-[11px] font-bold opacity-70">{formatDateTime(item.createdAt)}</p>
               </div>
@@ -4095,7 +4095,7 @@ function CsvImportBox<T>({
       setErrors(response.errors);
       setMessage(`${response.created.length} registro${response.created.length === 1 ? "" : "s"} importado${response.created.length === 1 ? "" : "s"}.`);
     } catch (caught) {
-      setErrors([caught instanceof Error ? caught.message : "Nao foi possivel importar a planilha."]);
+      setErrors([caught instanceof Error ? caught.message : "Não foi possível importar a planilha."]);
     } finally {
       setImporting(false);
     }
@@ -5652,9 +5652,9 @@ function ProposalDetailPanel({
               ) : null}
             </div>
             <ul className="mt-3 grid gap-1 text-xs font-bold leading-6 text-green-900/80">
-              <li>• Entre em contato para confirmar inicio do servico</li>
+              <li>• Entre em contato para confirmar início do serviço</li>
               {proposal.clientEmail ? <li>• E-mail do cliente: {proposal.clientEmail}</li> : null}
-              <li>• Combine forma e data de pagamento se ainda nao realizado</li>
+              <li>• Combine forma e data de pagamento se ainda não realizado</li>
               <li>• Crie nova proposta para proxima etapa quando necessario</li>
             </ul>
           </div>

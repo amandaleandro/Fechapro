@@ -628,7 +628,7 @@ function getPublicSegmentStyle(
     pageClass: "bg-[var(--ui-bg)]",
     primary,
     accent,
-    segmentName: "Servico profissional",
+    segmentName: "Serviço profissional",
     eyebrow: "Proposta profissional",
     intro: "Uma proposta organizada com escopo, investimento, prazo, portfólio e aceite em um único link.",
     headerBackground: `linear-gradient(135deg, ${secondary}, ${primary})`,
@@ -641,7 +641,7 @@ function getPublicSegmentStyle(
       primary,
       accent: "#FACC15",
       segmentName: "Casa e reforma",
-      eyebrow: "Orcamento de obra",
+      eyebrow: "Orçamento de obra",
       intro: "Escopo visual, etapas claras, materiais combinados e valor total para aprovar com segurança.",
       headerBackground: `linear-gradient(135deg, ${secondary} 0%, #111827 52%, ${primary} 100%)`,
     };
@@ -653,7 +653,7 @@ function getPublicSegmentStyle(
       primary: accent,
       accent: "#F97316",
       segmentName: "Automotivo",
-      eyebrow: "Orcamento automotivo",
+      eyebrow: "Orçamento automotivo",
       intro: "Diagnóstico, itens inclusos, prazo e condição de pagamento apresentados de forma objetiva.",
       headerBackground: `linear-gradient(135deg, #111827, ${secondary} 55%, ${accent})`,
     };
@@ -664,7 +664,7 @@ function getPublicSegmentStyle(
       pageClass: "bg-pink-50",
       primary: accent,
       accent: "#F9A8D4",
-      segmentName: "Beleza e estetica",
+      segmentName: "Beleza e estética",
       eyebrow: "Proposta de cuidado",
       intro: "Atendimento personalizado, procedimento, cuidados e próximos passos em uma apresentação leve.",
       headerBackground: `linear-gradient(135deg, #831843, ${accent} 58%, #F9A8D4)`,
@@ -676,7 +676,7 @@ function getPublicSegmentStyle(
       pageClass: "bg-emerald-50",
       primary,
       accent: "#A7F3D0",
-      segmentName: "Saude e bem-estar",
+      segmentName: "Saúde e bem-estar",
       eyebrow: "Plano de cuidado",
       intro: "Plano claro, acolhedor e organizado para entender o atendimento e aprovar com tranquilidade.",
       headerBackground: `linear-gradient(135deg, #064E3B, ${primary})`,
@@ -724,9 +724,9 @@ function getPublicSegmentStyle(
       pageClass: "bg-violet-50",
       primary: accent,
       accent: "#DDD6FE",
-      segmentName: "Educacao",
+      segmentName: "Educação",
       eyebrow: "Plano de aprendizado",
-      intro: "Conteudo, encontros, materiais e acompanhamento reunidos para aprovar o plano com clareza.",
+      intro: "Conteúdo, encontros, materiais e acompanhamento reunidos para aprovar o plano com clareza.",
       headerBackground: `linear-gradient(135deg, #4C1D95, ${secondary} 55%, ${accent})`,
     };
   }
@@ -738,7 +738,7 @@ function getPublicSegmentStyle(
       accent: "#FED7AA",
       segmentName: "Gastronomia",
       eyebrow: "Proposta de pedido",
-      intro: "Cardapio, quantidade, preparo, entrega e condicoes combinadas para aprovar sem duvidas.",
+      intro: "Cardápio, quantidade, preparo, entrega e condições combinadas para aprovar sem dúvidas.",
       headerBackground: `linear-gradient(135deg, #7C2D12, ${accent})`,
     };
   }
@@ -750,7 +750,7 @@ function getPublicSegmentStyle(
       accent: "#99F6E4",
       segmentName: "Pet",
       eyebrow: "Plano de cuidado pet",
-      intro: "Atendimento, cuidados, orientacoes e valores organizados para o tutor aprovar com tranquilidade.",
+      intro: "Atendimento, cuidados, orientações e valores organizados para o tutor aprovar com tranquilidade.",
       headerBackground: `linear-gradient(135deg, #134E4A, ${primary})`,
     };
   }
@@ -760,9 +760,9 @@ function getPublicSegmentStyle(
       pageClass: "bg-stone-50",
       primary: secondary,
       accent: "#D6D3D1",
-      segmentName: "Imoveis",
+      segmentName: "Imóveis",
       eyebrow: "Proposta imobiliaria",
-      intro: "Escopo, imovel atendido, responsabilidades e condicoes comerciais apresentados com objetividade.",
+      intro: "Escopo, imóvel atendido, responsabilidades e condições comerciais apresentados com objetividade.",
       headerBackground: `linear-gradient(135deg, #292524, ${secondary} 58%, ${primary})`,
     };
   }
@@ -774,7 +774,7 @@ function getPublicSegmentStyle(
       accent: "#FDA4AF",
       segmentName: "Moda e varejo",
       eyebrow: "Proposta comercial",
-      intro: "Produtos, campanha, loja, prazos e entregas alinhados em uma proposta pronta para decisao.",
+      intro: "Produtos, campanha, loja, prazos e entregas alinhados em uma proposta pronta para decisão.",
       headerBackground: `linear-gradient(135deg, #881337, ${secondary} 48%, ${accent})`,
     };
   }
@@ -785,8 +785,8 @@ function getPublicSegmentStyle(
       primary: secondary,
       accent: "#A5F3FC",
       segmentName: "Transporte",
-      eyebrow: "Proposta logistica",
-      intro: "Rota, prazo, volume, operacao e condicoes de pagamento definidos para aprovar o atendimento.",
+      eyebrow: "Proposta logística",
+      intro: "Rota, prazo, volume, operação e condições de pagamento definidos para aprovar o atendimento.",
       headerBackground: `linear-gradient(135deg, #164E63, ${secondary} 52%, ${primary})`,
     };
   }
@@ -798,7 +798,7 @@ function getPublicSegmentStyle(
       accent: "#BBF7D0",
       segmentName: "Financeiro",
       eyebrow: "Proposta financeira",
-      intro: "Objetivo, analise, entregaveis e proximos passos organizados para uma decisao segura.",
+      intro: "Objetivo, análise, entregáveis e próximos passos organizados para uma decisão segura.",
       headerBackground: `linear-gradient(135deg, #052E16, ${secondary} 58%, ${primary})`,
     };
   }
@@ -808,9 +808,9 @@ function getPublicSegmentStyle(
       pageClass: "bg-neutral-100",
       primary: secondary,
       accent: "#FCD34D",
-      segmentName: "Industria",
-      eyebrow: "Proposta tecnica",
-      intro: "Diagnostico, execucao, materiais, seguranca e entrega tecnica apresentados com precisao.",
+      segmentName: "Indústria",
+      eyebrow: "Proposta técnica",
+      intro: "Diagnóstico, execução, materiais, segurança e entrega técnica apresentados com precisão.",
       headerBackground: `linear-gradient(135deg, #171717, ${secondary} 54%, ${primary})`,
     };
   }
@@ -822,7 +822,7 @@ function getPublicSegmentStyle(
       accent: "#BEF264",
       segmentName: "Agro",
       eyebrow: "Proposta rural",
-      intro: "Area atendida, insumos, operacao, prazo e suporte descritos para aprovar com seguranca.",
+      intro: "Área atendida, insumos, operação, prazo e suporte descritos para aprovar com segurança.",
       headerBackground: `linear-gradient(135deg, #365314, ${primary})`,
     };
   }
@@ -834,7 +834,7 @@ function getPublicSegmentStyle(
       accent: "#BAE6FD",
       segmentName: "Turismo",
       eyebrow: "Proposta de experiencia",
-      intro: "Roteiro, hospedagem, datas, inclusos e condicoes reunidos para aprovar a experiencia.",
+      intro: "Roteiro, hospedagem, datas, inclusos e condições reunidos para aprovar a experiência.",
       headerBackground: `linear-gradient(135deg, #0C4A6E, ${secondary} 48%, ${accent})`,
     };
   }
@@ -844,9 +844,9 @@ function getPublicSegmentStyle(
       pageClass: "bg-slate-100",
       primary: secondary,
       accent: "#FBBF24",
-      segmentName: "Seguranca",
+      segmentName: "Segurança",
       eyebrow: "Proposta de protecao",
-      intro: "Diagnostico, equipamentos, instalacao, treinamento e suporte organizados para aprovar o projeto.",
+      intro: "Diagnóstico, equipamentos, instalação, treinamento e suporte organizados para aprovar o projeto.",
       headerBackground: `linear-gradient(135deg, #020617, ${secondary} 50%, ${primary})`,
     };
   }

@@ -272,5 +272,5 @@ export function verifyMercadoPagoWebhook(url: string) {
   const expected = productionEnv("MERCADO_PAGO_WEBHOOK_SECRET");
   if (!expected) return;
   const received = new URL(url).searchParams.get("secret");
-  if (received !== expected) throw new Error("Token do webhook invalido.");
+  if (received !== expected) throw new Error("Token do webhook inválido.");
 }
