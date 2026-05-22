@@ -4,7 +4,7 @@ import { sendProposalSentToClientEmail } from "@/lib/email";
 import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
 import { currentMonthRange, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
-import { findProposalTemplate } from "@/lib/proposal-templates";
+import { filterReadyProposalTemplates, findProposalTemplate } from "@/lib/proposal-templates";
 import { requireSession } from "@/lib/session";
 import { cleanOptionalString, cleanString, isValidDateOnly, isValidEmail } from "@/lib/validation";
 
@@ -52,6 +52,12 @@ export async function POST(request: Request) {
 
   const clientName = cleanString(body.clientName);
   const staticTemplate = findProposalTemplate(body.templateId);
+  if (staticTemplate) {
+    const profile = await prisma.user.findUnique({ where: { id: session.id }, select: { niche: true, segment: true } });
+    if (!filterReadyProposalTemplates(profile?.niche, profile?.segment).some((template) => template.id === staticTemplate.id)) {
+      return jsonError("Este template nao pertence ao nicho e segmento da conta.", 403);
+    }
+  }
   const customTemplate = staticTemplate
     ? null
     : body.templateId

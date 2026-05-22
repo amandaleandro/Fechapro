@@ -7,14 +7,14 @@ import { WhatsAppSupportButton } from "@/components/whatsapp-support-button";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br"),
   title: {
-    default: "FechaPro | Propostas comerciais online para fechar mais serviços",
+    default: "FechaPro | Estrutura comercial para vender serviços melhor",
     template: "%s | FechaPro",
   },
-  description: "Pare de enviar orçamentos simples que derrubam seu valor. Crie propostas comerciais online com portfólio, PDF, aceite e cobrança para fechar mais serviços.",
+  description: "Apresente, envie e acompanhe propostas profissionais com marca, portfólio, PDF, link, aceite online e apoio para vender serviços com mais confiança.",
   keywords: [
     "proposta comercial online",
     "gerador de proposta comercial",
-    "orçamento online",
+    "estrutura comercial para prestador de serviço",
     "proposta de serviço",
     "proposta comercial com aceite",
     "software para prestador de serviço",
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "FechaPro | Propostas comerciais online para fechar mais serviços",
-    description: "Transforme orçamentos improvisados em propostas profissionais com valor, prazo, portfólio, depoimentos, PDF e botão de aceite.",
+    title: "FechaPro | Estrutura comercial para vender serviços melhor",
+    description: "Transforme sua apresentação comercial com propostas profissionais, portfólio, PDF, link, aceite online e acompanhamento.",
     url: "/",
     siteName: "FechaPro",
     locale: "pt_BR",
@@ -45,8 +45,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FechaPro | Propostas comerciais online para fechar mais",
-    description: "Pare de vender serviço com orçamento simples. Envie uma proposta profissional com PDF, portfólio e aceite.",
+    title: "FechaPro | Estrutura comercial para vender serviços melhor",
+    description: "Apresente valor com propostas profissionais, portfólio, PDF, link, aceite online e acompanhamento.",
     images: ["/landing/hero-proposta.png"],
   },
   robots: {

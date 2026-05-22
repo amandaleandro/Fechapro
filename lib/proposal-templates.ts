@@ -1,6 +1,7 @@
 export type ProposalTemplate = {
   id: string;
   niche: string;
+  segment?: BusinessSegment;
   title: string;
   serviceName: string;
   price: number;
@@ -9,6 +10,30 @@ export type ProposalTemplate = {
   included: string[];
   notes: string;
 };
+
+export const businessSegments = [
+  { value: "technology", label: "Digital e tecnologia" },
+  { value: "home_reform", label: "Casa, reforma e servicos tecnicos" },
+  { value: "automotive", label: "Automotivo" },
+  { value: "beauty", label: "Beleza e estetica" },
+  { value: "health", label: "Saude e bem-estar" },
+  { value: "business", label: "Negocios e servicos profissionais" },
+  { value: "events", label: "Eventos" },
+  { value: "education", label: "Educacao" },
+  { value: "food", label: "Gastronomia" },
+  { value: "pet", label: "Pet" },
+  { value: "real_estate", label: "Imoveis" },
+  { value: "fashion_retail", label: "Moda e varejo" },
+  { value: "transport", label: "Transporte e logistica" },
+  { value: "finance", label: "Financeiro e seguros" },
+  { value: "industry", label: "Industria e manutencao" },
+  { value: "agriculture", label: "Agro e rural" },
+  { value: "tourism", label: "Turismo e hospedagem" },
+  { value: "security", label: "Seguranca" },
+  { value: "general", label: "Outros" },
+] as const;
+
+export type BusinessSegment = (typeof businessSegments)[number]["value"];
 
 type TemplateSeed = {
   niche: string;
@@ -740,4 +765,55 @@ function defaultNotes(niche: string) {
 
 export function findProposalTemplate(templateId?: string | null) {
   return proposalTemplates.find((template) => template.id === templateId) || null;
+}
+
+export const proposalTemplateNiches = [...new Set([...templateSeeds, ...broadSegmentTemplateSeeds].map((seed) => seed.niche))];
+
+export function isBusinessSegment(value?: string | null): value is BusinessSegment {
+  return businessSegments.some((segment) => segment.value === value);
+}
+
+export function filterReadyProposalTemplates(niche?: string | null, segment?: string | null) {
+  if (!niche || !isBusinessSegment(segment)) return [];
+  const normalizedNiche = normalizeNiche(niche);
+  return proposalTemplates.filter(
+    (template) => normalizeNiche(template.niche) === normalizedNiche && templateSegment(template.niche) === segment,
+  );
+}
+
+function templateSegment(niche: string): BusinessSegment {
+  const value = normalizeNiche(niche);
+
+  if (hasAny(value, ["automot", "lava jato", "funilaria"])) return "automotive";
+  if (hasAny(value, ["beleza", "estetica"])) return "beauty";
+  if (hasAny(value, ["saude", "fitness", "psicologia", "nutricao", "odontologia", "terapia"])) return "health";
+  if (hasAny(value, ["evento", "buffet", "fotografia", "audiovisual"])) return "events";
+  if (hasAny(value, ["aula", "educacao"])) return "education";
+  if (hasAny(value, ["pet", "veterinaria"])) return "pet";
+  if (hasAny(value, ["gastronomia"])) return "food";
+  if (hasAny(value, ["imove", "imobiliaria", "condominio"])) return "real_estate";
+  if (hasAny(value, ["moda", "varejo", "costura", "ecommerce", "brindes"])) return "fashion_retail";
+  if (hasAny(value, ["transporte", "logistica"])) return "transport";
+  if (hasAny(value, ["financeiro", "seguros"])) return "finance";
+  if (hasAny(value, ["industria", "metalurgia", "serralheria"])) return "industry";
+  if (hasAny(value, ["agro", "rural"])) return "agriculture";
+  if (hasAny(value, ["turismo", "hospedagem"])) return "tourism";
+  if (hasAny(value, ["seguranca"])) return "security";
+  if (hasAny(value, ["social", "designer", "tecnologia", "marketing", "grafica", "video", "eletronico", "redes", "internet", "telecom"])) return "technology";
+  if (hasAny(value, ["arquitetura", "reforma", "limpeza", "engenharia", "solar", "climat", "marcenaria", "jardinagem", "dedet", "piscina", "ceramica", "acabamento", "tecnico", "moveis"])) return "home_reform";
+  if (hasAny(value, ["consultoria", "advocacia", "contabilidade", "coaching", "recursos humanos", "ambiental", "comercial", "administracao", "equipamentos"])) return "business";
+  return "general";
+}
+
+function normalizeNiche(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function hasAny(value: string, terms: string[]) {
+  return terms.some((term) => value.includes(term));
 }

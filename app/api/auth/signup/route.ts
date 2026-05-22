@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, setSession } from "@/lib/session";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { isValidEmail } from "@/lib/validation";
+import { isBusinessSegment } from "@/lib/proposal-templates";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -17,15 +18,19 @@ export async function POST(request: Request) {
     checkoutId?: string;
     email?: string;
     name?: string;
+    niche?: string;
+    segment?: string;
     password?: string;
     turnstileToken?: string;
   };
   const name = body.name?.trim();
   const email = body.email?.trim().toLowerCase();
   const password = body.password || "";
+  const niche = body.niche?.trim();
+  const segment = body.segment?.trim();
 
-  if (!name || !email || password.length < 8) {
-    return jsonError("Informe nome, e-mail e senha com pelo menos 8 caracteres.");
+  if (!name || !email || !niche || !isBusinessSegment(segment) || password.length < 8) {
+    return jsonError("Informe nome, e-mail, nicho, segmento e senha com pelo menos 8 caracteres.");
   }
 
   if (!isValidEmail(email)) {
@@ -56,7 +61,7 @@ export async function POST(request: Request) {
 
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
-      data: { name, email, passwordHash: hashPassword(password) },
+      data: { name, email, niche, segment, passwordHash: hashPassword(password) },
     });
     await tx.planSubscription.create({
       data: {

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, requireSession, setSession, verifyPassword } from "@/lib/session";
 import { getClientIp, rateLimit, rateLimitError } from "@/lib/rate-limit";
 import { isValidEmail } from "@/lib/validation";
+import { isBusinessSegment } from "@/lib/proposal-templates";
 
 export async function PUT(request: Request) {
   const session = await requireSession();
@@ -15,6 +16,8 @@ export async function PUT(request: Request) {
   const body = (await request.json()) as {
     name?: string;
     email?: string;
+    niche?: string;
+    segment?: string;
     currentPassword?: string;
     newPassword?: string;
   };
@@ -22,9 +25,11 @@ export async function PUT(request: Request) {
   const email = body.email?.trim().toLowerCase();
   const currentPassword = body.currentPassword || "";
   const newPassword = body.newPassword || "";
+  const niche = body.niche?.trim();
+  const segment = body.segment?.trim();
 
-  if (!name || !email) {
-    return jsonError("Informe nome e e-mail.");
+  if (!name || !email || !niche || !isBusinessSegment(segment)) {
+    return jsonError("Informe nome, e-mail, nicho e segmento.");
   }
 
   if (!isValidEmail(email)) {
@@ -61,9 +66,11 @@ export async function PUT(request: Request) {
     data: {
       name,
       email,
+      niche,
+      segment,
       ...(shouldChangePassword ? { passwordHash: hashPassword(newPassword) } : {}),
     },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, niche: true, segment: true },
   });
 
   await setSession(updated);

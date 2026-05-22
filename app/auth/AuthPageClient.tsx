@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import { ArrowRight, Check, CreditCard, FileText, Link2, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
 import { isValidEmail } from "@/lib/validation";
+import { businessSegments, proposalTemplateNiches } from "@/lib/proposal-templates";
 
 type AuthMode = "login" | "signup";
 
@@ -15,6 +16,8 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
   const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [niche, setNiche] = useState("");
+  const [segment, setSegment] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
@@ -43,6 +46,11 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
       return;
     }
 
+    if (isSignup && (!niche.trim() || !segment)) {
+      setAuthError("Informe seu nicho e segmento para mostrar os templates certos.");
+      return;
+    }
+
     if (!email.trim() || !password) {
       setAuthError("Informe e-mail e senha para continuar.");
       return;
@@ -68,6 +76,8 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
       const result = await apiPost<{ isAdmin?: boolean }>(mode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
         checkoutId,
         name: name.trim(),
+        niche: niche.trim(),
+        segment,
         email: email.trim(),
         password,
         turnstileToken,
@@ -170,6 +180,13 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
 
             <div className="grid gap-4">
               {isSignup ? <AuthField autoComplete="name" icon={User} label="Nome" maxLength={80} placeholder="Seu nome completo" required value={name} onChange={setName} /> : null}
+              {isSignup ? <AuthField icon={Sparkles} label="Nicho" list="signup-template-niches" maxLength={80} placeholder="Ex: Contabilidade" required value={niche} onChange={setNiche} /> : null}
+              {isSignup ? <AuthSelect icon={User} label="Segmento" required value={segment} onChange={setSegment} /> : null}
+              {isSignup ? (
+                <datalist id="signup-template-niches">
+                  {proposalTemplateNiches.map((option) => <option key={option} value={option} />)}
+                </datalist>
+              ) : null}
               <AuthField autoComplete="email" icon={Mail} label="E-mail" placeholder="voce@email.com" required type="email" value={email} onChange={setEmail} />
               <AuthField autoComplete={isSignup ? "new-password" : "current-password"} icon={Lock} label="Senha" hint={isSignup ? "Mínimo de 8 caracteres." : undefined} minLength={isSignup ? 8 : undefined} placeholder="Sua senha" required type="password" value={password} onChange={setPassword} />
             </div>
@@ -221,6 +238,7 @@ function AuthField({
   hint,
   maxLength,
   minLength,
+  list,
   onChange,
   placeholder,
   required = false,
@@ -233,6 +251,7 @@ function AuthField({
   hint?: string;
   maxLength?: number;
   minLength?: number;
+  list?: string;
   onChange: (value: string) => void;
   placeholder?: string;
   required?: boolean;
@@ -247,7 +266,34 @@ function AuthField({
       </span>
       <span className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 transition focus-within:border-green-600 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
         <Icon className="shrink-0 text-slate-500" size={16} />
-        <input className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400" autoComplete={autoComplete} maxLength={maxLength} minLength={minLength} placeholder={placeholder} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+        <input className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400" autoComplete={autoComplete} list={list} maxLength={maxLength} minLength={minLength} placeholder={placeholder} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      </span>
+    </label>
+  );
+}
+
+function AuthSelect({
+  icon: Icon,
+  label,
+  onChange,
+  required = false,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  value: string;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+      {label}
+      <span className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 transition focus-within:border-green-600 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
+        <Icon className="shrink-0 text-slate-500" size={16} />
+        <select className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none" required={required} value={value} onChange={(event) => onChange(event.target.value)}>
+          <option value="">Selecione</option>
+          {businessSegments.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
       </span>
     </label>
   );

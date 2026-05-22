@@ -26,6 +26,7 @@ import {
   CreditCard,
   Plus,
   QrCode,
+  Presentation,
   RotateCcw,
   Settings,
   Send,
@@ -40,9 +41,10 @@ import {
   X,
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
-import { proposalTemplates as readyProposalTemplates, type ProposalTemplate } from "@/lib/proposal-templates";
+import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
 
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "support" | "account";
+type SessionProfile = { id?: string; name: string; email: string; niche?: string | null; segment?: string | null; isAdmin?: boolean };
 type ProposalStatus = "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
 
 type Client = {
@@ -354,6 +356,10 @@ function canUseModule(view: ActiveView, plan: PlanCode) {
   return !requiredPlan || planAccessRank[plan] >= planAccessRank[requiredPlan];
 }
 
+function canUseProposalSlides(plan: PlanCode) {
+  return planAccessRank[plan] >= planAccessRank.premium;
+}
+
 function requiredPlanLabel(view: ActiveView) {
   const requiredPlan = moduleRequirements[view];
   return requiredPlan ? planLabels[requiredPlan] : "";
@@ -633,7 +639,7 @@ const marketingArtBriefs = [
 
 
 export default function Home() {
-  const [session, setSession] = useState<{ name: string; email: string; isAdmin?: boolean } | null>(null);
+  const [session, setSession] = useState<SessionProfile | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [dark, setDark] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -668,14 +674,14 @@ export default function Home() {
   );
   const currentTourStep = tourStepIndex === null ? null : availableTourSteps[tourStepIndex] || null;
   const allProposalTemplates = useMemo(
-    () => [...customProposalTemplates, ...readyProposalTemplates],
-    [customProposalTemplates],
+    () => [...customProposalTemplates, ...filterReadyProposalTemplates(session?.niche, session?.segment)],
+    [customProposalTemplates, session?.niche, session?.segment],
   );
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((response) => response.json())
-      .then((data: { user: { id: string; name: string; email: string; isAdmin?: boolean } | null }) => {
+      .then((data: { user: SessionProfile | null }) => {
         setSession(data.user);
         if (data.user) loadDashboardData();
       })
@@ -1166,6 +1172,7 @@ export default function Home() {
 
             {activeView === "proposals" ? (
               <ProposalsView
+                currentPlan={currentPlan}
                 notice={notice}
                 onNotice={setNotice}
                 onCopyLink={copyProposalLink}
@@ -1232,6 +1239,8 @@ export default function Home() {
             {activeView === "templates" ? (
               <TemplatesView
                 customTemplates={customProposalTemplates}
+                hasTemplateProfile={Boolean(session?.niche && session?.segment)}
+                onOpenAccount={() => setActiveView("account")}
                 onTemplateCreated={(template) => setCustomProposalTemplates((current) => [template, ...current])}
                 proposalTemplates={allProposalTemplates}
                 onUseTemplate={(template) => {
@@ -1909,6 +1918,7 @@ function DashboardView({
           {proposals.length ? (
             proposals.map((proposal) => (
               <ProposalCard
+                currentPlan={billing?.subscription.plan || "start"}
                 key={proposal.id}
                 proposal={proposal}
                 onRemove={() => onProposalRemove(proposal.id)}
@@ -1936,6 +1946,7 @@ function DashboardView({
 }
 
 function ProposalsView({
+  currentPlan,
   notice,
   onCopyLink,
   onConfirmPix,
@@ -1948,6 +1959,7 @@ function ProposalsView({
   onStatusChange,
   proposals,
 }: {
+  currentPlan: PlanCode;
   notice: string | null;
   onCopyLink: (slug?: string) => void;
   onConfirmPix: (id: string) => void;
@@ -2016,6 +2028,7 @@ function ProposalsView({
 
       {selectedProposal ? (
         <ProposalDetailPanel
+          currentPlan={currentPlan}
           proposal={selectedProposal}
           onClose={() => setSelectedProposalId(null)}
           onConfirmPix={() => onConfirmPix(selectedProposal.id)}
@@ -2064,6 +2077,7 @@ function ProposalsView({
         {proposals.length ? (
           visibleProposals.map((proposal) => (
             <ProposalCard
+              currentPlan={currentPlan}
               key={proposal.id}
               proposal={proposal}
               onRemove={() => onRemove(proposal.id)}
@@ -2713,11 +2727,15 @@ function TestimonialsView({
 
 function TemplatesView({
   customTemplates,
+  hasTemplateProfile,
+  onOpenAccount,
   onTemplateCreated,
   onUseTemplate,
   proposalTemplates,
 }: {
   customTemplates: ProposalTemplate[];
+  hasTemplateProfile: boolean;
+  onOpenAccount: () => void;
   onTemplateCreated: (template: ProposalTemplate) => void;
   onUseTemplate: (template: ProposalTemplate) => void;
   proposalTemplates: ProposalTemplate[];
@@ -2772,6 +2790,17 @@ function TemplatesView({
           Use um modelo como ponto de partida. Ele preenche serviço, valor, prazo, pagamento, itens inclusos e observações.
         </p>
       </div>
+
+      {!hasTemplateProfile ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-blue-700/20 bg-blue-50 p-4 text-blue-950 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-bold leading-6">
+            Informe nicho e segmento na sua conta para liberar os modelos prontos do seu perfil.
+          </p>
+          <button className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-700 px-4 font-black text-white" type="button" onClick={onOpenAccount}>
+            Abrir conta
+          </button>
+        </div>
+      ) : null}
 
       <form className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10" onSubmit={submitImportedTemplate}>
         <SectionHeading eyebrow="Importar template" title="Subir PDF, planilha ou print" />
@@ -3527,11 +3556,13 @@ function AccountView({
   onChange,
   session,
 }: {
-  onChange: (session: { name: string; email: string }) => void;
-  session: { name: string; email: string };
+  onChange: (session: SessionProfile) => void;
+  session: SessionProfile;
 }) {
   const [name, setName] = useState(session.name);
   const [email, setEmail] = useState(session.email);
+  const [niche, setNiche] = useState(session.niche || "");
+  const [segment, setSegment] = useState(session.segment || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -3544,8 +3575,8 @@ function AccountView({
     setMessage(null);
     setError(null);
 
-    if (!name.trim() || !email.trim()) {
-      setError("Informe nome e e-mail.");
+    if (!name.trim() || !email.trim() || !niche.trim() || !segment) {
+      setError("Informe nome, e-mail, nicho e segmento.");
       setSaving(false);
       return;
     }
@@ -3566,9 +3597,11 @@ function AccountView({
     }
 
     try {
-      const updated = await apiPut<{ name: string; email: string }>("/api/account", {
+      const updated = await apiPut<SessionProfile>("/api/account", {
         name,
         email,
+        niche,
+        segment,
         currentPassword,
         newPassword,
       });
@@ -3589,7 +3622,7 @@ function AccountView({
         <div className="grid gap-5 p-5 text-white md:grid-cols-[1fr_auto] md:items-end">
           <div>
             <p className="text-xs font-black uppercase text-green-300">Minha conta</p>
-            <h2 className="mt-2 text-2xl font-black leading-tight">Ajustes do perfil</h2>
+            <h2 className="mt-2 text-2xl font-black leading-tight">Perfil e acesso</h2>
             <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-slate-300">
               Mantenha seus dados atualizados para assinar propostas, receber respostas dos clientes e acessar o FechaPro com segurança.
             </p>
@@ -3612,8 +3645,8 @@ function AccountView({
             <UserCircle size={20} />
           </span>
           <div>
-            <SectionHeading eyebrow="Dados pessoais" title="Acesso da conta" />
-            <p className="mt-1 text-sm font-bold leading-6 text-slate-600">Nome e e-mail usados para entrar e identificar sua conta.</p>
+            <SectionHeading eyebrow="Perfil da conta" title="Dados de acesso e templates" />
+            <p className="mt-1 text-sm font-bold leading-6 text-slate-600">Nome e e-mail identificam a conta. Nicho e segmento definem os modelos prontos exibidos para voce.</p>
           </div>
         </div>
 
@@ -3623,6 +3656,14 @@ function AccountView({
         <div className="grid gap-4 md:grid-cols-2">
           <TextField label="Nome" autoComplete="name" maxLength={80} required value={name} onChange={setName} />
           <TextField label="E-mail" autoComplete="email" required type="email" value={email} onChange={setEmail} />
+          <SelectField label="Nicho" options={proposalTemplateNiches} placeholder="Ex: Contabilidade" required value={niche} onChange={setNiche} />
+          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+            Segmento
+            <select className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700" required value={segment} onChange={(event) => setSegment(event.target.value)}>
+              <option value="">Selecione</option>
+              {businessSegments.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
         </div>
 
         <div className="mt-2 grid gap-4 rounded-lg border border-black/10 bg-slate-50 p-4">
@@ -3653,6 +3694,7 @@ function AccountView({
           <div className="mt-4 grid gap-3">
             <AccountStatusItem label="Perfil identificado" detail={name || "Nome não informado"} done={Boolean(name.trim())} />
             <AccountStatusItem label="E-mail de acesso" detail={email || "E-mail não informado"} done={isValidEmail(email.trim())} />
+            <AccountStatusItem label="Modelos do perfil" detail={niche || "Nicho nao informado"} done={Boolean(niche.trim() && segment)} />
             <AccountStatusItem label="Senha protegida" detail="Use pelo menos 8 caracteres ao trocar a senha." done={!newPassword || newPassword.length >= 8} />
           </div>
         </div>
@@ -4221,13 +4263,13 @@ function AuthScreen() {
   const benefits = [
     {
       icon: Send,
-      title: "Venda com mais autoridade",
-      description: "Troque o orçamento solto por uma proposta que mostra valor, escopo e próximos passos.",
+      title: "Apresente sua empresa melhor",
+      description: "Troque o improviso por uma apresentação comercial com marca, escopo, prova e próximos passos.",
     },
     {
       icon: FolderKanban,
-      title: "Defenda seu preço",
-      description: "Apresente serviço, portfólio, prazo e condições antes do cliente comparar só pelo menor valor.",
+      title: "Venda valor antes de preço",
+      description: "Mostre serviço, portfólio, prazo e condições antes de o cliente comparar só pelo menor valor.",
     },
     {
       icon: CheckCircle2,
@@ -4241,7 +4283,7 @@ function AuthScreen() {
     { value: "R$ 1.500", label: "na oferta de lançamento" },
   ];
   const dealLeaks = [
-    "Você manda preço no WhatsApp e o cliente compara como se todo serviço fosse igual.",
+    "Você apresenta a empresa em mensagens, fotos e áudios espalhados quando o cliente precisa decidir.",
     "A conversa esfria porque escopo, prazo, pagamento e provas ficam espalhados.",
     "O cliente pede desconto porque não enxergou tudo que está incluso.",
     "Você precisa explicar de novo o que poderia estar claro numa página de proposta.",
@@ -4254,9 +4296,9 @@ function AuthScreen() {
     "Ajuda você a acompanhar visualizações e fazer follow-up manual no momento certo.",
   ];
   const steps = [
-    "Monte a proposta com cliente, serviço, investimento, prazo, validade e condições.",
-    "Adicione marca, portfólio, depoimentos, itens inclusos e uma forma clara de pagamento.",
-    "Envie o link no WhatsApp e acompanhe visualizações, aceite, recusa e cliques.",
+    "Configure marca, serviços e clientes para sua apresentação comercial sair organizada.",
+    "Monte a proposta com investimento, prazo, portfólio, depoimentos, condições e próximos passos.",
+    "Envie link ou PDF, acompanhe visualizações e faça follow-up com mais contexto.",
   ];
   const niches = ["Designer", "Fotógrafo", "Arquiteto", "Consultor", "Técnico de ar-condicionado", "Marceneiro", "Estética", "Eventos", "Reformas", "Serviços digitais"];
   const landingExamples = [
@@ -4300,34 +4342,43 @@ function AuthScreen() {
   const plans = [
     {
       code: "start",
-      name: "Inicial",
+      name: "Apresentação Essencial",
       price: "R$ 97",
       priceSuffix: "/mês ou R$ 897/ano",
-      cta: "Criar proposta profissional",
-      detail: "Para quem quer parar de mandar orçamento simples e começar a enviar link, PDF e aceite online.",
+      cta: "Começar com o Essencial",
+      detail: "Para quem quer sair da apresentação improvisada e enviar link, PDF e aceite online.",
       items: ["20 propostas por mês", "5 artes para divulgar por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
     {
       code: "pro",
-      name: "Pro",
+      name: "Apresentação Profissional",
       price: "R$ 197",
       priceSuffix: "/mês ou R$ 1.497/ano",
-      badge: "Mais escolhido",
-      cta: "Quero vender com Pro",
+      cta: "Profissionalizar minhas vendas",
       detail: "Para quem vende com frequência e quer propostas mais completas, visuais e fáceis de acompanhar.",
       items: ["120 propostas por mês", "Tudo do Inicial", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
     },
     {
       code: "premium_site",
-      name: "Premium — FechaPro pronto para vender",
+      name: "Estrutura Comercial Completa",
       price: "12x de R$ 125",
       priceSuffix: "Premium com Site por R$ 1.500/ano até 03/06",
       promoPrice: "De R$ 2.997",
-      badge: "Melhor escolha",
-      cta: "Quero o Premium pronto — oferta até 03/06",
-      detail: "Melhor escolha para quem quer presença profissional completa: proposta, site, implantação e materiais para vender melhor.",
+      badge: "Mais vendido",
+      cta: "Quero minha estrutura pronta — oferta até 03/06",
+      detail: "Ideal para sair do improviso e começar a vender com apresentação profissional ainda esta semana.",
       items: ["12 meses de FechaPro", "Mini site profissional", "Implantação e configuração inicial", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para copiar e adaptar", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
     },
+  ];
+  const commercialStructure = [
+    "Configuração inicial da marca",
+    "Primeiras propostas criadas",
+    "Cadastro dos principais serviços",
+    "Modelo de proposta por nicho",
+    "Kit de mensagens para envio e follow-up",
+    "Treinamento rápido e apoio inicial",
+    "Artes de divulgação conforme o plano",
+    "Site ou página nos planos completos",
   ];
   const practicalValue = [
     { icon: FileText, title: "Proposta que vende valor", text: "Mostre escopo, prazo, investimento e condições em uma apresentação profissional." },
@@ -4337,6 +4388,14 @@ function AuthScreen() {
     { icon: LayoutDashboard, title: "Premium pronto", text: "Receba mini site, configuração, propostas iniciais e orientação para começar sem ficar montando tudo sozinho." },
   ];
   const faqs = [
+    {
+      question: "Eu já faço orçamento em PDF, Word ou Canva. O que muda?",
+      answer: "O FechaPro não entrega só um arquivo bonito. Ele organiza sua apresentação comercial com marca, portfólio, link, PDF, aceite online, acompanhamento e materiais para você vender com mais contexto.",
+    },
+    {
+      question: "É só acesso ao sistema?",
+      answer: "Não. Os planos trazem modelos e recursos para começar; no Premium com Site, você recebe implantação, primeiras propostas, kit de mensagens, treinamento rápido, artes e presença profissional conforme o pacote.",
+    },
     {
       question: "Preciso configurar tudo sozinho?",
       answer: "Não. No Premium com Site, a equipe do FechaPro configura a estrutura inicial, organiza portfólio, cria as primeiras propostas e entrega o caminho para você sair usando.",
@@ -4408,7 +4467,7 @@ function AuthScreen() {
         operatingSystem: "Web",
         url: siteUrl,
         image: `${siteUrl}/landing/hero-proposta.png`,
-        description: "Software para transformar orçamentos simples em propostas comerciais online com portfólio, PDF, aceite do cliente e cobrança.",
+        description: "Estrutura comercial para prestadores apresentarem, enviarem e acompanharem propostas profissionais com marca, portfólio, PDF, aceite e apoio para começar.",
         offers: plans.map((plan) => ({
           "@type": "Offer",
           name: plan.name,
@@ -4541,28 +4600,28 @@ function AuthScreen() {
           <div className="grid flex-1 content-end gap-6 pb-6 pt-12 sm:gap-8 sm:pb-8 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="max-w-3xl">
               <p className="fp-landing-kicker inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
-                Para prestadores que vendem pelo WhatsApp
+                Estrutura comercial para prestadores de serviço
               </p>
               <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Pare de perder vendas mandando só preço no WhatsApp.
+                Transforme sua apresentação comercial em uma máquina de vender serviços.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                Envie propostas profissionais com link, PDF, aceite online e botão para fechar. Seu orçamento também precisa vender.
+                O FechaPro ajuda prestadores a saírem do improviso com propostas profissionais com marca, portfólio, PDF, link, aceite online, acompanhamento e apoio de implantação.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
                 <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano, menos que muitos serviços fechados com uma única proposta.</p>
                 <p className="mt-1 text-xs font-bold leading-5 text-white/70">Depois da oferta, o Premium volta para R$ 2.997.</p>
               </div>
               <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-white/80">
-                Feito para quem não quer depender de áudio, texto solto e desconto para convencer o cliente.
+                Feito para quem quer apresentar valor, transmitir confiança e conduzir o próximo passo sem depender de áudio, texto solto e desconto.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Quero ver como fica minha proposta
+                  Quero profissionalizar minhas propostas
                 </a>
                 <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#como-funciona">
-                  Ver como funciona na prática
+                  Ver exemplo na prática
                 </a>
               </div>
             </div>
@@ -4606,10 +4665,57 @@ function AuthScreen() {
               <div className="rounded-lg border border-white/15 bg-slate-950/60 p-4">
                 <p className="text-xs font-black uppercase text-green-200">Para o cliente</p>
                 <p className="mt-2 text-sm font-bold leading-6 text-white/80">
-                  Em vez de explicar tudo de novo, você envia uma página com escopo, valor, prazo, PDF e botão de aceite.
+                  Em vez de explicar tudo de novo, você envia uma apresentação com marca, escopo, provas, valor, PDF e botão de aceite.
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="fp-landing-band border-b border-black/10 bg-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
+          <div>
+            <p className="text-xs font-black uppercase text-blue-700">Mais que orçamento</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">O problema não é só o orçamento. É toda a apresentação comercial.</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+              Quando o cliente pede preço e recebe uma mensagem simples, ele compara apenas valor. Quando recebe uma proposta organizada com marca, fotos, detalhes, condições, PDF e aceite, a percepção muda.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <article className="rounded-lg border border-rose-200 bg-rose-50 p-5">
+              <p className="text-xs font-black uppercase text-rose-700">Antes</p>
+              <h3 className="mt-3 text-xl font-black text-rose-950">Venda no improviso</h3>
+              <p className="mt-2 text-sm font-bold leading-6 text-rose-900/80">WhatsApp cheio de texto, fotos soltas, preço sem contexto e follow-up no escuro.</p>
+            </article>
+            <article className="rounded-lg border border-green-200 bg-green-50 p-5">
+              <p className="text-xs font-black uppercase text-green-700">Depois</p>
+              <h3 className="mt-3 text-xl font-black text-green-950">Venda com estrutura</h3>
+              <p className="mt-2 text-sm font-bold leading-6 text-green-950/80">Proposta com marca, portfólio, condições, PDF, link, aceite online e acompanhamento.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="fp-landing-dark bg-slate-950 text-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
+          <div>
+            <p className="text-xs font-black uppercase text-green-300">O que você recebe</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Você não recebe só acesso ao sistema.</h2>
+            <p className="mt-4 text-sm leading-6 text-white/72 sm:text-base sm:leading-7">
+              O FechaPro combina ferramenta, implantação e materiais para sua empresa começar com uma estrutura comercial mais pronta.
+            </p>
+            <a className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
+              Ver estruturas e planos
+            </a>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {commercialStructure.map((item) => (
+              <article className="fp-landing-dark-card flex gap-3 rounded-lg border border-white/15 bg-white/8 p-4 text-sm font-black leading-6" key={item}>
+                <CheckCircle2 className="mt-0.5 shrink-0 text-green-300" size={18} />
+                {item}
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -4619,9 +4725,9 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Simulador</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quanto você pode estar perdendo por mês com orçamento simples?</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quanto uma apresentação comercial fraca pode deixar na mesa por mês?</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Se você perde apenas 2 orçamentos por mês por parecer simples demais, o FechaPro já pode estar se pagando.
+              Se apenas 2 oportunidades por mês voltarem para a negociação porque seu valor ficou mais claro, o FechaPro já pode estar se pagando.
             </p>
           </div>
 
@@ -4661,7 +4767,7 @@ function AuthScreen() {
                 <p className="text-xs font-black uppercase text-green-300">Potencial estimado</p>
                 <strong className="mt-2 block text-3xl font-black sm:text-4xl">{money.format(estimatedMonthlyUpside)}</strong>
                 <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-                  Se {clampedRescuedDeals} orçamento(s) deixarem de virar comparação de preço e voltarem para negociação, esse é o valor que pode entrar de novo no jogo.
+                  Se {clampedRescuedDeals} oportunidade(s) deixarem de virar comparação de preço e voltarem para negociação, esse é o valor que pode entrar de novo no jogo.
                 </p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
@@ -4688,7 +4794,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-rose-700">O vazamento de vendas</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Se a proposta parece simples demais, o cliente negocia como se seu serviço fosse simples.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Se sua apresentação parece simples demais, o cliente negocia como se seu serviço fosse simples.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O WhatsApp aproxima, mas não sustenta sozinho uma venda de valor. O FechaPro coloca sua entrega em um formato que o cliente consegue revisar, comparar, aprovar e guardar.
             </p>
@@ -4734,7 +4840,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Como funciona</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Em poucos minutos, seu orçamento vira uma página de venda.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Em poucos minutos, sua proposta vira uma apresentação pronta para vender.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O processo é direto: informe cliente, serviço, valor e prazo; adicione provas do seu trabalho; envie o link pelo WhatsApp.
             </p>
@@ -4763,7 +4869,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Prova visual</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Antes era só “Fica R$ 850”. Agora é uma proposta que ajuda a vender.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Antes o cliente recebia só preço. Agora ele entende por que avançar.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O cliente recebe um link organizado, entende o que está incluso, vê provas do seu trabalho, baixa o PDF se quiser e aceita online quando estiver pronto para fechar.
             </p>
@@ -4771,11 +4877,11 @@ function AuthScreen() {
               <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
                 <p className="text-xs font-black uppercase text-rose-700">Antes</p>
                 <p className="mt-2 text-2xl font-black text-rose-950">“Fica R$ 850.”</p>
-                <p className="mt-2 text-sm font-bold leading-6 text-rose-900/80">Sem contexto, sem prova, sem escopo claro e fácil de comparar pelo menor preço.</p>
+                <p className="mt-2 text-sm font-bold leading-6 text-rose-900/80">Seu cliente recebe só preço e compara com qualquer concorrente.</p>
               </div>
               <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                 <p className="text-xs font-black uppercase text-green-700">Depois</p>
-                <p className="mt-2 text-sm font-black leading-6 text-green-950">Proposta com logo, fotos, itens inclusos, prazo, valor, PDF e botão de aceite.</p>
+                <p className="mt-2 text-sm font-black leading-6 text-green-950">Seu cliente recebe uma apresentação completa, vê fotos, condições, prazo e tem um botão claro para avançar.</p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-5 font-black text-white" href="#planos">
                 Criar minha proposta profissional
@@ -4931,7 +5037,7 @@ function AuthScreen() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase text-green-300">Planos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha como seu orçamento vai começar a vender.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha sua estrutura comercial FechaPro.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
               Do primeiro link profissional à presença completa com site, implantação e materiais para vender melhor.
             </p>
@@ -4951,9 +5057,9 @@ function AuthScreen() {
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {plans.map((plan) => (
               <article className={`fp-landing-plan motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
-                plan.name === "Premium — FechaPro pronto para vender"
+                plan.code === "premium_site"
                   ? "motion-pulse-soft border-green-300 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.03]"
-                  : plan.name === "Inicial"
+                  : plan.code === "start"
                     ? "border-green-400 bg-white text-slate-950"
                     : "border-blue-300 bg-white text-slate-950"
               }`} key={plan.name}>
@@ -4962,7 +5068,7 @@ function AuthScreen() {
                     {plan.badge}
                   </span>
                 ) : null}
-                <p className={`text-sm font-black uppercase ${plan.name === "Premium — FechaPro pronto para vender" ? "text-green-700" : "text-blue-700"}`}>{plan.name}</p>
+                <p className={`text-sm font-black uppercase ${plan.code === "premium_site" ? "text-green-700" : "text-blue-700"}`}>{plan.name}</p>
                 <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
                 <span className="mt-1 block text-slate-600">{plan.priceSuffix}</span>
                 {plan.promoPrice ? <strong className="mt-3 block text-xl text-slate-950">{plan.promoPrice}</strong> : null}
@@ -4977,7 +5083,7 @@ function AuthScreen() {
                 </ul>
                 <a
                   className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.name === "Premium — FechaPro pronto para vender" ? "bg-slate-950 text-white" : "bg-green-600 text-white"
+                    plan.code === "premium_site" ? "bg-slate-950 text-white" : "bg-green-600 text-white"
                   }`}
                   href={`/checkout/cadastro/${plan.code}`}
                 >
@@ -5033,7 +5139,7 @@ function AuthScreen() {
       <section className="fp-landing-cta bg-green-600 text-white">
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-green-100">Comece pelo próximo orçamento</p>
+            <p className="text-xs font-black uppercase text-green-100">Comece pela próxima apresentação</p>
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Seu próximo cliente pode receber uma proposta que parece pronta para ser aprovada.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="#planos">
@@ -5113,51 +5219,11 @@ function ProductUpdatesModal({
   onOpenArts: () => void;
   onOpenBrand: () => void;
 }) {
-  const updates = [
-    {
-      icon: FileText,
-      title: "Propostas mais completas",
-      description: "Link público, aceite do cliente, PDF, status e pagamento ficam juntos em um fluxo mais profissional.",
-      tag: "Disponível",
-    },
-    {
-      icon: Palette,
-      title: "Artes de divulgação",
-      description: "Crie peças para divulgar serviços, promoções, cardápios, agenda aberta e campanhas rápidas.",
-      tag: "Novo",
-    },
-    {
-      icon: CreditCard,
-      title: "Planos, créditos e cobrança",
-      description: "Assinaturas, pacotes extras de artes e limites por plano já aparecem conectados ao painel.",
-      tag: "Ativo",
-    },
+  const nextFeatureGroups = [
+    { label: "Em preparo", features: upcomingFeatures.slice(0, 2) },
+    { label: "Na fila", features: upcomingFeatures.slice(2, 5) },
+    { label: "Em estudo", features: upcomingFeatures.slice(5) },
   ];
-  const nextFeatures = [
-    "Modelos de proposta por nicho com textos mais prontos para vender.",
-    "Acompanhamento mais detalhado depois que o cliente abre, aceita ou paga a proposta.",
-    "Mais opções para transformar propostas aceitas em próximos passos de atendimento.",
-    "Melhorias no checkout para deixar aceite e pagamento ainda mais diretos.",
-  ];
-
-  updates.splice(0, updates.length, ...currentUpdates);
-  nextFeatures.splice(0, nextFeatures.length, ...upcomingFeatures);
-
-  const [ctaVariant, setCtaVariant] = useState<"A" | "B">("A");
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const key = "fechapro_updates_cta_variant";
-    const stored = localStorage.getItem(key);
-    if (stored === "A" || stored === "B") {
-      setCtaVariant(stored as "A" | "B");
-      return;
-    }
-    const newV = Math.random() < 0.5 ? "A" : "B";
-    localStorage.setItem(key, newV);
-    setCtaVariant(newV);
-  }, []);
-
-  const primaryCta = ctaVariant === "A" ? "Enviar proposta por WhatsApp" : "Fechar a venda agora";
 
   return (
     <div
@@ -5171,7 +5237,7 @@ function ProductUpdatesModal({
           <div className="min-w-0">
             <p className="text-xs font-black uppercase text-green-700">Novidades do FechaPro</p>
             <h2 id="updates-modal-title" className="mt-1 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              Funções novas para fechar mais rápido
+              O que chegou e o que vem depois
             </h2>
           </div>
           <button
@@ -5190,7 +5256,7 @@ function ProductUpdatesModal({
               <div>
                 <p className="text-xs font-black uppercase text-green-200">Agora no painel</p>
                 <p className="mt-2 text-lg font-black leading-snug">
-                  Seu cliente recebe uma proposta mais profissional, você acompanha melhor o interesse e ainda ganha velocidade para divulgar seus serviços.
+                  Propostas mais flexíveis, recebimento por proposta e artes de divulgação já estão prontos para o seu fluxo comercial.
                 </p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
@@ -5201,7 +5267,8 @@ function ProductUpdatesModal({
           </section>
 
           <section className="grid gap-3">
-            {updates.map((item) => {
+            <p className="text-xs font-black uppercase text-green-700">Recursos disponíveis</p>
+            {currentUpdates.map((item) => {
               const Icon = item.icon;
               return (
                 <article className="grid grid-cols-[auto_1fr] gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:p-4" key={item.title}>
@@ -5223,43 +5290,24 @@ function ProductUpdatesModal({
           </section>
 
           <section className="rounded-lg border border-black/10 p-4">
-            <p className="text-xs font-black uppercase text-blue-700">Próximas features</p>
+            <p className="text-xs font-black uppercase text-blue-700">Próximos recursos</p>
+            <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
+              Estes itens estão planejados e podem mudar conforme testes e prioridades do produto.
+            </p>
             <div className="mt-3 grid gap-4">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Agora</p>
-                <div className="mt-2 grid gap-2">
-                  {nextFeatures.slice(0, 2).map((feature) => (
-                    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
-                      <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
+              {nextFeatureGroups.map((group) => (
+                <div key={group.label}>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">{group.label}</p>
+                  <div className="mt-2 grid gap-2">
+                    {group.features.map((feature) => (
+                      <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
+                        <span className="mt-2 size-2 shrink-0 rounded-full bg-blue-500" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Em seguida</p>
-                <div className="mt-2 grid gap-2">
-                  {nextFeatures.slice(2, 5).map((feature) => (
-                    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
-                      <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Depois</p>
-                <div className="mt-2 grid gap-2">
-                  {nextFeatures.slice(5).map((feature) => (
-                    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm font-bold leading-6 text-slate-700" key={feature}>
-                      <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </section>
 
@@ -5324,7 +5372,7 @@ function GuidedTour({
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {step.checklist.map((item) => (
             <div className="grid grid-cols-[auto_1fr] gap-2 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold leading-6 text-slate-700" key={item}>
               <CheckCircle2 className="mt-0.5 shrink-0 text-green-600" size={16} />
@@ -5560,6 +5608,7 @@ function ColorTile({ index, label }: { index: number; label: string }) {
 }
 
 function ProposalDetailPanel({
+  currentPlan,
   onClose,
   onConfirmPix,
   onCopyLink,
@@ -5570,6 +5619,7 @@ function ProposalDetailPanel({
   onStatusChange,
   proposal,
 }: {
+  currentPlan: PlanCode;
   onClose: () => void;
   onConfirmPix: () => void;
   onCopyLink: () => void;
@@ -5687,7 +5737,7 @@ function ProposalDetailPanel({
           </div>
         ) : null}
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {proposal.publicSlug ? (
             <>
               <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" href={`/p/${proposal.publicSlug}`} target="_blank">
@@ -5698,6 +5748,17 @@ function ProposalDetailPanel({
                 <FileDown size={16} />
                 Baixar PDF
               </a>
+              {canUseProposalSlides(currentPlan) ? (
+                <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" href={`/p/${proposal.publicSlug}/slides`} target="_blank">
+                  <Presentation size={16} />
+                  Apresentacao
+                </a>
+              ) : (
+                <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 bg-slate-50 px-4 font-black text-slate-500">
+                  <LockKeyhole size={16} />
+                  Slides Premium
+                </span>
+              )}
               <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onCopyLink}>
                 <Copy size={16} />
                 Copiar link
@@ -5783,6 +5844,7 @@ function DetailLine({ label, value }: { label: string; value: string }) {
 }
 
 function ProposalCard({
+  currentPlan,
   onCopyLink,
   onDuplicate,
   onEdit,
@@ -5792,6 +5854,7 @@ function ProposalCard({
   onStatusChange,
   proposal,
 }: {
+  currentPlan?: PlanCode;
   onCopyLink: () => void;
   onDuplicate: () => void;
   onEdit?: () => void;
@@ -5831,7 +5894,7 @@ function ProposalCard({
         <span className="text-sm font-bold text-slate-500">{proposal.deadline}</span>
       </div>
       {proposal.publicSlug ? (
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <a
             className="rounded-lg bg-slate-100 px-3 py-2 text-center text-sm font-black text-green-700"
             href={`/p/${proposal.publicSlug}`}
@@ -5847,6 +5910,16 @@ function ProposalCard({
             <FileDown size={15} />
             PDF
           </a>
+          {currentPlan && canUseProposalSlides(currentPlan) ? (
+            <a
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-black text-white"
+              href={`/p/${proposal.publicSlug}/slides`}
+              target="_blank"
+            >
+              <Presentation size={15} />
+              Slides
+            </a>
+          ) : null}
           <button
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
             type="button"

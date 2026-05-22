@@ -25,7 +25,7 @@ const money = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 0,
 });
 
-export async function GET(_request: Request, context: { params: Promise<{ slug: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
@@ -48,6 +48,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
   ]);
 
   const brand = proposal.user.brandProfile;
+  const logoUrl = brand?.logoUrl || demoLogoUrl(proposal.publicSlug);
   const pdf = await createProposalPdf({
     clientName: proposal.clientName,
     serviceName: proposal.serviceName,
@@ -62,6 +63,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
     notes: proposal.notes || "",
     ownerName: proposal.user.name,
     publicUrl: `${process.env.APP_URL || "http://localhost:3000"}/p/${proposal.publicSlug}`,
+    assetOrigin: new URL(request.url).origin,
     brandName: brand?.businessName || proposal.user.name,
     brandColor: normalizeColor(brand?.primaryColor || "#22C55E"),
     brandSecondaryColor: normalizeColor(brand?.secondaryColor || "#0F172A", "#0F172A"),
@@ -80,7 +82,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
     showTestimonials: brand?.showTestimonials !== false,
     showServices: brand?.showServices !== false,
     showFaq: brand?.showFaq !== false,
-    logoUrl: brand?.logoUrl || "",
+    logoUrl,
     status: proposal.status,
     acceptedBy: proposal.acceptedBy || "",
     acceptedEmail: proposal.acceptedEmail || "",
@@ -173,7 +175,7 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
     ellipsis: true,
   });
 
-  const logo = await readImageFromUrl(data.logoUrl);
+  const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
   if (logo) {
     const hasAlpha = await bufferHasAlpha(logo);
     if (!hasAlpha) {
@@ -232,7 +234,7 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
     doc.roundedRect(x + 2, imageY + 3, imageW, imageH, 8).fill("#CBD5E1");
     doc.roundedRect(x, imageY, imageW, imageH, 8).fill("#F1F5F9");
     const item = images[index];
-    const image = await readImageFromUrl(item?.imageUrl || "");
+    const image = await readImageFromUrl(item?.imageUrl || "", data.assetOrigin);
     if (image) {
       drawPdfImage(doc, image, x, imageY, {
         fit: [imageW, imageH],
@@ -363,7 +365,7 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
     for (let y = 0; y < 402; y += 34) doc.rect(0, y, PAGE.width, 0.35).fill("#334155");
   }
 
-  const logo = await readImageFromUrl(data.logoUrl);
+  const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
   if (logo) {
     const hasAlpha = await bufferHasAlpha(logo);
     if (!hasAlpha) {
@@ -420,7 +422,7 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
 
   doc.roundedRect(coverImageX + 4, coverImageY + 5, coverImageWidth, coverImageHeight, 12).fill("#020617");
   doc.roundedRect(coverImageX, coverImageY, coverImageWidth, coverImageHeight, 12).fill("#FFFFFF");
-  const coverImage = await readImageFromUrl(data.portfolio[0]?.imageUrl || "");
+  const coverImage = await readImageFromUrl(data.portfolio[0]?.imageUrl || "", data.assetOrigin);
   if (coverImage) {
     drawPdfImage(doc, coverImage, coverImageX + 9, coverImageY + 9, {
       fit: [coverImageWidth - 18, coverImageHeight - 18],
@@ -495,7 +497,7 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     for (let y = 0; y < 292; y += 34) doc.rect(0, y, PAGE.width, 0.35).fill("#334155");
   }
 
-  const logo = await readImageFromUrl(data.logoUrl);
+  const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
   if (logo) {
     const logoX = MARGIN;
     const logoY = 30;
@@ -1418,7 +1420,7 @@ async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData, des
     const y = doc.y;
 
     doc.rect(x, y + 112, cardWidth, 1).fill(LINE);
-    const image = await readImageFromUrl(item.imageUrl || "");
+    const image = await readImageFromUrl(item.imageUrl || "", data.assetOrigin);
     if (image) {
       drawPdfImage(doc, image, x, y, {
         fit: [cardWidth, 102],
@@ -1643,7 +1645,7 @@ function sectionBlockHeight(panelHeight: number) {
   return 58 + panelHeight;
 }
 
-async function readImageFromUrl(url: string) {
+async function readImageFromUrl(url: string, assetOrigin: string) {
   if (!url) return null;
 
   let image: Buffer | null = null;
@@ -1653,16 +1655,12 @@ async function readImageFromUrl(url: string) {
   if (uploadFilename) {
     image = await readLocalUploadFile(uploadFilename);
     contentType = imageContentTypeFromFilename(uploadFilename);
-  } else if (url.startsWith("http://") || url.startsWith("https://")) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) return null;
-      contentType = response.headers.get("content-type") || "";
-      if (!contentType.startsWith("image/")) return null;
-      image = Buffer.from(await response.arrayBuffer());
-    } catch {
-      return null;
+    if (!image) {
+      const uploadUrl = new URL(`/api/uploads/${uploadFilename}`, assetOrigin).toString();
+      ({ image, contentType } = await fetchImage(uploadUrl));
     }
+  } else if (url.startsWith("http://") || url.startsWith("https://")) {
+    ({ image, contentType } = await fetchImage(url));
   } else if (url.startsWith("/")) {
     // Serve static files from the public/ directory (e.g. /brand/logo.png)
     try {
@@ -1678,6 +1676,17 @@ async function readImageFromUrl(url: string) {
   }
 
   return image ? normalizePdfImage(image, contentType) : null;
+}
+
+async function fetchImage(url: string) {
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    const contentType = response.headers.get("content-type") || "";
+    if (!response.ok || !contentType.startsWith("image/")) return { image: null, contentType: "" };
+    return { image: Buffer.from(await response.arrayBuffer()), contentType };
+  } catch {
+    return { image: null, contentType: "" };
+  }
 }
 
 function localUploadFilename(url: string) {
@@ -1734,6 +1743,10 @@ function imageContentTypeFromFilename(filename: string) {
   if (ext === ".webp") return "image/webp";
   if (ext === ".avif") return "image/avif";
   return "image/*";
+}
+
+function demoLogoUrl(publicSlug: string) {
+  return publicSlug.startsWith("demo-") ? "/brand/logofechapro.png" : "";
 }
 
 function normalizeColor(color: string, fallback = "#22C55E") {
@@ -1827,6 +1840,7 @@ type ProposalPdfData = {
   notes: string;
   ownerName: string;
   publicUrl: string;
+  assetOrigin: string;
   brandName: string;
   brandColor: string;
   brandSecondaryColor: string;

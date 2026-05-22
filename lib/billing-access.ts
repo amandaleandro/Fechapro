@@ -24,3 +24,8 @@ export function blockedSubscriptionMessage(status: string) {
 export function planLimits(plan: PlanCode) {
   return plans[plan] || plans.start;
 }
+
+export function canUseProposalPresentation(subscription: SubscriptionAccessInput | null | undefined) {
+  if (!subscription || !canUsePaidFeatures(subscription)) return false;
+  return subscription.plan === "premium" || subscription.plan === "premium_site";
+}

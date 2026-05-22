@@ -301,9 +301,11 @@ Para recusar, ele pode informar o motivo e clicar em **Recusar proposta**.
 Ao criar a proposta, escolha como deseja receber:
 
 - **Mercado Pago:** o cliente pode seguir para PIX, cartão ou boleto, conforme disponibilidade do Mercado Pago. Quando a confirmação chega pelo webhook, a proposta registra o pagamento.
-- **PIX direto:** o cliente vê um QR Code e o código copia e cola com a chave PIX cadastrada em **Marca**. Nesse modo, combine o envio do comprovante com o cliente, pois a confirmação não é automática.
+- **PIX direto:** o cliente vê um QR Code e o código copia e cola com a chave PIX cadastrada em **Marca**. Nesse modo, combine o envio do comprovante com o cliente. Depois de conferir o recebimento, abra os detalhes da proposta e use **Confirmar recebimento do PIX** para registrar o pagamento e notificar o cliente por e-mail quando houver e-mail informado.
 
 Se escolher PIX direto sem chave cadastrada, o sistema pede que você volte em **Marca** e informe a chave antes de salvar.
+
+O PIX direto não é confirmado automaticamente por integração bancária. A confirmação no painel deve ser feita somente depois que você verificar o valor recebido.
 
 ## 17. Acompanhar resultados
 
@@ -425,7 +427,7 @@ Não. Ele aceita pela página pública da proposta.
 Sim. A proposta pode ser aberta online e baixada em PDF.
 
 **Posso receber por PIX direto?**  
-Sim. Cadastre a chave PIX em **Marca** e escolha PIX direto ao criar a proposta.
+Sim. Cadastre a chave PIX em **Marca** e escolha PIX direto ao criar a proposta. Depois de conferir o pagamento, registre a confirmação nos detalhes da proposta.
 
 **Posso receber pelo Mercado Pago?**  
 Sim. Quando a proposta usa Mercado Pago, o cliente segue para o checkout e a confirmação pode ser registrada automaticamente pelo webhook.
@@ -439,31 +441,30 @@ O status passa a indicar aceite, e a linha do tempo mostra os dados registrados.
 **As artes de divulgação são ilimitadas?**  
 Não. Elas seguem o limite do plano ou os créditos extras comprados.
 
-## 24. Novidades e futuras implementações
+## 24. Novidades e próximos recursos
 
-A tela de novidades mostra melhorias recentes e recursos planejados para próximas versões. Ela ajuda você a saber o que já está disponível e o que ainda está em desenvolvimento.
+A modal **Novidades do FechaPro** aparece no painel para apresentar melhorias recentes e próximos recursos. Você também pode abri-la pelo botão de megafone no topo do painel. Ela separa o que já está disponível do que ainda está planejado.
 
 Novidades recentes:
 
 - **Proposta e PDF por segmento:** escolha tipo de documento e segmento visual para deixar link e PDF mais alinhados ao serviço.
 - **Edição de proposta salva:** ajuste dados, escopo, documento, segmento e forma de recebimento sem recriar a proposta.
 - **Templates mais completos e vários serviços:** use modelos por nicho ou marque serviços cadastrados para somar valores e itens em uma única proposta.
-- **PIX direto na proposta:** opção para mostrar QR Code e código copia e cola usando a chave PIX cadastrada em **Marca**.
-- **Pagamento por escolha:** em cada proposta, você pode escolher Mercado Pago ou PIX direto.
+- **Recebimento por proposta:** em cada proposta, escolha Mercado Pago ou PIX direto com QR Code e código copia e cola para a chave cadastrada em **Marca**.
+- **Confirmação de PIX no painel:** depois de verificar o recebimento do PIX direto, registre o pagamento nos detalhes da proposta.
 - **Artes de divulgação:** solicitação com briefing, aprovação, legenda, mensagem para WhatsApp e download da arte final.
 
-Futuras implementações previstas:
+Próximos recursos exibidos na modal:
 
-- confirmação automática para pagamentos PIX diretos, quando houver integração bancária disponível;
-- linha do tempo mais detalhada com abertura, aceite, recusa, pagamento, cliques no WhatsApp e histórico de follow-up;
-- editor de proposta com blocos extras para bônus, garantias, comparativo de planos e próximos passos;
-- envio de proposta por e-mail com mensagem pronta e registro do envio no histórico comercial;
-- agenda de follow-up para lembrar quando chamar clientes que visualizaram e ainda não responderam;
-- mais variações de documentos e layouts para nichos específicos;
-- relatórios por período com taxa de aceite, valor aprovado, valor em aberto e desempenho por serviço;
-- área de próximos passos depois do aceite, com checklist de início do atendimento e arquivos solicitados ao cliente.
+- fechar pelo WhatsApp com ações em um clique;
+- reengajamento automático para quem abriu a proposta e não respondeu;
+- timeline única com abertura, aceite, pagamento e conversa;
+- editor rápido com bônus, garantias e comparação de planos;
+- relatórios de conversão e receita por serviço;
+- portal do cliente com status, arquivos e checklist;
+- histórico de e-mails enviados e novos controles de entrega.
 
-Essas implementações podem mudar de ordem ou formato conforme testes, integrações disponíveis e necessidades dos usuários.
+Esses recursos podem mudar de ordem, escopo ou formato conforme testes, integrações disponíveis e necessidades dos usuários.
 
 ## 25. Resumo do fluxo recomendado
 
