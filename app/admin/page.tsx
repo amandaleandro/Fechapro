@@ -274,8 +274,8 @@ export default function AdminPage() {
     try {
       const response = await fetch(`/api/admin/seed-demo-proposals${replace ? "?replace=1" : ""}`, { method: "POST" });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível criar as propostas demo."));
-      const result = (await response.json()) as { created: number };
-      setNotice(`${result.created} propostas demo criadas no perfil do admin.`);
+      const result = (await response.json()) as { created: number; photos?: number };
+      setNotice(`${result.created} propostas demo e ${result.photos || 0} fotos de nicho criadas no perfil do admin.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível criar as propostas demo.");
     } finally {
@@ -290,8 +290,8 @@ export default function AdminPage() {
     try {
       const response = await fetch("/api/admin/seed-demo-proposals", { method: "DELETE" });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível remover as propostas demo."));
-      const result = (await response.json()) as { deleted: number };
-      setNotice(`${result.deleted} propostas demo removidas.`);
+      const result = (await response.json()) as { deleted: number; photosDeleted?: number };
+      setNotice(`${result.deleted} propostas demo e ${result.photosDeleted || 0} fotos de nicho removidas.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível remover as propostas demo.");
     } finally {
@@ -537,7 +537,7 @@ export default function AdminPage() {
             <p className="text-xs font-black uppercase text-purple-700">Propostas demonstração</p>
             <h2 className="text-2xl font-black">Demo por nicho</h2>
             <p className="mt-1 text-sm font-bold text-slate-600">
-              Cria 20 propostas de demonstração no perfil do admin, cobrindo nichos variados com status diferentes (enviadas, visualizadas, aceitas, recusadas). Use para apresentar a plataforma para novos clientes.
+              Cria propostas reais de demonstração no perfil do admin, com clientes fictícios, fotos de portfólio por nicho, PDF e link público para copiar e enviar como exemplo.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

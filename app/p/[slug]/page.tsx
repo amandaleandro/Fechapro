@@ -60,9 +60,10 @@ export default async function PublicProposalPage({
     });
   }
 
+  const demoCategories = demoPortfolioCategories(proposal.publicSlug);
   const [portfolio, testimonials, services] = await Promise.all([
     prisma.portfolioAsset.findMany({
-      where: { userId: proposal.userId },
+      where: { userId: proposal.userId, ...(demoCategories.length ? { category: { in: demoCategories } } : {}) },
       orderBy: { createdAt: "desc" },
       take: 3,
     }),
@@ -530,6 +531,18 @@ export default async function PublicProposalPage({
   );
 }
 
+function demoPortfolioCategories(slug: string) {
+  if (!slug.startsWith("demo-")) return [];
+  const withoutPrefix = slug.slice("demo-".length);
+  const match = withoutPrefix.match(/^(.+)-[A-Za-z0-9_-]{8}$/);
+  if (!match?.[1]) return [];
+  const niche = match[1];
+  const parts = niche.split("-");
+  return Array.from(
+    new Set(parts.map((_, index) => `Demo:${parts.slice(0, parts.length - index).join("-")}`)),
+  );
+}
+
 function PreviewBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="fp-proposal-metric rounded-lg border border-black/10 p-4">
@@ -694,7 +707,7 @@ function getPublicSegmentStyle(
       headerBackground: `linear-gradient(135deg, ${secondary}, #1E293B 58%, ${primary})`,
     };
   }
-  if (segment === "events" || hasAny(text, ["evento", "fotografia", "cerimonial", "buffet", "decoracao", "festa", "casamento", "som", "sonorizacao", "iluminacao", "audiovisual", "dj", "microfone"])) {
+  if (segment === "events" || hasAny(text, ["evento", "fotografia", "fotografic", "fotografo", "cerimonial", "buffet", "decoracao", "festa", "casamento", "som", "sonorizacao", "iluminacao", "audiovisual", "dj", "microfone"])) {
     return {
       ...base,
       pageClass: "bg-amber-50",

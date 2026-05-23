@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 export function uploadDir() {
   return process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
@@ -52,6 +52,33 @@ export async function readLocalFile(filename: string): Promise<Buffer | null> {
   try {
     const safeFilename = path.basename(filename);
     return await readFile(path.join(uploadDir(), safeFilename));
+  } catch {
+    return null;
+  }
+}
+
+export async function readUploadedFile(filename: string): Promise<Buffer | null> {
+  const safeFilename = path.basename(filename);
+
+  try {
+    return await readFile(path.join(uploadDir(), safeFilename));
+  } catch {
+    // fall through to S3
+  }
+
+  if (!isS3Enabled()) return null;
+
+  try {
+    const client = s3Client()!;
+    const response = await client.send(
+      new GetObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: safeFilename })
+    );
+    if (!response.Body) return null;
+    const chunks: Buffer[] = [];
+    for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+      chunks.push(Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
   } catch {
     return null;
   }

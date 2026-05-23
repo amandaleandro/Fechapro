@@ -31,6 +31,166 @@ type DemoProposal = {
   declinedAt?: Date;
 };
 
+type DemoPortfolioItem = {
+  nicheLabel: string;
+  title: string;
+  category: string;
+  imageUrl: string;
+};
+
+const demoPortfolioItems: DemoPortfolioItem[] = [
+  {
+    nicheLabel: "social-media",
+    title: "[Demo] Calendario de conteudo para Instagram",
+    category: "Demo:social-media",
+    imageUrl: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "social-media",
+    title: "[Demo] Criativos de campanha digital",
+    category: "Demo:social-media",
+    imageUrl: "https://images.unsplash.com/photo-1557838923-2985c318be48?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "design",
+    title: "[Demo] Sistema de identidade visual aplicado",
+    category: "Demo:design",
+    imageUrl: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "fotografia",
+    title: "[Demo] Ensaio profissional em estudio",
+    category: "Demo:fotografia",
+    imageUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "tecnologia",
+    title: "[Demo] Site responsivo publicado",
+    category: "Demo:tecnologia",
+    imageUrl: "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "marketing-digital",
+    title: "[Demo] Painel de performance de anuncios",
+    category: "Demo:marketing-digital",
+    imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "arquitetura",
+    title: "[Demo] Projeto de interiores em ambiente residencial",
+    category: "Demo:arquitetura",
+    imageUrl: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "advocacia",
+    title: "[Demo] Atendimento juridico consultivo",
+    category: "Demo:advocacia",
+    imageUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "contabilidade",
+    title: "[Demo] Organizacao fiscal e empresarial",
+    category: "Demo:contabilidade",
+    imageUrl: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "psicologia",
+    title: "[Demo] Ambiente acolhedor de atendimento",
+    category: "Demo:psicologia",
+    imageUrl: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "beleza",
+    title: "[Demo] Resultado de beleza e cuidado pessoal",
+    category: "Demo:beleza",
+    imageUrl: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "casa-reforma",
+    title: "[Demo] Reforma residencial finalizada",
+    category: "Demo:casa-reforma",
+    imageUrl: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "saude-fitness",
+    title: "[Demo] Treino personalizado acompanhado",
+    category: "Demo:saude-fitness",
+    imageUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "pet",
+    title: "[Demo] Cuidado pet profissional",
+    category: "Demo:pet",
+    imageUrl: "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "eventos",
+    title: "[Demo] Evento organizado com cerimonial",
+    category: "Demo:eventos",
+    imageUrl: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "gastronomia",
+    title: "[Demo] Marmitas semanais preparadas",
+    category: "Demo:gastronomia",
+    imageUrl: "https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "mecanica",
+    title: "[Demo] Oficina mecanica em atendimento",
+    category: "Demo:mecanica",
+    imageUrl: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "auto-eletrica",
+    title: "[Demo] Diagnostico eletrico automotivo",
+    category: "Demo:auto-eletrica",
+    imageUrl: "https://images.unsplash.com/photo-1625047509248-ec889cbff17f?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "som-evento",
+    title: "[Demo] Estrutura de som para evento",
+    category: "Demo:som-evento",
+    imageUrl: "https://images.unsplash.com/photo-1501612780327-45045538702b?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "eletricista",
+    title: "[Demo] Instalacao eletrica residencial",
+    category: "Demo:eletricista",
+    imageUrl: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "hidraulica",
+    title: "[Demo] Reparo hidraulico residencial",
+    category: "Demo:hidraulica",
+    imageUrl: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "manutencao-ar",
+    title: "[Demo] Manutencao de ar-condicionado",
+    category: "Demo:manutencao-ar",
+    imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "funilaria-pdr",
+    title: "[Demo] Reparo automotivo de lataria",
+    category: "Demo:funilaria-pdr",
+    imageUrl: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "buffet-aniversario",
+    title: "[Demo] Buffet montado para evento",
+    category: "Demo:buffet-aniversario",
+    imageUrl: "https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    nicheLabel: "eventos-cerimonial",
+    title: "[Demo] Cerimonial em recepcao",
+    category: "Demo:eventos-cerimonial",
+    imageUrl: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80",
+  },
+];
+
 const demoProposals: DemoProposal[] = [
   {
     clientName: "Ana Lima",
@@ -689,7 +849,7 @@ export async function POST(request: Request) {
 
   const adminUser = await prisma.user.findUnique({
     where: { email: admin.email },
-    select: { id: true },
+    select: { id: true, name: true, email: true },
   });
 
   if (!adminUser) {
@@ -697,49 +857,133 @@ export async function POST(request: Request) {
   }
 
   if (replace) {
-    await prisma.proposalAsset.deleteMany({
-      where: {
-        userId: adminUser.id,
-        publicSlug: { startsWith: "demo-" },
-      },
-    });
+    await prisma.$transaction([
+      prisma.proposalAsset.deleteMany({
+        where: {
+          userId: adminUser.id,
+          publicSlug: { startsWith: "demo-" },
+        },
+      }),
+      prisma.portfolioAsset.deleteMany({
+        where: {
+          userId: adminUser.id,
+          category: { startsWith: "Demo:" },
+        },
+      }),
+      prisma.testimonialAsset.deleteMany({
+        where: {
+          userId: adminUser.id,
+          authorName: { startsWith: "[Demo]" },
+        },
+      }),
+    ]);
   }
 
   const now = new Date();
-  const created = await prisma.$transaction(
-    demoProposals.map((p) =>
-      prisma.proposalAsset.create({
-        data: {
-          userId: adminUser.id,
-          clientName: p.clientName,
-          clientEmail: p.clientEmail,
-          serviceName: p.serviceName,
-          price: p.price,
-          deadline: p.deadline,
-          payment: p.payment,
-          included: p.included,
-          notes: p.notes,
-          status: p.status,
-          viewCount: p.viewCount,
-          publicSlug: demoSlug(p.nicheLabel),
-          checkoutMode: "mercadopago",
-          documentType: "auto",
-          segment: "auto",
-          acceptedBy: p.acceptedBy ?? null,
-          acceptedEmail: p.acceptedEmail ?? null,
-          acceptedAt: p.acceptedAt ?? null,
-          paymentStatus: p.paymentStatus ?? "not_started",
-          paymentMethod: p.paymentMethod ?? null,
-          paymentPaidAt: p.paymentPaidAt ?? null,
-          declinedReason: p.declinedReason ?? null,
-          declinedAt: p.declinedAt ?? null,
-          createdAt: new Date(now.getTime() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
-        },
-      })
-    )
-  );
+  const created = await prisma.$transaction(async (tx) => {
+    await tx.brandProfile.upsert({
+      where: { userId: adminUser.id },
+      create: {
+        userId: adminUser.id,
+        businessName: "FechaPro Demo",
+        email: adminUser.email,
+        bio: "Propostas comerciais prontas para demonstrar valor, escopo, investimento, fotos, PDF e aceite online.",
+        proposalStyle: "premium",
+        proposalIntro: "Esta e uma proposta exemplo criada para apresentar como o cliente recebe um orcamento profissional por link, com fotos, escopo claro e opcoes de aceite.",
+        proposalClosing: "Todos os detalhes podem ser ajustados antes do envio oficial. Este link serve como demonstracao comercial para facilitar a venda.",
+        proposalTerms: "Valores, prazos e condicoes desta demonstracao sao ficticios e podem ser adaptados ao cliente real.",
+        proposalFaq: "Posso trocar o cliente depois?|Sim. Duplique a proposta e ajuste nome, valor, prazo e escopo antes de enviar.\nO cliente consegue aceitar online?|Sim. O link publico mostra o aceite, PDF e canais de contato.",
+        showPortfolio: true,
+        showTestimonials: true,
+        showServices: true,
+        showFaq: true,
+      },
+      update: {
+        showPortfolio: true,
+        showTestimonials: true,
+        showServices: true,
+        showFaq: true,
+      },
+    });
 
-  return NextResponse.json({ created: created.length, proposals: created.map((p) => ({ id: p.id, clientName: p.clientName, status: p.status, publicSlug: p.publicSlug })) }, { status: 201 });
+    const portfolioCreated = await Promise.all(
+      demoPortfolioItems.map((item, index) =>
+        tx.portfolioAsset.create({
+          data: {
+            userId: adminUser.id,
+            title: item.title,
+            category: item.category,
+            imageUrl: item.imageUrl,
+            createdAt: new Date(now.getTime() - index * 60 * 1000),
+          },
+        }),
+      ),
+    );
+
+    await tx.testimonialAsset.createMany({
+      data: [
+        {
+          userId: adminUser.id,
+          authorName: "[Demo] Marina Alves",
+          company: "Cliente ficticio",
+          quote: "A proposta ficou clara, bonita e ajudou a entender exatamente o que estava incluso antes de aprovar.",
+        },
+        {
+          userId: adminUser.id,
+          authorName: "[Demo] Rafael Costa",
+          company: "Cliente ficticio",
+          quote: "Receber o link com fotos, prazo, investimento e aceite online passou muito mais confianca.",
+        },
+        {
+          userId: adminUser.id,
+          authorName: "[Demo] Patricia Nogueira",
+          company: "Cliente ficticio",
+          quote: "O PDF e o link deixaram a negociacao simples para compartilhar internamente e fechar o servico.",
+        },
+      ],
+    });
+
+    const proposalsCreated = await Promise.all(
+      demoProposals.map((p) =>
+        tx.proposalAsset.create({
+          data: {
+            userId: adminUser.id,
+            clientName: p.clientName,
+            clientEmail: p.clientEmail,
+            serviceName: p.serviceName,
+            price: p.price,
+            deadline: p.deadline,
+            payment: p.payment,
+            included: p.included,
+            notes: p.notes,
+            status: p.status,
+            viewCount: p.viewCount,
+            publicSlug: demoSlug(p.nicheLabel),
+            checkoutMode: "mercadopago",
+            documentType: "auto",
+            segment: "auto",
+            acceptedBy: p.acceptedBy ?? null,
+            acceptedEmail: p.acceptedEmail ?? null,
+            acceptedAt: p.acceptedAt ?? null,
+            paymentStatus: p.paymentStatus ?? "not_started",
+            paymentMethod: p.paymentMethod ?? null,
+            paymentPaidAt: p.paymentPaidAt ?? null,
+            declinedReason: p.declinedReason ?? null,
+            declinedAt: p.declinedAt ?? null,
+            createdAt: new Date(now.getTime() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
+          },
+        }),
+      ),
+    );
+
+    return { portfolioCreated, proposalsCreated };
+  });
+
+  return NextResponse.json({
+    created: created.proposalsCreated.length,
+    photos: created.portfolioCreated.length,
+    proposals: created.proposalsCreated.map((p) => ({ id: p.id, clientName: p.clientName, status: p.status, publicSlug: p.publicSlug })),
+  }, { status: 201 });
 }
 
 export async function DELETE() {
@@ -754,12 +998,26 @@ export async function DELETE() {
     return NextResponse.json({ error: "Usuário admin não encontrado no banco." }, { status: 404 });
   }
 
-  const { count } = await prisma.proposalAsset.deleteMany({
-    where: {
-      userId: adminUser.id,
-      publicSlug: { startsWith: "demo-" },
-    },
-  });
+  const [proposals, portfolio, testimonials] = await prisma.$transaction([
+    prisma.proposalAsset.deleteMany({
+      where: {
+        userId: adminUser.id,
+        publicSlug: { startsWith: "demo-" },
+      },
+    }),
+    prisma.portfolioAsset.deleteMany({
+      where: {
+        userId: adminUser.id,
+        category: { startsWith: "Demo:" },
+      },
+    }),
+    prisma.testimonialAsset.deleteMany({
+      where: {
+        userId: adminUser.id,
+        authorName: { startsWith: "[Demo]" },
+      },
+    }),
+  ]);
 
-  return NextResponse.json({ deleted: count });
+  return NextResponse.json({ deleted: proposals.count, photosDeleted: portfolio.count, testimonialsDeleted: testimonials.count });
 }

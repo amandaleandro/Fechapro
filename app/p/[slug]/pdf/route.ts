@@ -35,11 +35,7 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
   if (!proposal) notFound();
 
   const [portfolio, testimonials] = await Promise.all([
-    prisma.portfolioAsset.findMany({
-      where: { userId: proposal.userId },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-    }),
+    findProposalPortfolio(proposal.userId, proposal.publicSlug),
     prisma.testimonialAsset.findMany({
       where: { userId: proposal.userId },
       orderBy: { createdAt: "desc" },
@@ -49,6 +45,7 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
 
   const brand = proposal.user.brandProfile;
   const logoUrl = brand?.logoUrl || demoLogoUrl(proposal.publicSlug);
+  console.log("[PDF] logoUrl:", logoUrl || "(vazio)", "| brand.logoUrl:", brand?.logoUrl || "(null)");
   const pdf = await createProposalPdf({
     clientName: proposal.clientName,
     serviceName: proposal.serviceName,
@@ -102,6 +99,49 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
       "Cache-Control": "no-store",
     },
   });
+}
+
+async function findProposalPortfolio(userId: string, slug: string) {
+  const demoCategories = demoPortfolioCategories(slug);
+  if (!demoCategories.length) {
+    return prisma.portfolioAsset.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    });
+  }
+
+  const related = await prisma.portfolioAsset.findMany({
+    where: { userId, category: { in: demoCategories } },
+    orderBy: { createdAt: "desc" },
+    take: 4,
+  });
+
+  if (related.length >= 4) return related;
+
+  const fill = await prisma.portfolioAsset.findMany({
+    where: {
+      userId,
+      id: { notIn: related.map((item) => item.id) },
+      category: { startsWith: "Demo:" },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 4 - related.length,
+  });
+
+  return [...related, ...fill];
+}
+
+function demoPortfolioCategories(slug: string) {
+  if (!slug.startsWith("demo-")) return [];
+  const withoutPrefix = slug.slice("demo-".length);
+  const match = withoutPrefix.match(/^(.+)-[A-Za-z0-9_-]{8}$/);
+  if (!match?.[1]) return [];
+  const niche = match[1];
+  const parts = niche.split("-");
+  return Array.from(
+    new Set(parts.map((_, index) => `Demo:${parts.slice(0, parts.length - index).join("-")}`)),
+  );
 }
 
 async function createProposalPdf(data: ProposalPdfData) {
@@ -373,13 +413,7 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
     } else {
       doc.roundedRect(logoX, logoY, logoWidth, logoHeight, 8).lineWidth(1).strokeColor("#FFFFFF").stroke();
     }
-    const didDrawLogo = drawPdfImage(doc, logo, logoX, logoY, {
-      fit: [logoWidth - 24, logoHeight - 18],
-      align: "center",
-      valign: "center",
-      width: logoWidth,
-      height: logoHeight,
-    });
+    const didDrawLogo = drawLogoImageInFrame(doc, logo, logoX, logoY, logoWidth, logoHeight, 12, 9);
     if (!didDrawLogo) drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
   } else {
     drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
@@ -389,9 +423,10 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
   doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text(style.eyebrow, brandTextX, 49, {
     characterSpacing: 1.1,
   });
-  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(14).text(data.brandName, brandTextX, 65, {
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12.5).text(data.brandName, brandTextX, 65, {
     width: PAGE.width - brandTextX - MARGIN - 122,
-    height: 20,
+    height: 32,
+    lineGap: 1,
     ellipsis: true,
   });
   drawStatusPill(doc, data.status, PAGE.width - MARGIN - 132, 49, 132, data.brandColor);
@@ -432,19 +467,7 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
       height: coverImageHeight - 18,
     });
   } else {
-    doc.roundedRect(coverImageX + 9, coverImageY + 9, coverImageWidth - 18, coverImageHeight - 18, 8).fill(design.soft);
-    doc.rect(coverImageX + 30, coverImageY + 52, coverImageWidth - 60, 1).fill(data.brandAccentColor);
-    doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text("ENTREGA EM DESTAQUE", coverImageX + 24, coverImageY + 76, {
-      width: coverImageWidth - 48,
-      align: "center",
-    });
-    doc.fillColor(INK).font("Helvetica-Bold").fontSize(14).text(data.serviceName, coverImageX + 24, coverImageY + 101, {
-      width: coverImageWidth - 48,
-      height: 48,
-      align: "center",
-      lineGap: 2,
-      ellipsis: true,
-    });
+    drawCoverSummaryCard(doc, data, design, coverImageX + 9, coverImageY + 9, coverImageWidth - 18, coverImageHeight - 18);
   }
 
   doc.roundedRect(MARGIN + 3, 432, CONTENT_WIDTH, 144, 12).fill("#CBD5E1");
@@ -509,13 +532,7 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     } else {
       doc.roundedRect(logoX, logoY, logoWidth, logoHeight, 7).lineWidth(1).strokeColor("#FFFFFF").stroke();
     }
-    const didDrawLogo = drawPdfImage(doc, logo, logoX, logoY, {
-      fit: [logoWidth - 14, logoHeight - 14],
-      align: "center",
-      valign: "center",
-      width: logoWidth,
-      height: logoHeight,
-    });
+    const didDrawLogo = drawLogoImageInFrame(doc, logo, logoX, logoY, logoWidth, logoHeight, 7, 7);
     if (!didDrawLogo) drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
   } else {
     drawLogoInitials(doc, data.brandName, MARGIN, 30, 58, data.brandColor);
@@ -912,7 +929,7 @@ function getSegmentDesign(data: ProposalPdfData): PdfSegmentDesign {
     };
   }
 
-  if (selectedSegment === "events" || hasAny(text, ["evento", "cerimonial", "buffet", "decoracao", "festa", "casamento", "coffee break", "fotografia", "som", "sonorizacao", "iluminacao", "audiovisual", "dj", "microfone"])) {
+  if (selectedSegment === "events" || hasAny(text, ["evento", "cerimonial", "buffet", "decoracao", "festa", "casamento", "coffee break", "fotografia", "fotografic", "fotografo", "ensaio fotografic", "som", "sonorizacao", "iluminacao", "audiovisual", "dj", "microfone"])) {
     return {
       ...base,
       primary: data.brandAccentColor,
@@ -1600,6 +1617,45 @@ function drawCoverDetail(doc: PDFKit.PDFDocument, label: string, value: string, 
   });
 }
 
+function drawCoverSummaryCard(
+  doc: PDFKit.PDFDocument,
+  data: ProposalPdfData,
+  design: PdfSegmentDesign,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  doc.roundedRect(x, y, width, height, 8).fill(design.soft);
+  doc.rect(x, y, width, 5).fill(data.brandAccentColor);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text("RESUMO DA PROPOSTA", x + 18, y + 24, {
+    width: width - 36,
+    characterSpacing: 0.8,
+    height: 10,
+    ellipsis: true,
+  });
+  doc.fillColor(INK).font("Helvetica-Bold").fontSize(13).text(data.serviceName, x + 18, y + 42, {
+    width: width - 36,
+    height: 48,
+    lineGap: 2,
+    ellipsis: true,
+  });
+  doc.rect(x + 18, y + 100, width - 36, 1).fill(LINE);
+  doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(7.5).text("CLIENTE", x + 18, y + 112);
+  doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text(data.clientName, x + 18, y + 124, {
+    width: width - 36,
+    height: 14,
+    ellipsis: true,
+  });
+  doc.rect(x + 18, y + 148, width - 36, 1).fill(LINE);
+  doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(7.5).text("INVESTIMENTO", x + 18, y + 160);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(13).text(data.price, x + 18, y + 172, {
+    width: width - 36,
+    height: 16,
+    ellipsis: true,
+  });
+}
+
 function drawInlineMetric(doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, width: number) {
   doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(7.5).text(label.toUpperCase(), x, y, {
     width,
@@ -1675,16 +1731,48 @@ async function readImageFromUrl(url: string, assetOrigin: string) {
     return null;
   }
 
-  return image ? normalizePdfImage(image, contentType) : null;
+  if (!image) {
+    console.error("[PDF] Logo não carregado:", url);
+    return null;
+  }
+
+  const result = await normalizePdfImage(image, contentType);
+  if (!result) console.error("[PDF] Logo carregado mas não processado pelo sharp:", url, contentType);
+  return result;
 }
 
 async function fetchImage(url: string) {
   try {
-    const response = await fetch(url, { cache: "no-store" });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {
+          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          "User-Agent": "Mozilla/5.0 (compatible; FechaProBot/1.0; +https://fechapro.com.br)",
+          Referer: "https://fechapro.com.br/",
+        },
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (!response.ok) {
+      console.error("[PDF] Fetch imagem retornou erro:", url, response.status);
+      return { image: null, contentType: "" };
+    }
     const contentType = response.headers.get("content-type") || "";
-    if (!response.ok || !contentType.startsWith("image/")) return { image: null, contentType: "" };
+    // Accept image/* and application/octet-stream (some CDNs return this for images)
+    const isImage = contentType.startsWith("image/") || contentType === "application/octet-stream" || contentType === "";
+    if (!isImage) {
+      console.error("[PDF] Fetch imagem content-type inesperado:", url, contentType);
+      return { image: null, contentType: "" };
+    }
     return { image: Buffer.from(await response.arrayBuffer()), contentType };
-  } catch {
+  } catch (err) {
+    console.error("[PDF] Fetch imagem falhou:", url, (err as Error).message);
     return { image: null, contentType: "" };
   }
 }
@@ -1709,9 +1797,29 @@ function drawPdfImage(
   try {
     doc.image(image, x, y, options);
     return true;
-  } catch {
+  } catch (err) {
+    console.error("[PDF] Falha ao renderizar imagem no PDFKit:", err);
     return false;
   }
+}
+
+function drawLogoImageInFrame(
+  doc: PDFKit.PDFDocument,
+  image: Buffer,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  paddingX: number,
+  paddingY: number,
+) {
+  return drawPdfImage(doc, image, x + paddingX, y + paddingY, {
+    fit: [width - paddingX * 2, height - paddingY * 2],
+    align: "center",
+    valign: "center",
+    width: width - paddingX * 2,
+    height: height - paddingY * 2,
+  });
 }
 
 async function normalizePdfImage(image: Buffer, contentType: string) {
@@ -1722,7 +1830,11 @@ async function normalizePdfImage(image: Buffer, contentType: string) {
       .png()
       .toBuffer();
   } catch {
-    if (contentType === "image/png" || contentType === "image/jpeg" || contentType === "image/jpg") return image;
+    // If sharp fails, return raw buffer only for formats PDFKit can render natively.
+    // Detect by content-type or magic bytes (handles application/octet-stream from CDNs).
+    const isPng = contentType === "image/png" || (image[0] === 0x89 && image[1] === 0x50);
+    const isJpeg = contentType === "image/jpeg" || contentType === "image/jpg" || (image[0] === 0xff && image[1] === 0xd8);
+    if (isPng || isJpeg) return image;
     return null;
   }
 }
@@ -1787,8 +1899,19 @@ function getPdfProposalStyle(style: string) {
 }
 
 function initials(value: string) {
-  const words = value.trim().split(/\s+/).slice(0, 2);
-  return words.map((word) => word[0]?.toUpperCase()).join("") || "FP";
+  const cleanValue = value.split("|")[0].trim();
+  const normalized = cleanValue.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const parts = normalized
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .slice(0, 2);
+  if (parts.length === 0) return "FP";
+  if (parts.length === 1) {
+    const w = parts[0];
+    return (w.length >= 2 ? w[0] + w[1] : w[0]).toUpperCase();
+  }
+  return parts.map((word) => word[0]?.toUpperCase()).join("");
 }
 
 function formatDate(date: string) {

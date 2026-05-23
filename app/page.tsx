@@ -4345,7 +4345,7 @@ function AuthScreen() {
       name: "Apresentação Essencial",
       price: "R$ 97",
       priceSuffix: "/mês ou R$ 897/ano",
-      cta: "Começar com o Essencial",
+      cta: "Quero profissionalizar minhas propostas",
       detail: "Para quem quer sair da apresentação improvisada e enviar link, PDF e aceite online.",
       items: ["20 propostas por mês", "5 artes para divulgar por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
@@ -4354,7 +4354,7 @@ function AuthScreen() {
       name: "Apresentação Profissional",
       price: "R$ 197",
       priceSuffix: "/mês ou R$ 1.497/ano",
-      cta: "Profissionalizar minhas vendas",
+      cta: "Quero profissionalizar minhas propostas",
       detail: "Para quem vende com frequência e quer propostas mais completas, visuais e fáceis de acompanhar.",
       items: ["120 propostas por mês", "Tudo do Inicial", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
     },
@@ -4364,8 +4364,8 @@ function AuthScreen() {
       price: "12x de R$ 125",
       priceSuffix: "Premium com Site por R$ 1.500/ano até 03/06",
       promoPrice: "De R$ 2.997",
-      badge: "Mais vendido",
-      cta: "Quero minha estrutura pronta — oferta até 03/06",
+      badge: "Melhor escolha para vender agora",
+      cta: "Reservar minha implantação",
       detail: "Ideal para sair do improviso e começar a vender com apresentação profissional ainda esta semana.",
       items: ["12 meses de FechaPro", "Mini site profissional", "Implantação e configuração inicial", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para copiar e adaptar", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
     },
@@ -4603,10 +4603,10 @@ function AuthScreen() {
                 Estrutura comercial para prestadores de serviço
               </p>
               <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Transforme sua apresentação comercial em uma máquina de vender serviços.
+                Pare de mandar preço solto. Envie propostas profissionais que ajudam o cliente a entender seu valor.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                O FechaPro ajuda prestadores a saírem do improviso com propostas profissionais com marca, portfólio, PDF, link, aceite online, acompanhamento e apoio de implantação.
+                O FechaPro ajuda prestadores de serviço a criarem propostas com marca, fotos, detalhes, PDF, link, aceite online e acompanhamento, com implantação para começar rápido.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
                 <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano, menos que muitos serviços fechados com uma única proposta.</p>
@@ -4618,10 +4618,10 @@ function AuthScreen() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Quero profissionalizar minhas propostas
+                  Quero ver minha proposta pronta
                 </a>
-                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#como-funciona">
-                  Ver exemplo na prática
+                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
+                  Reservar minha implantação
                 </a>
               </div>
             </div>
@@ -4632,19 +4632,25 @@ function AuthScreen() {
                   <LandingMetric key={metric.value} value={metric.value} label={metric.label} />
                 ))}
               </div>
-              <div className="motion-lift rounded-lg bg-white p-4 text-slate-950">
-                <p className="text-xs font-black uppercase text-blue-700">Exemplo de proposta</p>
-                <h2 className="mt-1 text-xl font-black">{activeExample.service}</h2>
-                <div className="mt-4 grid gap-2 text-sm font-bold text-slate-600">
-                  <span>Cliente: {activeExample.client}</span>
-                  <span>Investimento: {money.format(activeExample.price)}</span>
-                  <span>Prazo: {activeExample.deadline}</span>
-                  <span>Inclui: {activeExample.included.join(", ")}</span>
-                  <span>Prova: {activeExample.proof}</span>
+              <div className="motion-lift grid gap-3 rounded-lg bg-white p-4 text-slate-950">
+                <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
+                  <p className="text-xs font-black uppercase text-rose-700">Antes</p>
+                  <p className="mt-1 text-lg font-black text-rose-950">WhatsApp: "Fica R$ 850."</p>
+                  <p className="mt-1 text-xs font-bold leading-5 text-rose-900/80">Preço solto, fotos espalhadas e pouca percepção de valor.</p>
                 </div>
-                <button className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-green-600 font-black text-white" type="button">
-                  Aceitar proposta
-                </button>
+                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                  <p className="text-xs font-black uppercase text-green-700">Depois</p>
+                  <h2 className="mt-1 text-xl font-black">{activeExample.service}</h2>
+                  <div className="mt-3 grid gap-2 text-sm font-bold text-slate-600">
+                    <span>Logo e marca profissional</span>
+                    <span>Fotos, escopo e prazo: {activeExample.deadline}</span>
+                    <span>Investimento: {money.format(activeExample.price)}</span>
+                    <span>PDF, link e botão verde de aceite</span>
+                  </div>
+                  <button className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-green-600 font-black text-white" type="button">
+                    Aceitar proposta
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {landingExamples.map((example, index) => (
@@ -4717,6 +4723,24 @@ function AuthScreen() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="fp-landing-band border-b border-black/10 bg-green-50">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
+          <div>
+            <p className="text-xs font-black uppercase text-green-700">Condição especial de lançamento</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Plano Completo Anual Promocional por R$ 1.500.</h2>
+            <p className="mt-4 max-w-4xl text-sm font-bold leading-6 text-slate-700 sm:text-base sm:leading-7">
+              Inclui acesso anual, implantação inicial, configuração da marca, primeira proposta criada, kit de mensagens, treinamento rápido e apoio para começar a vender melhor ainda esta semana.
+            </p>
+            <p className="mt-3 max-w-4xl text-sm font-black leading-6 text-green-800">
+              O Completo mensal começa em R$ 297/mês + R$ 997 de implantação. Só o primeiro mês ficaria R$ 1.294. Na condição promocional, você pega o plano completo anual por R$ 1.500.
+            </p>
+          </div>
+          <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-6 font-black text-white" href="#planos">
+            Quero reservar minha implantação
+          </a>
         </div>
       </section>
 
@@ -5039,7 +5063,7 @@ function AuthScreen() {
             <p className="text-xs font-black uppercase text-green-300">Planos</p>
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha sua estrutura comercial FechaPro.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Do primeiro link profissional à presença completa com site, implantação e materiais para vender melhor.
+              Se você vende serviços por orçamento, pacote ou proposta personalizada, o plano completo é o melhor caminho porque já inclui implantação, primeira proposta pronta e estrutura comercial para começar rápido.
             </p>
           </div>
 
@@ -5052,6 +5076,11 @@ function AuthScreen() {
             <p className="mt-3 max-w-3xl text-sm font-black leading-6 text-green-100">
               Se uma única venda recuperada pagar esse valor, o sistema já deixou de ser custo e virou ferramenta de fechamento.
             </p>
+            <div className="mt-4 grid gap-2 rounded-lg border border-white/15 bg-slate-950/60 p-4 text-sm font-bold leading-6 text-white/82 sm:grid-cols-3">
+              <span>Completo mensal: R$ 297/mês</span>
+              <span>Implantação avulsa: R$ 997</span>
+              <span className="text-green-200">Anual promocional: R$ 1.500</span>
+            </div>
           </div>
 
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
@@ -5097,9 +5126,9 @@ function AuthScreen() {
           </div>
 
           <div className="mt-8 rounded-lg border border-white/15 bg-white/8 p-5">
-            <p className="text-xs font-black uppercase text-green-300">Sem travar na tecnologia</p>
+            <p className="text-xs font-black uppercase text-green-300">Garantia de implantação</p>
             <p className="mt-2 text-sm font-bold leading-6 text-white/78 sm:text-base sm:leading-7">
-              No Premium com Site, a equipe monta o início com você. Nos demais planos, você usa modelos prontos para enviar propostas profissionais pelo WhatsApp no seu ritmo.
+              Se em até 7 dias você não conseguir criar e enviar sua primeira proposta com nossa ajuda, fazemos junto com você na implantação. A promessa é tirar a estrutura do papel, sem prometer resultado de venda.
             </p>
           </div>
         </div>
@@ -5143,14 +5172,14 @@ function AuthScreen() {
             <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Seu próximo cliente pode receber uma proposta que parece pronta para ser aprovada.</h2>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="#planos">
-            Garantir meu plano
+            Reservar minha implantação
           </a>
         </div>
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
         <a className="grid min-h-12 w-full place-items-center rounded-lg bg-green-600 px-4 text-center font-black text-white" href="#planos">
-          Garantir minha oferta
+          Reservar minha implantação
         </a>
       </div>
     </main>
