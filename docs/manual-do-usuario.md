@@ -443,28 +443,30 @@ Não. Elas seguem o limite do plano ou os créditos extras comprados.
 
 ## 24. Novidades e próximos recursos
 
-A modal **Novidades do FechaPro** aparece no painel para apresentar melhorias recentes e próximos recursos. Você também pode abri-la pelo botão de megafone no topo do painel. Ela separa o que já está disponível do que ainda está planejado.
+A modal **Novidades do FechaPro** aparece no painel para avisar o que mudou no sistema e o que está em desenvolvimento. Você também pode abri-la pelo botão de megafone no topo do painel.
+
+Use essa modal como um resumo rápido:
+
+- **Recursos disponíveis:** melhorias que já podem ser usadas na sua conta.
+- **Próximos recursos:** ideias e funcionalidades planejadas, organizadas por prioridade.
+- **Botões de ação:** atalhos para testar recursos importantes, como artes de divulgação ou ajustes da marca.
 
 Novidades recentes:
 
-- **Proposta e PDF por segmento:** escolha tipo de documento e segmento visual para deixar link e PDF mais alinhados ao serviço.
-- **Edição de proposta salva:** ajuste dados, escopo, documento, segmento e forma de recebimento sem recriar a proposta.
-- **Templates mais completos e vários serviços:** use modelos por nicho ou marque serviços cadastrados para somar valores e itens em uma única proposta.
-- **Recebimento por proposta:** em cada proposta, escolha Mercado Pago ou PIX direto com QR Code e código copia e cola para a chave cadastrada em **Marca**.
-- **Confirmação de PIX no painel:** depois de verificar o recebimento do PIX direto, registre o pagamento nos detalhes da proposta.
-- **Artes de divulgação:** solicitação com briefing, aprovação, legenda, mensagem para WhatsApp e download da arte final.
+- **Proposta e PDF por segmento:** escolha tipo de documento e segmento visual para deixar a apresentação mais alinhada ao serviço vendido.
+- **Edição de proposta salva:** corrija dados, escopo, documento, segmento e forma de recebimento sem recriar tudo do zero.
+- **Templates e vários serviços:** use modelos por nicho ou marque serviços cadastrados para montar uma proposta única com valor total.
+- **Recebimento por proposta:** escolha Mercado Pago ou PIX direto em cada proposta, com QR Code e código copia e cola quando usar PIX direto.
+- **Confirmação de PIX no painel:** depois de conferir o recebimento, registre o pagamento nos detalhes da proposta.
+- **Artes de divulgação:** envie briefing, acompanhe aprovação, copie legenda, copie mensagem para WhatsApp e baixe a arte final.
 
 Próximos recursos exibidos na modal:
 
-- fechar pelo WhatsApp com ações em um clique;
-- reengajamento automático para quem abriu a proposta e não respondeu;
-- timeline única com abertura, aceite, pagamento e conversa;
-- editor rápido com bônus, garantias e comparação de planos;
-- relatórios de conversão e receita por serviço;
-- portal do cliente com status, arquivos e checklist;
-- histórico de e-mails enviados e novos controles de entrega.
+- **Em preparo:** fechamento pelo WhatsApp com ações em um clique e reengajamento de clientes que abriram a proposta e não responderam.
+- **Na fila:** timeline única da negociação, editor rápido com bônus/garantias/comparação de planos e relatórios de conversão e receita por serviço.
+- **Em estudo:** portal do cliente com status, arquivos e checklist, além de histórico de e-mails enviados e novos controles de entrega.
 
-Esses recursos podem mudar de ordem, escopo ou formato conforme testes, integrações disponíveis e necessidades dos usuários.
+Os próximos recursos podem mudar de ordem, escopo ou formato conforme testes, integrações disponíveis e necessidades dos usuários. Quando um item ficar pronto, ele passa para a lista de recursos disponíveis.
 
 ## 25. Resumo do fluxo recomendado
 

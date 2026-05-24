@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, LayoutTemplate, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Trash2, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, LayoutTemplate, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Trash2, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
 
 type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
 
@@ -57,6 +58,15 @@ type AdminMetrics = {
       end: string;
     }
   >;
+};
+
+type AdminWhatsAppStatus = {
+  authDir: string;
+  configured: boolean;
+  connected: boolean;
+  phone: string | null;
+  qr: string | null;
+  qrImage: string | null;
 };
 
 type AdminMarketingArt = {
@@ -127,7 +137,9 @@ export default function AdminPage() {
   const [arts, setArts] = useState<AdminMarketingArt[]>([]);
   const [supportThreads, setSupportThreads] = useState<AdminSupportThread[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+  const [whatsappStatus, setWhatsappStatus] = useState<AdminWhatsAppStatus | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [connectingWhatsApp, setConnectingWhatsApp] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
   const [seedingDemo, setSeedingDemo] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -172,6 +184,16 @@ export default function AdminPage() {
     }
   }
 
+  async function loadWhatsAppStatus() {
+    try {
+      const response = await fetch("/api/admin/whatsapp", { cache: "no-store" });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar o WhatsApp."));
+      setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o WhatsApp.");
+    }
+  }
+
   async function loadSupportThreads() {
     try {
       const response = await fetch("/api/admin/support", { cache: "no-store" });
@@ -188,7 +210,25 @@ export default function AdminPage() {
     loadArts();
     loadMetrics();
     loadSupportThreads();
+    loadWhatsAppStatus();
   }, []);
+
+  async function connectWhatsApp() {
+    setConnectingWhatsApp(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/whatsapp", { method: "POST" });
+      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel conectar o WhatsApp."));
+      const status = (await response.json()) as AdminWhatsAppStatus;
+      setWhatsappStatus(status);
+      setNotice(status.connected ? "WhatsApp FechaPro conectado." : "Escaneie o QR Code para conectar o WhatsApp FechaPro.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Nao foi possivel conectar o WhatsApp.");
+    } finally {
+      setConnectingWhatsApp(false);
+    }
+  }
 
   async function uploadArt(item: AdminMarketingArt, file: File, caption: string, whatsappMessage: string) {
     setSavingId(item.id);
@@ -338,7 +378,7 @@ export default function AdminPage() {
               Use esta tela para liberar clientes sem pagamento confirmado, reativar assinaturas atrasadas ou bloquear acessos.
             </p>
           </div>
-          <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={() => { loadUsers(); loadMetrics(); loadSupportThreads(); }}>
+          <button className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" type="button" onClick={() => { loadUsers(); loadMetrics(); loadSupportThreads(); loadWhatsAppStatus(); }}>
             <RefreshCcw size={17} />
             Atualizar
           </button>
@@ -348,6 +388,41 @@ export default function AdminPage() {
           <AdminStat icon={UserCog} label="Usuarios" value={String(totalUsers)} />
           <AdminStat icon={CheckCircle2} label="Liberados" value={String(activeUsers)} />
           <AdminStat icon={ShieldCheck} label="Bloqueados" value={String(blockedUsers)} />
+        </section>
+
+        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase text-green-700">WhatsApp FechaPro</p>
+              <h2 className="text-2xl font-black">Numero oficial de notificacoes</h2>
+              <p className="mt-1 max-w-3xl text-sm font-bold text-slate-600">
+                O admin geral conecta um unico numero remetente. As notificacoes de proposta sao enviadas para o WhatsApp cadastrado na Marca do usuario dono da proposta.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadWhatsAppStatus}>
+                <RefreshCcw size={15} />
+                Atualizar
+              </button>
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-black text-white disabled:opacity-60" disabled={connectingWhatsApp} type="button" onClick={connectWhatsApp}>
+                <MessageCircle size={16} />
+                {connectingWhatsApp ? "Conectando..." : whatsappStatus?.connected ? "Reconectar" : "Conectar numero"}
+              </button>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700">
+              <p>Status: <span className={whatsappStatus?.connected ? "text-green-700" : "text-amber-700"}>{whatsappStatus?.connected ? "Conectado" : "Aguardando conexao"}</span></p>
+              <p className="mt-2">Sessao: {whatsappStatus?.authDir || "Nao configurada"}</p>
+              {whatsappStatus?.phone ? <p className="mt-2">Numero conectado: {whatsappStatus.phone}</p> : null}
+            </div>
+            {whatsappStatus?.qrImage ? (
+              <div className="grid justify-items-center gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3">
+                <Image alt="QR Code para conectar WhatsApp FechaPro" className="rounded-lg bg-white p-2" height={256} src={whatsappStatus.qrImage} unoptimized width={256} />
+                <p className="max-w-64 text-center text-xs font-black text-green-800">Escaneie com o WhatsApp do numero oficial FechaPro.</p>
+              </div>
+            ) : null}
+          </div>
         </section>
 
         <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">

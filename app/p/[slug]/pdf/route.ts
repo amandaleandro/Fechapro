@@ -1296,20 +1296,24 @@ function drawScope(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSe
 }
 
 function drawPayment(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
-  ensureSpace(doc, 126);
+  doc.font("Helvetica-Bold").fontSize(13);
+  const paymentTextHeight = doc.heightOfString(data.payment, {
+    width: 176,
+    lineGap: 2,
+  });
+  const cardHeight = Math.max(94, paymentTextHeight + 58);
+  ensureSpace(doc, cardHeight + 32);
   sectionTitle(doc, "Condição comercial", "Pagamento e aceite", design);
   const y = doc.y + 8;
   const splitX = MARGIN + 224;
-  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 94, 9).fill(design.soft);
-  doc.rect(MARGIN, y, 6, 94).fill(design.primary);
+  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, cardHeight, 9).fill(design.soft);
+  doc.rect(MARGIN, y, 6, cardHeight).fill(design.primary);
   doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(7.5).text("FORMA DE PAGAMENTO", MARGIN + 24, y + 24);
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(13).text(data.payment, MARGIN + 24, y + 40, {
     width: 176,
-    height: 34,
     lineGap: 2,
-    ellipsis: true,
   });
-  doc.rect(splitX, y + 20, 1, 54).fill(LINE);
+  doc.rect(splitX, y + 20, 1, cardHeight - 40).fill(LINE);
   drawInlineMetric(doc, "Recebimento", paymentMethodLabel(data.paymentMethod), splitX + 24, y + 25, 200);
   doc.fillColor(MUTED).font("Helvetica").fontSize(9).text(
     "Aceite, contato e instrucoes finais ficam disponiveis no link da proposta.",
@@ -1317,7 +1321,7 @@ function drawPayment(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pdf
     y + 53,
     { width: CONTENT_WIDTH - 272, height: 24, lineGap: 2, ellipsis: true },
   );
-  doc.y = y + 116;
+  doc.y = y + cardHeight + 22;
 }
 
 function drawNotes(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {

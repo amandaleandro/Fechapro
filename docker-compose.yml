@@ -40,10 +40,13 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       NODE_ENV: production
       UPLOAD_DIR: /app/uploads
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-baileys}
+      WHATSAPP_BAILEYS_AUTH_DIR: ${WHATSAPP_BAILEYS_AUTH_DIR:-/app/baileys-session}
     ports:
       - "3000:3000"
     volumes:
       - fechapro_uploads:/app/uploads
+      - fechapro_baileys_session:/app/baileys-session
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- --header=\"Authorization: Bearer $$HEALTHCHECK_TOKEN\" http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
       interval: 30s
@@ -87,3 +90,4 @@ services:
 volumes:
   fechapro_postgres_data:
   fechapro_uploads:
+  fechapro_baileys_session:

@@ -19,9 +19,30 @@ type BaileysSocket = Awaited<ReturnType<typeof createBaileysSocket>>;
 
 let baileysSocketPromise: Promise<BaileysSocket> | null = null;
 let baileysConnected = false;
+let baileysQr: string | null = null;
+let baileysPhone: string | null = null;
 
 export function isWhatsAppNotificationConfigured() {
   return Boolean(provider === "baileys" || webhookUrl || (cloudPhoneNumberId && cloudAccessToken));
+}
+
+export async function connectBaileysWhatsApp() {
+  if (provider !== "baileys") {
+    throw new Error('Configure WHATSAPP_PROVIDER="baileys" para conectar pelo painel admin.');
+  }
+
+  await getBaileysSocket();
+  return getBaileysWhatsAppStatus();
+}
+
+export function getBaileysWhatsAppStatus() {
+  return {
+    authDir: baileysAuthDir,
+    configured: provider === "baileys",
+    connected: baileysConnected,
+    phone: baileysPhone,
+    qr: baileysQr,
+  };
 }
 
 export async function sendProposalWhatsAppNotification(userId: string, input: ProposalWhatsAppNotification) {
@@ -101,12 +122,16 @@ async function createBaileysSocket() {
   socket.ev.on("creds.update", saveCreds);
   socket.ev.on("connection.update", (update) => {
     baileysConnected = update.connection === "open";
+    if (update.qr) baileysQr = update.qr;
 
     if (update.connection === "close") {
       const statusCode = getDisconnectStatusCode(update.lastDisconnect?.error);
       if (statusCode !== baileys.DisconnectReason.loggedOut) {
         baileysSocketPromise = null;
       }
+    } else if (update.connection === "open") {
+      baileysQr = null;
+      baileysPhone = socket.user?.id || null;
     }
   });
 

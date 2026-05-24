@@ -66,7 +66,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
             <strong>{brandName}</strong>
           </div>
           <div className="fp-slide-cover-copy">
-            <p>Apresentacao comercial</p>
+            <p>Apresentação comercial</p>
             <h1>{proposal.serviceName}</h1>
             <h2>Preparada para {proposal.clientName}</h2>
           </div>

@@ -101,12 +101,12 @@ export default async function PublicProposalPage({
   const acceptedDocumentHref = currentStatus === "accepted" ? contractPdfHref : proposalPdfHref;
   const acceptedDocumentLabel = currentStatus === "accepted" ? "Contrato" : "Contrato / proposta";
   const acceptedAtLabel = proposal.acceptedAt
-    ? proposal.acceptedAt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    ? proposal.acceptedAt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
     : "";
   const contractConditions = [
     ["Contratante", proposal.clientName],
     ["Contratada", brandName],
-    ["Servico", proposal.serviceName],
+    ["Serviço", proposal.serviceName],
     ["Investimento", money.format(proposal.price)],
     ["Prazo", proposal.deadline],
     ["Pagamento", proposal.payment || "A combinar"],
@@ -126,9 +126,9 @@ export default async function PublicProposalPage({
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Proposta aceita com sucesso.</strong>
-            <p className="mt-1 text-sm">Obrigado, {query.name || "cliente"}. O contrato preenchido ja esta disponivel para visualizar e assinar.</p>
+            <p className="mt-1 text-sm">Obrigado, {query.name || "cliente"}. O contrato preenchido já está disponível com as condições aceitas.</p>
             <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg bg-green-700 px-4 text-sm font-black text-white" href="#contrato">
-              Ver contrato preenchido
+              Ver contrato
             </a>
           </div>
         ) : null}
@@ -457,10 +457,10 @@ export default async function PublicProposalPage({
             <div className="grid gap-5 lg:grid-cols-[1fr_0.72fr]">
               <div>
                 <p className="text-xs font-black uppercase text-green-700">Contrato preenchido</p>
-                <h2 className="mt-1 text-2xl font-black">Condicoes aceitas para execucao</h2>
+                <h2 className="mt-1 text-2xl font-black">Condições aceitas para a execução</h2>
                 <p className="mt-2 leading-7 text-slate-600">
-                  Este documento foi gerado automaticamente a partir da proposta aceita. Ele reune escopo, valores,
-                  prazo, pagamento, observacoes e termos comerciais cadastrados pelo profissional.
+                  Este documento foi gerado automaticamente a partir da proposta aceita. Ele consolida escopo, valor,
+                  prazo, forma de pagamento, observações e termos comerciais cadastrados pelo profissional.
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {contractConditions.map(([label, value]) => (
@@ -471,9 +471,9 @@ export default async function PublicProposalPage({
                   ))}
                 </div>
                 <div className="mt-4 rounded-lg border border-black/10 bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase text-slate-500">Escopo contratado</p>
+                  <p className="text-xs font-black uppercase text-slate-500">Escopo e termos contratados</p>
                   <ul className="mt-3 grid gap-2 text-sm font-bold leading-6 text-slate-700">
-                    {(proposal.included.length ? proposal.included : ["Servico conforme combinado."]).map((item, index) => (
+                    {(proposal.included.length ? proposal.included : ["Serviço conforme combinado."]).map((item, index) => (
                       <li key={`${item}-${index}`}>- {item}</li>
                     ))}
                   </ul>
@@ -489,7 +489,7 @@ export default async function PublicProposalPage({
               <aside className="grid content-start gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-950">
                 <div>
                   <p className="text-xs font-black uppercase text-green-700">Assinatura</p>
-                  <h3 className="mt-1 text-xl font-black">Aceite digital registrado</h3>
+                  <h3 className="mt-1 text-xl font-black">Assinatura digital do cliente</h3>
                   <p className="mt-2 text-sm font-bold leading-6">
                     Assinado por {proposal.acceptedBy || proposal.clientName}
                     {proposal.acceptedEmail ? ` (${proposal.acceptedEmail})` : ""}
@@ -510,7 +510,7 @@ export default async function PublicProposalPage({
                   ) : null}
                 </div>
                 <p className="text-xs font-bold leading-5 text-green-900/80">
-                  Para assinatura fisica, abra o PDF e use a opcao de imprimir. Para assinatura digital, o aceite acima fica registrado no PDF.
+                  Como a proposta já foi aceita, o aceite digital do cliente fica registrado como assinatura no PDF. Se precisar de assinatura física, abra o contrato em PDF e use a opção de imprimir.
                 </p>
               </aside>
             </div>

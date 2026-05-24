@@ -28,7 +28,9 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - fechapro_uploads:/app/uploads
+      - fechapro_baileys_session:/app/baileys-session
 
 volumes:
   fechapro_postgres_data:
   fechapro_uploads:
+  fechapro_baileys_session:

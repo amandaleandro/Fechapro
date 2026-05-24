@@ -5361,43 +5361,43 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
 const currentUpdates = [
   {
     icon: FileText,
-    title: "Proposta e PDF por segmento",
-    description: "Escolha tipo de documento e segmento visual para gerar link e PDF com apresentação mais adequada ao serviço.",
+    title: "Proposta e PDF mais alinhados",
+    description: "Escolha tipo de documento e segmento visual para deixar link público e PDF com cara do serviço vendido.",
     tag: "Disponível",
   },
   {
     icon: Settings,
-    title: "Editar proposta salva",
-    description: "Abra uma proposta já criada, ajuste dados, escopo, documento, segmento e forma de recebimento sem recomeçar.",
+    title: "Edição de proposta salva",
+    description: "Corrija cliente, valor, escopo, documento, segmento e forma de recebimento sem recriar a proposta.",
     tag: "Novo",
   },
   {
     icon: Layers3,
-    title: "Templates e vários serviços",
-    description: "Use modelos mais completos por nicho ou marque serviços cadastrados para somar valores e itens em uma proposta.",
+    title: "Templates e pacotes",
+    description: "Use modelos por nicho ou combine vários serviços cadastrados em uma proposta única com valor total.",
     tag: "Novo",
   },
   {
     icon: CreditCard,
     title: "Recebimento por proposta",
-    description: "Escolha PIX direto com QR Code e copia e cola ou Mercado Pago com PIX, cartão e boleto para cada proposta.",
+    description: "Defina Mercado Pago ou PIX direto em cada proposta, com QR Code e copia e cola quando usar sua chave PIX.",
     tag: "Ativo",
   },
   {
     icon: Palette,
-    title: "Artes de divulgação",
-    description: "Solicite artes com briefing, acompanhe a aprovação, copie legenda e baixe o material final quando estiver liberado.",
+    title: "Artes de divulgação guiadas",
+    description: "Envie briefing, acompanhe aprovação, copie legenda, copie mensagem para WhatsApp e baixe a arte final.",
     tag: "Novo",
   },
 ];
 
 const upcomingFeatures = [
-  "Fechar pelo WhatsApp: ações em 1 clique.",
-  "Reengajamento automático para quem abriu e não respondeu.",
-  "Timeline única: abertura → aceite → pagamento → chat.",
+  "Fechamento pelo WhatsApp com ações em um clique.",
+  "Reengajamento de clientes que abriram a proposta e não responderam.",
+  "Timeline única com abertura, aceite, pagamento e conversa.",
   "Editor rápido com bônus, garantias e comparação de planos.",
   "Relatórios de conversão e receita por serviço.",
-  "Portal do cliente: status, arquivos e checklist.",
+  "Portal do cliente com status, arquivos e checklist.",
   "Histórico de e-mails enviados e novos controles de entrega.",
 ];
 
@@ -5428,7 +5428,7 @@ function ProductUpdatesModal({
           <div className="min-w-0">
             <p className="text-xs font-black uppercase text-green-700">Novidades do FechaPro</p>
             <h2 id="updates-modal-title" className="mt-1 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              O que chegou e o que vem depois
+              Veja o que mudou no seu painel
             </h2>
           </div>
           <button
@@ -5447,7 +5447,7 @@ function ProductUpdatesModal({
               <div>
                 <p className="text-xs font-black uppercase text-green-200">Agora no painel</p>
                 <p className="mt-2 text-lg font-black leading-snug">
-                  Propostas mais flexíveis, recebimento por proposta e artes de divulgação já estão prontos para o seu fluxo comercial.
+                  Propostas mais fáceis de ajustar, recebimento por proposta e artes de divulgação já estão prontos para usar.
                 </p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
@@ -5483,7 +5483,7 @@ function ProductUpdatesModal({
           <section className="rounded-lg border border-black/10 p-4">
             <p className="text-xs font-black uppercase text-blue-700">Próximos recursos</p>
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-              Estes itens estão planejados e podem mudar conforme testes e prioridades do produto.
+              Estes itens estão planejados e podem mudar de ordem ou formato conforme os testes do produto.
             </p>
             <div className="mt-3 grid gap-4">
               {nextFeatureGroups.map((group) => (
@@ -5504,7 +5504,7 @@ function ProductUpdatesModal({
 
           <div className="grid gap-2 sm:grid-cols-3">
             <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onOpenArts}>
-              Ver artes de divulgação
+              Abrir artes
             </button>
             <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black text-slate-800" type="button" onClick={onOpenBrand}>
               Ajustar marca
@@ -6174,16 +6174,14 @@ function ProposalCard({
             <FileDown size={15} />
             PDF
           </a>
-          {proposal.status === "accepted" ? (
-            <a
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
-              href={`/p/${proposal.publicSlug}/contrato`}
-              target="_blank"
-            >
-              <FileDown size={15} />
-              Contrato
-            </a>
-          ) : null}
+          <a
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
+            href={`/p/${proposal.publicSlug}/contrato`}
+            target="_blank"
+          >
+            <FileDown size={15} />
+            Contrato
+          </a>
           {currentPlan && canUseProposalSlides(currentPlan) ? (
             <a
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-black text-white"

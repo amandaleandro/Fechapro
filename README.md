@@ -6,6 +6,8 @@ Plataforma mobile first para prestadores de serviço criarem propostas comerciai
 
 O FechaPro transforma orçamentos simples em propostas completas, bonitas e fáceis de aprovar. A aplicação reúne cadastro comercial, biblioteca de serviços, clientes, portfólio, depoimentos, templates por nicho, checkout, acompanhamento comercial e suporte.
 
+O manual completo para usuários finais fica em `docs/manual-do-usuario.md`.
+
 Principais recursos:
 
 - landing page comercial com planos públicos;
@@ -130,7 +132,7 @@ NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 NEXT_PUBLIC_WHATSAPP_NUMBER=""
 NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE="Olá! Preciso de ajuda com o FechaPro."
 WHATSAPP_PROVIDER="baileys"
-WHATSAPP_BAILEYS_AUTH_DIR=".baileys-session"
+WHATSAPP_BAILEYS_AUTH_DIR="/app/baileys-session"
 WHATSAPP_NOTIFICATION_WEBHOOK_URL=""
 WHATSAPP_NOTIFICATION_WEBHOOK_TOKEN=""
 WHATSAPP_CLOUD_PHONE_NUMBER_ID=""
@@ -181,7 +183,8 @@ Pacotes extras de artes:
 - Os e-mails transacionais cobrem boas-vindas, redefinição de senha, proposta enviada, visualização, aceite, recusa e confirmação de pagamento disponível.
 - Os templates de marketing ficam em `lib/email.ts`; a régua recomendada e os cuidados de descadastro estão em `docs/emails-marketing.md`.
 - Para web push, gere chaves VAPID e preencha `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT`.
-- Para notificações de proposta por WhatsApp com Baileys, configure `WHATSAPP_PROVIDER="baileys"` e `WHATSAPP_BAILEYS_AUTH_DIR`. No primeiro envio, escaneie o QR Code exibido nos logs do servidor; depois a sessão fica salva nessa pasta.
+- Para notificações de proposta por WhatsApp com Baileys, configure `WHATSAPP_PROVIDER="baileys"` e `WHATSAPP_BAILEYS_AUTH_DIR`. O Baileys usa um único número remetente do FechaPro. No primeiro envio, escaneie o QR Code exibido nos logs do servidor; depois a sessão fica salva nessa pasta.
+- Cada alerta é enviado para o WhatsApp cadastrado na tela **Marca** do profissional, avisando quando o cliente dele abriu, aprovou, recusou ou pagou uma proposta.
 - Se preferir um provedor externo, configure `WHATSAPP_NOTIFICATION_WEBHOOK_URL` e opcionalmente `WHATSAPP_NOTIFICATION_WEBHOOK_TOKEN`. O endpoint recebe `phone`, `message`, `title`, `body`, `url`, `tag` e `businessName`.
 - Como alternativa ao webhook, configure `WHATSAPP_CLOUD_PHONE_NUMBER_ID` e `WHATSAPP_CLOUD_ACCESS_TOKEN` para enviar pela Cloud API da Meta.
 - Configure `NEXT_PUBLIC_WHATSAPP_NUMBER` com o número do suporte, somente com dígitos.
