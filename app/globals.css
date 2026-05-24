@@ -651,25 +651,72 @@ select:focus {
 }
 
 .fp-proposal-logo-frame {
-  /* Reduce horizontal whitespace and make the frame closer to square */
-  width: clamp(3.5rem, 9vw, 5rem);
-  height: clamp(3.5rem, 8vw, 4.5rem);
-  padding: 0.45rem;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.9));
+  width: clamp(8.5rem, 22vw, 16.5rem);
+  height: clamp(5.5rem, 11vw, 8.4rem);
+  padding: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(2, 6, 23, 0.22);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 24px rgba(2, 6, 23, 0.14);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 10px 24px rgba(2, 6, 23, 0.12);
 }
 
 .fp-proposal-logo-image {
   display: block;
-  width: auto;
+  width: 100%;
   height: 100%;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  object-position: center;
+  margin: 0 auto;
   filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.12));
+}
+
+.fp-proposal-logo-fallback {
+  width: min(7.3rem, 54%);
+  height: 100%;
+  font-size: clamp(1.8rem, 4vw, 2.1rem);
+}
+
+.fp-proposal-logo-frame .fp-proposal-logo-image {
+  max-height: calc(100% - 0.2rem);
+  max-width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .fp-proposal-logo-frame {
+    width: 264px; /* ~16.5rem */
+    height: 134px; /* ~8.4rem */
+  }
+}
+
+.fp-proposal-cover-card {
+  min-height: clamp(18rem, 32vw, 25.75rem);
+  box-shadow: 14px 12px 0 rgba(2, 6, 23, 0.38) !important;
+}
+
+.fp-proposal-cover-card > div,
+.fp-proposal-cover-card > div > div {
+  height: 100%;
+  min-height: inherit;
+}
+
+@media (max-width: 640px) {
+  .fp-proposal-logo-frame {
+    width: 100%;
+    max-width: 16rem;
+    padding: 0.45rem;
+  }
+
+  .fp-proposal-cover-card {
+    min-height: 15rem;
+    box-shadow: 8px 8px 0 rgba(2, 6, 23, 0.28) !important;
+  }
 }
 
 .fp-proposal-service-brief {

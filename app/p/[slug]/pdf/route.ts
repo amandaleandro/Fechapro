@@ -217,12 +217,6 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
 
   const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
   if (logo) {
-    const hasAlpha = await bufferHasAlpha(logo);
-    if (!hasAlpha) {
-      doc.roundedRect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 8).fillAndStroke("#FFFFFF", "#E2E8F0");
-    } else {
-      doc.roundedRect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 8).lineWidth(1).strokeColor("#E2E8F0").stroke();
-    }
     const didDrawLogo = drawPdfImage(doc, logo, logoBoxX + 8, logoBoxY + 8, {
       fit: [logoBoxWidth - 16, logoBoxHeight - 16],
       align: "center",
@@ -230,7 +224,9 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
       width: logoBoxWidth - 16,
       height: logoBoxHeight - 16,
     });
-    if (!didDrawLogo) drawServiceMark(doc, data.brandName, logoFallbackX, logoBoxY, logoSize, design.primary);
+    if (!didDrawLogo) {
+      drawServiceMark(doc, data.brandName, logoFallbackX, logoBoxY, logoSize, design.primary);
+    }
   } else {
     drawServiceMark(doc, data.brandName, logoFallbackX, logoBoxY, logoSize, design.primary);
   }
@@ -276,13 +272,21 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
     const item = images[index];
     const image = await readImageFromUrl(item?.imageUrl || "", data.assetOrigin);
     if (image) {
-      drawPdfImage(doc, image, x, imageY, {
+      const didDraw = drawPdfImage(doc, image, x, imageY, {
         fit: [imageW, imageH],
         align: "center",
         valign: "center",
         width: imageW,
         height: imageH,
       });
+      if (!didDraw) {
+        doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(13).text(index === 0 ? data.serviceName : design.fallbackImageLabel, x + 14, imageY + 48, {
+          width: imageW - 28,
+          align: "center",
+          height: 34,
+          ellipsis: true,
+        });
+      }
     } else {
       doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(13).text(index === 0 ? data.serviceName : design.fallbackImageLabel, x + 14, imageY + 48, {
         width: imageW - 28,
@@ -407,14 +411,10 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
 
   const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
   if (logo) {
-    const hasAlpha = await bufferHasAlpha(logo);
-    if (!hasAlpha) {
-      doc.roundedRect(logoX, logoY, logoWidth, logoHeight, 8).fill("#FFFFFF");
-    } else {
-      doc.roundedRect(logoX, logoY, logoWidth, logoHeight, 8).lineWidth(1).strokeColor("#FFFFFF").stroke();
-    }
     const didDrawLogo = drawLogoImageInFrame(doc, logo, logoX, logoY, logoWidth, logoHeight, 12, 9);
-    if (!didDrawLogo) drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
+    if (!didDrawLogo) {
+      drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
+    }
   } else {
     drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
   }
@@ -459,13 +459,16 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
   doc.roundedRect(coverImageX, coverImageY, coverImageWidth, coverImageHeight, 12).fill("#FFFFFF");
   const coverImage = await readImageFromUrl(data.portfolio[0]?.imageUrl || "", data.assetOrigin);
   if (coverImage) {
-    drawPdfImage(doc, coverImage, coverImageX + 9, coverImageY + 9, {
+    const didDraw = drawPdfImage(doc, coverImage, coverImageX + 9, coverImageY + 9, {
       fit: [coverImageWidth - 18, coverImageHeight - 18],
       align: "center",
       valign: "center",
       width: coverImageWidth - 18,
       height: coverImageHeight - 18,
     });
+    if (!didDraw) {
+      drawCoverSummaryCard(doc, data, design, coverImageX + 9, coverImageY + 9, coverImageWidth - 18, coverImageHeight - 18);
+    }
   } else {
     drawCoverSummaryCard(doc, data, design, coverImageX + 9, coverImageY + 9, coverImageWidth - 18, coverImageHeight - 18);
   }
@@ -526,14 +529,10 @@ async function drawCover(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
     const logoY = 30;
     const logoWidth = 92;
     const logoHeight = 58;
-    const hasAlpha = await bufferHasAlpha(logo);
-    if (!hasAlpha) {
-      doc.roundedRect(logoX, logoY, logoWidth, logoHeight, 7).fill("#FFFFFF");
-    } else {
-      doc.roundedRect(logoX, logoY, logoWidth, logoHeight, 7).lineWidth(1).strokeColor("#FFFFFF").stroke();
-    }
     const didDrawLogo = drawLogoImageInFrame(doc, logo, logoX, logoY, logoWidth, logoHeight, 7, 7);
-    if (!didDrawLogo) drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
+    if (!didDrawLogo) {
+      drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
+    }
   } else {
     drawLogoInitials(doc, data.brandName, MARGIN, 30, 58, data.brandColor);
   }
@@ -619,7 +618,8 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pdf
 
   const featureWidth = 192;
   const itemWidth = CONTENT_WIDTH - featureWidth - 24;
-  const itemHeight = 38;
+  const itemGap = 12;
+  const itemValueWidth = itemWidth - 62;
   const startY = doc.y + 10;
 
   doc.roundedRect(MARGIN + 2, startY + 3, featureWidth, 138, 9).fill("#E2E8F0");
@@ -639,20 +639,28 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pdf
     ellipsis: true,
   });
 
+  let itemY = startY;
   items.forEach(([label, value], index) => {
     const x = MARGIN + featureWidth + 24;
-    const y = startY + index * (itemHeight + 12);
+    const displayValue = value || "A combinar";
+    doc.font("Helvetica-Bold").fontSize(10.5);
+    const valueHeight = doc.heightOfString(displayValue, {
+      width: itemValueWidth,
+      lineGap: 2,
+    });
+    const itemHeight = Math.max(42, valueHeight + 31);
+    const y = itemY;
     doc.roundedRect(x, y, itemWidth, itemHeight, 7).fillAndStroke("#FFFFFF", LINE);
     doc.roundedRect(x + 14, y + 16, 20, 3, 1.5).fill(index === 1 ? design.primary : design.accent);
     doc.fillColor(MUTED).font("Helvetica-Bold").fontSize(7.5).text(label.toUpperCase(), x + 48, y + 10);
-    doc.fillColor(INK).font("Helvetica-Bold").fontSize(10.5).text(value || "A combinar", x + 48, y + 21, {
-      width: itemWidth - 62,
-      height: 12,
-      ellipsis: true,
+    doc.fillColor(INK).font("Helvetica-Bold").fontSize(10.5).text(displayValue, x + 48, y + 21, {
+      width: itemValueWidth,
+      lineGap: 2,
     });
+    itemY += itemHeight + itemGap;
   });
 
-  doc.y = startY + 162;
+  doc.y = Math.max(startY + 162, itemY + 10);
 }
 
 function drawServiceMark(doc: PDFKit.PDFDocument, brandName: string, x: number, y: number, size: number, color: string) {

@@ -1,5 +1,6 @@
 import webpush, { WebPushError } from "web-push";
 import { prisma } from "@/lib/prisma";
+import { sendProposalWhatsAppNotification } from "@/lib/whatsapp";
 
 const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY || "";
@@ -27,6 +28,8 @@ export async function sendProposalPushNotification(
     tag: string;
   }
 ) {
+  await sendProposalWhatsAppNotification(userId, input);
+
   if (!isPushConfigured()) return;
 
   const subscriptions = await prisma.pushSubscription.findMany({ where: { userId } });

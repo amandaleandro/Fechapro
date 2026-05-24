@@ -71,5 +71,5 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
     );
   }
 
-  redirect(`/p/${slug}?accepted=1&name=${encodeURIComponent(signerName)}`);
+  redirect(`/p/${slug}?accepted=1&name=${encodeURIComponent(signerName)}#contrato`);
 }

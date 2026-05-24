@@ -96,6 +96,22 @@ export default async function PublicProposalPage({
     : null;
   const acceptHref = hasDecision ? "#status" : "#aceite";
   const wantsPix = proposal.checkoutMode === "pix";
+  const proposalPdfHref = `/p/${proposal.publicSlug}/pdf`;
+  const contractPdfHref = `/p/${proposal.publicSlug}/contrato`;
+  const acceptedDocumentHref = currentStatus === "accepted" ? contractPdfHref : proposalPdfHref;
+  const acceptedDocumentLabel = currentStatus === "accepted" ? "Contrato" : "Contrato / proposta";
+  const acceptedAtLabel = proposal.acceptedAt
+    ? proposal.acceptedAt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    : "";
+  const contractConditions = [
+    ["Contratante", proposal.clientName],
+    ["Contratada", brandName],
+    ["Servico", proposal.serviceName],
+    ["Investimento", money.format(proposal.price)],
+    ["Prazo", proposal.deadline],
+    ["Pagamento", proposal.payment || "A combinar"],
+    ["Validade da proposta", validUntilLabel],
+  ];
 
   return (
     <main
@@ -110,7 +126,10 @@ export default async function PublicProposalPage({
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Proposta aceita com sucesso.</strong>
-            <p className="mt-1 text-sm">Obrigado, {query.name || "cliente"}. O profissional já pode seguir com os próximos passos.</p>
+            <p className="mt-1 text-sm">Obrigado, {query.name || "cliente"}. O contrato preenchido ja esta disponivel para visualizar e assinar.</p>
+            <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg bg-green-700 px-4 text-sm font-black text-white" href="#contrato">
+              Ver contrato preenchido
+            </a>
           </div>
         ) : null}
 
@@ -216,8 +235,8 @@ export default async function PublicProposalPage({
                     Aceitar proposta
                   </a>
                 ) : null}
-                <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 px-5 font-black text-white" href={`/p/${proposal.publicSlug}/pdf`}>
-                  Contrato / proposta
+                <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 px-5 font-black text-white" href={acceptedDocumentHref}>
+                  {acceptedDocumentLabel}
                 </a>
                 {currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
                   <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 bg-white/10 px-5 font-black text-white" href={`/p/${proposal.publicSlug}/recibo`}>
@@ -261,8 +280,8 @@ export default async function PublicProposalPage({
                     Aceitar online
                   </a>
                 ) : null}
-                <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black" href={`/p/${proposal.publicSlug}/pdf`}>
-                  Contrato / proposta
+                <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black" href={acceptedDocumentHref}>
+                  {acceptedDocumentLabel}
                 </a>
                 {currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
                   <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/20 bg-green-50 px-4 text-center font-black text-green-800" href={`/p/${proposal.publicSlug}/recibo`}>
@@ -433,6 +452,71 @@ export default async function PublicProposalPage({
           </section>
         ) : null}
 
+        {currentStatus === "accepted" ? (
+          <section className="fp-proposal-panel rounded-lg border border-green-700/20 bg-white p-5 shadow-xl shadow-slate-900/5" id="contrato">
+            <div className="grid gap-5 lg:grid-cols-[1fr_0.72fr]">
+              <div>
+                <p className="text-xs font-black uppercase text-green-700">Contrato preenchido</p>
+                <h2 className="mt-1 text-2xl font-black">Condicoes aceitas para execucao</h2>
+                <p className="mt-2 leading-7 text-slate-600">
+                  Este documento foi gerado automaticamente a partir da proposta aceita. Ele reune escopo, valores,
+                  prazo, pagamento, observacoes e termos comerciais cadastrados pelo profissional.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {contractConditions.map(([label, value]) => (
+                    <div className="rounded-lg border border-black/10 bg-slate-50 p-3" key={label}>
+                      <p className="text-xs font-black uppercase text-slate-500">{label}</p>
+                      <strong className="mt-1 block text-slate-950">{value}</strong>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-lg border border-black/10 bg-slate-50 p-4">
+                  <p className="text-xs font-black uppercase text-slate-500">Escopo contratado</p>
+                  <ul className="mt-3 grid gap-2 text-sm font-bold leading-6 text-slate-700">
+                    {(proposal.included.length ? proposal.included : ["Servico conforme combinado."]).map((item, index) => (
+                      <li key={`${item}-${index}`}>- {item}</li>
+                    ))}
+                  </ul>
+                  {proposal.notes ? (
+                    <p className="mt-3 whitespace-pre-line text-sm font-bold leading-6 text-slate-700">{proposal.notes}</p>
+                  ) : null}
+                  {brand?.proposalTerms ? (
+                    <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{brand.proposalTerms}</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <aside className="grid content-start gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-950">
+                <div>
+                  <p className="text-xs font-black uppercase text-green-700">Assinatura</p>
+                  <h3 className="mt-1 text-xl font-black">Aceite digital registrado</h3>
+                  <p className="mt-2 text-sm font-bold leading-6">
+                    Assinado por {proposal.acceptedBy || proposal.clientName}
+                    {proposal.acceptedEmail ? ` (${proposal.acceptedEmail})` : ""}
+                    {acceptedAtLabel ? ` em ${acceptedAtLabel}` : ""}.
+                  </p>
+                </div>
+                <div className="grid gap-2">
+                  <a className="grid min-h-11 place-items-center rounded-lg px-4 text-center font-black text-white" href={contractPdfHref} style={{ background: brandColor }} target="_blank">
+                    Abrir contrato em PDF
+                  </a>
+                  <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/30 bg-white px-4 text-center font-black text-green-900" href={contractPdfHref} target="_blank">
+                    Imprimir ou salvar
+                  </a>
+                  {whatsappUrl ? (
+                    <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/30 bg-white px-4 text-center font-black text-green-900" href={whatsappUrl} target="_blank">
+                      Enviar duvida pelo WhatsApp
+                    </a>
+                  ) : null}
+                </div>
+                <p className="text-xs font-bold leading-5 text-green-900/80">
+                  Para assinatura fisica, abra o PDF e use a opcao de imprimir. Para assinatura digital, o aceite acima fica registrado no PDF.
+                </p>
+              </aside>
+            </div>
+          </section>
+        ) : null}
+
         {brand?.showFaq !== false ? (
         <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
           <p className="text-xs font-black uppercase text-blue-700">FAQ</p>
@@ -465,8 +549,8 @@ export default async function PublicProposalPage({
                 Aceito por {proposal.acceptedBy || proposal.clientName}
                 {proposal.acceptedAt ? ` em ${proposal.acceptedAt.toLocaleString("pt-BR")}` : ""}.
               </p>
-              <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg px-4 font-black text-white" href={`/p/${proposal.publicSlug}/pdf`} style={{ background: brandColor }}>
-                Baixar contrato / proposta
+              <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg px-4 font-black text-white" href={acceptedDocumentHref} style={{ background: brandColor }}>
+                Baixar {acceptedDocumentLabel.toLowerCase()}
               </a>
             </div>
           ) : null}
@@ -591,7 +675,7 @@ export default async function PublicProposalPage({
 
       <div className="fp-proposal-mobile-bar fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-2xl shadow-slate-950/15 backdrop-blur sm:hidden">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2">
-          <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-3 text-center text-sm font-black text-slate-800" href={`/p/${proposal.publicSlug}/pdf`}>
+          <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-3 text-center text-sm font-black text-slate-800" href={acceptedDocumentHref}>
             PDF
           </a>
           <a className="grid min-h-11 place-items-center rounded-lg px-3 text-center text-sm font-black text-white" href={acceptHref} style={{ background: brandColor }}>

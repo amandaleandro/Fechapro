@@ -129,6 +129,12 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 NEXT_PUBLIC_WHATSAPP_NUMBER=""
 NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE="Olá! Preciso de ajuda com o FechaPro."
+WHATSAPP_PROVIDER="baileys"
+WHATSAPP_BAILEYS_AUTH_DIR=".baileys-session"
+WHATSAPP_NOTIFICATION_WEBHOOK_URL=""
+WHATSAPP_NOTIFICATION_WEBHOOK_TOKEN=""
+WHATSAPP_CLOUD_PHONE_NUMBER_ID=""
+WHATSAPP_CLOUD_ACCESS_TOKEN=""
 ```
 
 Também existem aliases em minúsculas para variáveis do Mercado Pago em alguns ambientes. Prefira manter os nomes do `.env.example` atualizados e nunca coloque chaves reais em arquivos versionados.
@@ -175,6 +181,9 @@ Pacotes extras de artes:
 - Os e-mails transacionais cobrem boas-vindas, redefinição de senha, proposta enviada, visualização, aceite, recusa e confirmação de pagamento disponível.
 - Os templates de marketing ficam em `lib/email.ts`; a régua recomendada e os cuidados de descadastro estão em `docs/emails-marketing.md`.
 - Para web push, gere chaves VAPID e preencha `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT`.
+- Para notificações de proposta por WhatsApp com Baileys, configure `WHATSAPP_PROVIDER="baileys"` e `WHATSAPP_BAILEYS_AUTH_DIR`. No primeiro envio, escaneie o QR Code exibido nos logs do servidor; depois a sessão fica salva nessa pasta.
+- Se preferir um provedor externo, configure `WHATSAPP_NOTIFICATION_WEBHOOK_URL` e opcionalmente `WHATSAPP_NOTIFICATION_WEBHOOK_TOKEN`. O endpoint recebe `phone`, `message`, `title`, `body`, `url`, `tag` e `businessName`.
+- Como alternativa ao webhook, configure `WHATSAPP_CLOUD_PHONE_NUMBER_ID` e `WHATSAPP_CLOUD_ACCESS_TOKEN` para enviar pela Cloud API da Meta.
 - Configure `NEXT_PUBLIC_WHATSAPP_NUMBER` com o número do suporte, somente com dígitos.
 - Ajuste `NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE` para mudar a mensagem preenchida ao abrir o WhatsApp.
 - A aba **Suporte** do painel registra conversas que podem ser respondidas no painel admin.

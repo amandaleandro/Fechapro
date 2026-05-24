@@ -74,31 +74,33 @@ function createPaymentReceiptPdf(data: {
     doc.roundedRect(32, 30, 531, 782, 18).fill("#FFFFFF");
     doc.rect(32, 30, 531, 128).fill(data.primaryColor);
     doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(11).text("RECIBO DE PAGAMENTO", 58, 58, { characterSpacing: 1.8 });
-    doc.fontSize(26).text(data.businessName, 58, 82, { width: 340 });
+    doc.fontSize(24).text(data.businessName, 58, 82, { width: 318, height: 34, ellipsis: true });
     doc.font("Helvetica").fontSize(9).fillColor("#FFFFFF").text("Documento gerado pelo FechaPro", 58, 120);
 
     doc.roundedRect(398, 58, 122, 58, 10).fill("#FFFFFF");
     doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(9).text("CODIGO", 414, 72);
     doc.fillColor("#0F172A").fontSize(12).text(data.receiptCode, 414, 88, { width: 90, ellipsis: true });
 
-    doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(13).text("Valor recebido", 58, 194);
-    doc.fontSize(34).text(data.total, 58, 216);
-    doc.fillColor("#475569").font("Helvetica").fontSize(11).text(
-      `Recebemos de ${data.clientName} o valor acima referente ao servico "${data.serviceName}".`,
-      58,
-      262,
-      { width: 468, lineGap: 4 },
-    );
+    doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(13).text("Valor recebido", 58, 190);
+    doc.fontSize(34).text(data.total, 58, 212, { width: 468, height: 42, ellipsis: true });
 
-    doc.roundedRect(58, 314, 468, 84, 12).fill("#ECFDF5");
-    doc.fillColor("#166534").font("Helvetica-Bold").fontSize(10).text("PAGAMENTO CONFIRMADO", 78, 334, { characterSpacing: 0.8 });
-    doc.fillColor("#0F172A").fontSize(16).text(data.paidAt, 78, 354);
-    doc.fillColor("#166534").font("Helvetica").fontSize(10).text(`Forma: ${data.method}`, 78, 378);
+    const description = `Recebemos de ${data.clientName} o valor acima referente ao servico "${data.serviceName}".`;
+    doc.fillColor("#475569").font("Helvetica").fontSize(11);
+    const descriptionY = 266;
+    const descriptionHeight = Math.min(doc.heightOfString(description, { width: 468, lineGap: 4 }), 58);
+    doc.text(description, 58, descriptionY, { width: 468, height: descriptionHeight, lineGap: 4, ellipsis: true });
 
-    infoCard(doc, 58, 430, "Cliente", data.clientName, data.clientEmail || "E-mail nao informado");
-    infoCard(doc, 302, 430, "Servico", data.serviceName, `Aceite: ${data.acceptedAt}`);
-    infoCard(doc, 58, 534, "Recebedor", data.businessName, contactLine(data.businessEmail, data.businessWhatsapp));
-    infoCard(doc, 302, 534, "Emissao", data.createdAt, "Recibo vinculado a proposta aceita");
+    const confirmationY = descriptionY + descriptionHeight + 28;
+    doc.roundedRect(58, confirmationY, 468, 90, 12).fill("#ECFDF5");
+    doc.fillColor("#166534").font("Helvetica-Bold").fontSize(10).text("PAGAMENTO CONFIRMADO", 78, confirmationY + 18, { characterSpacing: 0.8 });
+    doc.fillColor("#0F172A").fontSize(16).text(data.paidAt, 78, confirmationY + 40, { width: 428, height: 20, ellipsis: true });
+    doc.fillColor("#166534").font("Helvetica").fontSize(10).text(`Forma: ${data.method}`, 78, confirmationY + 66, { width: 428, height: 14, ellipsis: true });
+
+    const cardsY = confirmationY + 122;
+    infoCard(doc, 58, cardsY, "Cliente", data.clientName, data.clientEmail || "E-mail nao informado");
+    infoCard(doc, 302, cardsY, "Servico", data.serviceName, `Aceite: ${data.acceptedAt}`);
+    infoCard(doc, 58, cardsY + 104, "Recebedor", data.businessName, contactLine(data.businessEmail, data.businessWhatsapp));
+    infoCard(doc, 302, cardsY + 104, "Emissao", data.createdAt, "Recibo vinculado a proposta aceita");
 
     doc.strokeColor("#CBD5E1").moveTo(90, 696).lineTo(286, 696).stroke();
     doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(10).text(data.businessName, 90, 708, { width: 196, align: "center" });
@@ -117,8 +119,8 @@ function createPaymentReceiptPdf(data: {
 function infoCard(doc: PDFKit.PDFDocument, x: number, y: number, title: string, value: string, detail: string) {
   doc.roundedRect(x, y, 224, 78, 10).fill("#F8FAFC").stroke("#E2E8F0");
   doc.fillColor("#64748B").font("Helvetica-Bold").fontSize(8).text(title.toUpperCase(), x + 16, y + 15, { characterSpacing: 0.7 });
-  doc.fillColor("#0F172A").fontSize(12).text(value, x + 16, y + 32, { width: 192, ellipsis: true });
-  doc.fillColor("#64748B").font("Helvetica").fontSize(9).text(detail, x + 16, y + 52, { width: 192, ellipsis: true });
+  doc.fillColor("#0F172A").fontSize(12).text(value, x + 16, y + 31, { width: 192, height: 16, ellipsis: true });
+  doc.fillColor("#64748B").font("Helvetica").fontSize(9).text(detail, x + 16, y + 54, { width: 192, height: 12, ellipsis: true });
 }
 
 function contactLine(email: string, whatsapp: string) {

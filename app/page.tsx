@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   BarChart3,
@@ -2016,6 +2016,7 @@ function ProposalsView({
   proposals: Proposal[];
 }) {
   const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null);
+  const detailPanelRef = useRef<HTMLDivElement | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(proposals.length / pageSize));
@@ -2035,6 +2036,11 @@ function ProposalsView({
   useEffect(() => {
     setPage((current) => Math.min(current, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    if (!selectedProposal) return;
+    detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectedProposal]);
 
   return (
     <section className="grid gap-4">
@@ -2070,25 +2076,27 @@ function ProposalsView({
       </div>
 
       {selectedProposal ? (
-        <ProposalDetailPanel
-          currentPlan={currentPlan}
-          proposal={selectedProposal}
-          onClose={() => setSelectedProposalId(null)}
-          onConfirmPix={() => onConfirmPix(selectedProposal.id)}
-          onCopyLink={() => onCopyLink(selectedProposal.publicSlug)}
-          onDuplicate={() => onDuplicate(selectedProposal.id)}
-          onEdit={() => onEdit(selectedProposal)}
-          onRemove={() => {
-            if (window.confirm("Remover esta proposta?")) {
-              onRemove(selectedProposal.id);
-              setSelectedProposalId(null);
-            }
-          }}
-          onResend={() => onResend(selectedProposal.id)}
-          onStatusChange={(status) => onStatusChange(selectedProposal.id, status)}
-          onSatisfactionSurveySend={() => onSatisfactionSurveySend(selectedProposal.id)}
-          onSatisfactionSurveyLinkCopy={() => onSatisfactionSurveyLinkCopy(selectedProposal)}
-        />
+        <div ref={detailPanelRef}>
+          <ProposalDetailPanel
+            currentPlan={currentPlan}
+            proposal={selectedProposal}
+            onClose={() => setSelectedProposalId(null)}
+            onConfirmPix={() => onConfirmPix(selectedProposal.id)}
+            onCopyLink={() => onCopyLink(selectedProposal.publicSlug)}
+            onDuplicate={() => onDuplicate(selectedProposal.id)}
+            onEdit={() => onEdit(selectedProposal)}
+            onRemove={() => {
+              if (window.confirm("Remover esta proposta?")) {
+                onRemove(selectedProposal.id);
+                setSelectedProposalId(null);
+              }
+            }}
+            onResend={() => onResend(selectedProposal.id)}
+            onStatusChange={(status) => onStatusChange(selectedProposal.id, status)}
+            onSatisfactionSurveySend={() => onSatisfactionSurveySend(selectedProposal.id)}
+            onSatisfactionSurveyLinkCopy={() => onSatisfactionSurveyLinkCopy(selectedProposal)}
+          />
+        </div>
       ) : null}
 
       <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
@@ -5920,8 +5928,14 @@ function ProposalDetailPanel({
             <div className="grid gap-2 sm:grid-cols-2">
               <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-4 font-black text-blue-700" href={`/p/${proposal.publicSlug}/pdf`} target="_blank">
                 <FileDown size={16} />
-                Contrato / proposta
+                Proposta em PDF
               </a>
+              {proposal.status === "accepted" ? (
+                <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-4 font-black text-green-700" href={`/p/${proposal.publicSlug}/contrato`} target="_blank">
+                  <FileDown size={16} />
+                  Contrato
+                </a>
+              ) : null}
               {proposal.status === "accepted" && proposal.paymentStatus === "paid" ? (
                 <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-4 font-black text-green-700" href={`/p/${proposal.publicSlug}/recibo`} target="_blank">
                   <FileDown size={16} />
@@ -6144,7 +6158,7 @@ function ProposalCard({
         <span className="text-sm font-bold text-slate-500">{proposal.deadline}</span>
       </div>
       {proposal.publicSlug ? (
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
           <a
             className="rounded-lg bg-slate-100 px-3 py-2 text-center text-sm font-black text-green-700"
             href={`/p/${proposal.publicSlug}`}
@@ -6160,6 +6174,16 @@ function ProposalCard({
             <FileDown size={15} />
             PDF
           </a>
+          {proposal.status === "accepted" ? (
+            <a
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
+              href={`/p/${proposal.publicSlug}/contrato`}
+              target="_blank"
+            >
+              <FileDown size={15} />
+              Contrato
+            </a>
+          ) : null}
           {currentPlan && canUseProposalSlides(currentPlan) ? (
             <a
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-black text-white"
