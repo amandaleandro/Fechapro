@@ -27,7 +27,11 @@ export async function GET() {
     data: { status: "expired" },
   });
 
-  const items = await prisma.proposalAsset.findMany({ where: { userId: session.id }, orderBy: { createdAt: "desc" } });
+  const items = await prisma.proposalAsset.findMany({
+    where: { userId: session.id },
+    include: { satisfactionSurvey: true },
+    orderBy: { createdAt: "desc" },
+  });
   return NextResponse.json(items, { headers: { "Cache-Control": "no-store" } });
 }
 

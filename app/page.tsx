@@ -134,6 +134,19 @@ type Proposal = {
   acceptedAt?: string | null;
   declinedReason?: string | null;
   declinedAt?: string | null;
+  satisfactionSurvey?: {
+    id: string;
+    testimonialId?: string | null;
+    rating?: number | null;
+    recommendScore?: number | null;
+    comment?: string | null;
+    testimonialOk: boolean;
+    clientName?: string | null;
+    clientEmail?: string | null;
+    serviceCompletedAt?: string | null;
+    sentAt?: string | null;
+    respondedAt?: string | null;
+  } | null;
   createdAt: string;
 };
 
@@ -897,6 +910,22 @@ export default function Home() {
     setNotice(`Proposta reenviada.${emailNote}`);
   }
 
+  async function sendSatisfactionSurvey(id: string) {
+    const result = await apiPost<NonNullable<Proposal["satisfactionSurvey"]> & { emailSent?: boolean }>(`/api/proposals/${id}/satisfaction/send`, {});
+    setProposals((current) => current.map((item) => (item.id === id ? { ...item, satisfactionSurvey: result } : item)));
+    setNotice(result.emailSent ? "Serviço finalizado e pesquisa de satisfação enviada ao cliente." : "Serviço finalizado e pesquisa liberada.");
+  }
+
+  function copySatisfactionSurveyLink(proposal?: Proposal | null) {
+    if (!proposal?.publicSlug) return;
+    if (!proposal.satisfactionSurvey?.serviceCompletedAt) {
+      setNotice("Finalize o serviço para liberar o link da pesquisa.");
+      return;
+    }
+    navigator.clipboard.writeText(`${window.location.origin}/p/${proposal.publicSlug}#satisfacao`);
+    setNotice("Link da pesquisa copiado para enviar no WhatsApp.");
+  }
+
   async function duplicateProposal(id: string) {
     const copy = await apiPost<Proposal>(`/api/proposals/${id}/duplicate`, {});
     setProposals((current) => [copy, ...current]);
@@ -932,7 +961,7 @@ export default function Home() {
   async function confirmPixPayment(id: string) {
     const result = await apiPost<Proposal>(`/api/proposals/${id}/confirm-pix`, {});
     setProposals((current) => current.map((item) => (item.id === id ? result : item)));
-    setNotice("Pagamento PIX confirmado. Cliente notificado por e-mail.");
+    setNotice("Pagamento confirmado. Cliente notificado por e-mail.");
   }
 
   function copyProposalLink(slug?: string) {
@@ -1158,6 +1187,8 @@ export default function Home() {
             onStatusChange={changeProposalStatus}
             onProposalRemove={removeProposal}
             onProposalResend={resendProposal}
+            onSatisfactionSurveySend={sendSatisfactionSurvey}
+            onSatisfactionSurveyLinkCopy={copySatisfactionSurveyLink}
             onProposalDuplicate={duplicateProposal}
             onProposalEdit={editProposal}
             onProposalPdf={saveProposalAndOpenPdf}
@@ -1181,6 +1212,8 @@ export default function Home() {
                 onEdit={editProposal}
                 onRemove={removeProposal}
                 onResend={resendProposal}
+                onSatisfactionSurveySend={sendSatisfactionSurvey}
+                onSatisfactionSurveyLinkCopy={copySatisfactionSurveyLink}
                 onStatusChange={changeProposalStatus}
                 proposals={proposals}
                 onNewProposal={() => {
@@ -1393,6 +1426,8 @@ function DashboardView({
   onProposalEdit,
   onProposalRemove,
   onProposalResend,
+  onSatisfactionSurveySend,
+  onSatisfactionSurveyLinkCopy,
   onProposalPdf,
   onProposalSave,
   onSeed,
@@ -1417,6 +1452,8 @@ function DashboardView({
   onProposalEdit: (proposal: Proposal) => void;
   onProposalRemove: (id: string) => void;
   onProposalResend: (id: string) => void;
+  onSatisfactionSurveySend: (id: string) => void;
+  onSatisfactionSurveyLinkCopy: (proposal: Proposal) => void;
   onProposalPdf: () => void | Promise<void>;
   onProposalSave: (status?: ProposalStatus) => void | Promise<Proposal | null>;
   onSeed: () => void;
@@ -1930,6 +1967,8 @@ function DashboardView({
                 }}
                 onStatusChange={(status) => onStatusChange(proposal.id, status)}
                 onResend={() => onProposalResend(proposal.id)}
+                onSatisfactionSurveySend={() => onSatisfactionSurveySend(proposal.id)}
+                onSatisfactionSurveyLinkCopy={() => onSatisfactionSurveyLinkCopy(proposal)}
                 onDuplicate={() => onProposalDuplicate(proposal.id)}
                 onEdit={() => onProposalEdit(proposal)}
               />
@@ -1956,6 +1995,8 @@ function ProposalsView({
   onNotice,
   onRemove,
   onResend,
+  onSatisfactionSurveySend,
+  onSatisfactionSurveyLinkCopy,
   onStatusChange,
   proposals,
 }: {
@@ -1969,6 +2010,8 @@ function ProposalsView({
   onNotice: (message: string | null) => void;
   onRemove: (id: string) => void;
   onResend: (id: string) => void;
+  onSatisfactionSurveySend: (id: string) => void;
+  onSatisfactionSurveyLinkCopy: (proposal: Proposal) => void;
   onStatusChange: (id: string, status: ProposalStatus) => void;
   proposals: Proposal[];
 }) {
@@ -2043,6 +2086,8 @@ function ProposalsView({
           }}
           onResend={() => onResend(selectedProposal.id)}
           onStatusChange={(status) => onStatusChange(selectedProposal.id, status)}
+          onSatisfactionSurveySend={() => onSatisfactionSurveySend(selectedProposal.id)}
+          onSatisfactionSurveyLinkCopy={() => onSatisfactionSurveyLinkCopy(selectedProposal)}
         />
       ) : null}
 
@@ -2084,6 +2129,8 @@ function ProposalsView({
               onCopyLink={() => onCopyLink(proposal.publicSlug)}
               onStatusChange={(status) => onStatusChange(proposal.id, status)}
               onResend={() => onResend(proposal.id)}
+              onSatisfactionSurveySend={() => onSatisfactionSurveySend(proposal.id)}
+              onSatisfactionSurveyLinkCopy={() => onSatisfactionSurveyLinkCopy(proposal)}
               onDuplicate={() => onDuplicate(proposal.id)}
               onEdit={() => onEdit(proposal)}
               onOpenDetail={() => setSelectedProposalId(proposal.id)}
@@ -4300,28 +4347,10 @@ function AuthScreen() {
     "Monte a proposta com investimento, prazo, portfólio, depoimentos, condições e próximos passos.",
     "Envie link ou PDF, acompanhe visualizações e faça follow-up com mais contexto.",
   ];
-  const niches = ["Designer", "Fotógrafo", "Arquiteto", "Consultor", "Técnico de ar-condicionado", "Marceneiro", "Estética", "Eventos", "Reformas", "Serviços digitais"];
+  const niches = ["Fotografia", "Buffet/Eventos", "Estética", "Arquitetura", "Marcenaria", "Social Media", "Reformas", "Serviços digitais"];
   const landingExamples = [
     {
-      niche: "Designer",
-      client: "Maria Eduarda",
-      service: "Identidade visual premium",
-      price: 1200,
-      deadline: "7 dias úteis",
-      proof: "Portfolio, paleta, tipografia e depoimento antes do aceite",
-      included: ["Logo principal", "Paleta de cores", "Tipografia", "Modelos de posts"],
-    },
-    {
-      niche: "Social media",
-      client: "Clínica Aura",
-      service: "Gestão mensal de Instagram",
-      price: 1800,
-      deadline: "30 dias",
-      proof: "Calendário, exemplos de posts e clareza do que entra no pacote",
-      included: ["Planejamento", "12 posts", "8 stories", "Relatório mensal"],
-    },
-    {
-      niche: "Fotógrafo",
+      niche: "Fotografia",
       client: "Studio Serena",
       service: "Ensaio profissional de marca",
       price: 950,
@@ -4330,13 +4359,49 @@ function AuthScreen() {
       included: ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online"],
     },
     {
-      niche: "Consultor",
+      niche: "Buffet/Eventos",
+      client: "Casa Aurora",
+      service: "Buffet completo para 80 convidados",
+      price: 6800,
+      deadline: "Data reservada",
+      proof: "Fotos de eventos, cardápio, equipe, itens inclusos e condições de reserva",
+      included: ["Cardápio completo", "Equipe de apoio", "Montagem", "Cronograma"],
+    },
+    {
+      niche: "Estética",
+      client: "Clínica Aura",
+      service: "Pacote facial premium",
+      price: 1200,
+      deadline: "4 sessões",
+      proof: "Antes e depois, protocolo, cuidados e condições de pagamento",
+      included: ["Avaliação", "4 sessões", "Cuidados pós", "Acompanhamento"],
+    },
+    {
+      niche: "Arquitetura",
+      client: "Apartamento Vila Norte",
+      service: "Projeto de interiores",
+      price: 4200,
+      deadline: "30 dias",
+      proof: "Escopo, etapas, referências visuais, entregáveis e prazo de aprovação",
+      included: ["Layout", "Moodboard", "Lista de compras", "3D básico"],
+    },
+    {
+      niche: "Marcenaria",
+      client: "Família Almeida",
+      service: "Móvel planejado para cozinha",
+      price: 7800,
+      deadline: "35 dias",
+      proof: "Medidas, materiais, acabamento, imagens de referência e garantia",
+      included: ["Medição", "Projeto", "Fabricação", "Instalação"],
+    },
+    {
+      niche: "Social Media",
       client: "Loja Vértice",
-      service: "Consultoria estratégica",
-      price: 2500,
-      deadline: "4 semanas",
-      proof: "Diagnóstico, plano de ação e próximos passos sem conversa solta",
-      included: ["Diagnóstico", "4 encontros", "Plano de ação", "Suporte por mensagem"],
+      service: "Gestão mensal de Instagram",
+      price: 1800,
+      deadline: "30 dias",
+      proof: "Calendário, exemplos de posts e clareza do que entra no pacote",
+      included: ["Planejamento", "12 posts", "8 stories", "Relatório mensal"],
     },
   ];
   const plans = [
@@ -4345,7 +4410,7 @@ function AuthScreen() {
       name: "Apresentação Essencial",
       price: "R$ 97",
       priceSuffix: "/mês ou R$ 897/ano",
-      cta: "Quero profissionalizar minhas propostas",
+      cta: "Ver plano menor",
       detail: "Para quem quer sair da apresentação improvisada e enviar link, PDF e aceite online.",
       items: ["20 propostas por mês", "5 artes para divulgar por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
     },
@@ -4354,7 +4419,7 @@ function AuthScreen() {
       name: "Apresentação Profissional",
       price: "R$ 197",
       priceSuffix: "/mês ou R$ 1.497/ano",
-      cta: "Quero profissionalizar minhas propostas",
+      cta: "Ver plano menor",
       detail: "Para quem vende com frequência e quer propostas mais completas, visuais e fáceis de acompanhar.",
       items: ["120 propostas por mês", "Tudo do Inicial", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
     },
@@ -4376,6 +4441,7 @@ function AuthScreen() {
     "Cadastro dos principais serviços",
     "Modelo de proposta por nicho",
     "Kit de mensagens para envio e follow-up",
+    "Formulário de satisfação pós-serviço",
     "Treinamento rápido e apoio inicial",
     "Artes de divulgação conforme o plano",
     "Site ou página nos planos completos",
@@ -4384,6 +4450,7 @@ function AuthScreen() {
     { icon: FileText, title: "Proposta que vende valor", text: "Mostre escopo, prazo, investimento e condições em uma apresentação profissional." },
     { icon: FileDown, title: "PDF para decisão", text: "O cliente pode baixar, guardar e consultar sem perder tudo no histórico do WhatsApp." },
     { icon: ImageIcon, title: "Provas no lugar certo", text: "Portfólio e depoimentos aparecem junto da proposta, no momento em que o cliente decide." },
+    { icon: MessageSquareQuote, title: "Satisfação e depoimentos", text: "Depois do serviço, peça avaliação e transforme clientes satisfeitos em prova social para próximas vendas." },
     { icon: Megaphone, title: "Artes para puxar demanda", text: "Tenha materiais para postar, divulgar serviços e chamar novas conversas pelo WhatsApp." },
     { icon: LayoutDashboard, title: "Premium pronto", text: "Receba mini site, configuração, propostas iniciais e orientação para começar sem ficar montando tudo sozinho." },
   ];
@@ -4423,6 +4490,10 @@ function AuthScreen() {
     {
       question: "O sistema envia mensagens automáticas para o cliente?",
       answer: "Não. O FechaPro mostra visualizações, aceite, recusa e cliques para você fazer follow-up manual com mais contexto. As mensagens do Premium são modelos para copiar, adaptar e enviar.",
+    },
+    {
+      question: "O FechaPro emite nota fiscal?",
+      answer: "A emissão automática de nota fiscal está no roadmap. No momento, o foco é profissionalizar proposta, aceite, acompanhamento e pós-venda. Em breve, o sistema poderá ajudar no controle e envio de notas após o fechamento.",
     },
   ];
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
@@ -4531,8 +4602,8 @@ function AuthScreen() {
         <a className="rounded-md bg-green-500 px-2.5 py-1 text-slate-950" href="#planos">Ver oferta</a>
       </div>
     </div>
-    <main className="fp-landing min-h-screen bg-slate-50 pt-12 text-slate-950 sm:pt-11">
-      <section className="fp-landing-hero relative isolate overflow-hidden bg-slate-950 text-white">
+    <main className="fp-landing min-h-screen bg-slate-50 text-slate-950">
+      <section className="fp-landing-hero relative isolate overflow-hidden bg-slate-950 pt-12 text-white sm:pt-11">
         <Image className="motion-hero-pan absolute inset-0 -z-20 object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" fill priority sizes="100vw" />
         <div className="absolute inset-0 -z-10 bg-slate-950/74" />
         <div className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 py-4 pb-20 sm:min-h-[92vh] sm:px-6 sm:pb-4 lg:px-8">
@@ -4606,7 +4677,7 @@ function AuthScreen() {
                 Pare de mandar preço solto. Envie propostas profissionais que ajudam o cliente a entender seu valor.
               </h1>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                O FechaPro ajuda prestadores de serviço a criarem propostas com marca, fotos, detalhes, PDF, link, aceite online e acompanhamento, com implantação para começar rápido.
+                O FechaPro ajuda prestadores de serviço a saírem do orçamento improvisado e criarem propostas com marca, fotos, detalhes, PDF, link, aceite online e acompanhamento.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
                 <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano, menos que muitos serviços fechados com uma única proposta.</p>
@@ -4618,10 +4689,10 @@ function AuthScreen() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
                   <Sparkles size={18} />
-                  Quero ver minha proposta pronta
-                </a>
-                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#planos">
                   Reservar minha implantação
+                </a>
+                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#como-funciona">
+                  Ver exemplo na prática
                 </a>
               </div>
             </div>
@@ -4653,7 +4724,7 @@ function AuthScreen() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {landingExamples.map((example, index) => (
+                {landingExamples.slice(0, 4).map((example, index) => (
                   <button
                     className={`min-h-10 rounded-lg border px-2 text-xs font-black ${
                       activeExampleIndex === index
@@ -4707,12 +4778,12 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-300">O que você recebe</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Você não recebe só acesso ao sistema.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Você não compra só acesso. Você recebe uma estrutura pronta para começar.</h2>
             <p className="mt-4 text-sm leading-6 text-white/72 sm:text-base sm:leading-7">
               O FechaPro combina ferramenta, implantação e materiais para sua empresa começar com uma estrutura comercial mais pronta.
             </p>
             <a className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
-              Ver estruturas e planos
+              Reservar minha implantação
             </a>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -4732,10 +4803,13 @@ function AuthScreen() {
             <p className="text-xs font-black uppercase text-green-700">Condição especial de lançamento</p>
             <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Plano Completo Anual Promocional por R$ 1.500.</h2>
             <p className="mt-4 max-w-4xl text-sm font-bold leading-6 text-slate-700 sm:text-base sm:leading-7">
-              Inclui acesso anual, implantação inicial, configuração da marca, primeira proposta criada, kit de mensagens, treinamento rápido e apoio para começar a vender melhor ainda esta semana.
+              Você recebe: acesso anual ao FechaPro, implantação inicial, configuração da marca, primeira proposta criada, kit de mensagens, treinamento rápido e apoio para começar a vender melhor ainda esta semana.
             </p>
             <p className="mt-3 max-w-4xl text-sm font-black leading-6 text-green-800">
-              O Completo mensal começa em R$ 297/mês + R$ 997 de implantação. Só o primeiro mês ficaria R$ 1.294. Na condição promocional, você pega o plano completo anual por R$ 1.500.
+              Completo mensal: R$ 297/mês + R$ 997 implantação = R$ 1.294 no primeiro mês. Completo anual promocional: R$ 1.500 pelo ano. Por uma diferença pequena, você pega o ano inteiro.
+            </p>
+            <p className="mt-2 max-w-4xl text-sm font-bold leading-6 text-slate-700">
+              Vagas limitadas para implantação com primeira proposta criada. Após o período promocional, o plano volta para o valor normal.
             </p>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-6 font-black text-white" href="#planos">
@@ -4795,7 +4869,7 @@ function AuthScreen() {
                 </p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
-                Ver planos
+                Reservar minha implantação
               </a>
             </div>
           </div>
@@ -4838,7 +4912,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-green-300">Recursos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Tudo que tira sua venda do improviso.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Tudo para sua empresa parar de vender no improviso.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
               Você monta a proposta, envia o link pelo WhatsApp, acompanha visualizações e deixa o cliente com um caminho claro para aceitar, pagar ou tirar dúvidas.
             </p>
@@ -4848,6 +4922,7 @@ function AuthScreen() {
               { icon: FileText, title: "Propostas profissionais com link", text: "Mostre valor, prazo, escopo, portfólio e próximos passos em uma página profissional para enviar ao cliente." },
               { icon: FileDown, title: "PDF da proposta", text: "O cliente pode visualizar online e baixar uma versão em PDF com mais confiança." },
               { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre trabalhos anteriores e provas sociais dentro da própria proposta." },
+              { icon: MessageSquareQuote, title: "Formulário de satisfação", text: "Após finalizar o serviço, envie uma avaliação para o cliente e transforme feedbacks em prova social para vender mais." },
               { icon: Megaphone, title: "Artes para divulgar", text: "Tenha materiais prontos para postar, chamar atenção e puxar novas conversas pelo WhatsApp." },
             ].map((feature) => (
               <article className="fp-landing-dark-card motion-lift rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
@@ -4864,7 +4939,7 @@ function AuthScreen() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Como funciona</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Em poucos minutos, sua proposta vira uma apresentação pronta para vender.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Em poucos minutos, você cria uma proposta que parece profissional de verdade.</h2>
             <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
               O processo é direto: informe cliente, serviço, valor e prazo; adicione provas do seu trabalho; envie o link pelo WhatsApp.
             </p>
@@ -4908,7 +4983,7 @@ function AuthScreen() {
                 <p className="mt-2 text-sm font-black leading-6 text-green-950">Seu cliente recebe uma apresentação completa, vê fotos, condições, prazo e tem um botão claro para avançar.</p>
               </div>
               <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-5 font-black text-white" href="#planos">
-                Criar minha proposta profissional
+                Reservar minha implantação
               </a>
             </div>
           </div>
@@ -5036,6 +5111,82 @@ function AuthScreen() {
         </div>
       </section>
 
+      <section className="fp-landing-band border-y border-black/10 bg-white">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <article className="rounded-lg border border-green-200 bg-green-50 p-5">
+            <p className="text-xs font-black uppercase text-green-700">O FechaPro é para você se</p>
+            <ul className="mt-4 grid gap-3">
+              {[
+                "vende serviço por orçamento, pacote ou proposta",
+                "manda valores pelo WhatsApp",
+                "tem ticket acima de R$ 500",
+                "quer parecer mais profissional",
+                "precisa explicar melhor o que está incluso",
+              ].map((item) => (
+                <li className="flex gap-3 text-sm font-bold leading-6 text-green-950" key={item}>
+                  <CheckCircle2 className="mt-1 shrink-0 text-green-700" size={18} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </article>
+          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+            <p className="text-xs font-black uppercase text-slate-600">Talvez não seja para você se</p>
+            <ul className="mt-4 grid gap-3">
+              {[
+                "vende apenas produto simples de prateleira",
+                "não envia orçamento",
+                "não pretende fazer follow-up",
+                "não quer organizar minimamente sua apresentação comercial",
+              ].map((item) => (
+                <li className="flex gap-3 text-sm font-bold leading-6 text-slate-700" key={item}>
+                  <X className="mt-1 shrink-0 text-slate-500" size={18} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section className="fp-landing-band bg-slate-100">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase text-blue-700">Exemplos por nicho</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Veja como o FechaPro se adapta ao seu tipo de serviço.</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+              Cada nicho precisa apresentar valor de um jeito. Por isso, sua proposta pode mostrar fotos, pacotes, prazos, etapas, condições e diferenciais conforme o que você vende.
+            </p>
+          </div>
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {landingExamples.map((example, index) => (
+              <article className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={example.niche}>
+                <p className="text-xs font-black uppercase text-blue-700">{example.niche}</p>
+                <h3 className="mt-2 text-xl font-black">{example.service}</h3>
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-600">{example.proof}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {example.included.slice(0, 3).map((item) => (
+                    <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700" key={item}>
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <button
+                  className="mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-green-600 px-4 text-sm font-black text-green-700"
+                  type="button"
+                  onClick={() => {
+                    setActiveExampleIndex(index);
+                    goToSection("como-funciona");
+                  }}
+                >
+                  Ver exemplo na prática
+                </button>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="fp-landing-band bg-white">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
@@ -5069,17 +5220,20 @@ function AuthScreen() {
 
           <div className="fp-landing-offer motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
             <p className="text-xs font-black uppercase text-green-200">Condição especial de lançamento</p>
-            <h3 className="mt-2 text-2xl font-black">Os primeiros clientes recebem implantação, primeiras propostas criadas, kit de mensagens e apoio para começar a vender melhor já na primeira semana.</h3>
+            <h3 className="mt-2 text-2xl font-black">Você recebe acesso anual, implantação, primeira proposta pronta e materiais para sair do improviso já na primeira semana.</h3>
             <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-white/82">
-              Por R$ 1.500/ano, você leva 12 meses de FechaPro, mini site profissional, implantação, portfólio organizado, primeiras propostas, PDF, aceite online, 20 artes por mês, calendário de divulgação e mensagens prontas para copiar, adaptar e enviar.
+              Por R$ 1.500/ano, você leva 12 meses de FechaPro, mini site profissional, implantação inicial, configuração da marca, primeira proposta criada, portfólio organizado, PDF, aceite online, 20 artes por mês, calendário de divulgação e kit de mensagens.
             </p>
             <p className="mt-3 max-w-3xl text-sm font-black leading-6 text-green-100">
               Se uma única venda recuperada pagar esse valor, o sistema já deixou de ser custo e virou ferramenta de fechamento.
             </p>
+            <p className="mt-2 max-w-3xl text-sm font-black leading-6 text-green-100">
+              Condição especial para os primeiros clientes com implantação assistida.
+            </p>
             <div className="mt-4 grid gap-2 rounded-lg border border-white/15 bg-slate-950/60 p-4 text-sm font-bold leading-6 text-white/82 sm:grid-cols-3">
-              <span>Completo mensal: R$ 297/mês</span>
-              <span>Implantação avulsa: R$ 997</span>
-              <span className="text-green-200">Anual promocional: R$ 1.500</span>
+              <span>Mensal + implantação: R$ 1.294 no primeiro mês</span>
+              <span>Anual promocional: R$ 1.500 pelo ano</span>
+              <span className="text-green-200">Por uma diferença pequena, você pega 12 meses</span>
             </div>
           </div>
 
@@ -5087,10 +5241,10 @@ function AuthScreen() {
             {plans.map((plan) => (
               <article className={`fp-landing-plan motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
                 plan.code === "premium_site"
-                  ? "motion-pulse-soft border-green-300 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.03]"
+                  ? "motion-pulse-soft border-2 border-green-400 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.04]"
                   : plan.code === "start"
-                    ? "border-green-400 bg-white text-slate-950"
-                    : "border-blue-300 bg-white text-slate-950"
+                    ? "border-white/20 bg-white/90 text-slate-950 opacity-90"
+                    : "border-white/20 bg-white/90 text-slate-950 opacity-90"
               }`} key={plan.name}>
                 {plan.badge ? (
                   <span className="absolute right-4 top-0 -translate-y-1/2 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
@@ -5112,7 +5266,7 @@ function AuthScreen() {
                 </ul>
                 <a
                   className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.code === "premium_site" ? "bg-slate-950 text-white" : "bg-green-600 text-white"
+                    plan.code === "premium_site" ? "bg-slate-950 text-white" : "border border-slate-300 bg-white text-slate-700"
                   }`}
                   href={`/checkout/cadastro/${plan.code}`}
                 >
@@ -5645,6 +5799,8 @@ function ProposalDetailPanel({
   onEdit,
   onRemove,
   onResend,
+  onSatisfactionSurveySend,
+  onSatisfactionSurveyLinkCopy,
   onStatusChange,
   proposal,
 }: {
@@ -5656,6 +5812,8 @@ function ProposalDetailPanel({
   onEdit: () => void;
   onRemove: () => void;
   onResend: () => void;
+  onSatisfactionSurveySend: () => void;
+  onSatisfactionSurveyLinkCopy: () => void;
   onStatusChange: (status: ProposalStatus) => void;
   proposal: Proposal;
 }) {
@@ -5707,24 +5865,14 @@ function ProposalDetailPanel({
                 <DetailLine label="Confirmado em" value={formatDateTime(proposal.paymentPaidAt)} />
               ) : null}
             </div>
-            {proposal.providerReceiptUrl ? (
-              <a
-                className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-blue-700"
-                href={proposal.providerReceiptUrl}
-                target="_blank"
-              >
-                <FileDown size={14} />
-                Ver comprovante
-              </a>
-            ) : null}
-            {proposal.checkoutMode === "pix" && proposal.paymentStatus !== "paid" ? (
+            {proposal.paymentStatus !== "paid" ? (
               <button
                 className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
                 type="button"
                 onClick={onConfirmPix}
               >
                 <CheckCircle2 size={14} />
-                Confirmar recebimento do PIX
+                Confirmar pagamento recebido
               </button>
             ) : null}
           </div>
@@ -5766,16 +5914,85 @@ function ProposalDetailPanel({
           </div>
         ) : null}
 
+        {proposal.publicSlug ? (
+          <div className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+            <p className="text-xs font-black uppercase text-slate-500">Documentos da proposta</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-4 font-black text-blue-700" href={`/p/${proposal.publicSlug}/pdf`} target="_blank">
+                <FileDown size={16} />
+                Contrato / proposta
+              </a>
+              {proposal.status === "accepted" && proposal.paymentStatus === "paid" ? (
+                <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-4 font-black text-green-700" href={`/p/${proposal.publicSlug}/recibo`} target="_blank">
+                  <FileDown size={16} />
+                  Recibo de pagamento
+                </a>
+              ) : (
+                <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 bg-slate-50 px-4 font-black text-slate-500">
+                  <LockKeyhole size={16} />
+                  Recibo liberado após aceite e pagamento
+                </span>
+              )}
+              {proposal.providerReceiptUrl ? (
+                <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black text-slate-700" href={proposal.providerReceiptUrl} target="_blank">
+                  <FileDown size={16} />
+                  Comprovante externo
+                </a>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {proposal.status === "accepted" ? (
+          <div className="rounded-lg border border-blue-700/20 bg-blue-50 p-4">
+            <p className="text-xs font-black uppercase text-blue-700">Pesquisa de satisfação</p>
+            {proposal.satisfactionSurvey?.respondedAt ? (
+              <div className="mt-2 grid gap-2 text-sm font-bold leading-6 text-blue-950">
+                <p>Resposta recebida em {formatDateTime(proposal.satisfactionSurvey.respondedAt)}.</p>
+                <p>Nota: {proposal.satisfactionSurvey.rating || "-"} de 5 | Indicaria: {proposal.satisfactionSurvey.recommendScore ?? "-"}/10</p>
+                {proposal.satisfactionSurvey.comment ? <p className="whitespace-pre-line">"{proposal.satisfactionSurvey.comment}"</p> : null}
+                {proposal.satisfactionSurvey.testimonialOk ? <p>Cliente autorizou usar como depoimento{proposal.satisfactionSurvey.testimonialId ? " e ele foi salvo na aba Depoimentos." : "."}</p> : null}
+              </div>
+            ) : (
+              <div className="mt-2 grid gap-3">
+                <p className="text-sm font-bold leading-6 text-blue-950">
+                  Finalize o serviço para liberar a pesquisa. Ela fica vinculada a esta proposta e ao mesmo link enviado ao cliente.
+                </p>
+                <button
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-700 px-3 text-sm font-black text-white"
+                  type="button"
+                  onClick={onSatisfactionSurveySend}
+                >
+                  <MessageSquareQuote size={15} />
+                  {proposal.satisfactionSurvey?.sentAt ? "Reenviar pesquisa" : "Finalizar serviço e enviar pesquisa"}
+                </button>
+                {proposal.satisfactionSurvey?.serviceCompletedAt ? (
+                  <button
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-blue-700/20 bg-white px-3 text-sm font-black text-blue-700"
+                    type="button"
+                    onClick={onSatisfactionSurveyLinkCopy}
+                  >
+                    <Copy size={15} />
+                    Copiar link da pesquisa
+                  </button>
+                ) : null}
+                {proposal.satisfactionSurvey?.serviceCompletedAt ? (
+                  <p className="text-xs font-bold text-blue-900/70">Serviço finalizado em {formatDateTime(proposal.satisfactionSurvey.serviceCompletedAt)}.</p>
+                ) : null}
+                {proposal.satisfactionSurvey?.sentAt ? (
+                  <p className="text-xs font-bold text-blue-900/70">Enviada em {formatDateTime(proposal.satisfactionSurvey.sentAt)}.</p>
+                ) : null}
+              </div>
+            )}
+          </div>
+        ) : null}
+
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {proposal.publicSlug ? (
             <>
               <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" href={`/p/${proposal.publicSlug}`} target="_blank">
                 <Eye size={16} />
                 Ver online
-              </a>
-              <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-4 font-black text-blue-700" href={`/p/${proposal.publicSlug}/pdf`} target="_blank">
-                <FileDown size={16} />
-                Baixar PDF
               </a>
               {canUseProposalSlides(currentPlan) ? (
                 <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white" href={`/p/${proposal.publicSlug}/slides`} target="_blank">
@@ -5880,6 +6097,8 @@ function ProposalCard({
   onOpenDetail,
   onRemove,
   onResend,
+  onSatisfactionSurveySend,
+  onSatisfactionSurveyLinkCopy,
   onStatusChange,
   proposal,
 }: {
@@ -5890,6 +6109,8 @@ function ProposalCard({
   onOpenDetail?: () => void;
   onRemove: () => void;
   onResend: () => void;
+  onSatisfactionSurveySend: () => void;
+  onSatisfactionSurveyLinkCopy: () => void;
   onStatusChange: (status: ProposalStatus) => void;
   proposal: Proposal;
 }) {
@@ -5980,6 +6201,32 @@ function ProposalCard({
         })}
       </div>
       <div className="grid gap-2 sm:grid-cols-3">
+        {proposal.status === "accepted" && !proposal.satisfactionSurvey?.respondedAt ? (
+          <button
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-sm font-black text-blue-700"
+            type="button"
+            onClick={onSatisfactionSurveySend}
+          >
+            <MessageSquareQuote size={15} />
+            {proposal.satisfactionSurvey?.sentAt ? "Reenviar pesquisa" : "Finalizar e pesquisar"}
+          </button>
+        ) : null}
+        {proposal.satisfactionSurvey?.serviceCompletedAt && !proposal.satisfactionSurvey?.respondedAt ? (
+          <button
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-sm font-black text-blue-700"
+            type="button"
+            onClick={onSatisfactionSurveyLinkCopy}
+          >
+            <Copy size={15} />
+            Link pesquisa
+          </button>
+        ) : null}
+        {proposal.satisfactionSurvey?.respondedAt ? (
+          <span className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700">
+            <MessageSquareQuote size={15} />
+            Avaliado
+          </span>
+        ) : null}
         {canResend && (
           <button
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"

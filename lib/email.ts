@@ -235,6 +235,30 @@ export async function sendProposalAcceptedToClientEmail(clientEmail: string, cli
   );
 }
 
+export async function sendSatisfactionSurveyEmail(clientEmail: string, clientName: string, ownerName: string, serviceName: string, slug: string) {
+  const link = `${APP_URL}/p/${slug}#satisfacao`;
+  const safeClientName = escapeHtml(clientName);
+  const safeOwnerName = escapeHtml(ownerName);
+  const safeServiceName = escapeHtml(serviceName);
+
+  await sendEmail(
+    clientEmail,
+    `Como foi o atendimento? - ${serviceName}`,
+    emailTemplate({
+      title: "Conte como foi o atendimento",
+      preheader: `${ownerName} quer saber como foi sua experiencia com ${serviceName}.`,
+      intro: `Ola, ${safeClientName}!`,
+      body: `
+        <p><strong>${safeOwnerName}</strong> marcou o servico <strong>${safeServiceName}</strong> como concluido e enviou uma pesquisa rapida de satisfacao.</p>
+        <p>Sua resposta ajuda a melhorar o atendimento e, se voce autorizar, pode virar depoimento para novos clientes.</p>
+      `,
+      buttonLabel: "Responder pesquisa",
+      buttonUrl: link,
+      footer: "Este email foi enviado porque voce recebeu uma proposta pelo FechaPro.",
+    })
+  );
+}
+
 export async function sendProposalDeclinedEmail(ownerEmail: string, ownerName: string, clientName: string, serviceName: string, reason: string | null) {
   const safeOwnerName = escapeHtml(ownerName);
   const safeClientName = escapeHtml(clientName);

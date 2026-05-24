@@ -357,8 +357,8 @@ Acesse **Planos** para ver seu plano atual, limites e pacotes extras.
 Planos públicos disponíveis no sistema:
 
 - **Start:** até 20 propostas por mês e 5 artes por mês.
-- **Pro:** até 120 propostas por mês e 10 artes por mês.
-- **Premium com Site:** até 600 propostas por mês, 20 artes por mês, mini site profissional, configuração inicial, modelos de mensagens para copiar e adaptar e materiais de apoio.
+- **Pro:** até 120 propostas por mês, 10 artes por mês e contrato mínimo para usar com clientes.
+- **Premium com Site:** até 600 propostas por mês, 20 artes por mês, contrato mínimo para usar com clientes, mini site profissional, configuração inicial, modelos de mensagens para copiar e adaptar e materiais de apoio.
 
 Também podem existir planos internos ou legados, como **Profissional** e **Pro Site**, conforme a configuração comercial vigente.
 

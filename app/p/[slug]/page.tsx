@@ -18,13 +18,13 @@ export default async function PublicProposalPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ accepted?: string; declined?: string; error?: string; name?: string; payment?: string; paymentError?: string }>;
+  searchParams: Promise<{ accepted?: string; declined?: string; error?: string; name?: string; payment?: string; paymentError?: string; survey?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
-    include: { user: { include: { brandProfile: true } } },
+    include: { satisfactionSurvey: true, user: { include: { brandProfile: true } } },
   });
 
   if (!proposal) notFound();
@@ -88,6 +88,7 @@ export default async function PublicProposalPage({
   const customFaq = parseCustomFaq(brand?.proposalFaq || "");
   const expired = Boolean(proposal.validUntil && proposal.validUntil < new Date().toISOString().slice(0, 10));
   const hasDecision = expired || currentStatus === "accepted" || currentStatus === "declined";
+  const satisfactionReleased = Boolean(proposal.satisfactionSurvey?.serviceCompletedAt);
   const validUntilLabel = proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar";
   const daysLeft = proposal.validUntil ? getDaysLeft(proposal.validUntil) : null;
   const whatsappUrl = brand?.whatsapp
@@ -131,6 +132,13 @@ export default async function PublicProposalPage({
           <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-4 text-rose-900 shadow-xl shadow-slate-900/5">
             <strong>Não foi possível abrir o pagamento.</strong>
             <p className="mt-1 text-sm">{query.paymentError}</p>
+          </div>
+        ) : null}
+
+        {query.survey ? (
+          <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
+            <strong>Pesquisa enviada com sucesso.</strong>
+            <p className="mt-1 text-sm">Obrigado pelo retorno. Sua avaliação ficou ligada a esta proposta.</p>
           </div>
         ) : null}
 
@@ -209,8 +217,13 @@ export default async function PublicProposalPage({
                   </a>
                 ) : null}
                 <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 px-5 font-black text-white" href={`/p/${proposal.publicSlug}/pdf`}>
-                  Baixar PDF
+                  Contrato / proposta
                 </a>
+                {currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
+                  <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 bg-white/10 px-5 font-black text-white" href={`/p/${proposal.publicSlug}/recibo`}>
+                    Recibo
+                  </a>
+                ) : null}
               </div>
             </div>
 
@@ -249,8 +262,13 @@ export default async function PublicProposalPage({
                   </a>
                 ) : null}
                 <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black" href={`/p/${proposal.publicSlug}/pdf`}>
-                  Baixar PDF
+                  Contrato / proposta
                 </a>
+                {currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
+                  <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/20 bg-green-50 px-4 text-center font-black text-green-800" href={`/p/${proposal.publicSlug}/recibo`}>
+                    Recibo de pagamento
+                  </a>
+                ) : null}
               </div>
             </aside>
           </div>
@@ -303,15 +321,15 @@ export default async function PublicProposalPage({
               <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : wantsPix ? "Pague com PIX" : "Pague com PIX ou cartão"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
                 {proposal.paymentStatus === "paid"
-                  ? "O Mercado Pago confirmou o pagamento desta proposta."
+                  ? "O pagamento desta proposta foi confirmado."
                   : wantsPix
                     ? "Finalize com o PIX direto do profissional."
                     : "Finalize o pagamento em ambiente seguro via Mercado Pago."}
               </p>
-              {proposal.paymentStatus === "paid" && proposal.providerReceiptUrl ? (
-                <a className="mt-4 grid min-h-11 place-items-center rounded-lg px-5 text-center font-black text-white" href={proposal.providerReceiptUrl} style={{ background: brandColor }} target="_blank">
-                  Ver comprovante
-                </a>
+              {proposal.paymentStatus === "paid" ? (
+                <div className="mt-4 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold text-green-900">
+                  Recibo disponível no menu de documentos da proposta.
+                </div>
               ) : (
                 <a className="mt-4 grid min-h-12 w-full place-items-center rounded-lg px-5 text-center font-black text-white" href={`/checkout/proposta/${proposal.publicSlug}`} style={{ background: brandColor }}>
                   Pagar agora
@@ -448,11 +466,65 @@ export default async function PublicProposalPage({
                 {proposal.acceptedAt ? ` em ${proposal.acceptedAt.toLocaleString("pt-BR")}` : ""}.
               </p>
               <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg px-4 font-black text-white" href={`/p/${proposal.publicSlug}/pdf`} style={{ background: brandColor }}>
-                Baixar comprovante em PDF
+                Baixar contrato / proposta
               </a>
             </div>
           ) : null}
         </section>
+
+        {currentStatus === "accepted" && satisfactionReleased ? (
+          <section className="fp-proposal-accept grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="satisfacao">
+            <div>
+              <p className="text-xs font-black uppercase text-blue-700">Pós-serviço</p>
+              <h2 className="mt-1 text-2xl font-black">Pesquisa de satisfação</h2>
+              <p className="mt-2 leading-7 text-slate-600">Este formulário fica ligado ao orçamento aceito e ajuda o profissional a acompanhar a entrega final.</p>
+            </div>
+            {proposal.satisfactionSurvey?.respondedAt ? (
+              <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-900">
+                <strong>Avaliação registrada.</strong>
+                <p className="mt-1 text-sm font-bold">
+                  Nota {proposal.satisfactionSurvey.rating || "-"} de 5
+                  {proposal.satisfactionSurvey.recommendScore !== null ? ` | Indicação ${proposal.satisfactionSurvey.recommendScore}/10` : ""}.
+                </p>
+              </div>
+            ) : (
+              <form action={`/api/public/proposals/${proposal.publicSlug}/satisfaction`} method="post" className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-black text-slate-700">
+                    Satisfação geral
+                    <select className="min-h-12 rounded-lg border border-black/10 bg-slate-50 p-3 outline-green-700" name="rating" required defaultValue="">
+                      <option value="" disabled>Escolha uma nota</option>
+                      <option value="5">5 - Excelente</option>
+                      <option value="4">4 - Muito bom</option>
+                      <option value="3">3 - Bom</option>
+                      <option value="2">2 - Regular</option>
+                      <option value="1">1 - Ruim</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-2 text-sm font-black text-slate-700">
+                    Indicaria para alguém? 0 a 10
+                    <input className="min-h-12 rounded-lg border border-black/10 bg-slate-50 p-3 outline-green-700" name="recommendScore" type="number" min="0" max="10" required />
+                  </label>
+                </div>
+                <textarea className="min-h-28 rounded-lg border border-black/10 bg-slate-50 p-3 outline-green-700" name="comment" maxLength={1200} placeholder="Conte como foi a experiência, o que gostou ou o que poderia melhorar." />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input className="min-h-12 rounded-lg border border-black/10 bg-slate-50 p-3 outline-green-700" name="clientName" placeholder="Seu nome" defaultValue={proposal.acceptedBy || proposal.clientName} />
+                  <input className="min-h-12 rounded-lg border border-black/10 bg-slate-50 p-3 outline-green-700" name="clientEmail" placeholder="Seu e-mail" type="email" defaultValue={proposal.acceptedEmail || proposal.clientEmail || ""} />
+                </div>
+                <label className="flex items-start gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-700">
+                  <input className="mt-1" name="testimonialOk" type="checkbox" />
+                  Autorizo usar meu comentário como depoimento, com meu nome, para divulgar o trabalho realizado.
+                </label>
+                {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+                  <div className="cf-turnstile" data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+                ) : null}
+                <button className="min-h-12 rounded-lg px-5 font-black text-white" style={{ background: brandColor }} type="submit">
+                  Enviar avaliação
+                </button>
+              </form>
+            )}
+          </section>
+        ) : null}
 
         {!hasDecision ? (
           <section className="fp-proposal-accept grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="aceite">

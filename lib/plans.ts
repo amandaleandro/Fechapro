@@ -37,7 +37,7 @@ export const plans: Record<
     proposalLimit: 120,
     artLimit: 10,
     public: true,
-    features: ["Até 120 propostas por mês", "Tudo do Start", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
+    features: ["Até 120 propostas por mês", "Tudo do Start", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "Contrato mínimo para usar com clientes", "10 artes para divulgar por mês", "Suporte melhor"],
   },
   plus: {
     code: "plus",
@@ -71,7 +71,7 @@ export const plans: Record<
     proposalLimit: 600,
     artLimit: 20,
     public: true,
-    features: ["12 meses de FechaPro", "Mini site profissional", "FechaPro configurado", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Modelos de mensagens para copiar e adaptar", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
+    features: ["12 meses de FechaPro", "Mini site profissional", "FechaPro configurado", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "Contrato mínimo para usar com clientes", "20 artes mensais de divulgação", "Modelos de mensagens para copiar e adaptar", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
   },
 };
 

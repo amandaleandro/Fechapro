@@ -159,8 +159,8 @@ Os planos ficam em `lib/plans.ts`. Atualmente há planos públicos para venda e 
 Planos públicos:
 
 - **Start:** 20 propostas por mês e 5 artes por mês.
-- **Pro:** 120 propostas por mês e 10 artes por mês.
-- **Premium com Site:** 600 propostas por mês, 20 artes por mês, implantação/configuração, modelos de mensagens para copiar e adaptar e materiais de apoio.
+- **Pro:** 120 propostas por mês, 10 artes por mês e contrato mínimo para usar com clientes.
+- **Premium com Site:** 600 propostas por mês, 20 artes por mês, contrato mínimo para usar com clientes, implantação/configuração, modelos de mensagens para copiar e adaptar e materiais de apoio.
 
 Pacotes extras de artes:
 

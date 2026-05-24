@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
 import { AccessTracker } from "@/components/access-tracker";
 import { WhatsAppSupportButton } from "@/components/whatsapp-support-button";
@@ -77,11 +76,10 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="google-adsense-account" content="ca-pub-6025997161206513" />
-        <Script
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6025997161206513"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
       </head>
       <body>

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
-import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/session";
-import { sendProposalPushNotification } from "@/lib/push";
 import { sendPixPaymentConfirmedToClientEmail } from "@/lib/email";
+import { prisma } from "@/lib/prisma";
+import { sendProposalPushNotification } from "@/lib/push";
+import { requireSession } from "@/lib/session";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
@@ -23,26 +23,26 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     },
   });
 
-  if (!proposal) return jsonError("Proposta não encontrada.", 404);
-  if (proposal.checkoutMode !== "pix") return jsonError("Esta proposta não usa pagamento PIX.");
-  if (proposal.paymentStatus === "paid") return jsonError("Pagamento já confirmado.");
+  if (!proposal) return jsonError("Proposta nao encontrada.", 404);
+  if (proposal.paymentStatus === "paid") return jsonError("Pagamento ja confirmado.");
 
+  const isPix = proposal.checkoutMode === "pix";
   const updated = await prisma.proposalAsset.update({
     where: { id },
     data: {
       paymentStatus: "paid",
-      paymentProvider: "pix",
-      paymentMethod: "pix",
+      paymentProvider: isPix ? "pix" : "manual",
+      paymentMethod: isPix ? "pix" : "manual",
       paymentPaidAt: new Date(),
       paymentUpdatedAt: new Date(),
     },
   });
 
   await sendProposalPushNotification(session.id, {
-    title: "PIX confirmado",
-    body: `Pagamento PIX de ${proposal.clientName} registrado.`,
+    title: "Pagamento confirmado",
+    body: `Pagamento de ${proposal.clientName} registrado.`,
     slug: proposal.publicSlug,
-    tag: `proposal-${proposal.publicSlug}-pix-paid`,
+    tag: `proposal-${proposal.publicSlug}-paid`,
   });
 
   if (proposal.clientEmail) {
