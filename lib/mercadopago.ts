@@ -178,6 +178,18 @@ export async function createPlanCheckout(input: {
   userId: string;
 }) {
   const plan = plans[input.plan];
+  if (plan.billingMode === "one_time") {
+    return createPreference({
+      amountCents: plan.priceCents,
+      description: `${plan.name}: ${plan.features.slice(0, 3).join(", ")}.`,
+      externalReference: `subscription:${input.userId}:${plan.code}`,
+      origin: input.origin,
+      payerEmail: input.userEmail,
+      successPath: `/?payment=success&plan=${plan.code}`,
+      title: `FechaPro ${plan.name}`,
+    });
+  }
+
   return createSubscriptionCheckout({
     amountCents: recurringAmountCents(input.plan),
     backPath: `/?payment=success&plan=${plan.code}`,
@@ -195,6 +207,18 @@ export async function createSignupPlanCheckout(input: {
   plan: PlanCode;
 }) {
   const plan = plans[input.plan];
+  if (plan.billingMode === "one_time") {
+    return createPreference({
+      amountCents: plan.priceCents,
+      description: `${plan.name}: ${plan.features.slice(0, 3).join(", ")}.`,
+      externalReference: `signup_plan:${input.checkoutId}`,
+      origin: input.origin,
+      payerEmail: input.email,
+      successPath: `/cadastro?checkout=${input.checkoutId}&plan=${plan.code}&payment=success`,
+      title: `FechaPro ${plan.name}`,
+    });
+  }
+
   return createSubscriptionCheckout({
     amountCents: recurringAmountCents(input.plan),
     backPath: `/cadastro?checkout=${input.checkoutId}&plan=${plan.code}&payment=success`,

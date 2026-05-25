@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
-import { artPacks, currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
+import { accumulatedProposalLimit, artPacks, currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -30,6 +30,13 @@ export async function GET() {
       },
     },
   });
+  const usedSinceSubscriptionStart = await prisma.proposalAsset.count({
+    where: {
+      userId: session.id,
+      createdAt: { gte: subscription.startedAt },
+    },
+  });
+  const accumulatedLimit = accumulatedProposalLimit(plans[subscription.plan].proposalLimit, subscription.startedAt);
 
   return NextResponse.json({
     subscription,
@@ -38,6 +45,8 @@ export async function GET() {
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
+      proposalsUsedSinceSubscriptionStart: usedSinceSubscriptionStart,
+      accumulatedProposalLimit: accumulatedLimit,
       artsThisMonth,
       artLimit: plans[subscription.plan].artLimit,
       artCreditBalance: subscription.artCreditBalance,
@@ -77,6 +86,13 @@ export async function PUT(request: Request) {
       },
     },
   });
+  const usedSinceSubscriptionStart = await prisma.proposalAsset.count({
+    where: {
+      userId: session.id,
+      createdAt: { gte: subscription.startedAt },
+    },
+  });
+  const accumulatedLimit = accumulatedProposalLimit(plans[subscription.plan].proposalLimit, subscription.startedAt);
 
   return NextResponse.json({
     subscription,
@@ -85,6 +101,8 @@ export async function PUT(request: Request) {
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
+      proposalsUsedSinceSubscriptionStart: usedSinceSubscriptionStart,
+      accumulatedProposalLimit: accumulatedLimit,
       artsThisMonth,
       artLimit: plans[subscription.plan].artLimit,
       artCreditBalance: subscription.artCreditBalance,

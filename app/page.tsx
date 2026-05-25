@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
+import { isUnlimitedProposalLimit } from "@/lib/plans";
 
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "support" | "account";
 type SessionProfile = { id?: string; name: string; email: string; niche?: string | null; segment?: string | null; isAdmin?: boolean };
@@ -179,7 +180,7 @@ type BrandProfile = {
   showFaq: boolean;
 };
 
-type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
+type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site";
 type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
 
 type BillingPlan = {
@@ -215,6 +216,8 @@ type BillingState = {
   usage: {
     proposalsThisMonth: number;
     proposalLimit: number;
+    proposalsUsedSinceSubscriptionStart?: number;
+    accumulatedProposalLimit?: number;
     artsThisMonth: number;
     artLimit: number;
     artCreditBalance: number;
@@ -334,18 +337,32 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
 
 const planAccessRank: Record<PlanCode, number> = {
   start: 1,
+  essential: 2,
+  professional: 3,
+  complete: 5,
   pro: 2,
   plus: 3,
   premium: 4,
   premium_site: 5,
+  founder_start: 1,
+  founder_essential: 2,
+  founder_professional: 3,
+  founder_complete_site: 5,
 };
 
 const planLabels: Record<PlanCode, string> = {
   start: "Start",
+  essential: "Essencial",
+  professional: "Profissional",
+  complete: "Completo",
   pro: "Pro",
   plus: "Profissional",
   premium: "Pro Site",
   premium_site: "Estrutura Comercial Completa",
+  founder_start: "Start",
+  founder_essential: "Essencial",
+  founder_professional: "Profissional",
+  founder_complete_site: "Completo",
 };
 
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
@@ -1753,13 +1770,13 @@ function DashboardView({
         </section>
       ) : null}
 
-      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[1fr_auto] sm:items-end sm:p-6">
+      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:p-6">
         <div>
-          <h2 className="max-w-[14ch] text-3xl font-black leading-none sm:max-w-[12ch] sm:text-6xl">
+          <h2 className="max-w-[18ch] text-3xl font-black leading-tight text-slate-950 sm:max-w-[20ch] sm:text-5xl lg:text-6xl">
             Crie uma proposta profissional que valoriza seu serviço.
           </h2>
           <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Monte uma proposta com marca, fotos, valor, prazo, PDF, link e aceite online. Depois envie pelo WhatsApp.
+            Monte uma proposta com sua marca, fotos, valor, prazo, PDF, link e aceite online. Depois envie pelo WhatsApp e acompanhe se o cliente abriu.
           </p>
         </div>
 
@@ -1775,149 +1792,6 @@ function DashboardView({
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-4">
-        <Metric label="Clientes que abriram proposta" value={String(totalViews)} />
-        <Metric label="Clientes interessados" value={String(whatsappClicks)} />
-        <Metric label="Propostas enviadas" value={String(sent)} />
-        <Metric label="Propostas aprovadas" value={String(accepted)} />
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-3">
-        <Metric label="Valor total enviado" value={money.format(sentValue)} />
-        <Metric label="Valor aguardando resposta" value={money.format(openValue)} />
-        <Metric label="Taxa de aceite" value={`${acceptanceRate}%`} />
-      </section>
-
-      {billing ? (
-        <section className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `${billing.subscription.plan.toUpperCase()} em uso` : "Pagamento pendente"} />
-            <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
-              {hasPaidAccess ? `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês` : "Pague pelo Mercado Pago ou aguarde liberação do admin"}
-            </span>
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
-              {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes de divulgação`}
-            </span>
-          </div>
-          <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-green-600"
-              style={{
-                width: `${Math.min(100, Math.round((billing.usage.proposalsThisMonth / billing.usage.proposalLimit) * 100))}%`,
-              }}
-            />
-          </div>
-        </section>
-      ) : null}
-
-      <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <SectionHeading eyebrow="Configuração" title="Sua estrutura comercial" />
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
-            {setupProgress}/{setupChecklist.length} pronto
-          </span>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-4">
-          {setupChecklist.map((item) => (
-            <div className={`grid grid-cols-[auto_1fr] items-center gap-2 rounded-lg border p-3 text-sm font-black ${item.done ? "border-green-700/20 bg-green-50 text-green-800" : "border-black/10 bg-slate-50 text-slate-600"}`} key={item.label}>
-              {item.done ? <CheckCircle2 size={16} /> : <HelpCircle size={16} />}
-              {item.label}
-            </div>
-          ))}
-        </div>
-        <p className="text-sm font-bold leading-6 text-slate-500">
-          Quanto mais completa sua estrutura, mais profissional sua proposta fica para o cliente.
-        </p>
-      </section>
-
-      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1fr_0.8fr]">
-        <div>
-          <SectionHeading eyebrow="Indicadores" title="Acompanhamento de vendas" />
-          <div className="mt-4 grid gap-3 sm:grid-cols-5">
-            <FunnelStep label="Enviadas" value={sent} tone="bg-amber-500" />
-            <FunnelStep label="Visualizadas" value={viewed} tone="bg-sky-600" />
-            <FunnelStep label="Aguardando resposta" value={awaitingResponse} tone="bg-indigo-600" />
-            <FunnelStep label="Aceitas" value={accepted} tone="bg-green-700" />
-            <FunnelStep label="Recusadas" value={declined} tone="bg-rose-700" />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
-          <MiniStat label="Visualizações" value={String(totalViews)} />
-          <MiniStat label="Clientes interessados" value={String(whatsappClicks)} />
-          <MiniStat label="Vencidas" value={String(expired)} />
-        </div>
-      </section>
-
-      {followUps.length ? (
-        <section className="grid gap-3 rounded-lg border border-amber-700/20 bg-amber-50 p-4 shadow-xl shadow-slate-900/10">
-          <SectionHeading eyebrow="Follow-up" title="Clientes quentes para retomar hoje" />
-          {followUps.map((proposal) => {
-            const proposalUrl = proposal.publicSlug ? `${getPublicAppUrl()}/p/${proposal.publicSlug}` : "";
-            const followUpMessages = [
-              {
-                label: "Enviar follow-up",
-                text: `Oi, ${proposal.clientName}! Passando para saber se conseguiu olhar a proposta de ${proposal.serviceName}. Posso tirar alguma duvida? ${proposalUrl}`,
-              },
-              {
-                label: "Chamar no WhatsApp",
-                text: `Oi, ${proposal.clientName}! Vi que a proposta de ${proposal.serviceName} esta em aberto. Quer que eu explique algum ponto do escopo, prazo ou pagamento? ${proposalUrl}`,
-              },
-              {
-                label: "Reforçar validade",
-                text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale ate ${formatDateOnly(proposal.validUntil)}` : " esta disponivel para aceite"}. Segue o link: ${proposalUrl}`,
-              },
-            ];
-            return (
-              <div className="grid gap-3 rounded-lg border border-amber-700/20 bg-white p-3 lg:grid-cols-[1fr_auto] lg:items-center" key={proposal.id}>
-                <div>
-                  <strong>{proposal.clientName}</strong>
-                  <p className="text-sm font-bold leading-6 text-slate-600">
-                    Enviada ha {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}. {proposalStatusHelp(proposal)}
-                  </p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {followUpMessages.map((message) => (
-                    <button
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
-                      type="button"
-                      key={message.label}
-                      onClick={() => {
-                        navigator.clipboard.writeText(message.text);
-                        onNotice(`${message.label} copiado.`);
-                      }}
-                    >
-                      <Copy size={15} />
-                      {message.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </section>
-      ) : null}
-      <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
-        <div>
-          <SectionHeading eyebrow="Indicações" title="Ganhe crescimento com seus clientes" />
-          <p className="mt-2 leading-7 text-slate-600">
-            Compartilhe o FechaPro com outro profissional. Quando o programa de indicação estiver ativo, essa área vira o controle de meses grátis e descontos.
-          </p>
-        </div>
-        <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black text-slate-800"
-          type="button"
-          onClick={() => {
-            const inviteLink = getPublicAppUrl();
-            navigator.clipboard.writeText(`Conhece o FechaPro? Estou usando para enviar propostas profissionais e acompanhar aceite dos clientes: ${inviteLink}`);
-            onNotice("Mensagem de indicação copiada.");
-          }}
-        >
-          <Copy size={16} />
-          Copiar convite
-        </button>
-      </section>
-
       <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
         <form
           id="proposal-form"
@@ -1928,10 +1802,10 @@ function DashboardView({
           }}
         >
           <div className="grid gap-3">
-            <SectionHeading eyebrow={isEditingProposal ? "Editar proposta" : "Proposta rapida"} title={isEditingProposal ? "Ajuste os dados da proposta" : "Preencha o essencial"} />
+            <SectionHeading eyebrow={isEditingProposal ? "Editar proposta" : "Proposta rapida"} title={isEditingProposal ? "Ajuste os dados da proposta" : "Crie sua proposta rápida"} />
             <div className="grid gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold leading-6 text-green-900">
-              <span className="font-black">Para criar uma proposta, preencha cliente, servico, valor, prazo e o que esta incluso.</span>
-              <span>Depois de salvar, voce pode copiar o link, enviar no WhatsApp ou baixar o PDF.</span>
+              <span className="font-black">Preencha cliente, serviço, valor, prazo e itens inclusos.</span>
+              <span>Depois envie o link pelo WhatsApp ou baixe em PDF.</span>
             </div>
           </div>
 
@@ -2177,7 +2051,7 @@ function DashboardView({
         </form>
 
         <aside id="proposal-preview" className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
-          <SectionHeading eyebrow="Como seu cliente vai receber" title={draft.clientName ? `Proposta para ${draft.clientName}` : "Proposta para cliente"} />
+          <SectionHeading eyebrow="Veja como seu cliente vai receber" title={draft.clientName ? `Proposta para ${draft.clientName}` : "Prévia da proposta profissional"} />
 
           <div className="grid gap-4 overflow-hidden rounded-lg border border-black/10 bg-slate-50">
             <div className="h-2" style={{ background: `linear-gradient(90deg, ${brand.primaryColor}, ${brand.accentColor})` }} />
@@ -2248,6 +2122,27 @@ function DashboardView({
         </aside>
       </section>
 
+      <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SectionHeading eyebrow="Configuração" title="Sua estrutura comercial" />
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
+            {setupProgress}/{setupChecklist.length} pronto
+          </span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-4">
+          {setupChecklist.map((item) => (
+            <div className={`grid grid-cols-[auto_1fr] items-center gap-2 rounded-lg border p-3 text-sm font-black ${item.done ? "border-green-700/20 bg-green-50 text-green-800" : "border-black/10 bg-slate-50 text-slate-600"}`} key={item.label}>
+              {item.done ? <CheckCircle2 size={16} /> : <HelpCircle size={16} />}
+              {item.label}
+            </div>
+          ))}
+        </div>
+        <p className="text-sm font-bold leading-6 text-slate-500">
+          Quanto mais completa sua estrutura, mais confiança sua proposta transmite ao cliente.
+        </p>
+      </section>
+
+
       <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SectionHeading eyebrow="Pipeline" title="Propostas recentes" />
@@ -2311,6 +2206,138 @@ function DashboardView({
           </div>
         ) : null}
       </section>
+
+      <section className="grid gap-3 sm:grid-cols-4">
+        <Metric label="Clientes que abriram proposta" value={String(totalViews)} />
+        <Metric label="Cliques no WhatsApp" value={String(whatsappClicks)} />
+        <Metric label="Propostas enviadas" value={String(sent)} />
+        <Metric label="Propostas aceitas" value={String(accepted)} />
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <Metric label="Valor total enviado" value={money.format(sentValue)} />
+        <Metric label="Valor aguardando resposta" value={money.format(openValue)} />
+        <Metric label="Taxa de aceite" value={`${acceptanceRate}%`} />
+      </section>
+
+      {billing ? (
+        <section className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `${billing.subscription.plan.toUpperCase()} em uso` : "Pagamento pendente"} />
+            <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
+              {hasPaidAccess
+                ? isUnlimitedProposalLimit(billing.usage.proposalLimit)
+                  ? "Propostas ilimitadas"
+                  : `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês`
+                : "Pague pelo Mercado Pago ou aguarde liberação do admin"}
+            </span>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
+              {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes de divulgação`}
+            </span>
+          </div>
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-green-600"
+              style={{
+                width: isUnlimitedProposalLimit(billing.usage.proposalLimit)
+                  ? "100%"
+                  : `${Math.min(100, Math.round((billing.usage.proposalsThisMonth / billing.usage.proposalLimit) * 100))}%`,
+              }}
+            />
+          </div>
+        </section>
+      ) : null}
+
+      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1fr_0.8fr]">
+        <div>
+          <SectionHeading eyebrow="Indicadores" title="Acompanhamento de vendas" />
+          <div className="mt-4 grid gap-3 sm:grid-cols-5">
+            <FunnelStep label="Enviadas" value={sent} tone="bg-amber-500" />
+            <FunnelStep label="Abertas" value={viewed} tone="bg-sky-600" />
+            <FunnelStep label="Aguardando resposta" value={awaitingResponse} tone="bg-indigo-600" />
+            <FunnelStep label="Aceitas" value={accepted} tone="bg-green-700" />
+            <FunnelStep label="Recusadas" value={declined} tone="bg-rose-700" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
+          <MiniStat label="Visualizações" value={String(totalViews)} />
+          <MiniStat label="Cliques no WhatsApp" value={String(whatsappClicks)} />
+          <MiniStat label="Vencidas" value={String(expired)} />
+        </div>
+      </section>
+
+      {followUps.length ? (
+        <section className="grid gap-3 rounded-lg border border-amber-700/20 bg-amber-50 p-4 shadow-xl shadow-slate-900/10">
+          <SectionHeading eyebrow="Follow-up" title="Clientes quentes para retomar hoje" />
+          {followUps.map((proposal) => {
+            const proposalUrl = proposal.publicSlug ? `${getPublicAppUrl()}/p/${proposal.publicSlug}` : "";
+            const followUpMessages = [
+              {
+                label: "Enviar follow-up",
+                text: `Oi, ${proposal.clientName}! Passando para saber se conseguiu olhar a proposta de ${proposal.serviceName}. Posso tirar alguma duvida? ${proposalUrl}`,
+              },
+              {
+                label: "Chamar no WhatsApp",
+                text: `Oi, ${proposal.clientName}! Vi que a proposta de ${proposal.serviceName} esta em aberto. Quer que eu explique algum ponto do escopo, prazo ou pagamento? ${proposalUrl}`,
+              },
+              {
+                label: "Reforçar validade",
+                text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale ate ${formatDateOnly(proposal.validUntil)}` : " esta disponivel para aceite"}. Segue o link: ${proposalUrl}`,
+              },
+            ];
+            return (
+              <div className="grid gap-3 rounded-lg border border-amber-700/20 bg-white p-3 lg:grid-cols-[1fr_auto] lg:items-center" key={proposal.id}>
+                <div>
+                  <strong>{proposal.clientName}</strong>
+                  <p className="text-sm font-bold leading-6 text-slate-600">
+                    Enviada ha {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}. {proposalStatusHelp(proposal)}
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {followUpMessages.map((message) => (
+                    <button
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
+                      type="button"
+                      key={message.label}
+                      onClick={() => {
+                        navigator.clipboard.writeText(message.text);
+                        onNotice(`${message.label} copiado.`);
+                      }}
+                    >
+                      <Copy size={15} />
+                      {message.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      ) : null}
+      {false ? (
+      <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <SectionHeading eyebrow="Indicações" title="Ganhe crescimento com seus clientes" />
+          <p className="mt-2 leading-7 text-slate-600">
+            Compartilhe o FechaPro com outro profissional. Quando o programa de indicação estiver ativo, essa área vira o controle de meses grátis e descontos.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black text-slate-800"
+          type="button"
+          onClick={() => {
+            const inviteLink = getPublicAppUrl();
+            navigator.clipboard.writeText(`Conhece o FechaPro? Estou usando para enviar propostas profissionais e acompanhar aceite dos clientes: ${inviteLink}`);
+            onNotice("Mensagem de indicação copiada.");
+          }}
+        >
+          <Copy size={16} />
+          Copiar convite
+        </button>
+      </section>
+      ) : null}
+
     </>
   );
 }
@@ -2796,6 +2823,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
       eyebrow="Cadastro"
       title="Serviços e preços"
       description="Cadastre seus serviços uma vez e use em qualquer proposta com um clique. Quanto mais completo, mais profissional fica o orçamento."
+      contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
       form={
         <form
           className="grid gap-3"
@@ -2937,6 +2965,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
       eyebrow="Seus trabalhos"
       title="Portfólio"
       description="Mostre trabalhos anteriores dentro da proposta. Fotos e projetos reais aumentam a confiança do cliente antes do aceite."
+      contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
       form={
         <form
           className="grid gap-3"
@@ -3072,6 +3101,7 @@ function TestimonialsView({
       eyebrow="Prova social"
       title="Depoimentos"
       description="Depoimentos aparecem na proposta antes do cliente aceitar. Quem fala bem de você vende por você."
+      contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
       form={
         <form
           className="grid gap-3"
@@ -3177,50 +3207,45 @@ function TemplatesView({
   }
 
   return (
-    <section className="grid gap-4">
-      <div className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <p className="text-xs font-black uppercase text-blue-700">Templates</p>
-        <h2 className="text-2xl font-black">Modelos prontos por nicho</h2>
-        <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Use um modelo como ponto de partida. Ele preenche serviço, valor, prazo, pagamento, itens inclusos e observações.
-        </p>
-      </div>
-
-      {!hasTemplateProfile ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-blue-700/20 bg-blue-50 p-4 text-blue-950 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-bold leading-6">
-            Informe nicho e segmento na sua conta para liberar os modelos prontos do seu perfil.
-          </p>
-          <button className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-700 px-4 font-black text-white" type="button" onClick={onOpenAccount}>
-            Abrir conta
-          </button>
-        </div>
-      ) : null}
-
-      <form className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10" onSubmit={submitImportedTemplate}>
-        <SectionHeading eyebrow="Importar template" title="Subir PDF, planilha ou print" />
-        <input accept=".pdf,.csv,.xls,.xlsx,image/png,image/jpeg,image/webp" className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} />
-        <div className="grid gap-3 sm:grid-cols-2">
+    <CrudShell
+      eyebrow="Templates"
+      title="Modelos prontos por nicho"
+      description="Use um modelo como ponto de partida. Ele preenche serviço, valor, prazo, pagamento, itens inclusos e observações."
+      contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
+      form={
+        <form className="grid gap-4" onSubmit={submitImportedTemplate}>
+          {!hasTemplateProfile ? (
+            <div className="grid gap-3 rounded-lg border border-blue-700/20 bg-blue-50 p-3 text-blue-950">
+              <p className="text-sm font-bold leading-6">
+                Informe nicho e segmento na sua conta para liberar os modelos prontos do seu perfil.
+              </p>
+              <button className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-700 px-4 font-black text-white" type="button" onClick={onOpenAccount}>
+                Abrir conta
+              </button>
+            </div>
+          ) : null}
+          <SectionHeading eyebrow="Importar template" title="Subir PDF, planilha ou print" />
+          <input accept=".pdf,.csv,.xls,.xlsx,image/png,image/jpeg,image/webp" className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} />
           <TextField label="Titulo do template" maxLength={80} required value={uploadForm.title} onChange={(value) => setUploadForm({ ...uploadForm, title: value })} />
           <TextField label="Nicho" maxLength={80} placeholder="Ex: Designer, Manicure, Eletricista" value={uploadForm.niche} onChange={(value) => setUploadForm({ ...uploadForm, niche: value })} />
           <TextField label="Serviço" maxLength={100} required value={uploadForm.serviceName} onChange={(value) => setUploadForm({ ...uploadForm, serviceName: value })} />
           <TextField label="Valor" min={1} required step="1" type="number" value={uploadForm.price || ""} onChange={(value) => setUploadForm({ ...uploadForm, price: Number(value || 0) })} />
           <TextField label="Prazo" maxLength={80} required value={uploadForm.deadline} onChange={(value) => setUploadForm({ ...uploadForm, deadline: value })} />
           <TextField label="Pagamento" maxLength={120} value={uploadForm.payment} onChange={(value) => setUploadForm({ ...uploadForm, payment: value })} />
-        </div>
-        <TextAreaField label="Itens inclusos" maxLength={1200} placeholder={"Um item por linha"} value={uploadForm.included} onChange={(value) => setUploadForm({ ...uploadForm, included: value })} />
-        <TextAreaField label="Observações" maxLength={800} rows={3} value={uploadForm.notes} onChange={(value) => setUploadForm({ ...uploadForm, notes: value })} />
-        {error ? <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
-        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
-          <FileDown size={18} />
-          {saving ? "Importando..." : "Importar e usar template"}
-        </button>
-        {customTemplates.length ? <p className="text-sm font-bold text-slate-500">{customTemplates.length} template(s) importado(s) salvos.</p> : null}
-      </form>
-
-      <div className="grid gap-3 lg:grid-cols-2">
+          <TextAreaField label="Itens inclusos" maxLength={1200} placeholder={"Um item por linha"} value={uploadForm.included} onChange={(value) => setUploadForm({ ...uploadForm, included: value })} />
+          <TextAreaField label="Observações" maxLength={800} rows={3} value={uploadForm.notes} onChange={(value) => setUploadForm({ ...uploadForm, notes: value })} />
+          {error ? <FormError message={error} /> : null}
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="submit">
+            <FileDown size={18} />
+            {saving ? "Importando..." : "Importar e usar template"}
+          </button>
+          {customTemplates.length ? <p className="text-sm font-bold text-slate-500">{customTemplates.length} template(s) importado(s) salvos.</p> : null}
+        </form>
+      }
+    >
+      <div className="grid gap-3">
         {visibleTemplates.map((template) => (
-          <article className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10" key={template.id}>
+          <article className="grid gap-4 rounded-lg border border-black/10 p-4" key={template.id}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-black text-green-700">
@@ -3252,7 +3277,7 @@ function TemplatesView({
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-1 flex flex-col gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-slate-600">
           Página {page} de {totalPages}
         </p>
@@ -3275,7 +3300,7 @@ function TemplatesView({
           </button>
         </div>
       </div>
-    </section>
+    </CrudShell>
   );
 }
 
@@ -3803,8 +3828,13 @@ function PlansView({
           Status: {["active", "trial"].includes(billing.subscription.status) && ["mercadopago", "admin"].includes(billing.subscription.provider || "") ? "ativo" : "aguardando pagamento/liberação"}
           <span className="mt-1 block">
             Uso atual: {billing.usage.proposalsThisMonth}
-            {`/${billing.usage.proposalLimit} propostas este mês`}
+            {isUnlimitedProposalLimit(billing.usage.proposalLimit) ? " propostas este mês, sem limite" : `/${billing.usage.proposalLimit} propostas este mês`}
           </span>
+          {!isUnlimitedProposalLimit(billing.usage.proposalLimit) ? (
+            <span className="mt-1 block">
+              Saldo acumulado: {billing.usage.proposalsUsedSinceSubscriptionStart || 0}/{billing.usage.accumulatedProposalLimit || billing.usage.proposalLimit} propostas
+            </span>
+          ) : null}
           <span className="mt-1 block">
             Artes de divulgação: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mês
           </span>
@@ -3853,7 +3883,10 @@ function PlansView({
                 ) : null}
               </div>
               <p className="text-sm font-bold text-slate-500">
-                {`Até ${plan.proposalLimit} propostas por mês`}
+                {isUnlimitedProposalLimit(plan.proposalLimit) ? "Propostas ilimitadas" : `Até ${plan.proposalLimit} propostas por mês`}
+                {!isUnlimitedProposalLimit(plan.proposalLimit) ? (
+                  <span className="mt-1 block">Renova todo mês e acumula o saldo não usado</span>
+                ) : null}
                 <span className="mt-1 block">
                   {plan.artLimit > 0 ? `${plan.artLimit} artes de divulgação por mês` : "Artes de divulgação não inclusas"}
                 </span>
@@ -4628,1038 +4661,65 @@ function LandingRange({
 }
 
 function AuthScreen() {
-  const launchOfferDeadline = useMemo(() => new Date("2026-06-03T23:59:59-03:00"), []);
-  const [timeUntilOfferEnds, setTimeUntilOfferEnds] = useState({ days: "0", hours: "00", minutes: "00", expired: false });
-  const benefits = [
-    {
-      icon: Send,
-      title: "Apresente sua empresa melhor",
-      description: "Troque o improviso por uma apresentação comercial com marca, escopo, prova e próximos passos.",
-    },
-    {
-      icon: FolderKanban,
-      title: "Venda valor antes de preço",
-      description: "Mostre serviço, portfólio, prazo e condições antes de o cliente comparar só pelo menor valor.",
-    },
-    {
-      icon: CheckCircle2,
-      title: "Facilite o sim",
-      description: "Envie link, PDF, WhatsApp e botão de aceite em uma experiência pronta para o cliente decidir.",
-    },
-  ];
-  const salesProof = [
-    { value: "12 meses", label: "de FechaPro incluso" },
-    { value: "Implantação", label: "para começar acompanhado" },
-    { value: "R$ 1.500", label: "no pacote completo anual" },
-  ];
-  const dealLeaks = [
-    "Você apresenta a empresa em mensagens, fotos e áudios espalhados quando o cliente precisa decidir.",
-    "A conversa esfria porque escopo, prazo, pagamento e provas ficam espalhados.",
-    "O cliente pede desconto porque não enxergou tudo que está incluso.",
-    "Você precisa explicar de novo o que poderia estar claro numa página de proposta.",
-    "A decisão fica informal: sem PDF, sem aceite e sem um próximo passo óbvio.",
-  ];
-  const objections = [
-    "Mostra o valor da entrega antes da conversa virar desconto.",
-    "Reduz dúvidas repetidas porque reúne escopo, prazo, pagamento e provas no mesmo link.",
-    "Dá um caminho claro para aceitar, pagar ou chamar no WhatsApp.",
-    "Ajuda você a acompanhar visualizações e fazer follow-up manual no momento certo.",
-  ];
-  const steps = [
-    "Configure marca, serviços e clientes para sua apresentação comercial sair organizada.",
-    "Monte a proposta com investimento, prazo, portfólio, depoimentos, condições e próximos passos.",
-    "Envie link ou PDF, acompanhe visualizações e faça follow-up com mais contexto.",
-  ];
-  const niches = ["Fotografia", "Buffet/Eventos", "Estética", "Arquitetura", "Marcenaria", "Social Media", "Reformas", "Serviços digitais"];
-  const landingExamples = [
-    {
-      niche: "Fotografia",
-      client: "Studio Serena",
-      service: "Ensaio profissional de marca",
-      price: 950,
-      deadline: "5 dias úteis",
-      proof: "Galeria, estilo de edição e condições de entrega no mesmo link",
-      included: ["Briefing", "2 horas de ensaio", "30 fotos tratadas", "Galeria online"],
-    },
-    {
-      niche: "Buffet/Eventos",
-      client: "Casa Aurora",
-      service: "Buffet completo para 80 convidados",
-      price: 6800,
-      deadline: "Data reservada",
-      proof: "Fotos de eventos, cardápio, equipe, itens inclusos e condições de reserva",
-      included: ["Cardápio completo", "Equipe de apoio", "Montagem", "Cronograma"],
-    },
-    {
-      niche: "Estética",
-      client: "Clínica Aura",
-      service: "Pacote facial premium",
-      price: 1200,
-      deadline: "4 sessões",
-      proof: "Antes e depois, protocolo, cuidados e condições de pagamento",
-      included: ["Avaliação", "4 sessões", "Cuidados pós", "Acompanhamento"],
-    },
-    {
-      niche: "Arquitetura",
-      client: "Apartamento Vila Norte",
-      service: "Projeto de interiores",
-      price: 4200,
-      deadline: "30 dias",
-      proof: "Escopo, etapas, referências visuais, entregáveis e prazo de aprovação",
-      included: ["Layout", "Moodboard", "Lista de compras", "3D básico"],
-    },
-    {
-      niche: "Marcenaria",
-      client: "Família Almeida",
-      service: "Móvel planejado para cozinha",
-      price: 7800,
-      deadline: "35 dias",
-      proof: "Medidas, materiais, acabamento, imagens de referência e garantia",
-      included: ["Medição", "Projeto", "Fabricação", "Instalação"],
-    },
-    {
-      niche: "Social Media",
-      client: "Loja Vértice",
-      service: "Gestão mensal de Instagram",
-      price: 1800,
-      deadline: "30 dias",
-      proof: "Calendário, exemplos de posts e clareza do que entra no pacote",
-      included: ["Planejamento", "12 posts", "8 stories", "Relatório mensal"],
-    },
-  ];
+  const [openFaq, setOpenFaq] = useState(0);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
   const plans = [
-    {
-      code: "start",
-      name: "Apresentação Essencial",
-      price: "R$ 97",
-      priceSuffix: "/mês ou R$ 897/ano",
-      cta: "Ver plano menor",
-      detail: "Para quem quer sair da apresentação improvisada e enviar link, PDF e aceite online.",
-      items: ["20 propostas por mês", "5 artes para divulgar por mês", "Propostas profissionais", "PDF da proposta", "Portfólio básico", "Aceite online", "Modelos prontos", "Suporte básico"],
-    },
-    {
-      code: "pro",
-      name: "Apresentação Profissional",
-      price: "R$ 197",
-      priceSuffix: "/mês ou R$ 1.200/ano",
-      cta: "Ver plano menor",
-      detail: "Para quem vende com frequência e quer propostas mais completas, visuais e fáceis de acompanhar.",
-      items: ["120 propostas por mês", "Tudo do Start", "Personalização visual", "Portfólio dentro da proposta", "Depoimentos de clientes", "Termos comerciais e aceite profissional", "Visualizações e cliques no WhatsApp", "10 artes por mês", "Mensagens de envio e follow-up", "Suporte prioritário"],
-    },
-    {
-      code: "premium_site",
-      name: "Estrutura Comercial Completa",
-      price: "R$ 1.500 anual",
-      priceSuffix: "ou 12x de R$ 150",
-      promoPrice: "De R$ 2.997",
-      badge: "Melhor escolha para vender agora",
-      cta: "Reservar minha implantação",
-      detail: "Para quem quer sair com sistema, presença digital, materiais comerciais e implantação prontos.",
-      items: ["12 meses de FechaPro", "600 propostas por mês", "Link profissional, PDF e aceite online", "WhatsApp e pagamento na proposta", "Mini site profissional", "Diagnóstico Comercial do Instagram", "Ajuste da logo para uso comercial", "5 artes iniciais + 20 artes mensais", "Ideias, legendas e chamadas para posts", "Mensagens prontas de abordagem e follow-up", "Configuração de marca, serviços, WhatsApp e PIX", "Primeira proposta criada com você", "Treinamento rápido"],
-    },
+    { code: "start", name: "Start", price: "R$ 250", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com baixo investimento. Acesso liberado em até 24h úteis.", items: ["Acesso ao FechaPro Start", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "Até 10 propostas por mês", "Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"], excluded: ["Não inclui site", "Não inclui artes", "Não inclui implantação feita pela equipe", "Não inclui primeira proposta criada pela equipe", "Não inclui kit completo de mensagens", "Não inclui suporte personalizado contínuo"], cta: "Garantir cota Start", href: "/checkout/cadastro/start" },
+    { code: "essential", name: "Essencial", price: "R$ 500", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com uma estrutura mais profissional. Setup básico entregue em até 48h úteis.", items: ["Tudo da cota Start", "Até 20 propostas por mês", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos", "Treinamento rápido", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"], excluded: ["Não inclui site", "Não inclui artes mensais", "Não inclui implantação completa"], cta: "Garantir cota Essencial", href: "/checkout/cadastro/essential" },
+    { code: "professional", name: "Profissional", price: "R$ 1.000", period: "pagamento único · acesso vitalício", description: "Para quem quer apoio para começar vendendo melhor. Implantação inicial em até 5 dias úteis após envio das informações.", items: ["Tudo da cota Essencial", "Até 60 propostas por mês", "Implantação inicial", "Configuração da marca", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio para começar a vender", "Até 5 artes iniciais no primeiro mês", "Entrega: implantação em até 5 dias úteis"], excluded: ["Não inclui site completo", "Não inclui manutenção contínua de artes", "Não inclui suporte ilimitado"], cta: "Garantir cota Profissional", href: "/checkout/cadastro/professional", featured: true },
+    { code: "complete", name: "Completo", price: "R$ 2.000", period: "pagamento único · acesso vitalício", description: "Para negócios com ticket alto que querem sair com estrutura completa. Site entregue em até 15 dias úteis após envio das informações.", items: ["Tudo da cota Profissional", "Até 120 propostas por mês", "FechaPro completo", "Site institucional de até 5 páginas", "Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Entrega: estrutura completa e site em até 15 dias úteis"], excluded: ["Domínio pago à parte, se necessário", "Manutenção futura do site não inclusa", "Alterações do site incluídas apenas na implantação inicial", "Novas páginas podem ser cobradas à parte"], cta: "Garantir cota Completa", href: "/checkout/cadastro/complete" },
   ];
-  const commercialStructure = [
-    "Configuração inicial da marca",
-    "Primeira proposta criada com você",
-    "Cadastro dos principais serviços",
-    "Modelo de proposta por nicho",
-    "Mensagens prontas para abordagem e follow-up",
-    "Diagnóstico Comercial do Instagram",
-    "Treinamento rápido e apoio inicial",
-    "Artes de divulgação conforme o plano",
-    "Mini site profissional no pacote completo",
+  const features = [
+    { label: "01 - Proposta", title: "Link profissional com tudo que o cliente precisa ver", text: "Marca, portfólio, depoimentos, escopo, prazo, valor e FAQ em uma página limpa, sem cadastro para o cliente.", icon: FileText },
+    { label: "02 - Rastreamento", title: "Você sabe quando o cliente abriu", text: "Acompanhe visualizações, cliques, aceite, recusa e pagamento para fazer follow-up com contexto.", icon: Eye },
+    { label: "03 - Pagamento", title: "PIX e Mercado Pago direto na proposta", text: "O cliente aceita e encontra o próximo passo de pagamento no mesmo link, com QR Code PIX ou checkout.", icon: CreditCard },
+    { label: "04 - Marca", title: "Sua identidade visual em cada proposta", text: "Logo, cores, WhatsApp, bio e textos comerciais deixam a apresentação com cara de empresa organizada.", icon: Palette },
+    { label: "05 - Templates", title: "22 nichos com modelos prontos", text: "Design, saúde, eventos, reformas, marketing, beleza e mais. Menos tela em branco, mais proposta enviada.", icon: Layers3 },
+    { label: "06 - Artes", title: "Divulgação para Instagram e WhatsApp", text: "Créditos de artes ajudam você a divulgar serviços e puxar novas conversas comerciais.", icon: Megaphone },
   ];
-  const practicalValue = [
-    { icon: FileText, title: "Proposta que vende valor", text: "Mostre escopo, prazo, investimento e condições em uma apresentação profissional." },
-    { icon: FileDown, title: "PDF para decisão", text: "O cliente pode baixar, guardar e consultar sem perder tudo no histórico do WhatsApp." },
-    { icon: ImageIcon, title: "Provas no lugar certo", text: "Portfólio e depoimentos aparecem junto da proposta, no momento em que o cliente decide." },
-    { icon: MessageSquareQuote, title: "Satisfação e depoimentos", text: "Depois do serviço, peça avaliação e transforme clientes satisfeitos em prova social para próximas vendas." },
-    { icon: Megaphone, title: "Artes para puxar demanda", text: "Tenha materiais para postar, divulgar serviços e chamar novas conversas pelo WhatsApp." },
-    { icon: LayoutDashboard, title: "Estrutura pronta", text: "Receba mini site, configuração, primeira proposta e orientação para começar sem ficar montando tudo sozinho." },
+  const problems = [
+    { title: "Cliente some depois do preço", text: "Você não sabe se ele leu, comparou, esqueceu ou desistiu.", icon: MessageSquareQuote },
+    { title: "PDF ou texto sem identidade", text: "Planilha, print ou mensagem solta passam menos segurança antes mesmo do valor.", icon: FileDown },
+    { title: "Cobrança fora da proposta", text: "Depois do aceite ainda precisa pedir PIX, mandar link e conferir comprovante.", icon: QrCode },
+    { title: "Follow-up no escuro", text: "Você chama sem saber se é hora de explicar, pressionar ou esperar.", icon: Bell },
+  ];
+  const steps = ["Configure sua marca", "Crie a proposta", "Envie o link", "Acompanhe o aceite"];
+  const testimonials = [
+    ["Ana Clara R.", "Designer - São Paulo", "Antes eu mandava só o valor e o cliente pedia desconto. Agora ele vê escopo, prazo e referências antes de negociar."],
+    ["Rafael M.", "Consultor de marketing - BH", "O melhor foi parar de explicar tudo por áudio. Envio o link, vejo quando abriu e faço follow-up com mais contexto."],
+    ["Juliana F.", "Nutricionista - Curitiba", "Transformei orçamento em plano de cuidado. O paciente entende as etapas e aceita pelo link sem aquela troca infinita de mensagem."],
   ];
   const faqs = [
-    {
-      question: "Eu já faço orçamento em PDF, Word ou Canva. O que muda?",
-      answer: "O FechaPro não entrega só um arquivo bonito. Ele organiza sua apresentação comercial com marca, portfólio, link, PDF, aceite online, acompanhamento e materiais para você vender com mais contexto.",
-    },
-    {
-      question: "É só acesso ao sistema?",
-      answer: "Não. Os planos trazem modelos e recursos para começar; na Estrutura Comercial Completa, você recebe implantação, mini site, diagnóstico do Instagram, ajuste simples da logo, mensagens prontas, artes, treinamento rápido e presença profissional conforme o pacote.",
-    },
-    {
-      question: "Preciso configurar tudo sozinho?",
-      answer: "Não. Na Estrutura Comercial Completa, a equipe do FechaPro configura a estrutura inicial, organiza portfólio, cadastra os primeiros serviços, cria a primeira proposta com você e entrega o caminho para sair usando.",
-    },
-    {
-      question: "Posso cancelar?",
-      answer: "Sim, você pode cancelar conforme as condições do plano contratado.",
-    },
-    {
-      question: "As artes são feitas por vocês?",
-      answer: "Na Estrutura Comercial Completa, você recebe 5 artes iniciais e 20 artes por mês. No plano Pro, você também tem créditos mensais para artes.",
-    },
-    {
-      question: "Qual plano devo escolher para vender mais rápido?",
-      answer: "A Estrutura Comercial Completa é o caminho mais direto: por R$ 1.500/ano, você recebe sistema por 12 meses, mini site, implantação assistida, diagnóstico do Instagram, ajuste simples da logo, mensagens prontas, artes iniciais, artes mensais e orientação para começar com mais clareza.",
-    },
-    {
-      question: "Qual é o limite do site?",
-      answer: "O mini site profissional tem até 5 seções e é feito com modelo pronto personalizado para sua empresa.",
-    },
-    {
-      question: "O FechaPro substitui meu orçamento manual?",
-      answer: "Sim. Você cria uma proposta com link, PDF, portfólio, depoimentos e aceite, em vez de enviar só uma mensagem solta com preço.",
-    },
-    {
-      question: "O sistema envia mensagens automáticas para o cliente?",
-      answer: "Não. O FechaPro mostra visualizações, aceite, recusa e cliques para você fazer follow-up manual com mais contexto. As mensagens do pacote completo são modelos para copiar, adaptar e enviar.",
-    },
-    {
-      question: "O FechaPro emite nota fiscal?",
-      answer: "A emissão automática de nota fiscal está no roadmap. No momento, o foco é profissionalizar proposta, aceite, acompanhamento e pós-venda. Em breve, o sistema poderá ajudar no controle e envio de notas após o fechamento.",
-    },
+    ["Preciso instalar algum app?", "Não. O FechaPro funciona pelo navegador, no celular ou computador. Seu cliente também acessa pelo link, sem cadastro obrigatório."],
+    ["Meu cliente vai conseguir usar?", "Sim. Ele recebe o link no WhatsApp, abre a proposta, vê escopo, valor, prazo e escolhe aceitar, recusar ou pagar."],
+    ["Funciona para o meu nicho?", "O FechaPro tem templates para 22 nichos, incluindo design, saúde, eventos, reformas, beleza, marketing digital, consultoria, educação e gastronomia."],
+    ["O pagamento pelo link é seguro?", "O checkout usa Mercado Pago ou PIX direto configurado pelo profissional. O FechaPro organiza o fluxo da proposta e do pagamento."],
+    ["Tem garantia ou teste?", "Você pode começar pelo plano que faz sentido e cancelar conforme as condições contratadas. A Estrutura Completa inclui implantação assistida."],
   ];
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
-  const [activeExampleIndex, setActiveExampleIndex] = useState(0);
-  const [monthlyProposals, setMonthlyProposals] = useState(12);
-  const [averageTicket, setAverageTicket] = useState(1200);
-  const [rescuedDeals, setRescuedDeals] = useState(2);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const activeExample = landingExamples[activeExampleIndex];
-  const rescuedDealLimit = Math.max(1, Math.min(monthlyProposals, 10));
-  const clampedRescuedDeals = Math.min(rescuedDeals, rescuedDealLimit);
-  const estimatedMonthlyUpside = averageTicket * clampedRescuedDeals;
-  useEffect(() => {
-    function updateCountdown() {
-      const difference = launchOfferDeadline.getTime() - Date.now();
-      if (difference <= 0) {
-        setTimeUntilOfferEnds({ days: "0", hours: "00", minutes: "00", expired: true });
-        return;
-      }
-      const days = Math.floor(difference / 86400000);
-      const hours = Math.floor((difference % 86400000) / 3600000);
-      const minutes = Math.floor((difference % 3600000) / 60000);
-      setTimeUntilOfferEnds({
-        days: String(days),
-        hours: String(hours).padStart(2, "0"),
-        minutes: String(minutes).padStart(2, "0"),
-        expired: false,
-      });
-    }
-
-    updateCountdown();
-    const interval = window.setInterval(updateCountdown, 60000);
-    return () => window.clearInterval(interval);
-  }, [launchOfferDeadline]);
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        name: "FechaPro",
-        applicationCategory: "BusinessApplication",
-        operatingSystem: "Web",
-        url: siteUrl,
-        image: `${siteUrl}/landing/hero-proposta.png`,
-        description: "Estrutura comercial para prestadores apresentarem, enviarem e acompanharem propostas profissionais com marca, portfólio, PDF, aceite, mini site, materiais comerciais e apoio para começar.",
-        offers: plans.map((plan) => ({
-          "@type": "Offer",
-          name: plan.name,
-          price: plan.code === "premium_site" ? "1500" : plan.price.replace("R$ ", ""),
-          priceCurrency: "BRL",
-          availability: "https://schema.org/InStock",
-        })),
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: faqs.map((faq) => ({
-          "@type": "Question",
-          name: faq.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: faq.answer,
-          },
-        })),
-      },
+      { "@type": "SoftwareApplication", name: "FechaPro", applicationCategory: "BusinessApplication", operatingSystem: "Web", url: siteUrl, description: "Propostas profissionais com link, PDF, aceite online, pagamento integrado, rastreamento e artes de divulgação para prestadores de serviço.", offers: plans.map((plan) => ({ "@type": "Offer", name: plan.name, price: plan.price.replace("R$ ", ""), priceCurrency: "BRL", availability: "https://schema.org/InStock" })) },
+      { "@type": "FAQPage", mainEntity: faqs.map(([question, answer]) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })) },
     ],
   };
 
-  function goToSection(id: string) {
-    setMobileMenuOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.history.replaceState(null, "", window.location.pathname);
-  }
-
-  function updateMonthlyProposals(value: number) {
-    setMonthlyProposals(value);
-    setRescuedDeals((current) => Math.min(current, Math.max(1, Math.min(value, 10))));
-  }
-
-  function updateRescuedDeals(value: number) {
-    setRescuedDeals(Math.min(value, rescuedDealLimit));
-  }
-
   return (
     <>
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-    />
-    <div className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950 px-2 py-1.5 text-white shadow-xl shadow-black/20">
-      <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 text-[11px] font-black sm:gap-3 sm:text-sm">
-        <span className="hidden text-white/82 sm:inline">Pacote completo com implantação</span>
-        <span className="text-green-300">{timeUntilOfferEnds.expired ? "Oferta encerrada" : "Encerra em"}</span>
-        <span className="grid grid-flow-col gap-1" aria-label={`Faltam ${timeUntilOfferEnds.days} dias, ${timeUntilOfferEnds.hours} horas e ${timeUntilOfferEnds.minutes} minutos para a oferta encerrar`}>
-          {[
-            { value: timeUntilOfferEnds.days, label: "dias" },
-            { value: timeUntilOfferEnds.hours, label: "h" },
-            { value: timeUntilOfferEnds.minutes, label: "min" },
-          ].map((item) => (
-            <span className="inline-flex min-w-12 items-center justify-center gap-1 rounded-md bg-white px-2 py-1 text-slate-950" key={item.label}>
-              <strong>{item.value}</strong>
-              <span className="text-[10px] uppercase text-slate-500">{item.label}</span>
-            </span>
-          ))}
-        </span>
-        <span className="hidden text-white/82 md:inline">Estrutura Comercial Completa por R$ 1.500/ano. Sistema, mini site, materiais e implantação assistida.</span>
-        <a className="rounded-md bg-green-500 px-2.5 py-1 text-slate-950" href="#planos">Ver oferta</a>
-      </div>
-    </div>
-    <main className="fp-landing min-h-screen bg-slate-50 text-slate-950">
-      <section className="fp-landing-hero relative isolate overflow-hidden bg-slate-950 pt-12 text-white sm:pt-11">
-        <Image className="motion-hero-pan absolute inset-0 -z-20 object-cover" src="/landing/hero-proposta.png" alt="Tela de proposta comercial online criada no FechaPro" fill priority sizes="100vw" />
-        <div className="absolute inset-0 -z-10 bg-slate-950/74" />
-        <div className="mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-7xl flex-col px-4 py-4 pb-20 sm:min-h-[92vh] sm:px-6 sm:pb-4 lg:px-8">
-          <header className="relative flex items-center justify-between gap-3">
-            <a className="inline-flex items-center gap-2 font-black" href="#">
-              <span className="grid h-12 w-40 place-items-center rounded-lg bg-white/95 px-3">
-                <Image alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
-              </span>
-            </a>
-            <nav className="hidden items-center gap-6 text-sm font-bold text-white/80 md:flex">
-              <button className="font-bold" type="button" onClick={() => goToSection("como-funciona")}>
-                Como funciona
-              </button>
-              <button className="font-bold" type="button" onClick={() => goToSection("recursos")}>
-                Recursos
-              </button>
-              <a className="font-bold" href="#planos">
-                Planos
-              </a>
-              <a href="/interesse">
-                Tenho interesse
-              </a>
-              <a href="#planos">
-                Começar
-              </a>
-            </nav>
-            <div className="flex items-center gap-2">
-              <a className="hidden min-h-10 items-center justify-center rounded-lg bg-green-500 px-4 text-sm font-black text-slate-950 sm:inline-flex" href="#planos">
-                Escolher plano
-              </a>
-              <a className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/25 px-4 text-sm font-black text-white" href="/login">
-                Entrar
-              </a>
-              <button
-                aria-expanded={mobileMenuOpen}
-                aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
-                className="grid h-10 w-10 place-items-center rounded-lg border border-white/25 text-white md:hidden"
-                type="button"
-                onClick={() => setMobileMenuOpen((current) => !current)}
-              >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            </div>
-            {mobileMenuOpen ? (
-              <nav className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 grid gap-1 rounded-lg border border-white/15 bg-slate-950/96 p-2 text-sm font-black text-white shadow-xl shadow-black/30 backdrop-blur md:hidden">
-                <button className="min-h-11 rounded-lg px-3 text-left" type="button" onClick={() => goToSection("como-funciona")}>
-                  Como funciona
-                </button>
-                <button className="min-h-11 rounded-lg px-3 text-left" type="button" onClick={() => goToSection("recursos")}>
-                  Recursos
-                </button>
-                <a className="min-h-11 rounded-lg px-3 py-3" href="#planos" onClick={() => setMobileMenuOpen(false)}>
-                  Planos
-                </a>
-                <a className="min-h-11 rounded-lg px-3 py-3" href="/interesse">
-                  Tenho interesse
-                </a>
-                <a className="min-h-11 rounded-lg bg-green-500 px-3 py-3 text-slate-950" href="#planos">
-                  Começar
-                </a>
-              </nav>
-            ) : null}
-          </header>
-
-          <div className="grid flex-1 content-end gap-6 pb-6 pt-12 sm:gap-8 sm:pb-8 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
-            <div className="max-w-3xl">
-              <p className="fp-landing-kicker inline-flex rounded-lg bg-white/12 px-3 py-2 text-xs font-black uppercase tracking-normal text-green-100">
-                Estrutura comercial para prestadores de serviço
-              </p>
-              <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Pare de mandar preço solto. Envie propostas profissionais que ajudam o cliente a entender seu valor.
-              </h1>
-              <p className="mt-5 max-w-2xl text-sm leading-6 text-white/82 sm:text-base sm:leading-7">
-                O FechaPro ajuda prestadores de serviço a saírem do orçamento improvisado e criarem propostas com marca, fotos, detalhes, PDF, link, aceite online e acompanhamento.
-              </p>
-              <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
-                <p className="text-sm font-black text-green-100">Planos a partir de R$ 97/mês. Pacote completo com implantação por R$ 1.500 anual.</p>
-                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Sistema, mini site, materiais comerciais e apoio para começar com tudo pronto.</p>
-              </div>
-              <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-white/80">
-                Feito para quem quer apresentar valor, transmitir confiança e conduzir o próximo passo sem depender de áudio, texto solto e desconto.
-              </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <a className="fp-landing-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
-                  <Sparkles size={18} />
-                  Reservar minha implantação
-                </a>
-                <a className="fp-landing-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/25 px-5 font-black text-white" href="#como-funciona">
-                  Ver exemplo na prática
-                </a>
-              </div>
-            </div>
-
-            <div className="fp-landing-demo motion-float-slow grid gap-3 rounded-lg border border-white/15 bg-white/10 p-3 backdrop-blur sm:p-4">
-              <div className="grid gap-2 sm:grid-cols-3">
-                {salesProof.map((metric) => (
-                  <LandingMetric key={metric.value} value={metric.value} label={metric.label} />
-                ))}
-              </div>
-              <div className="motion-lift grid gap-3 rounded-lg bg-white p-4 text-slate-950">
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
-                  <p className="text-xs font-black uppercase text-rose-700">Antes</p>
-                  <p className="mt-1 text-lg font-black text-rose-950">WhatsApp: "Fica R$ 850."</p>
-                  <p className="mt-1 text-xs font-bold leading-5 text-rose-900/80">Preço solto, fotos espalhadas e pouca percepção de valor.</p>
-                </div>
-                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                  <p className="text-xs font-black uppercase text-green-700">Depois</p>
-                  <h2 className="mt-1 text-xl font-black">{activeExample.service}</h2>
-                  <div className="mt-3 grid gap-2 text-sm font-bold text-slate-600">
-                    <span>Logo e marca profissional</span>
-                    <span>Fotos, escopo e prazo: {activeExample.deadline}</span>
-                    <span>Investimento: {money.format(activeExample.price)}</span>
-                    <span>PDF, link e botão verde de aceite</span>
-                  </div>
-                  <button className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-green-600 font-black text-white" type="button">
-                    Aceitar proposta
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {landingExamples.slice(0, 4).map((example, index) => (
-                  <button
-                    className={`min-h-10 rounded-lg border px-2 text-xs font-black ${
-                      activeExampleIndex === index
-                        ? "border-green-300 bg-green-300 text-slate-950"
-                        : "border-white/20 bg-white/10 text-white"
-                    }`}
-                    key={example.niche}
-                    type="button"
-                    onClick={() => setActiveExampleIndex(index)}
-                  >
-                    {example.niche}
-                  </button>
-                ))}
-              </div>
-              <div className="rounded-lg border border-white/15 bg-slate-950/60 p-4">
-                <p className="text-xs font-black uppercase text-green-200">Para o cliente</p>
-                <p className="mt-2 text-sm font-bold leading-6 text-white/80">
-                  Em vez de explicar tudo de novo, você envia uma apresentação com marca, escopo, provas, valor, PDF e botão de aceite.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band border-b border-black/10 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Mais que orçamento</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">O problema não é só o orçamento. É toda a apresentação comercial.</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Quando o cliente pede preço e recebe uma mensagem simples, ele compara apenas valor. Quando recebe uma proposta organizada com marca, fotos, detalhes, condições, PDF e aceite, a percepção muda.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <article className="rounded-lg border border-rose-200 bg-rose-50 p-5">
-              <p className="text-xs font-black uppercase text-rose-700">Antes</p>
-              <h3 className="mt-3 text-xl font-black text-rose-950">Venda no improviso</h3>
-              <p className="mt-2 text-sm font-bold leading-6 text-rose-900/80">WhatsApp cheio de texto, fotos soltas, preço sem contexto e follow-up no escuro.</p>
-            </article>
-            <article className="rounded-lg border border-green-200 bg-green-50 p-5">
-              <p className="text-xs font-black uppercase text-green-700">Depois</p>
-              <h3 className="mt-3 text-xl font-black text-green-950">Venda com estrutura</h3>
-              <p className="mt-2 text-sm font-bold leading-6 text-green-950/80">Proposta com marca, portfólio, condições, PDF, link, aceite online e acompanhamento.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-dark bg-slate-950 text-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-green-300">O que você recebe</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Você não compra só acesso. Você recebe uma estrutura pronta para começar.</h2>
-            <p className="mt-4 text-sm leading-6 text-white/72 sm:text-base sm:leading-7">
-              O FechaPro combina ferramenta, implantação e materiais para sua empresa começar com uma estrutura comercial mais pronta.
-            </p>
-            <a className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
-              Reservar minha implantação
-            </a>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {commercialStructure.map((item) => (
-              <article className="fp-landing-dark-card flex gap-3 rounded-lg border border-white/15 bg-white/8 p-4 text-sm font-black leading-6" key={item}>
-                <CheckCircle2 className="mt-0.5 shrink-0 text-green-300" size={18} />
-                {item}
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band border-b border-black/10 bg-green-50">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-green-700">Pacote de maior valor</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Estrutura Comercial Completa por R$ 1.500 anual.</h2>
-            <p className="mt-4 max-w-4xl text-sm font-bold leading-6 text-slate-700 sm:text-base sm:leading-7">
-              Você recebe: acesso anual ao FechaPro, mini site profissional, implantação inicial, configuração da marca, primeira proposta criada, kit de mensagens, diagnóstico do Instagram, ajuste simples da logo, artes iniciais, treinamento rápido e apoio para começar a vender melhor.
-            </p>
-            <p className="mt-3 max-w-4xl text-sm font-black leading-6 text-green-800">
-              Em vez de vender só acesso ao sistema, o pacote entrega FechaPro por 12 meses, mini site, implantação, mensagens prontas, diagnóstico do Instagram, ajuste simples da logo e materiais para vender com mais profissionalismo.
-            </p>
-            <p className="mt-2 max-w-4xl text-sm font-bold leading-6 text-slate-700">
-              Se fosse contratar separado, sistema, site, artes, ajuste de logo, mensagens comerciais, configuração e treinamento sairiam muito mais caro. Aqui fica tudo em um pacote para vender com mais profissionalismo.
-            </p>
-          </div>
-          <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-6 font-black text-white" href="#planos">
-            Quero reservar minha implantação
-          </a>
-        </div>
-      </section>
-
-
-      <section className="fp-landing-band fp-landing-muted bg-slate-100">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Simulador</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Quanto uma apresentação comercial fraca pode deixar na mesa por mês?</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Se apenas 2 oportunidades por mês voltarem para a negociação porque seu valor ficou mais claro, o FechaPro já pode estar se pagando.
-            </p>
-          </div>
-
-          <div className="fp-landing-card grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <LandingRange
-                label="Propostas por mês"
-                max={60}
-                min={1}
-                step={1}
-                value={monthlyProposals}
-                valueLabel={`${monthlyProposals}`}
-                onChange={updateMonthlyProposals}
-              />
-              <LandingRange
-                label="Ticket médio"
-                max={10000}
-                min={300}
-                step={100}
-                value={averageTicket}
-                valueLabel={money.format(averageTicket)}
-                onChange={setAverageTicket}
-              />
-              <LandingRange
-                label="Vendas recuperadas"
-                max={rescuedDealLimit}
-                min={1}
-                step={1}
-                value={clampedRescuedDeals}
-                valueLabel={`${clampedRescuedDeals}/mês`}
-                onChange={updateRescuedDeals}
-              />
-            </div>
-
-            <div className="grid gap-3 rounded-lg bg-slate-950 p-5 text-white sm:grid-cols-[1fr_auto] sm:items-center">
-              <div>
-                <p className="text-xs font-black uppercase text-green-300">Potencial estimado</p>
-                <strong className="mt-2 block text-3xl font-black sm:text-4xl">{money.format(estimatedMonthlyUpside)}</strong>
-                <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-                  Se {clampedRescuedDeals} oportunidade(s) deixarem de virar comparação de preço e voltarem para negociação, esse é o valor que pode entrar de novo no jogo.
-                </p>
-              </div>
-              <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-500 px-5 font-black text-slate-950" href="#planos">
-                Reservar minha implantação
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band border-b border-black/10 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:grid-cols-3 sm:px-6 lg:px-8">
-          {benefits.map((benefit) => (
-            <article className="fp-landing-card motion-lift rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={benefit.title}>
-              <benefit.icon className="text-green-700" size={24} />
-              <h2 className="mt-4 text-lg font-black">{benefit.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{benefit.description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="fp-landing-band bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-rose-700">O vazamento de vendas</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Se sua apresentação parece simples demais, o cliente negocia como se seu serviço fosse simples.</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              O WhatsApp aproxima, mas não sustenta sozinho uma venda de valor. O FechaPro coloca sua entrega em um formato que o cliente consegue revisar, comparar, aprovar e guardar.
-            </p>
-          </div>
-          <div className="grid gap-3">
-            {dealLeaks.map((item) => (
-              <article className="fp-landing-alert grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-rose-700/15 bg-rose-50 p-5" key={item}>
-                <span className="motion-float-soft grid size-9 place-items-center rounded-lg bg-rose-700 font-black text-white">!</span>
-                <p className="self-center text-sm font-black leading-6 text-rose-950 sm:text-base">{item}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-dark bg-slate-950 text-white" id="recursos">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-green-300">Recursos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Tudo para sua empresa parar de vender no improviso.</h2>
-            <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Você monta a proposta, envia o link pelo WhatsApp, acompanha visualizações e deixa o cliente com um caminho claro para aceitar, pagar ou tirar dúvidas.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              { icon: FileText, title: "Propostas profissionais com link", text: "Mostre valor, prazo, escopo, portfólio e próximos passos em uma página profissional para enviar ao cliente." },
-              { icon: FileDown, title: "PDF da proposta", text: "O cliente pode visualizar online e baixar uma versão em PDF com mais confiança." },
-              { icon: ImageIcon, title: "Portfólio e depoimentos", text: "Mostre trabalhos anteriores e provas sociais dentro da própria proposta." },
-              { icon: MessageSquareQuote, title: "Formulário de satisfação", text: "Após finalizar o serviço, envie uma avaliação para o cliente e transforme feedbacks em prova social para vender mais." },
-              { icon: Megaphone, title: "Artes para divulgar", text: "Tenha materiais prontos para postar, chamar atenção e puxar novas conversas pelo WhatsApp." },
-            ].map((feature) => (
-              <article className="fp-landing-dark-card motion-lift rounded-lg border border-white/15 bg-white/8 p-5" key={feature.title}>
-                <feature.icon className="text-green-300" size={24} />
-                <h3 className="mt-4 text-lg font-black">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-white/70">{feature.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band fp-landing-muted bg-slate-100" id="como-funciona">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Como funciona</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Em poucos minutos, você cria uma proposta que parece profissional de verdade.</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              O processo é direto: informe cliente, serviço, valor e prazo; adicione provas do seu trabalho; envie o link pelo WhatsApp.
-            </p>
-            <div className="mt-6 hidden items-end gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 md:flex">
-              <Image className="h-40 w-auto shrink-0 object-contain" src="/landing/fe-sozinha.png" alt="Fe, mascote do FechaPro" width={160} height={220} />
-              <div className="pb-2">
-                <p className="text-xs font-black uppercase text-green-700">Guiado pela Fe</p>
-                <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                  Primeiro você monta a proposta. Depois envia o link. A partir daí, o cliente vê valor, prova, prazo e próximo passo sem depender de explicação solta.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="grid gap-3">
-            {steps.map((step, index) => (
-              <article className="fp-landing-step grid grid-cols-[auto_1fr] gap-4 rounded-lg border border-black/10 bg-white p-5" key={step}>
-                <span className={`motion-float-soft grid size-10 place-items-center rounded-lg bg-slate-950 font-black text-white motion-delay-${Math.min(index, 3)}`}>{index + 1}</span>
-                <p className="self-center text-base font-black leading-6 sm:text-lg sm:leading-7">{step}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Prova visual</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Antes o cliente recebia só preço. Agora ele entende por que avançar.</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              O cliente recebe um link organizado, entende o que está incluso, vê provas do seu trabalho, baixa o PDF se quiser e aceita online quando estiver pronto para fechar.
-            </p>
-            <div className="mt-6 grid gap-3">
-              <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
-                <p className="text-xs font-black uppercase text-rose-700">Antes</p>
-                <p className="mt-2 text-2xl font-black text-rose-950">“Fica R$ 850.”</p>
-                <p className="mt-2 text-sm font-bold leading-6 text-rose-900/80">Seu cliente recebe só preço e compara com qualquer concorrente.</p>
-              </div>
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                <p className="text-xs font-black uppercase text-green-700">Depois</p>
-                <p className="mt-2 text-sm font-black leading-6 text-green-950">Seu cliente recebe uma apresentação completa, vê fotos, condições, prazo e tem um botão claro para avançar.</p>
-              </div>
-              <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-5 font-black text-white" href="#planos">
-                Reservar minha implantação
-              </a>
-            </div>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-[1fr_0.72fr]">
-            {/* Mockup fiel ao preview real da proposta */}
-            <div className="overflow-hidden rounded-xl border border-black/10 shadow-xl shadow-slate-900/10">
-              {/* Barra superior */}
-              <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Depois</p>
-                <p className="text-sm font-black text-white">Proposta profissional para o cliente</p>
-              </div>
-              {/* Corpo do card */}
-              <div className="bg-white p-4">
-                {/* Avatar + nome */}
-                <div className="flex items-center gap-3 border-b border-black/8 pb-4">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-green-700 text-sm font-black text-white">AL</span>
-                  <div>
-                    <p className="text-sm font-black leading-tight">Amanda Leandro Soares do Carmo</p>
-                    <p className="text-xs font-bold text-blue-700">Proposta comercial</p>
-                  </div>
-                </div>
-                {/* Campos comerciais */}
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="font-black uppercase text-slate-400">Serviço</p>
-                    <p className="mt-0.5 font-black text-slate-900">Identidade visual</p>
-                  </div>
-                  <div>
-                    <p className="font-black uppercase text-slate-400">Investimento</p>
-                    <p className="mt-0.5 font-black text-slate-900">R$ 1.200</p>
-                  </div>
-                  <div className="mt-2">
-                    <p className="font-black uppercase text-slate-400">Prazo</p>
-                    <p className="mt-0.5 font-black text-slate-900">7 dias úteis</p>
-                  </div>
-                  <div className="mt-2">
-                    <p className="font-black uppercase text-slate-400">Pagamento</p>
-                    <p className="mt-0.5 font-black text-slate-900">50% antecipado</p>
-                  </div>
-                </div>
-                {/* Inclui */}
-                <div className="mt-4">
-                  <p className="text-xs font-black text-slate-900">Inclui</p>
-                  <ul className="mt-1.5 grid gap-1">
-                    {["Logo principal", "Paleta de cores", "Tipografia", "Modelos de posts"].map((item) => (
-                      <li className="flex items-center gap-2 text-xs font-bold text-slate-700" key={item}>
-                        <CheckCircle2 className="shrink-0 text-green-600" size={13} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {/* Portfólio colorido */}
-                <div className="mt-4 grid grid-cols-3 gap-1.5 overflow-hidden rounded-lg">
-                  <div className="flex h-12 items-end bg-gradient-to-br from-blue-900 to-blue-700 p-1.5">
-                    <span className="text-[10px] font-black text-white">Logo</span>
-                  </div>
-                  <div className="flex h-12 items-end bg-gradient-to-br from-green-500 to-green-700 p-1.5">
-                    <span className="text-[10px] font-black text-white">Social</span>
-                  </div>
-                  <div className="flex h-12 items-end bg-gradient-to-br from-slate-700 to-slate-900 p-1.5">
-                    <span className="text-[10px] font-black text-white">Web</span>
-                  </div>
-                </div>
-                {/* Depoimento */}
-                <div className="mt-4 border-l-2 border-green-500 pl-3">
-                  <p className="text-xs font-bold italic leading-5 text-slate-700">"Excelente entrega, muito profissional e antes do prazo."</p>
-                  <p className="mt-1 text-[10px] font-black text-green-700">Cliente verificado</p>
-                </div>
-                {/* Botões */}
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-green-600 text-xs font-black text-white" type="button">
-                    <Send size={11} />
-                    Aceitar proposta
-                  </button>
-                  <button className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-black/15 text-xs font-black text-slate-700" type="button">
-                    <FileDown size={11} />
-                    Gerar PDF
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Cards laterais */}
-            <div className="grid gap-4 content-start">
-              <article className="rounded-lg border border-black/10 bg-slate-950 p-5 text-white">
-                <MessageSquareQuote className="text-green-300" size={24} />
-                <h3 className="mt-3 text-lg font-black">Link no WhatsApp</h3>
-                <p className="mt-2 text-sm leading-6 text-white/70">Envie um link direto para o cliente ver a proposta completa, sem texto solto ou áudio explicando tudo.</p>
-              </article>
-              <article className="rounded-lg border border-black/10 bg-slate-50 p-5">
-                <FileDown className="text-green-700" size={24} />
-                <h3 className="mt-3 text-lg font-black">PDF profissional</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">O cliente baixa, guarda e consulta quando quiser. Sem perder no histórico do WhatsApp.</p>
-              </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Para quem serve</p>
-            <h2 className="mt-2 max-w-3xl text-3xl font-black leading-tight sm:text-4xl">Para prestadores que vendem confiança antes de vender preço.</h2>
-            <div className="fp-landing-tags mt-6 flex flex-wrap gap-2">
-              {niches.map((niche) => (
-                <span className="rounded-lg border border-black/10 bg-slate-50 px-4 py-3 text-sm font-black" key={niche}>
-                  {niche}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="fp-landing-card rounded-lg border border-black/10 bg-slate-50 p-5">
-            <p className="text-xs font-black uppercase text-blue-700">Na decisão do cliente</p>
-            <h3 className="mt-2 text-xl font-black sm:text-2xl">A proposta precisa vender antes do follow-up.</h3>
-            <ul className="mt-5 grid gap-3">
-              {objections.map((item) => (
-                <li className="flex gap-3 text-sm font-bold leading-6 text-slate-700 sm:text-base sm:leading-7" key={item}>
-                  <CheckCircle2 className="mt-1 shrink-0 text-green-700" size={18} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band border-y border-black/10 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <article className="rounded-lg border border-green-200 bg-green-50 p-5">
-            <p className="text-xs font-black uppercase text-green-700">O FechaPro é para você se</p>
-            <ul className="mt-4 grid gap-3">
-              {[
-                "vende serviço por orçamento, pacote ou proposta",
-                "manda valores pelo WhatsApp",
-                "tem ticket acima de R$ 500",
-                "quer parecer mais profissional",
-                "precisa explicar melhor o que está incluso",
-              ].map((item) => (
-                <li className="flex gap-3 text-sm font-bold leading-6 text-green-950" key={item}>
-                  <CheckCircle2 className="mt-1 shrink-0 text-green-700" size={18} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </article>
-          <article className="rounded-lg border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs font-black uppercase text-slate-600">Talvez não seja para você se</p>
-            <ul className="mt-4 grid gap-3">
-              {[
-                "vende apenas produto simples de prateleira",
-                "não envia orçamento",
-                "não pretende fazer follow-up",
-                "não quer organizar minimamente sua apresentação comercial",
-              ].map((item) => (
-                <li className="flex gap-3 text-sm font-bold leading-6 text-slate-700" key={item}>
-                  <X className="mt-1 shrink-0 text-slate-500" size={18} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section className="fp-landing-band bg-slate-100">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase text-blue-700">Exemplos por nicho</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Veja como o FechaPro se adapta ao seu tipo de serviço.</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Cada nicho precisa apresentar valor de um jeito. Por isso, sua proposta pode mostrar fotos, pacotes, prazos, etapas, condições e diferenciais conforme o que você vende.
-            </p>
-          </div>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {landingExamples.map((example, index) => (
-              <article className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" key={example.niche}>
-                <p className="text-xs font-black uppercase text-blue-700">{example.niche}</p>
-                <h3 className="mt-2 text-xl font-black">{example.service}</h3>
-                <p className="mt-2 text-sm font-bold leading-6 text-slate-600">{example.proof}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {example.included.slice(0, 3).map((item) => (
-                    <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700" key={item}>
-                      {item}
-                    </span>
-                  ))}
-                </div>
-                <button
-                  className="mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-green-600 px-4 text-sm font-black text-green-700"
-                  type="button"
-                  onClick={() => {
-                    setActiveExampleIndex(index);
-                    goToSection("como-funciona");
-                  }}
-                >
-                  Ver exemplo na prática
-                </button>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase text-blue-700">Na prática</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Mais valor percebido antes da negociação.</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Em vez de mandar só preço, você apresenta escopo, prazo, provas, PDF e botão de aceite em um link organizado. Isso muda a conversa: sai do "quanto custa?" e vai para "como fechamos?".
-            </p>
-          </div>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {practicalValue.map((item) => (
-              <article className="fp-landing-card motion-lift rounded-lg border border-black/10 bg-slate-50 p-5" key={item.title}>
-                <item.icon className="text-green-700" size={24} />
-                <h3 className="mt-4 text-lg font-black">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-dark scroll-mt-6 bg-slate-950 text-white" id="planos">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase text-green-300">Planos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Planos a partir de R$ 97/mês. Pacote completo para quem quer começar com tudo pronto.</h2>
-            <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Se você vende serviços por orçamento, pacote ou proposta personalizada, pode começar simples. Mas se quiser sair com sistema, presença digital, materiais comerciais e implantação, a Estrutura Comercial Completa é a oferta mais forte.
-            </p>
-          </div>
-
-          <div className="fp-landing-offer motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
-            <p className="text-xs font-black uppercase text-green-200">Estrutura Comercial Completa</p>
-            <h3 className="mt-2 text-2xl font-black">Você recebe uma estrutura comercial pronta, não apenas acesso a um sistema.</h3>
-            <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-white/82">
-              Por R$ 1.500 anual, você leva 12 meses de FechaPro, propostas com link e PDF, aceite online, acompanhamento de visualizações, botão de WhatsApp e pagamento, portfólio, depoimentos, mini site profissional, configuração da marca, diagnóstico do Instagram, ajuste simples da logo, artes iniciais, mensagens prontas e treinamento rápido.
-            </p>
-            <p className="mt-3 max-w-3xl text-sm font-black leading-6 text-green-100">
-              Se essa estrutura ajudar a fechar 1 ou 2 serviços que antes você perderia, ela já começa a se pagar.
-            </p>
-            <p className="mt-2 max-w-3xl text-sm font-black leading-6 text-green-100">
-              A ideia é você sair com uma estrutura pronta para vender melhor, não apenas com login e senha.
-            </p>
-            <div className="mt-4 grid gap-2 rounded-lg border border-white/15 bg-slate-950/60 p-4 text-sm font-bold leading-6 text-white/82 sm:grid-cols-3">
-              <span>Planos a partir de R$ 97/mês</span>
-              <span>Pacote completo: R$ 1.500 anual</span>
-              <span className="text-green-200">Também pode ser apresentado como 12x de R$ 150</span>
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {plans.map((plan) => (
-              <article className={`fp-landing-plan motion-lift relative flex h-full flex-col rounded-lg border p-5 ${
-                plan.code === "premium_site"
-                  ? "motion-pulse-soft border-2 border-green-400 bg-white text-slate-950 shadow-2xl shadow-green-950/30 lg:scale-[1.04]"
-                  : plan.code === "start"
-                    ? "border-white/20 bg-white/90 text-slate-950 opacity-90"
-                    : "border-white/20 bg-white/90 text-slate-950 opacity-90"
-              }`} key={plan.name}>
-                {plan.badge ? (
-                  <span className="absolute right-4 top-0 -translate-y-1/2 rounded-full bg-green-600 px-3 py-1 text-xs font-black uppercase text-white">
-                    {plan.badge}
-                  </span>
-                ) : null}
-                <p className={`text-sm font-black uppercase ${plan.code === "premium_site" ? "text-green-700" : "text-blue-700"}`}>{plan.name}</p>
-                <strong className="mt-3 block text-3xl font-black">{plan.price}</strong>
-                <span className="mt-1 block text-slate-600">{plan.priceSuffix}</span>
-                {plan.promoPrice ? <strong className="mt-3 block text-xl text-slate-950">{plan.promoPrice}</strong> : null}
-                <p className="mt-4 min-h-24 text-sm leading-6 text-slate-600">{plan.detail}</p>
-                <ul className="mt-5 grid gap-3">
-                  {plan.items.map((item) => (
-                    <li className="flex items-center gap-2 text-sm font-bold" key={item}>
-                      <CheckCircle2 className="shrink-0 text-green-500" size={18} />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  className={`mt-auto grid min-h-11 place-items-center rounded-lg px-4 text-center font-black ${
-                    plan.code === "premium_site" ? "bg-slate-950 text-white" : "border border-slate-300 bg-white text-slate-700"
-                  }`}
-                  href={`/checkout/cadastro/${plan.code}`}
-                >
-                  {plan.cta}
-                </a>
-                <p className="mt-3 text-center text-xs font-bold text-slate-500">
-                  Checkout seguro pelo Mercado Pago.
-                </p>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-8 rounded-lg border border-white/15 bg-white/8 p-5">
-            <p className="text-xs font-black uppercase text-green-300">Garantia de implantação</p>
-            <p className="mt-2 text-sm font-bold leading-6 text-white/78 sm:text-base sm:leading-7">
-              Se em até 7 dias você não conseguir criar e enviar sua primeira proposta com nossa ajuda, fazemos junto com você na implantação. A promessa é tirar a estrutura do papel, sem prometer resultado de venda.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-band bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Dúvidas comuns</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">As dúvidas que aparecem antes de clicar em comprar.</h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Alguns pontos importantes sobre uso, pagamento, limites e configuração inicial.
-            </p>
-            <div className="mt-6 hidden rounded-lg border border-black/10 bg-slate-50 p-4 md:block">
-              <div className="flex items-end gap-4">
-                <Image className="h-36 w-auto shrink-0 object-contain" src="/landing/fe-sozinha.png" alt="Fe, mascote do FechaPro" width={140} height={200} />
-                <div className="pb-2">
-                  <p className="text-xs font-black uppercase text-green-700">Ainda ficou com dúvida?</p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    A Fe te ajuda a escolher o plano mais alinhado com seu momento.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="grid gap-3">
-            {faqs.map((faq) => (
-              <details className="fp-landing-faq rounded-lg border border-black/10 bg-slate-50 p-4" key={faq.question}>
-                <summary className="cursor-pointer font-black">{faq.question}</summary>
-                <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">{faq.answer}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fp-landing-cta bg-green-600 text-white">
-        <div className="mx-auto grid max-w-7xl gap-5 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
-          <div>
-            <p className="text-xs font-black uppercase text-green-100">Comece pela próxima apresentação</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Seu próximo cliente pode receber uma proposta que parece pronta para ser aprovada.</h2>
-          </div>
-          <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-slate-950 px-6 font-black text-white" href="#planos">
-            Reservar minha implantação
-          </a>
-        </div>
-      </section>
-
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
-        <a className="grid min-h-12 w-full place-items-center rounded-lg bg-green-600 px-4 text-center font-black text-white" href="#planos">
-          Reservar minha implantação
-        </a>
-      </div>
-    </main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <main className="fp-landing min-h-screen bg-[#faf8f3] text-[#0d1409]">
+        <div className="sticky top-0 z-50 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black text-[#5c3a00] sm:text-sm">Cotas de fundador limitadas a 20 vagas: comece por R$ 250 ou saia com estrutura completa + site por R$ 2.000.</div>
+        <header className="sticky top-[32px] z-40 border-b border-black/10 bg-[#f5f2ec]/90 px-4 backdrop-blur sm:top-[36px]"><div className="mx-auto flex max-w-7xl items-center justify-between gap-4 py-3"><a className="text-xl font-black text-green-900" href="#top">Fecha<span className="text-green-600">Pro</span></a><nav className="hidden items-center gap-6 text-sm font-bold text-slate-700 md:flex"><a href="#funcionalidades">Funcionalidades</a><a href="#como-funciona">Como funciona</a><a href="#planos">Planos</a><a href="#faq">FAQ</a></nav><div className="flex items-center gap-2"><a className="hidden rounded-lg px-4 py-2 text-sm font-black text-slate-700 sm:inline-flex" href="/login">Entrar</a><a className="rounded-lg bg-green-700 px-4 py-2 text-sm font-black text-white" href="#planos">Começar</a></div></div></header>
+        <section id="top" className="relative overflow-hidden px-4 py-20 sm:py-24"><div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_35%,rgba(34,160,96,0.18),transparent_55%),linear-gradient(rgba(212,207,197,0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(212,207,197,0.45)_1px,transparent_1px)] bg-[length:auto,60px_60px,60px_60px]" /><div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center"><div><h1 className="max-w-3xl text-4xl font-black leading-tight tracking-normal sm:text-6xl">Pare de mandar preço solto. <span className="text-green-700">Comece a fechar com proposta.</span></h1><p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">Proposta profissional com link, PDF, aceite online e pagamento por PIX ou Mercado Pago, enviada pelo WhatsApp. Você acompanha quando o cliente abre e age na hora certa.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row"><a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-700 px-6 font-black text-white shadow-lg shadow-green-900/15" href="#planos">Criar minha primeira proposta</a><a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-black/10 px-6 font-black text-slate-700" href="#como-funciona">Ver como funciona</a></div><div className="mt-10 grid gap-3 sm:grid-cols-3">{[["Link profissional", "uma página com marca, escopo, provas e botão de aceite"], ["PDF para enviar", "documento organizado para o cliente guardar e comparar"], ["Aceite e acompanhamento", "você vê visualização, resposta e pagamento no painel"]].map(([value,label]) => <div className="rounded-lg border border-black/10 bg-white p-4 shadow-sm" key={value}><strong className="block text-base font-black text-green-800">{value}</strong><span className="mt-2 block text-sm leading-6 text-slate-600">{label}</span></div>)}</div></div><div className="rounded-lg border border-black/10 bg-white p-4 shadow-2xl shadow-green-950/10"><div className="rounded-lg bg-slate-950 p-4 text-white"><div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4"><strong>Proposta Comercial</strong><span className="rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">Visualizada agora</span></div><div className="mt-5 grid gap-4 rounded-lg bg-white p-5 text-slate-950"><div className="flex items-center gap-3"><span className="grid h-12 w-12 place-items-center rounded-lg bg-green-700 text-lg font-black text-white">LS</span><div><p className="text-xs font-black uppercase text-green-700">Lumina Studio</p><h2 className="text-2xl font-black">Identidade visual completa</h2></div></div><div className="grid gap-3 rounded-lg bg-slate-50 p-4"><p className="text-sm font-black text-slate-900">Inclui logo principal, paleta de cores, tipografia, manual simples e 2 rodadas de ajuste.</p><div className="grid gap-2 sm:grid-cols-3"><span className="rounded-lg bg-green-50 p-3 text-sm font-black text-green-800">R$ 1.800</span><span className="rounded-lg bg-blue-50 p-3 text-sm font-black text-blue-800">10 dias úteis</span><span className="rounded-lg bg-amber-50 p-3 text-sm font-black text-amber-800">50% + 50%</span></div></div><div className="grid grid-cols-3 gap-2"><div className="h-20 rounded-lg bg-gradient-to-br from-emerald-600 to-slate-950" /><div className="h-20 rounded-lg bg-gradient-to-br from-blue-700 to-emerald-500" /><div className="h-20 rounded-lg bg-gradient-to-br from-slate-200 to-white ring-1 ring-black/10" /></div><button className="min-h-12 rounded-lg bg-green-700 font-black text-white" type="button">Aceitar proposta</button></div></div></div></div></section>
+        <section className="px-4 py-16"><div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-2"><article className="rounded-lg border border-rose-200 bg-white p-6 shadow-sm"><p className="text-xs font-black uppercase text-rose-700">Preço solto no WhatsApp</p><div className="mt-5 rounded-lg bg-[#e9f7ef] p-4 text-slate-900"><p className="max-w-sm rounded-lg bg-white px-4 py-3 text-sm font-bold shadow-sm">Fica R$ 850. Faço em 5 dias.</p></div><h2 className="mt-6 text-2xl font-black">O cliente compara só preço.</h2><p className="mt-2 leading-7 text-slate-600">Sem escopo, sem prova, sem condição de pagamento e sem próximo passo claro. A conversa vira desconto.</p></article><article className="rounded-lg border border-green-700 bg-slate-950 p-6 text-white shadow-xl shadow-green-950/20"><p className="text-xs font-black uppercase text-green-300">Proposta profissional FechaPro</p><div className="mt-5 rounded-lg bg-white p-4 text-slate-950"><div className="flex items-center justify-between gap-3"><strong>Instalação elétrica residencial</strong><span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-800">Link aberto</span></div><div className="mt-4 grid gap-2 text-sm font-bold text-slate-700"><span>Escopo: revisão, instalação e teste de segurança</span><span>Prazo: 5 dias úteis</span><span>Pagamento: PIX ou Mercado Pago</span><span>PDF + aceite online</span></div></div><h2 className="mt-6 text-2xl font-black">O cliente entende valor.</h2><p className="mt-2 leading-7 text-white/70">Marca, fotos, itens inclusos, prazo, pagamento e botão para aceitar. A proposta vende antes do follow-up.</p></article></div></section><section className="bg-[#0d1409] px-4 py-16 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-300">O problema</p><h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">O WhatsApp manda a mensagem. Ele não vende sua proposta por você.</h2><div className="mt-10 grid gap-3 md:grid-cols-4">{problems.map((item) => <article className="rounded-lg border border-white/10 bg-white/5 p-5" key={item.title}><item.icon className="text-green-300" size={24} /><h3 className="mt-4 font-black">{item.title}</h3><p className="mt-2 text-sm leading-6 text-white/65">{item.text}</p></article>)}</div></div></section>
+        <section id="funcionalidades" className="px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">A solução</p><h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">Tudo que você precisa para fechar mais no mesmo link.</h2><div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{features.map((feature) => <article className="rounded-lg border border-black/10 bg-white p-6 shadow-sm" key={feature.title}><feature.icon className="text-green-700" size={26} /><p className="mt-5 text-xs font-black uppercase text-green-700">{feature.label}</p><h3 className="mt-2 text-xl font-black">{feature.title}</h3><p className="mt-3 text-sm leading-7 text-slate-600">{feature.text}</p></article>)}</div></div></section>
+        <section id="como-funciona" className="bg-[#0d1409] px-4 py-20 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-300">Como funciona</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Da criação ao fechamento em 4 passos.</h2><div className="mt-10 grid gap-4 md:grid-cols-4">{steps.map((step, index) => <article className="rounded-lg border border-white/10 bg-white/5 p-5" key={step}><span className="grid h-12 w-12 place-items-center rounded-full bg-white text-lg font-black text-green-800">{index + 1}</span><h3 className="mt-5 font-black">{step}</h3><p className="mt-2 text-sm leading-6 text-white/65">{index === 0 ? "Logo, cores, WhatsApp, PIX e nicho." : index === 1 ? "Template, cliente, serviço, valor e prazo." : index === 2 ? "Um link único para enviar no WhatsApp." : "Visualização, aceite, recusa e pagamento no painel."}</p></article>)}</div><div className="mt-10 grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-2 lg:items-center"><div><h3 className="text-2xl font-black">Você para de adivinhar. Começa a acompanhar.</h3><p className="mt-3 leading-7 text-white/70">Cada movimentação importante entra no histórico da proposta para você fazer o próximo contato com contexto.</p></div><div className="grid gap-3">{["Proposta visualizada", "Cliente clicou no WhatsApp", "Proposta aceita", "Pagamento confirmado"].map((item) => <div className="rounded-lg border border-white/10 bg-[#1c2616] p-4 font-bold" key={item}>{item}</div>)}</div></div></div></section>
+        <section className="px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">Depoimentos</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Profissionais que pararam de vender só por mensagem.</h2><div className="mt-10 grid gap-4 md:grid-cols-3">{testimonials.map(([name, role, quote]) => <article className="rounded-lg border border-black/10 bg-white p-6 shadow-sm" key={name}><p className="text-[#b88d13]">★★★★★</p><p className="mt-4 text-sm italic leading-7 text-slate-700">&quot;{quote}&quot;</p><div className="mt-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-green-700 font-black text-white">{name[0]}</span><p><strong className="block text-sm">{name}</strong><span className="text-xs font-bold text-slate-500">{role}</span></p></div></article>)}</div></div></section>
+        <section id="planos" className="bg-[#f5f2ec] px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">Planos</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Escolha sua cota de fundador enquanto ainda há vagas.</h2><div className="mt-10 grid gap-5 lg:grid-cols-4">{plans.map((plan) => <article className={`relative flex flex-col rounded-lg bg-white p-6 shadow-sm ${plan.featured ? "border-2 border-green-700" : "border border-black/10"}`} key={plan.code}>{plan.featured ? <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-700 px-4 py-1 text-xs font-black text-white">Mais escolhido</span> : null}<p className="text-xs font-black uppercase text-slate-500">{plan.name}</p><strong className="mt-4 text-5xl font-black">{plan.price}</strong><span className="mt-1 text-sm font-bold text-slate-500">{plan.period}</span><p className="mt-5 min-h-20 border-b border-black/10 pb-5 text-sm leading-7 text-slate-600">{plan.description}</p><ul className="mt-5 grid gap-3">{plan.items.map((item) => <li className="flex gap-2 text-sm font-bold text-slate-700" key={item}><CheckCircle2 className="shrink-0 text-green-700" size={18} />{item}</li>)}</ul><div className="mt-5 rounded-lg bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-500">Não inclui / limites</p><ul className="mt-3 grid gap-2">{plan.excluded.map((item) => <li className="flex gap-2 text-xs font-bold leading-5 text-slate-500" key={item}><X className="mt-0.5 shrink-0 text-slate-400" size={14} />{item}</li>)}</ul></div><a className={`mt-8 grid min-h-12 place-items-center rounded-lg px-4 text-center font-black ${plan.featured ? "bg-green-700 text-white" : "border border-green-700 text-green-800"}`} href={plan.href}>{plan.cta}</a></article>)}</div></div></section>
+        <section className="px-4 py-16 bg-white"><div className="mx-auto grid max-w-7xl gap-6 rounded-lg border border-black/10 bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 lg:grid-cols-[0.8fr_1.2fr] lg:p-8"><div><p className="text-xs font-black uppercase text-green-300">Depois da compra</p><h2 className="mt-3 text-3xl font-black leading-tight">O que acontece depois de garantir sua cota?</h2><p className="mt-3 leading-7 text-white/70">Você recebe o acesso, preenche um formulário rápido e, quando a cota inclui implantação, nossa equipe agenda a configuração inicial.</p></div><div className="grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Acesso e formulário</strong><p className="mt-2 text-sm leading-6 text-white/70">Start recebe acesso em até 24h úteis. Essencial recebe acesso e setup básico em até 48h úteis. Profissional e Completo iniciam pelo briefing de implantação.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Prazos de entrega</strong><p className="mt-2 text-sm leading-6 text-white/70">Implantação inicial em até 5 dias úteis. Site da cota Completa em até 15 dias úteis após envio das informações.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Duração do acesso</strong><p className="mt-2 text-sm leading-6 text-white/70">Todas as cotas incluem 12 meses de acesso ao FechaPro. Renovação futura será combinada antes do fim do período.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Vagas limitadas</strong><p className="mt-2 text-sm leading-6 text-white/70">Oferta válida por tempo limitado ou até preencher as 20 cotas de fundador disponíveis.</p></div></div></div></section><section id="faq" className="bg-[#0d1409] px-4 py-20 text-white"><div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.8fr_1.2fr]"><div><p className="text-xs font-black uppercase text-green-300">FAQ</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">As dúvidas antes de comprar.</h2></div><div className="grid gap-3">{faqs.map(([question, answer], index) => <article className="border-b border-white/10" key={question}><button className="flex w-full items-center justify-between gap-4 py-5 text-left font-black" type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}><span>{question}</span><Plus className={openFaq === index ? "rotate-45" : ""} size={20} /></button>{openFaq === index ? <p className="pb-5 text-sm leading-7 text-white/65">{answer}</p> : null}</article>)}</div></div></section>
+        <section className="bg-green-900 px-4 py-20 text-center text-white"><div className="mx-auto max-w-3xl"><h2 className="text-3xl font-black leading-tight sm:text-5xl">Sua primeira proposta profissional em poucos minutos.</h2><p className="mt-5 text-lg leading-8 text-white/75">Envie um link com sua marca, escopo, valor, aceite e pagamento. Pare de vender no improviso.</p><a className="mt-8 inline-flex min-h-14 items-center justify-center rounded-lg bg-white px-8 font-black text-green-900" href="#planos">Escolher meu plano</a></div></section>
+        <footer className="flex flex-col gap-4 bg-[#0d1409] px-4 py-8 text-sm text-white/55 sm:flex-row sm:items-center sm:justify-between"><strong className="text-lg text-white">Fecha<span className="text-green-300">Pro</span></strong><div className="flex gap-5"><a href="/privacidade">Política de Privacidade</a><a href="/termos">Termos de Uso</a><a href="/interesse">Suporte</a></div><span>© 2026 FechaPro. Todos os direitos reservados.</span></footer>
+      </main>
     </>
   );
 }
@@ -6088,9 +5148,9 @@ function PreviewItem({ label, value }: { label: string; value: string }) {
 
 function PortfolioStrip({ portfolio }: { portfolio: PortfolioItem[] }) {
   const items = portfolio.length ? portfolio.slice(0, 3) : [
-    { id: "1", title: "Logo", category: "Design", imageUrl: "" },
-    { id: "2", title: "Social", category: "Conteúdo", imageUrl: "" },
-    { id: "3", title: "Web", category: "Site", imageUrl: "" },
+    { id: "1", title: "Portfólio", category: "Trabalhos", imageUrl: "" },
+    { id: "2", title: "Depoimentos", category: "Prova social", imageUrl: "" },
+    { id: "3", title: "Diferenciais", category: "Valor", imageUrl: "" },
   ];
   return (
     <div className="grid grid-cols-3 gap-2">

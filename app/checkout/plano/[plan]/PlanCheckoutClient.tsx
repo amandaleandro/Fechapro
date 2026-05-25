@@ -42,10 +42,10 @@ export function PlanCheckoutClient({ plan }: { plan: PlanCode }) {
         onClick={continuePayment}
       >
         {loading ? <RotateCcw size={18} /> : <LockKeyhole size={18} />}
-        {loading ? "Abrindo Mercado Pago..." : "Autorizar assinatura"}
+        {loading ? "Abrindo Mercado Pago..." : "Pagar pelo Mercado Pago"}
       </button>
       <div className="grid gap-2 text-sm font-bold leading-6 text-slate-600">
-        {["Assinatura protegida pelo Mercado Pago", "Plano ativado após autorização", "Sem armazenamento de cartão no FechaPro"].map((item) => (
+        {["Pagamento protegido pelo Mercado Pago", "Plano ativado após confirmação", "Sem armazenamento de cartão no FechaPro"].map((item) => (
           <span className="inline-flex items-center gap-2" key={item}>
             <CheckCircle2 className="text-green-600" size={16} />
             {item}

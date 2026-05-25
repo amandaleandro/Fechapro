@@ -13,7 +13,7 @@ export function SignupCheckoutClient({ plan }: { plan: PlanCode }) {
     setError("");
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) {
-      setError("Informe seu e-mail para iniciar a assinatura.");
+      setError("Informe seu e-mail para iniciar o pagamento.");
       return;
     }
     setLoading(true);
@@ -58,7 +58,7 @@ export function SignupCheckoutClient({ plan }: { plan: PlanCode }) {
         onClick={startCheckout}
       >
         {loading ? <RotateCcw size={18} /> : <CreditCard size={18} />}
-        {loading ? "Abrindo Mercado Pago..." : "Autorizar assinatura"}
+        {loading ? "Abrindo Mercado Pago..." : "Pagar pelo Mercado Pago"}
       </button>
     </div>
   );

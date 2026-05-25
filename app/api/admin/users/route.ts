@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { requireAdmin } from "@/lib/admin";
-import { currentMonthRange, plans, type PlanCode } from "@/lib/plans";
+import { accumulatedProposalLimit, currentMonthRange, plans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/session";
 import { isValidEmail } from "@/lib/validation";
@@ -13,7 +13,7 @@ export async function GET() {
   await requireAdmin();
 
   const { start, end } = currentMonthRange();
-  const [users, proposalUsage, artUsage] = await Promise.all([
+  const [users, proposalUsage, proposalAccumulatedUsage, artUsage] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -42,6 +42,10 @@ export async function GET() {
       where: { createdAt: { gte: start, lt: end } },
       _count: { userId: true },
     }),
+    prisma.proposalAsset.groupBy({
+      by: ["userId"],
+      _count: { userId: true },
+    }),
     prisma.marketingArtAsset.groupBy({
       by: ["userId"],
       where: { createdAt: { gte: start, lt: end } },
@@ -50,6 +54,7 @@ export async function GET() {
   ]);
 
   const proposalUsageByUser = new Map(proposalUsage.map((row) => [row.userId, row._count.userId]));
+  const proposalAccumulatedUsageByUser = new Map(proposalAccumulatedUsage.map((row) => [row.userId, row._count.userId]));
   const artUsageByUser = new Map(artUsage.map((row) => [row.userId, row._count.userId]));
 
   return NextResponse.json(
@@ -70,6 +75,8 @@ export async function GET() {
           usage: {
             proposalsThisMonth: proposalUsageByUser.get(user.id) || 0,
             proposalLimit: plans[plan].proposalLimit,
+            proposalsUsedSinceSubscriptionStart: proposalAccumulatedUsageByUser.get(user.id) || 0,
+            accumulatedProposalLimit: accumulatedProposalLimit(plans[plan].proposalLimit, user.subscription?.startedAt),
             artsThisMonth: artUsageByUser.get(user.id) || 0,
             artLimit: plans[plan].artLimit,
           },

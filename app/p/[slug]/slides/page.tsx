@@ -116,12 +116,13 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
             <div className="fp-slide-gallery">
               {portfolio.map((item) => (
                 <figure key={item.id}>
-                  {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img alt="" src={item.imageUrl} />
-                  ) : (
+                  <div className="fp-slide-gallery-media">
                     <span>{item.category || "Portfolio"}</span>
-                  )}
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img alt="" src={item.imageUrl} />
+                    ) : null}
+                  </div>
                   <figcaption>{item.title}</figcaption>
                 </figure>
               ))}

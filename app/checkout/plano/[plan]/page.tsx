@@ -16,6 +16,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
   if (!plan.public) notFound();
+  const oneTime = plan.billingMode === "one_time";
   const recurringPrice = plan.maintenancePrice || plan.price;
   const hasSetup = Boolean(plan.maintenancePrice);
   const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id } });
@@ -51,9 +52,9 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
                 Voltar para o painel
               </Link>
               <div>
-                <p className="text-xs font-black uppercase text-blue-700">Assinatura FechaPro</p>
+                <p className="text-xs font-black uppercase text-blue-700">{oneTime ? "Plano FechaPro" : "Assinatura FechaPro"}</p>
                 <h1 className="mt-2 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">
-                  {hasSetup ? `Confirme o plano ${plan.name}.` : `Confirme o plano ${plan.name} e libere seu painel.`}
+                  {oneTime ? `Confirme o plano ${plan.name} e libere seu painel.` : hasSetup ? `Confirme o plano ${plan.name}.` : `Confirme o plano ${plan.name} e libere seu painel.`}
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                   {hasSetup
@@ -64,7 +65,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
-                <CheckoutMetric label={hasSetup ? "Pagamento facilitado" : "Mensalidade recorrente"} value={recurringPrice} />
+                <CheckoutMetric label={oneTime ? "Pagamento único" : hasSetup ? "Pagamento facilitado" : "Mensalidade recorrente"} value={recurringPrice} />
                 <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mês`} />
               </div>
 
@@ -90,7 +91,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
 
           <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Pacote completo anual" : "Assinatura mensal"}</p>
+              <p className="text-xs font-black uppercase text-blue-700">{oneTime ? "Pagamento único" : hasSetup ? "Pacote completo anual" : "Assinatura mensal"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{recurringPrice}</strong>
               {hasSetup ? (
                 <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">
@@ -98,7 +99,9 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
                 </p>
               ) : null}
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-                {hasSetup
+                {oneTime
+                  ? "Pagamento único em ambiente seguro do Mercado Pago."
+                  : hasSetup
                   ? "Este pacote foi pensado para você sair com uma estrutura pronta para vender melhor, não apenas com acesso ao sistema."
                   : "Assinatura mensal em ambiente seguro do Mercado Pago."}
               </p>

@@ -1451,13 +1451,14 @@ async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData, des
     doc.rect(x, y + 112, cardWidth, 1).fill(LINE);
     const image = await readImageFromUrl(item.imageUrl || "", data.assetOrigin);
     if (image) {
-      drawPdfImage(doc, image, x, y, {
+      const rendered = drawPdfImage(doc, image, x, y, {
         fit: [cardWidth, 102],
         align: "center",
         valign: "center",
         width: cardWidth,
         height: 102,
       });
+      if (!rendered) drawPortfolioImageFallback(doc, x, y, cardWidth, 102, item.category || "Portfolio", design);
     } else {
       doc.roundedRect(x, y, cardWidth, 102, 6).fill(design.soft);
       doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(12).text(item.category || "Portfólio", x + 12, y + 44, {
@@ -1503,6 +1504,25 @@ function drawTestimonials(doc: PDFKit.PDFDocument, data: ProposalPdfData, design
       lineGap: 3,
     });
     doc.y = y + height + 8;
+  });
+}
+
+function drawPortfolioImageFallback(
+  doc: PDFKit.PDFDocument,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+  design: PdfSegmentDesign,
+) {
+  doc.roundedRect(x, y, width, height, 6).fill(design.soft);
+  doc.rect(x + 12, y + 18, width - 24, 2).fill(design.accent);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(12).text(label, x + 12, y + 43, {
+    align: "center",
+    width: width - 24,
+    height: 18,
+    ellipsis: true,
   });
 }
 

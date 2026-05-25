@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, LayoutTemplate, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Trash2, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
+import { isUnlimitedProposalLimit } from "@/lib/plans";
 
-type PlanCode = "start" | "pro" | "plus" | "premium" | "premium_site";
+type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site";
 
 type AdminPlan = {
   code: PlanCode;
@@ -31,6 +32,8 @@ type AdminUser = {
   usage: {
     proposalsThisMonth: number;
     proposalLimit: number;
+    proposalsUsedSinceSubscriptionStart?: number;
+    accumulatedProposalLimit?: number;
     artsThisMonth: number;
     artLimit: number;
   };
@@ -768,7 +771,16 @@ function AdminUserRow({
         <p className="mt-2 text-xs text-slate-500">{user.brandProfile?.businessName || "Empresa não configurada"}</p>
       </td>
       <td className="px-3 py-3 font-bold text-slate-700">
-        <p>{user.usage.proposalsThisMonth}/{user.usage.proposalLimit} propostas</p>
+        <p>
+          {isUnlimitedProposalLimit(user.usage.proposalLimit)
+            ? `${user.usage.proposalsThisMonth} propostas este mês, ilimitado`
+            : `${user.usage.proposalsThisMonth}/${user.usage.proposalLimit} propostas`}
+        </p>
+        {!isUnlimitedProposalLimit(user.usage.proposalLimit) ? (
+          <p className="mt-1 text-xs text-slate-500">
+            Acumulado: {user.usage.proposalsUsedSinceSubscriptionStart || 0}/{user.usage.accumulatedProposalLimit || user.usage.proposalLimit}
+          </p>
+        ) : null}
         <p className="mt-1">{user.usage.artsThisMonth}/{user.usage.artLimit} artes</p>
       </td>
       <td className="px-3 py-3 text-slate-600">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError, slugify } from "@/lib/api";
 import { sendProposalSentToClientEmail } from "@/lib/email";
 import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
-import { currentMonthRange, plans } from "@/lib/plans";
+import { accumulatedProposalLimit, currentMonthRange, isUnlimitedProposalLimit, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { filterReadyProposalTemplates, findProposalTemplate } from "@/lib/proposal-templates";
 import { requireSession } from "@/lib/session";
@@ -116,19 +116,19 @@ export async function POST(request: Request) {
   }
 
   const plan = planLimits(subscription.plan);
-  const { start, end } = currentMonthRange();
-  const usedThisMonth = await prisma.proposalAsset.count({
+  const { start } = currentMonthRange();
+  const usedSinceSubscriptionStart = await prisma.proposalAsset.count({
     where: {
       userId: session.id,
       createdAt: {
-        gte: start,
-        lt: end,
+        gte: subscription.startedAt || start,
       },
     },
   });
+  const accumulatedLimit = accumulatedProposalLimit(plan.proposalLimit, subscription.startedAt);
 
-  if (usedThisMonth >= plan.proposalLimit) {
-    return jsonError(`Limite mensal do plano ${plan.name} atingido.`, 402);
+  if (!isUnlimitedProposalLimit(accumulatedLimit) && usedSinceSubscriptionStart >= accumulatedLimit) {
+    return jsonError(`Limite acumulado do plano ${plan.name} atingido. Todo mês o saldo é renovado e o não utilizado fica acumulado.`, 402);
   }
 
   const existingService = await prisma.serviceAsset.findFirst({

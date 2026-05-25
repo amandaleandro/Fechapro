@@ -330,8 +330,15 @@ enum ProposalStatus {
 
 enum PlanCode {
   start
+  essential
+  professional
+  complete
   pro
   plus
   premium
   premium_site
+  founder_start
+  founder_essential
+  founder_professional
+  founder_complete_site
 }

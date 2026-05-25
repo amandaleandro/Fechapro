@@ -1376,6 +1376,7 @@ select:focus {
   grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .fp-slide-gallery figure:first-child,
@@ -1383,15 +1384,25 @@ select:focus {
   grid-column: span 3;
 }
 
+.fp-slide-gallery-media {
+  min-height: 0;
+  position: relative;
+}
+
 .fp-slide-gallery img,
-.fp-slide-gallery figure > span {
+.fp-slide-gallery-media > span {
   height: 100%;
   min-height: 0;
   object-fit: cover;
   width: 100%;
 }
 
-.fp-slide-gallery figure > span {
+.fp-slide-gallery img {
+  inset: 0;
+  position: absolute;
+}
+
+.fp-slide-gallery-media > span {
   color: var(--slides-primary);
   display: grid;
   font-size: 1.2rem;
