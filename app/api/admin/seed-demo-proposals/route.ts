@@ -841,6 +841,16 @@ const demoProposals: DemoProposal[] = [
   },
 ];
 
+function demoImageForNiche(nicheLabel: string) {
+  const parts = nicheLabel.split("-");
+  for (let index = 0; index < parts.length; index += 1) {
+    const niche = parts.slice(0, parts.length - index).join("-");
+    const item = demoPortfolioItems.find((photo) => photo.nicheLabel === niche);
+    if (item?.imageUrl) return item.imageUrl;
+  }
+  return demoPortfolioItems[0]?.imageUrl || null;
+}
+
 export async function POST(request: Request) {
   let admin = null;
   if (process.env.NODE_ENV === "production") {
@@ -884,6 +894,12 @@ export async function POST(request: Request) {
         where: {
           userId: adminUser.id,
           authorName: { startsWith: "[Demo]" },
+        },
+      }),
+      prisma.serviceAsset.deleteMany({
+        where: {
+          userId: adminUser.id,
+          imageUrl: { in: demoPortfolioItems.map((item) => item.imageUrl) },
         },
       }),
     ]);
@@ -953,6 +969,22 @@ export async function POST(request: Request) {
       ],
     });
 
+    const servicesCreated = await Promise.all(
+      demoProposals.map((p, index) =>
+        tx.serviceAsset.create({
+          data: {
+            userId: adminUser.id,
+            name: p.serviceName,
+            price: p.price,
+            deadline: p.deadline,
+            includes: p.included.slice(0, 30),
+            imageUrl: demoImageForNiche(p.nicheLabel),
+            createdAt: new Date(now.getTime() - index * 60 * 1000),
+          },
+        }),
+      ),
+    );
+
     const proposalsCreated = await Promise.all(
       demoProposals.map((p) =>
         tx.proposalAsset.create({
@@ -986,12 +1018,13 @@ export async function POST(request: Request) {
       ),
     );
 
-    return { portfolioCreated, proposalsCreated };
+    return { portfolioCreated, proposalsCreated, servicesCreated };
   });
 
   return NextResponse.json({
     created: created.proposalsCreated.length,
     photos: created.portfolioCreated.length,
+    services: created.servicesCreated.length,
     proposals: created.proposalsCreated.map((p) => ({ id: p.id, clientName: p.clientName, status: p.status, publicSlug: p.publicSlug })),
   }, { status: 201 });
 }
@@ -1017,7 +1050,7 @@ export async function DELETE() {
     return NextResponse.json({ error: "Usuário admin não encontrado no banco." }, { status: 404 });
   }
 
-  const [proposals, portfolio, testimonials] = await prisma.$transaction([
+  const [proposals, portfolio, testimonials, services] = await prisma.$transaction([
     prisma.proposalAsset.deleteMany({
       where: {
         userId: adminUser.id,
@@ -1036,7 +1069,13 @@ export async function DELETE() {
         authorName: { startsWith: "[Demo]" },
       },
     }),
+    prisma.serviceAsset.deleteMany({
+      where: {
+        userId: adminUser.id,
+        imageUrl: { in: demoPortfolioItems.map((item) => item.imageUrl) },
+      },
+    }),
   ]);
 
-  return NextResponse.json({ deleted: proposals.count, photosDeleted: portfolio.count, testimonialsDeleted: testimonials.count });
+  return NextResponse.json({ deleted: proposals.count, photosDeleted: portfolio.count, testimonialsDeleted: testimonials.count, servicesDeleted: services.count });
 }

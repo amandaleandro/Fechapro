@@ -1,6 +1,6 @@
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
-export const PHONE_REGEX = /^\+?[0-9\s().-]{8,20}$/;
+export const PHONE_REGEX = /^\d{10,11}$/;
 
 export function cleanString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -16,7 +16,7 @@ export function isValidEmail(value: string) {
 }
 
 export function isValidPhone(value: string) {
-  return PHONE_REGEX.test(value);
+  return PHONE_REGEX.test(value.replace(/\D/g, ""));
 }
 
 export function isValidHttpUrl(value: string) {

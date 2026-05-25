@@ -33,11 +33,11 @@ export const plans: Record<
     name: "Pro",
     price: "R$ 197/mês",
     priceCents: 19700,
-    annualPrice: "R$ 1.497/ano",
+    annualPrice: "R$ 1.200/ano",
     proposalLimit: 120,
     artLimit: 10,
     public: true,
-    features: ["Até 120 propostas por mês", "Tudo do Start", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "Contrato mínimo para usar com clientes", "10 artes para divulgar por mês", "Suporte melhor"],
+    features: ["Até 120 propostas por mês", "Tudo do Start", "Personalização visual da proposta", "Portfólio dentro da proposta", "Depoimentos de clientes", "Serviços cadastrados", "Termos comerciais e aceite profissional", "Acompanhamento de visualizações", "Acompanhamento de cliques no WhatsApp", "10 artes para divulgar por mês", "Mensagens de envio e follow-up", "Suporte prioritário"],
   },
   plus: {
     code: "plus",
@@ -63,15 +63,15 @@ export const plans: Record<
   },
   premium_site: {
     code: "premium_site",
-    name: "Premium com Site",
+    name: "Estrutura Comercial Completa",
     price: "R$ 1.500/ano",
     priceCents: 150000,
-    maintenancePrice: "ou R$ 300/mês + R$ 997 implantação",
-    maintenancePriceCents: 30000,
+    maintenancePrice: "12x de R$ 150",
+    maintenancePriceCents: 15000,
     proposalLimit: 600,
     artLimit: 20,
     public: true,
-    features: ["12 meses de FechaPro", "Mini site profissional", "FechaPro configurado", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "Contrato mínimo para usar com clientes", "20 artes mensais de divulgação", "Modelos de mensagens para copiar e adaptar", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
+    features: ["12 meses de FechaPro", "Até 600 propostas por mês", "Propostas profissionais com link e PDF", "Aceite online e botão para WhatsApp", "Acompanhamento de visualizações e cliques", "Pagamentos via Mercado Pago ou PIX direto", "Mini site profissional", "Diagnóstico Comercial do Instagram", "Ajuste e preparação da logo para uso comercial", "5 artes iniciais e 20 artes mensais", "Legendas, ideias de posts e chamadas para WhatsApp", "Mensagens prontas de abordagem e follow-up", "Configuração da marca, WhatsApp e PIX", "Cadastro dos primeiros serviços", "Primeira proposta criada com você", "Treinamento rápido de uso"],
   },
 };
 

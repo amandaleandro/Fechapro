@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { sendProposalDeclinedEmail, sendProposalDeclinedToClientEmail } from "@/lib/email";
+import { proposalNotification } from "@/lib/proposal-notifications";
 import { sendProposalPushNotification } from "@/lib/push";
 import { verifyTurnstile } from "@/lib/turnstile";
 
@@ -49,12 +50,14 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
     );
   }
 
-  await sendProposalPushNotification(proposal.userId, {
-    title: "Proposta recusada",
-    body: `${proposal.clientName} recusou a proposta de ${proposal.serviceName}.`,
-    slug,
-    tag: `proposal-${slug}-declined`,
-  });
+  await sendProposalPushNotification(
+    proposal.userId,
+    proposalNotification("declined", {
+      clientName: proposal.clientName,
+      serviceName: proposal.serviceName,
+      slug,
+    })
+  );
 
   if (proposal.clientEmail) {
     await sendProposalDeclinedToClientEmail(

@@ -140,6 +140,8 @@ export default function AdminPage() {
   const [whatsappStatus, setWhatsappStatus] = useState<AdminWhatsAppStatus | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [connectingWhatsApp, setConnectingWhatsApp] = useState(false);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
   const [seedingDemo, setSeedingDemo] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -189,8 +191,9 @@ export default function AdminPage() {
       const response = await fetch("/api/admin/whatsapp", { cache: "no-store" });
       if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar o WhatsApp."));
       setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
+      setWhatsappError(null);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o WhatsApp.");
+      setWhatsappError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o WhatsApp.");
     }
   }
 
@@ -213,18 +216,56 @@ export default function AdminPage() {
     loadWhatsAppStatus();
   }, []);
 
+  useEffect(() => {
+    if (!whatsappModalOpen || whatsappStatus?.connected) return;
+    const interval = window.setInterval(() => {
+      loadWhatsAppStatus();
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, [whatsappModalOpen, whatsappStatus?.connected]);
+
+  useEffect(() => {
+    if (!whatsappModalOpen || whatsappStatus?.connected || connectingWhatsApp) return;
+    const timeout = window.setTimeout(() => {
+      setConnectingWhatsApp(true);
+      setWhatsappError(null);
+      fetch("/api/admin/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetSession: true }),
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel recarregar o QR Code."));
+          setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
+        })
+        .catch((caught) => {
+          setWhatsappError(caught instanceof Error ? caught.message : "Nao foi possivel recarregar o QR Code.");
+        })
+        .finally(() => {
+          setConnectingWhatsApp(false);
+        });
+    }, 60_000);
+    return () => window.clearTimeout(timeout);
+  }, [connectingWhatsApp, whatsappModalOpen, whatsappStatus?.connected, whatsappStatus?.qr]);
+
   async function connectWhatsApp() {
     setConnectingWhatsApp(true);
+    setWhatsappModalOpen(true);
+    setWhatsappError(null);
     setNotice(null);
     setError(null);
     try {
-      const response = await fetch("/api/admin/whatsapp", { method: "POST" });
+      const response = await fetch("/api/admin/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetSession: !whatsappStatus?.connected }),
+      });
       if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel conectar o WhatsApp."));
       const status = (await response.json()) as AdminWhatsAppStatus;
       setWhatsappStatus(status);
       setNotice(status.connected ? "WhatsApp FechaPro conectado." : "Escaneie o QR Code para conectar o WhatsApp FechaPro.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Nao foi possivel conectar o WhatsApp.");
+      setWhatsappError(caught instanceof Error ? caught.message : "Nao foi possivel conectar o WhatsApp.");
     } finally {
       setConnectingWhatsApp(false);
     }
@@ -314,8 +355,8 @@ export default function AdminPage() {
     try {
       const response = await fetch(`/api/admin/seed-demo-proposals${replace ? "?replace=1" : ""}`, { method: "POST" });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível criar as propostas demo."));
-      const result = (await response.json()) as { created: number; photos?: number };
-      setNotice(`${result.created} propostas demo e ${result.photos || 0} fotos de nicho criadas no perfil do admin.`);
+      const result = (await response.json()) as { created: number; photos?: number; services?: number };
+      setNotice(`${result.created} propostas demo, ${result.services || 0} servicos e ${result.photos || 0} fotos de nicho criadas no perfil do admin.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível criar as propostas demo.");
     } finally {
@@ -330,8 +371,8 @@ export default function AdminPage() {
     try {
       const response = await fetch("/api/admin/seed-demo-proposals", { method: "DELETE" });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível remover as propostas demo."));
-      const result = (await response.json()) as { deleted: number; photosDeleted?: number };
-      setNotice(`${result.deleted} propostas demo e ${result.photosDeleted || 0} fotos de nicho removidas.`);
+      const result = (await response.json()) as { deleted: number; photosDeleted?: number; servicesDeleted?: number };
+      setNotice(`${result.deleted} propostas demo, ${result.servicesDeleted || 0} servicos e ${result.photosDeleted || 0} fotos de nicho removidas.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível remover as propostas demo.");
     } finally {
@@ -417,10 +458,10 @@ export default function AdminPage() {
               {whatsappStatus?.phone ? <p className="mt-2">Numero conectado: {whatsappStatus.phone}</p> : null}
             </div>
             {whatsappStatus?.qrImage ? (
-              <div className="grid justify-items-center gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3">
-                <Image alt="QR Code para conectar WhatsApp FechaPro" className="rounded-lg bg-white p-2" height={256} src={whatsappStatus.qrImage} unoptimized width={256} />
-                <p className="max-w-64 text-center text-xs font-black text-green-800">Escaneie com o WhatsApp do numero oficial FechaPro.</p>
-              </div>
+              <button className="grid justify-items-center gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3 text-left" type="button" onClick={() => setWhatsappModalOpen(true)}>
+                <Image alt="QR Code para conectar WhatsApp FechaPro" className="rounded-lg bg-white p-2" height={128} src={whatsappStatus.qrImage} unoptimized width={128} />
+                <p className="max-w-48 text-center text-xs font-black text-green-800">Abrir QR Code</p>
+              </button>
             ) : null}
           </div>
         </section>
@@ -646,6 +687,56 @@ export default function AdminPage() {
           </div>
         </section>
       </div>
+      {whatsappModalOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4">
+          <div className="grid max-h-[92vh] w-full max-w-lg gap-4 overflow-auto rounded-lg bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase text-green-700">WhatsApp FechaPro</p>
+                <h2 className="text-2xl font-black">Conectar numero oficial</h2>
+                <p className="mt-1 text-sm font-bold text-slate-600">
+                  Escaneie este QR Code com o WhatsApp que sera usado pelo FechaPro para enviar notificacoes.
+                </p>
+              </div>
+              <button className="rounded-lg border border-black/10 p-2 text-slate-600 hover:text-slate-950" type="button" onClick={() => setWhatsappModalOpen(false)} aria-label="Fechar modal">
+                <XCircle size={20} />
+              </button>
+            </div>
+
+            {whatsappStatus?.connected ? (
+              <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-sm font-black text-green-800">
+                WhatsApp conectado com sucesso. As notificacoes ja podem ser enviadas.
+              </div>
+            ) : whatsappError ? (
+              <div className="rounded-lg border border-red-700/20 bg-red-50 p-4 text-sm font-black text-red-800">
+                {whatsappError}
+              </div>
+            ) : whatsappStatus?.qrImage ? (
+              <div className="grid justify-items-center gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4">
+                <Image alt="QR Code para conectar WhatsApp FechaPro" className="rounded-lg bg-white p-2" height={280} src={whatsappStatus.qrImage} unoptimized width={280} />
+                <p className="text-center text-sm font-black text-green-800">
+                  Abra o WhatsApp no celular oficial, toque em Aparelhos conectados e escaneie o QR Code.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-amber-700/20 bg-amber-50 p-4 text-sm font-black text-amber-900">
+                Gerando QR Code... se demorar mais de 60 segundos, o sistema tenta recarregar automaticamente.
+              </div>
+            )}
+
+            <div className="flex flex-wrap justify-end gap-2">
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadWhatsAppStatus}>
+                <RefreshCcw size={15} />
+                Atualizar QR
+              </button>
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-black text-white disabled:opacity-60" disabled={connectingWhatsApp} type="button" onClick={connectWhatsApp}>
+                <MessageCircle size={16} />
+                {connectingWhatsApp ? "Conectando..." : "Conectar novamente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { sendPixPaymentConfirmedToClientEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { proposalNotification } from "@/lib/proposal-notifications";
 import { sendProposalPushNotification } from "@/lib/push";
 import { requireSession } from "@/lib/session";
 
@@ -38,12 +39,14 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     },
   });
 
-  await sendProposalPushNotification(session.id, {
-    title: "Pagamento confirmado",
-    body: `Pagamento de ${proposal.clientName} registrado.`,
-    slug: proposal.publicSlug,
-    tag: `proposal-${proposal.publicSlug}-paid`,
-  });
+  await sendProposalPushNotification(
+    session.id,
+    proposalNotification("paid", {
+      clientName: proposal.clientName,
+      serviceName: proposal.serviceName,
+      slug: proposal.publicSlug,
+    })
+  );
 
   if (proposal.clientEmail) {
     await sendPixPaymentConfirmedToClientEmail(

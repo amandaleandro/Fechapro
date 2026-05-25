@@ -1114,6 +1114,7 @@ select:focus {
   box-shadow: 0 2rem 6rem rgba(15, 23, 42, 0.3);
   display: grid;
   gap: clamp(1rem, 2vw, 2rem);
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 36rem;
   overflow: hidden;
   padding: clamp(1.5rem, 4vw, 4rem);
@@ -1284,6 +1285,11 @@ select:focus {
   overflow-wrap: anywhere;
 }
 
+.fp-slide-close > div:first-child p {
+  font-size: clamp(1.15rem, 1.65vw, 1.85rem);
+  line-height: 1.18;
+}
+
 .fp-slide-facts {
   display: grid;
   gap: 0.75rem;
@@ -1415,8 +1421,10 @@ select:focus {
   border-radius: 8px;
   color: #ffffff;
   display: grid;
-  gap: 1.25rem;
-  padding: clamp(1.4rem, 3vw, 3rem);
+  gap: 1.1rem;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(1.25rem, 2.4vw, 2.35rem);
 }
 
 .fp-slide-close a {
@@ -1433,6 +1441,8 @@ select:focus {
 .fp-slide-quotes {
   display: grid;
   gap: 0.8rem;
+  grid-auto-rows: minmax(0, 1fr);
+  min-height: 0;
 }
 
 .fp-slide-quotes blockquote {
@@ -1442,11 +1452,12 @@ select:focus {
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
   display: grid;
   gap: 0.8rem;
+  min-height: 0;
   padding: clamp(1rem, 2vw, 1.5rem);
 }
 
 .fp-slide-quotes p {
-  font-size: clamp(1rem, 1.45vw, 1.45rem);
+  font-size: clamp(0.95rem, 1.15vw, 1.25rem);
   font-weight: 850;
   line-height: 1.25;
   overflow-wrap: anywhere;

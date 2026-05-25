@@ -3,6 +3,8 @@ import type { CSSProperties } from "react";
 import { prisma } from "@/lib/prisma";
 import { sendProposalViewedEmail } from "@/lib/email";
 import { sendProposalPushNotification } from "@/lib/push";
+import { proposalNotification } from "@/lib/proposal-notifications";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,6 +24,7 @@ export default async function PublicProposalPage({
 }) {
   const { slug } = await params;
   const query = await searchParams;
+  const session = await getSession();
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
     include: { satisfactionSurvey: true, user: { include: { brandProfile: true } } },
@@ -29,17 +32,21 @@ export default async function PublicProposalPage({
 
   if (!proposal) notFound();
 
-  const isFirstView = proposal.status === "sent";
+  const isOwnerView = session?.id === proposal.userId;
+  const shouldTrackView = !isOwnerView;
+  const isFirstView = shouldTrackView && proposal.status === "sent";
   const currentStatus = isFirstView ? "viewed" : proposal.status;
-  const currentViewCount = proposal.viewCount + 1;
+  const currentViewCount = shouldTrackView ? proposal.viewCount + 1 : proposal.viewCount;
 
-  await prisma.proposalAsset.update({
-    where: { id: proposal.id },
-    data: {
-      viewCount: { increment: 1 },
-      status: currentStatus,
-    },
-  });
+  if (shouldTrackView) {
+    await prisma.proposalAsset.update({
+      where: { id: proposal.id },
+      data: {
+        viewCount: { increment: 1 },
+        status: currentStatus,
+      },
+    });
+  }
 
   if (isFirstView && proposal.user.email) {
     await sendProposalViewedEmail(
@@ -52,12 +59,14 @@ export default async function PublicProposalPage({
   }
 
   if (isFirstView) {
-    await sendProposalPushNotification(proposal.userId, {
-      title: "Proposta visualizada",
-      body: `${proposal.clientName} abriu a proposta de ${proposal.serviceName}.`,
-      slug: proposal.publicSlug,
-      tag: `proposal-${proposal.publicSlug}-viewed`,
-    });
+    await sendProposalPushNotification(
+      proposal.userId,
+      proposalNotification("viewed", {
+        clientName: proposal.clientName,
+        serviceName: proposal.serviceName,
+        slug: proposal.publicSlug,
+      })
+    );
   }
 
   const demoCategories = demoPortfolioCategories(proposal.publicSlug);
@@ -415,11 +424,17 @@ export default async function PublicProposalPage({
             <h2 className="mt-1 text-2xl font-black">Outras formas de contratar</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {services.map((service) => (
-                <div className="rounded-lg border border-black/10 bg-slate-50 p-4" key={service.id}>
-                  <strong className="block">{service.name}</strong>
-                  <span className="mt-1 block text-sm font-bold text-slate-500">
-                    A partir de {money.format(service.price)} {service.deadline ? `- ${service.deadline}` : ""}
-                  </span>
+                <div className="overflow-hidden rounded-lg border border-black/10 bg-slate-50" key={service.id}>
+                  {service.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt="" className="h-32 w-full object-cover" src={service.imageUrl} />
+                  ) : null}
+                  <div className="p-4">
+                    <strong className="block">{service.name}</strong>
+                    <span className="mt-1 block text-sm font-bold text-slate-500">
+                      A partir de {money.format(service.price)} {service.deadline ? `- ${service.deadline}` : ""}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

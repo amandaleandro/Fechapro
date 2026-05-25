@@ -2,17 +2,20 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
-import { cleanOptionalString, cleanString, cleanStringList, normalizePrice } from "@/lib/validation";
+import { cleanOptionalString, cleanString, cleanStringList, isValidHttpUrl, normalizePrice } from "@/lib/validation";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
   const { id } = await context.params;
-  const body = (await request.json()) as { name?: string; price?: number; deadline?: string; includes?: string[] };
+  const body = (await request.json()) as { name?: string; price?: number; deadline?: string; includes?: string[]; imageUrl?: string | null };
   const name = cleanString(body.name);
   const price = normalizePrice(body.price);
+  const imageUrl = cleanOptionalString(body.imageUrl);
 
   if (!name) return jsonError("Serviço obrigatório.");
   if (price === null || price < 0) return jsonError("Informe um valor válido para o serviço.");
+
+  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem invalida.");
 
   await prisma.serviceAsset.updateMany({
     where: { id, userId: session.id },
@@ -21,6 +24,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       price,
       deadline: cleanOptionalString(body.deadline),
       includes: cleanStringList(body.includes),
+      imageUrl,
     },
   });
 

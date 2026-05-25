@@ -49,14 +49,14 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
                 </h1>
                 <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                   {hasSetup
-                    ? "Na oferta até 03/06, o Premium com Site anual sai por R$ 1.500. A alternativa mensal é R$ 300/mês + R$ 997 de implantação."
+                    ? "A Estrutura Comercial Completa reúne sistema por 12 meses, mini site, implantação assistida, materiais comerciais, diagnóstico do Instagram, ajuste simples da logo e treinamento."
                     : "Depois da confirmação pelo Mercado Pago, você volta para criar nome, e-mail e senha. Sem pagamento confirmado, o painel fica bloqueado."}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
-                <CheckoutMetric label={hasSetup ? "Alternativa mensal" : "Mensalidade recorrente"} value={recurringPrice} />
+                <CheckoutMetric label={hasSetup ? "Pagamento facilitado" : "Mensalidade recorrente"} value={recurringPrice} />
                 <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mês`} />
               </div>
 
@@ -64,7 +64,7 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
                 <p className="text-xs font-black uppercase text-blue-700">O que acontece depois</p>
                 <ul className="mt-3 grid gap-2 leading-7 text-slate-700">
                   {(hasSetup
-                    ? ["Oferta anual alinhada com a equipe", "Mini site profissional de até 5 seções", "Conta criada já com assinatura ativa"]
+                    ? ["Sistema FechaPro por 12 meses", "Mini site profissional de até 5 seções", "Implantação assistida para começar com tudo pronto"]
                     : ["Pagamento confirmado pelo Mercado Pago", "Cadastro liberado com o plano escolhido", "Conta criada já com assinatura ativa"]
                   ).map((item) => (
                     <li className="grid grid-cols-[auto_1fr] gap-2 font-bold" key={item}>
@@ -79,12 +79,12 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
 
           <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/10 lg:sticky lg:top-6">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Oferta anual até 03/06" : "Assinatura mensal"}</p>
+              <p className="text-xs font-black uppercase text-blue-700">{hasSetup ? "Pacote completo anual" : "Assinatura mensal"}</p>
               <strong className="mt-1 block text-3xl font-black sm:text-4xl">{recurringPrice}</strong>
-              {hasSetup ? <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">Promocional anual: {plan.price}. Normal: R$ 2.997/ano.</p> : null}
+              {hasSetup ? <p className="mt-2 rounded-lg bg-[var(--ui-bg)] p-3 text-sm font-black text-slate-700">Investimento anual: {plan.price}. Equivalente a menos de R$ 5 por dia.</p> : null}
               <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
                 {hasSetup
-                  ? "Para garantir a oferta anual, fale com a equipe. Pelo Mercado Pago, este passo autoriza a alternativa mensal."
+                  ? "Este pacote foi pensado para você sair com uma estrutura pronta para vender melhor, não apenas com acesso ao sistema."
                   : "O cadastro só será liberado após a autorização da assinatura recorrente."}
               </p>
             </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMercadoPagoPayment, getMercadoPagoSubscription, verifyMercadoPagoWebhook } from "@/lib/mercadopago";
 import { prisma } from "@/lib/prisma";
+import { proposalNotification } from "@/lib/proposal-notifications";
 import { sendProposalPushNotification } from "@/lib/push";
 
 type MercadoPagoWebhookPayload = {
@@ -112,12 +113,14 @@ export async function POST(request: Request) {
           providerReceiptUrl: payment.transaction_details?.external_resource_url || proposal.providerReceiptUrl,
         },
       });
-      await sendProposalPushNotification(proposal.userId, {
-        title: "Proposta paga",
-        body: `${proposal.clientName} pagou a proposta de ${proposal.serviceName}.`,
-        slug: proposal.publicSlug,
-        tag: `proposal-${proposal.publicSlug}-paid`,
-      });
+      await sendProposalPushNotification(
+        proposal.userId,
+        proposalNotification("paid", {
+          clientName: proposal.clientName,
+          serviceName: proposal.serviceName,
+          slug: proposal.publicSlug,
+        })
+      );
     } else if (pending) {
       await prisma.proposalAsset.update({
         where: { id: proposal.id },

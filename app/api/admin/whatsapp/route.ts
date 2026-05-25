@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import { NextResponse } from "next/server";
+import { jsonError } from "@/lib/api";
 import { requireAdmin } from "@/lib/admin";
 import { connectBaileysWhatsApp, getBaileysWhatsAppStatus } from "@/lib/whatsapp";
 
@@ -11,10 +12,15 @@ export async function GET() {
   return NextResponse.json(await statusPayload());
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   await requireAdmin();
-  await connectBaileysWhatsApp();
-  return NextResponse.json(await statusPayload());
+  try {
+    const body = (await request.json().catch(() => null)) as { resetSession?: boolean } | null;
+    await connectBaileysWhatsApp({ resetSession: Boolean(body?.resetSession) });
+    return NextResponse.json(await statusPayload());
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : "Nao foi possivel conectar o WhatsApp.", 502);
+  }
 }
 
 async function statusPayload() {

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /tmp/pw-test && npm install playwright-core --quiet 2>&1 | tail -3 && ls node_modules | head -10)",
+      "Read(//tmp/**)",
+      "Read(//c/Users/amandalscarmo/AppData/Local/Temp/pw-test/**)",
+      "WebFetch(domain:www.propoz.com.br)"
+    ]
+  }
+}

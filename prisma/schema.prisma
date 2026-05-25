@@ -120,6 +120,7 @@ model ServiceAsset {
   price     Int      @default(0)
   deadline  String?
   includes  String[] @default([])
+  imageUrl  String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

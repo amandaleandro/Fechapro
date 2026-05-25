@@ -1,7 +1,8 @@
+import { rm } from "node:fs/promises";
 import { prisma } from "@/lib/prisma";
 
 const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-const provider = process.env.WHATSAPP_PROVIDER || "";
+const provider = process.env.WHATSAPP_PROVIDER || "baileys";
 const baileysAuthDir = process.env.WHATSAPP_BAILEYS_AUTH_DIR || ".baileys-session";
 const webhookUrl = process.env.WHATSAPP_NOTIFICATION_WEBHOOK_URL || "";
 const webhookToken = process.env.WHATSAPP_NOTIFICATION_WEBHOOK_TOKEN || "";
@@ -26,12 +27,17 @@ export function isWhatsAppNotificationConfigured() {
   return Boolean(provider === "baileys" || webhookUrl || (cloudPhoneNumberId && cloudAccessToken));
 }
 
-export async function connectBaileysWhatsApp() {
+export async function connectBaileysWhatsApp(options: { resetSession?: boolean } = {}) {
   if (provider !== "baileys") {
     throw new Error('Configure WHATSAPP_PROVIDER="baileys" para conectar pelo painel admin.');
   }
 
+  if (options.resetSession && !baileysConnected) {
+    await resetBaileysSession();
+  }
+
   await getBaileysSocket();
+  await waitForBaileysQrOrConnection();
   return getBaileysWhatsAppStatus();
 }
 
@@ -56,7 +62,7 @@ export async function sendProposalWhatsAppNotification(userId: string, input: Pr
   if (!phone) return;
 
   const proposalUrl = `${APP_URL}/p/${input.slug}`;
-  const message = `${input.title}\n\n${input.body}\n\nAbrir proposta: ${proposalUrl}`;
+  const message = `*${input.title}*\n\n${input.body}\n\nAcompanhe aqui: ${proposalUrl}\n\nMensagem automatica do FechaPro.`;
 
   try {
     if (provider === "baileys") {
@@ -108,6 +114,20 @@ async function getBaileysSocket() {
   }
 
   return baileysSocketPromise;
+}
+
+async function resetBaileysSession() {
+  baileysSocketPromise = null;
+  baileysQr = null;
+  baileysPhone = null;
+  await rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
+}
+
+async function waitForBaileysQrOrConnection() {
+  const timeoutAt = Date.now() + 12_000;
+  while (!baileysConnected && !baileysQr && Date.now() < timeoutAt) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
 }
 
 async function createBaileysSocket() {

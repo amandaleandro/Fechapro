@@ -64,6 +64,7 @@ type ServiceItem = {
   price: number;
   deadline: string | null;
   includes: string[];
+  imageUrl: string | null;
 };
 
 type PortfolioItem = {
@@ -235,7 +236,7 @@ const keys = {
   services: "fechapro_services_v1",
   portfolio: "fechapro_portfolio_v1",
   testimonials: "fechapro_testimonials_v1",
-  updatesModal: "fechapro_updates_modal_v3",
+  updatesModal: "fechapro_updates_modal_v4",
 };
 
 function getPublicAppUrl() {
@@ -312,6 +313,10 @@ const proposalSegmentOptions: Array<{ value: ProposalDraft["segment"]; label: st
   { value: "general", label: "Serviço geral" },
 ];
 
+function proposalSegmentLabel(value: ProposalDraft["segment"]) {
+  return proposalSegmentOptions.find((option) => option.value === value)?.label || "";
+}
+
 const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }> = [
   { id: "dashboard", label: "Painel", icon: LayoutDashboard },
   { id: "proposals", label: "Propostas", icon: FileText },
@@ -340,7 +345,7 @@ const planLabels: Record<PlanCode, string> = {
   pro: "Pro",
   plus: "Profissional",
   premium: "Pro Site",
-  premium_site: "Premium com Site",
+  premium_site: "Estrutura Comercial Completa",
 };
 
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
@@ -650,6 +655,28 @@ const marketingArtBriefs = [
   },
 ];
 
+const quickIncludedSuggestions = [
+  "Atendimento inicial",
+  "Diagnostico ou briefing",
+  "Execucao do servico",
+  "Materiais inclusos",
+  "Ajustes combinados",
+  "Entrega final",
+  "Suporte apos entrega",
+];
+
+const quickExampleProposal: ProposalDraft = {
+  ...blankDraft,
+  clientName: "Cliente exemplo",
+  serviceName: "Servico profissional",
+  price: 1200,
+  deadline: "7 dias uteis",
+  validUntil: nextWeekDate(),
+  payment: "50% na entrada e 50% na entrega",
+  included: ["Atendimento inicial", "Execucao do servico", "Ajustes combinados", "Entrega final"],
+  notes: "Esta proposta pode ser ajustada conforme combinacao com o cliente.",
+};
+
 
 export default function Home() {
   const [session, setSession] = useState<SessionProfile | null>(null);
@@ -658,6 +685,7 @@ export default function Home() {
   const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState<ProposalDraft>(blankDraft);
   const [editingProposalId, setEditingProposalId] = useState<string | null>(null);
+  const [lastSavedProposal, setLastSavedProposal] = useState<Proposal | null>(null);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -782,18 +810,36 @@ export default function Home() {
       setNotice("Cadastre uma chave PIX na aba Marca antes de escolher recebimento por PIX.");
       return null;
     }
+    const includedItems = cleanIncludedItems(draft.included);
+    if (!includedItems.length && !window.confirm("Sua proposta esta sem itens inclusos. Deseja salvar assim mesmo?")) {
+      return null;
+    }
+
+    if (!editingProposalId) {
+      const isDuplicate = proposals.some(
+        (p) =>
+          p.clientName.trim().toLowerCase() === draft.clientName.trim().toLowerCase() &&
+          p.serviceName.trim().toLowerCase() === draft.serviceName.trim().toLowerCase(),
+      );
+      if (isDuplicate && !window.confirm("Já existe uma proposta para este cliente com o mesmo serviço. Deseja criar assim mesmo?")) {
+        return null;
+      }
+    }
 
     try {
+      const existingClient = clients.find((client) => client.name.trim().toLowerCase() === draft.clientName.trim().toLowerCase());
+      const existingService = services.find((service) => service.name.trim().toLowerCase() === draft.serviceName.trim().toLowerCase());
       if (editingProposalId) {
         const result = await apiPatch<Proposal>(`/api/proposals/${editingProposalId}`, {
           ...draft,
           clientEmail: draft.clientEmail?.trim() || "",
-          included: cleanIncludedItems(draft.included),
+          included: includedItems,
           status,
         });
         setProposals((current) => current.map((item) => (item.id === result.id ? result : item)));
+        setLastSavedProposal(result);
         setNotice("Proposta atualizada com sucesso.");
-        setActiveView("proposals");
+        setActiveView("dashboard");
         setEditingProposalId(null);
         setDraft({ ...blankDraft, validUntil: nextWeekDate() });
         return result;
@@ -802,17 +848,47 @@ export default function Home() {
       const result = await apiPost<Proposal & { clientEmailSent?: boolean }>("/api/proposals", {
         ...draft,
         clientEmail: draft.clientEmail?.trim() || "",
-        included: cleanIncludedItems(draft.included),
+        included: includedItems,
         status,
       });
       setProposals((current) => [result, ...current]);
+      setLastSavedProposal(result);
+      if (!existingClient) {
+        try {
+          const client = await apiPost<Client>("/api/clients", {
+            name: draft.clientName.trim(),
+            email: draft.clientEmail?.trim() || "",
+            phone: "",
+            segment: draft.segment === "auto" ? "" : proposalSegmentLabel(draft.segment),
+            interestService: draft.serviceName.trim(),
+            status: "lead",
+            notes: "Criado automaticamente a partir de uma proposta.",
+          });
+          setClients((current) => [client, ...current]);
+        } catch {
+          setNotice("Proposta salva. Nao foi possivel salvar o cliente automaticamente.");
+        }
+      }
+      if (!existingService && !draft.serviceName.includes(" + ")) {
+        try {
+          const service = await apiPost<ServiceItem>("/api/services", {
+            name: draft.serviceName.trim(),
+            price: draft.price,
+            deadline: draft.deadline.trim(),
+            includes: includedItems,
+          });
+          setServices((current) => [service, ...current]);
+        } catch {
+          setNotice("Proposta salva. Nao foi possivel salvar o servico automaticamente.");
+        }
+      }
       const emailNote = result.clientEmailSent
         ? " E-mail enviado ao cliente."
         : draft.clientEmail
           ? ""
           : " Sem e-mail do cliente - proposta não foi enviada por e-mail.";
       setNotice(`Proposta salva com sucesso.${emailNote}`);
-      setActiveView("proposals");
+      setActiveView("dashboard");
       setBilling((current) =>
         current
           ? {
@@ -898,9 +974,13 @@ export default function Home() {
   }
 
   async function removeProposal(id: string) {
-    await apiDelete(`/api/proposals/${id}`);
-    setProposals((current) => current.filter((item) => item.id !== id));
-    setNotice("Proposta removida.");
+    try {
+      await apiDelete(`/api/proposals/${id}`);
+      setProposals((current) => current.filter((item) => item.id !== id));
+      setNotice("Proposta removida.");
+    } catch (caught) {
+      setNotice(caught instanceof Error ? caught.message : "Não foi possível remover a proposta.");
+    }
   }
 
   async function resendProposal(id: string) {
@@ -1045,7 +1125,7 @@ export default function Home() {
           <div className="min-w-0">
             <Image alt="FechaPro" className="mb-3 h-9 w-36 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
             <h1 className="max-w-xs text-2xl font-black leading-tight tracking-normal sm:max-w-none sm:text-3xl">
-              Sistema de propostas profissionais.
+              Sua central comercial para criar propostas que vendem.
             </h1>
             <p className="mt-1 text-sm font-bold text-slate-500">
               Olá, {brand?.businessName || session.name}
@@ -1192,6 +1272,8 @@ export default function Home() {
             onProposalDuplicate={duplicateProposal}
             onProposalEdit={editProposal}
             onProposalPdf={saveProposalAndOpenPdf}
+            lastSavedProposal={lastSavedProposal}
+            onLastSavedProposalDismiss={() => setLastSavedProposal(null)}
             openValue={openValue}
             portfolio={portfolio}
             proposals={proposals}
@@ -1432,6 +1514,8 @@ function DashboardView({
   onProposalSave,
   onSeed,
   onStatusChange,
+  lastSavedProposal,
+  onLastSavedProposalDismiss,
   openValue,
   portfolio,
   proposals,
@@ -1458,6 +1542,8 @@ function DashboardView({
   onProposalSave: (status?: ProposalStatus) => void | Promise<Proposal | null>;
   onSeed: () => void;
   onStatusChange: (id: string, status: ProposalStatus) => void;
+  lastSavedProposal: Proposal | null;
+  onLastSavedProposalDismiss: () => void;
   openValue: number;
   portfolio: PortfolioItem[];
   proposals: Proposal[];
@@ -1469,6 +1555,16 @@ function DashboardView({
   proposalTemplates: ProposalTemplate[];
 }) {
   const [includedText, setIncludedText] = useState(() => draft.included.join("\n"));
+  const [dashboardProposalPage, setDashboardProposalPage] = useState(1);
+  const [showAdvancedProposalOptions, setShowAdvancedProposalOptions] = useState(false);
+  const dashboardProposalPageSize = 5;
+  const dashboardProposalTotalPages = Math.max(1, Math.ceil(proposals.length / dashboardProposalPageSize));
+  const dashboardProposalFirstVisible = proposals.length ? (dashboardProposalPage - 1) * dashboardProposalPageSize + 1 : 0;
+  const dashboardProposalLastVisible = Math.min(dashboardProposalPage * dashboardProposalPageSize, proposals.length);
+  const dashboardVisibleProposals = proposals.slice(
+    (dashboardProposalPage - 1) * dashboardProposalPageSize,
+    dashboardProposalPage * dashboardProposalPageSize,
+  );
   const includedItems = cleanIncludedItems(draft.included);
   const previewIncludedItems = includedItems.length ? includedItems : ["Itens da proposta aparecem aqui."];
   const acceptedValue = proposals
@@ -1486,6 +1582,18 @@ function DashboardView({
   const acceptanceRate = proposals.length ? Math.round((accepted / proposals.length) * 100) : 0;
   const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
   const followUps = proposals.filter((proposal) => ["sent", "viewed", "awaiting_response"].includes(proposal.status) && daysSince(proposal.updatedAt || proposal.createdAt) >= 2).slice(0, 3);
+  const isFirstProposalExperience = !proposals.length && !lastSavedProposal;
+  const setupChecklist = [
+    { done: Boolean(brand.businessName && brand.whatsapp), label: "Marca e WhatsApp" },
+    { done: services.length > 0, label: "Serviço cadastrado" },
+    { done: clients.length > 0, label: "Cliente salvo" },
+    { done: proposals.length > 0, label: "Primeira proposta" },
+  ];
+  const setupProgress = setupChecklist.filter((item) => item.done).length;
+  const lastSavedUrl = lastSavedProposal?.publicSlug ? `${getPublicAppUrl()}/p/${lastSavedProposal.publicSlug}` : "";
+  const lastSavedWhatsappUrl = lastSavedProposal
+    ? `https://wa.me/?text=${encodeURIComponent(`Oi, ${lastSavedProposal.clientName}! Preparei sua proposta de ${lastSavedProposal.serviceName} com escopo, valor, prazo, PDF e aceite online. Pode acessar aqui: ${lastSavedUrl}`)}`
+    : "";
   const hasPaidAccess = Boolean(
     billing &&
       ["active", "trial"].includes(billing.subscription.status) &&
@@ -1496,6 +1604,10 @@ function DashboardView({
     const nextIncludedText = draft.included.join("\n");
     setIncludedText((current) => (current === nextIncludedText ? current : nextIncludedText));
   }, [draft.included]);
+
+  useEffect(() => {
+    setDashboardProposalPage((current) => Math.min(current, dashboardProposalTotalPages));
+  }, [dashboardProposalTotalPages]);
 
   function chooseService(serviceName: string) {
     const service = services.find((item) => item.name === serviceName);
@@ -1542,6 +1654,30 @@ function DashboardView({
     );
   }
 
+  function addIncludedSuggestion(item: string) {
+    const currentItems = cleanIncludedItems(draft.included);
+    if (currentItems.some((current) => current.toLowerCase() === item.toLowerCase())) return;
+    onDraftChange("included", [...currentItems, item]);
+  }
+
+  function useQuickExample() {
+    onDraftChange("templateId", quickExampleProposal.templateId);
+    onDraftChange("clientName", quickExampleProposal.clientName);
+    onDraftChange("clientEmail", quickExampleProposal.clientEmail);
+    onDraftChange("serviceName", quickExampleProposal.serviceName);
+    onDraftChange("price", quickExampleProposal.price);
+    onDraftChange("deadline", quickExampleProposal.deadline);
+    onDraftChange("validUntil", nextWeekDate());
+    onDraftChange("payment", quickExampleProposal.payment);
+    onDraftChange("documentType", quickExampleProposal.documentType);
+    onDraftChange("segment", quickExampleProposal.segment);
+    onDraftChange("checkoutMode", quickExampleProposal.checkoutMode);
+    onDraftChange("included", quickExampleProposal.included);
+    onDraftChange("notes", quickExampleProposal.notes);
+    onNotice("Exemplo preenchido. Ajuste os dados e salve a proposta.");
+    setTimeout(() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
   return (
     <>
       {notice ? (
@@ -1555,32 +1691,100 @@ function DashboardView({
 
       <PushNotificationPanel onNotice={onNotice} />
 
+      {lastSavedProposal?.publicSlug ? (
+        <section className="grid gap-4 rounded-lg border border-green-700/20 bg-green-50 p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase text-green-700">Proposta pronta</p>
+            <h2 className="mt-1 text-xl font-black leading-tight text-green-950">
+              {lastSavedProposal.clientName} - {lastSavedProposal.serviceName}
+            </h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-green-900">
+              Agora e so enviar para o cliente. O link abre no celular, gera PDF e registra visualizacao.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:min-w-72">
+            <button
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white"
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(lastSavedUrl);
+                onNotice("Link da proposta copiado.");
+              }}
+            >
+              <Copy size={17} />
+              Copiar link
+            </button>
+            <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-green-700/20 bg-white px-4 font-black text-green-800" href={lastSavedWhatsappUrl} target="_blank" rel="noreferrer">
+              <Send size={17} />
+              Enviar no WhatsApp
+            </a>
+            <div className="grid grid-cols-2 gap-2">
+              <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-700/20 bg-white px-3 text-sm font-black text-green-800" href={`/p/${lastSavedProposal.publicSlug}/pdf`} target="_blank" rel="noreferrer">
+                <FileDown size={15} />
+                PDF
+              </a>
+              <button className="min-h-10 rounded-lg border border-green-700/20 px-3 text-sm font-black text-green-800" type="button" onClick={onLastSavedProposalDismiss}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {isFirstProposalExperience ? (
+        <section className="grid gap-4 rounded-lg border border-blue-700/20 bg-blue-50 p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div>
+            <p className="text-xs font-black uppercase text-blue-700">Primeira proposta</p>
+            <h2 className="mt-1 text-2xl font-black leading-tight text-blue-950">Comece pelo basico e envie no WhatsApp.</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-blue-900">
+              O caminho mais rapido e preencher cliente, servico, valor, prazo e inclusos. Marca, PDF e link entram automaticamente.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:min-w-64">
+            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 font-black text-white" type="button" onClick={() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+              <FileText size={17} />
+              Criar agora
+            </button>
+            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 bg-white px-4 font-black text-blue-800" type="button" onClick={useQuickExample}>
+              <Sparkles size={17} />
+              Preencher exemplo
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[1fr_auto] sm:items-end sm:p-6">
         <div>
           <h2 className="max-w-[14ch] text-3xl font-black leading-none sm:max-w-[12ch] sm:text-6xl">
-            Crie uma proposta comercial em minutos.
+            Crie uma proposta profissional que valoriza seu serviço.
           </h2>
           <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Use seus cadastros de clientes, serviços, portfólio e depoimentos para montar uma proposta completa.
+            Monte uma proposta com marca, fotos, valor, prazo, PDF, link e aceite online. Depois envie pelo WhatsApp.
           </p>
         </div>
 
-        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-          <FileText size={18} />
-          Criar proposta
-        </button>
+        <div className="grid gap-2 sm:min-w-52">
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+            <FileText size={18} />
+            Criar proposta
+          </button>
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black text-slate-700" type="button" onClick={useQuickExample}>
+            <Sparkles size={17} />
+            Ver exemplo de proposta
+          </button>
+        </div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-4">
-        <Metric label="Clientes visualizaram o link" value={String(totalViews)} />
-        <Metric label="Clicaram no WhatsApp" value={String(whatsappClicks)} />
-        <Metric label="Orçamentos enviados" value={String(sent)} />
-        <Metric label="Orçamentos aprovados" value={String(accepted)} />
+        <Metric label="Clientes que abriram proposta" value={String(totalViews)} />
+        <Metric label="Clientes interessados" value={String(whatsappClicks)} />
+        <Metric label="Propostas enviadas" value={String(sent)} />
+        <Metric label="Propostas aprovadas" value={String(accepted)} />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
         <Metric label="Valor total enviado" value={money.format(sentValue)} />
-        <Metric label="Valor em aberto" value={money.format(openValue)} />
+        <Metric label="Valor aguardando resposta" value={money.format(openValue)} />
         <Metric label="Taxa de aceite" value={`${acceptanceRate}%`} />
       </section>
 
@@ -1606,13 +1810,33 @@ function DashboardView({
         </section>
       ) : null}
 
+      <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SectionHeading eyebrow="Configuração" title="Sua estrutura comercial" />
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
+            {setupProgress}/{setupChecklist.length} pronto
+          </span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-4">
+          {setupChecklist.map((item) => (
+            <div className={`grid grid-cols-[auto_1fr] items-center gap-2 rounded-lg border p-3 text-sm font-black ${item.done ? "border-green-700/20 bg-green-50 text-green-800" : "border-black/10 bg-slate-50 text-slate-600"}`} key={item.label}>
+              {item.done ? <CheckCircle2 size={16} /> : <HelpCircle size={16} />}
+              {item.label}
+            </div>
+          ))}
+        </div>
+        <p className="text-sm font-bold leading-6 text-slate-500">
+          Quanto mais completa sua estrutura, mais profissional sua proposta fica para o cliente.
+        </p>
+      </section>
+
       <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1fr_0.8fr]">
         <div>
-          <SectionHeading eyebrow="Indicadores" title="Funil comercial" />
+          <SectionHeading eyebrow="Indicadores" title="Acompanhamento de vendas" />
           <div className="mt-4 grid gap-3 sm:grid-cols-5">
             <FunnelStep label="Enviadas" value={sent} tone="bg-amber-500" />
             <FunnelStep label="Visualizadas" value={viewed} tone="bg-sky-600" />
-            <FunnelStep label="Aguardando" value={awaitingResponse} tone="bg-indigo-600" />
+            <FunnelStep label="Aguardando resposta" value={awaitingResponse} tone="bg-indigo-600" />
             <FunnelStep label="Aceitas" value={accepted} tone="bg-green-700" />
             <FunnelStep label="Recusadas" value={declined} tone="bg-rose-700" />
           </div>
@@ -1620,41 +1844,59 @@ function DashboardView({
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
           <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
           <MiniStat label="Visualizações" value={String(totalViews)} />
-          <MiniStat label="Cliques WhatsApp" value={String(whatsappClicks)} />
+          <MiniStat label="Clientes interessados" value={String(whatsappClicks)} />
           <MiniStat label="Vencidas" value={String(expired)} />
         </div>
       </section>
 
       {followUps.length ? (
         <section className="grid gap-3 rounded-lg border border-amber-700/20 bg-amber-50 p-4 shadow-xl shadow-slate-900/10">
-          <SectionHeading eyebrow="Follow-up" title="Oportunidades para retomar hoje" />
+          <SectionHeading eyebrow="Follow-up" title="Clientes quentes para retomar hoje" />
           {followUps.map((proposal) => {
-            const message = `Oi, tudo bem? Passando para saber se conseguiu olhar o orçamento de ${proposal.serviceName} que te enviei. Posso tirar alguma dúvida?`;
+            const proposalUrl = proposal.publicSlug ? `${getPublicAppUrl()}/p/${proposal.publicSlug}` : "";
+            const followUpMessages = [
+              {
+                label: "Enviar follow-up",
+                text: `Oi, ${proposal.clientName}! Passando para saber se conseguiu olhar a proposta de ${proposal.serviceName}. Posso tirar alguma duvida? ${proposalUrl}`,
+              },
+              {
+                label: "Chamar no WhatsApp",
+                text: `Oi, ${proposal.clientName}! Vi que a proposta de ${proposal.serviceName} esta em aberto. Quer que eu explique algum ponto do escopo, prazo ou pagamento? ${proposalUrl}`,
+              },
+              {
+                label: "Reforçar validade",
+                text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale ate ${formatDateOnly(proposal.validUntil)}` : " esta disponivel para aceite"}. Segue o link: ${proposalUrl}`,
+              },
+            ];
             return (
-              <div className="grid gap-3 rounded-lg border border-amber-700/20 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center" key={proposal.id}>
+              <div className="grid gap-3 rounded-lg border border-amber-700/20 bg-white p-3 lg:grid-cols-[1fr_auto] lg:items-center" key={proposal.id}>
                 <div>
                   <strong>{proposal.clientName}</strong>
                   <p className="text-sm font-bold leading-6 text-slate-600">
-                    Proposta enviada há {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}
+                    Enviada ha {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}. {proposalStatusHelp(proposal)}
                   </p>
                 </div>
-                <button
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-black text-white"
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(message);
-                    onNotice("Mensagem de follow-up copiada.");
-                  }}
-                >
-                  <Copy size={15} />
-                  Copiar mensagem
-                </button>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {followUpMessages.map((message) => (
+                    <button
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
+                      type="button"
+                      key={message.label}
+                      onClick={() => {
+                        navigator.clipboard.writeText(message.text);
+                        onNotice(`${message.label} copiado.`);
+                      }}
+                    >
+                      <Copy size={15} />
+                      {message.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             );
           })}
         </section>
       ) : null}
-
       <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
           <SectionHeading eyebrow="Indicações" title="Ganhe crescimento com seus clientes" />
@@ -1685,8 +1927,16 @@ function DashboardView({
             onProposalSave();
           }}
         >
-          <SectionHeading eyebrow={isEditingProposal ? "Editar proposta" : "Nova proposta"} title="Dados principais" />
+          <div className="grid gap-3">
+            <SectionHeading eyebrow={isEditingProposal ? "Editar proposta" : "Proposta rapida"} title={isEditingProposal ? "Ajuste os dados da proposta" : "Preencha o essencial"} />
+            <div className="grid gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold leading-6 text-green-900">
+              <span className="font-black">Para criar uma proposta, preencha cliente, servico, valor, prazo e o que esta incluso.</span>
+              <span>Depois de salvar, voce pode copiar o link, enviar no WhatsApp ou baixar o PDF.</span>
+            </div>
+          </div>
 
+          {showAdvancedProposalOptions ? (
+            <>
           <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3">
             <label className="grid gap-2 text-sm font-extrabold text-slate-600">
               Template por nicho
@@ -1741,6 +1991,8 @@ function DashboardView({
               </select>
             </label>
           </div>
+            </>
+          ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <SelectField
@@ -1765,6 +2017,49 @@ function DashboardView({
             />
             <TextField label="Valor" min={1} placeholder="1200" required step="1" type="number" value={draft.price || ""} onChange={(value) => onDraftChange("price", Number(value || 0))} />
             <TextField label="Prazo" maxLength={80} placeholder="7 dias úteis" required value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
+          </div>
+
+          <TextAreaField
+            label="O que esta incluso"
+            maxLength={1200}
+            placeholder={"Ex:\nBriefing inicial\nExecucao do servico\nAjustes combinados\nEntrega final"}
+            value={includedText}
+            onChange={(value) => {
+              setIncludedText(value);
+              onDraftChange("included", value.split("\n"));
+            }}
+          />
+          <div className="grid gap-2">
+            <span className="text-xs font-black uppercase text-slate-500">Adicionar rapido</span>
+            <div className="flex flex-wrap gap-2">
+              {quickIncludedSuggestions.map((item) => (
+                <button
+                  className="min-h-9 rounded-full border border-black/10 bg-slate-50 px-3 text-xs font-black text-slate-700"
+                  key={item}
+                  type="button"
+                  onClick={() => addIncludedSuggestion(item)}
+                >
+                  + {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 bg-slate-50 px-4 text-sm font-black text-slate-800"
+              type="button"
+              onClick={() => setShowAdvancedProposalOptions((current) => !current)}
+            >
+              <Settings size={16} />
+              {showAdvancedProposalOptions ? "Ocultar opcoes avancadas" : "Mostrar opcoes avancadas"}
+            </button>
+            <span className="text-xs font-bold text-slate-500">Template, validade, pagamento, e-mail, recebimento e visual.</span>
+          </div>
+
+          {showAdvancedProposalOptions ? (
+            <>
+          <div className="grid gap-3 sm:grid-cols-2">
             <TextField label="Validade" type="date" value={draft.validUntil} onChange={(value) => onDraftChange("validUntil", value)} />
             <TextField label="Pagamento" maxLength={120} placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
           </div>
@@ -1845,17 +2140,6 @@ function DashboardView({
           />
 
           <TextAreaField
-            label="Itens inclusos"
-            maxLength={1200}
-            placeholder={"Logo\nPaleta de cores\n5 modelos de posts"}
-            value={includedText}
-            onChange={(value) => {
-              setIncludedText(value);
-              onDraftChange("included", value.split("\n"));
-            }}
-          />
-
-          <TextAreaField
             label="Observações"
             maxLength={800}
             placeholder="A proposta inclui até 2 rodadas de ajustes."
@@ -1863,6 +2147,8 @@ function DashboardView({
             value={draft.notes}
             onChange={(value) => onDraftChange("notes", value)}
           />
+            </>
+          ) : null}
 
           <div className="grid gap-3 sm:grid-cols-3">
             <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
@@ -1871,14 +2157,27 @@ function DashboardView({
             <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
               Salvar rascunho
             </button>
-            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onSeed}>
-              Carregar exemplos
+            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={useQuickExample}>
+              Preencher exemplo
+            </button>
+          </div>
+          {showAdvancedProposalOptions ? (
+            <button className="justify-self-start text-sm font-black text-blue-700" type="button" onClick={onSeed}>
+              Criar clientes e servicos exemplo
+            </button>
+          ) : null}
+          <div className="sticky bottom-3 z-10 grid grid-cols-2 gap-2 rounded-lg border border-black/10 bg-white/95 p-2 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
+            <button className="min-h-11 rounded-lg bg-green-600 px-3 text-sm font-black text-white" type="submit">
+              Salvar
+            </button>
+            <button className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={() => document.getElementById("proposal-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+              Ver previa
             </button>
           </div>
         </form>
 
-        <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
-          <SectionHeading eyebrow="Preview" title={draft.clientName ? `Proposta para ${draft.clientName}` : "Proposta para cliente"} />
+        <aside id="proposal-preview" className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
+          <SectionHeading eyebrow="Como seu cliente vai receber" title={draft.clientName ? `Proposta para ${draft.clientName}` : "Proposta para cliente"} />
 
           <div className="grid gap-4 overflow-hidden rounded-lg border border-black/10 bg-slate-50">
             <div className="h-2" style={{ background: `linear-gradient(90deg, ${brand.primaryColor}, ${brand.accentColor})` }} />
@@ -1950,10 +2249,17 @@ function DashboardView({
       </section>
 
       <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <SectionHeading eyebrow="Pipeline" title="Propostas recentes" />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <SectionHeading eyebrow="Pipeline" title="Propostas recentes" />
+          {proposals.length ? (
+            <p className="text-sm font-bold text-slate-500">
+              Mostrando {dashboardProposalFirstVisible}-{dashboardProposalLastVisible} de {proposals.length}
+            </p>
+          ) : null}
+        </div>
         <div className="grid gap-3">
           {proposals.length ? (
-            proposals.map((proposal) => (
+            dashboardVisibleProposals.map((proposal) => (
               <ProposalCard
                 currentPlan={billing?.subscription.plan || "start"}
                 key={proposal.id}
@@ -1979,6 +2285,31 @@ function DashboardView({
             </p>
           )}
         </div>
+        {proposals.length > dashboardProposalPageSize ? (
+          <div className="flex flex-col gap-3 border-t border-black/10 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-sm font-black text-slate-600">
+              Página {dashboardProposalPage}/{dashboardProposalTotalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
+                disabled={dashboardProposalPage <= 1}
+                type="button"
+                onClick={() => setDashboardProposalPage((current) => Math.max(1, current - 1))}
+              >
+                Anterior
+              </button>
+              <button
+                className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
+                disabled={dashboardProposalPage >= dashboardProposalTotalPages}
+                type="button"
+                onClick={() => setDashboardProposalPage((current) => Math.min(dashboardProposalTotalPages, current + 1))}
+              >
+                Proxima
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </>
   );
@@ -2055,14 +2386,14 @@ function ProposalsView({
 
       <div className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <SectionHeading eyebrow="Tela da proposta" title="Propostas comerciais" />
+          <SectionHeading eyebrow="Suas propostas" title="Propostas comerciais" />
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onNewProposal}>
             <Plus size={18} />
             Nova proposta
           </button>
         </div>
         <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Aqui ficam os links que você envia para o cliente. Abra a proposta pública, copie o link, baixe PDF, duplique ou acompanhe o status.
+          Acompanhe quem abriu, quem está em aberto e quem já fechou. Copie o link, baixe PDF ou envie direto pelo WhatsApp.
         </p>
       </div>
 
@@ -2070,7 +2401,7 @@ function ProposalsView({
         <Metric label="Total" value={String(proposals.length)} />
         <Metric label="Enviadas" value={String(sent)} />
         <Metric label="Visualizadas" value={String(viewed)} />
-        <Metric label="Aguardando" value={String(awaitingResponse)} />
+        <Metric label="Aguardando resposta" value={String(awaitingResponse)} />
         <Metric label="Aceitas" value={String(accepted)} />
         <Metric label="Valor aceito" value={money.format(acceptedValue)} />
       </div>
@@ -2166,7 +2497,7 @@ function OnboardingView({
   session: { name: string; email: string };
 }) {
   const [businessName, setBusinessName] = useState(brand.businessName || session.name);
-  const [whatsapp, setWhatsapp] = useState(brand.whatsapp || "");
+  const [whatsapp, setWhatsapp] = useState(maskPhone(brand.whatsapp || ""));
   const [serviceName, setServiceName] = useState("");
   const [price, setPrice] = useState(0);
   const [deadline, setDeadline] = useState("");
@@ -2243,7 +2574,7 @@ function OnboardingView({
           </div>
         ) : null}
         <TextField label="Nome comercial" maxLength={80} required value={businessName} onChange={setBusinessName} />
-        <TextField label="WhatsApp" autoComplete="tel" maxLength={20} placeholder="5511999999999" required value={whatsapp} onChange={setWhatsapp} />
+        <TextField label="WhatsApp" autoComplete="tel" maxLength={15} placeholder="(11) 99999-9999" required value={whatsapp} onChange={(value) => setWhatsapp(maskPhone(value))} />
         <div className="grid gap-2">
           <span className="text-sm font-extrabold text-slate-600">Modelos rápidos</span>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -2318,9 +2649,10 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
 
   return (
     <CrudShell
-      eyebrow="Cadastro"
-      title="CRM simples"
-      description="Salve contatos, interesse, status e observações para retomar conversas e recuperar oportunidades."
+      eyebrow="Relacionamento"
+      title="Clientes e contatos"
+      description="Salve contatos com interesse, status e observações. Assim você sabe exatamente quem retomar e quando."
+      contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
       form={
         <form
           className="grid gap-3"
@@ -2329,7 +2661,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
           {error ? <FormError message={error} /> : null}
           <TextField label="Nome" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
           <TextField label="E-mail" autoComplete="email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
-          <TextField label="Telefone" autoComplete="tel" maxLength={20} value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
+          <TextField label="Telefone" autoComplete="tel" maxLength={15} placeholder="(11) 99999-9999" value={form.phone} onChange={(value) => setForm({ ...form, phone: maskPhone(value) })} />
           <TextField label="Segmento" maxLength={60} placeholder="Moda, estética, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
           <TextField label="Serviço de interesse" maxLength={90} placeholder="Identidade visual, limpeza, manutenção..." value={form.interestService} onChange={(value) => setForm({ ...form, interestService: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
@@ -2379,7 +2711,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
             setForm({
               name: client.name,
               email: client.email || "",
-              phone: client.phone || "",
+              phone: maskPhone(client.phone || ""),
               segment: client.segment || "",
               interestService: client.interestService || "",
               status: client.status || "lead",
@@ -2404,8 +2736,16 @@ function clientStatusLabel(status?: string | null) {
   return labels[status || "lead"] || "Lead";
 }
 
+function maskPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 function ServicesView({ services, onChange }: { services: ServiceItem[]; onChange: (items: ServiceItem[]) => void }) {
-  const [form, setForm] = useState({ name: "", price: 0, deadline: "", includes: "" });
+  const [form, setForm] = useState({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -2424,6 +2764,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
       name: form.name,
       price: form.price,
       deadline: form.deadline,
+      imageUrl: form.imageUrl.trim() || null,
       includes: form.includes
         .split("\n")
         .map((entry) => entry.trim())
@@ -2439,7 +2780,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
         const item = await apiPost<ServiceItem>("/api/services", payload);
         onChange([item, ...services]);
       }
-      setForm({ name: "", price: 0, deadline: "", includes: "" });
+      setForm({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível salvar o serviço.");
     }
@@ -2454,7 +2795,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
     <CrudShell
       eyebrow="Cadastro"
       title="Serviços e preços"
-      description="Monte uma biblioteca para preencher propostas mais rápido."
+      description="Cadastre seus serviços uma vez e use em qualquer proposta com um clique. Quanto mais completo, mais profissional fica o orçamento."
       form={
         <form
           className="grid gap-3"
@@ -2464,10 +2805,11 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
           <TextField label="Serviço" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
           <TextField label="Valor base" min={0} required step="1" type="number" value={form.price || ""} onChange={(value) => setForm({ ...form, price: Number(value || 0) })} />
           <TextField label="Prazo padrão" maxLength={80} value={form.deadline} onChange={(value) => setForm({ ...form, deadline: value })} />
+          <TextField label="URL da imagem" placeholder="Opcional: https://..." type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
           <TextAreaField label="Itens inclusos" maxLength={1200} value={form.includes} onChange={(value) => setForm({ ...form, includes: value })} />
           <CsvImportBox<ServiceItem>
             kind="services"
-            sampleHeaders={["servico", "valor_base", "prazo_padrao", "itens_inclusos"]}
+            sampleHeaders={["servico", "valor_base", "prazo_padrao", "itens_inclusos", "imagem_url"]}
             onImported={(created) => onChange([...created, ...services])}
           />
           <SubmitButton label={editingId ? "Atualizar serviço" : "Salvar serviço"} />
@@ -2477,7 +2819,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
               type="button"
               onClick={() => {
                 setEditingId(null);
-                setForm({ name: "", price: 0, deadline: "", includes: "" });
+                setForm({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
               }}
             >
               Cancelar edicao
@@ -2491,7 +2833,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
           key={service.id}
           title={service.name}
           subtitle={`${money.format(service.price)} | ${service.deadline || "Prazo a combinar"}`}
-          detail={service.includes.join(", ")}
+          detail={[service.imageUrl ? "Com imagem vinculada" : "", service.includes.join(", ")].filter(Boolean).join(" | ")}
           onEdit={() => {
             setEditingId(service.id);
             setForm({
@@ -2499,6 +2841,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
               price: service.price,
               deadline: service.deadline || "",
               includes: service.includes.join("\n"),
+              imageUrl: service.imageUrl || "",
             });
           }}
           onRemove={() => removeService(service.id)}
@@ -2591,9 +2934,9 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
 
   return (
     <CrudShell
-      eyebrow="Cadastro"
-      title="Portfolio"
-      description="Guarde trabalhos para mostrar dentro da proposta."
+      eyebrow="Seus trabalhos"
+      title="Portfólio"
+      description="Mostre trabalhos anteriores dentro da proposta. Fotos e projetos reais aumentam a confiança do cliente antes do aceite."
       form={
         <form
           className="grid gap-3"
@@ -2726,9 +3069,9 @@ function TestimonialsView({
 
   return (
     <CrudShell
-      eyebrow="Cadastro"
+      eyebrow="Prova social"
       title="Depoimentos"
-      description="Reforce prova social nas propostas enviadas."
+      description="Depoimentos aparecem na proposta antes do cliente aceitar. Quem fala bem de você vende por você."
       form={
         <form
           className="grid gap-3"
@@ -2803,9 +3146,6 @@ function TemplatesView({
   const pageSize = 12;
   const totalPages = Math.max(1, Math.ceil(proposalTemplates.length / pageSize));
   const visibleTemplates = proposalTemplates.slice((page - 1) * pageSize, page * pageSize);
-  const firstVisible = proposalTemplates.length ? (page - 1) * pageSize + 1 : 0;
-  const lastVisible = Math.min(page * pageSize, proposalTemplates.length);
-
   useEffect(() => {
     setPage((current) => Math.min(current, totalPages));
   }, [totalPages]);
@@ -2877,33 +3217,6 @@ function TemplatesView({
         </button>
         {customTemplates.length ? <p className="text-sm font-bold text-slate-500">{customTemplates.length} template(s) importado(s) salvos.</p> : null}
       </form>
-
-      <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-bold text-slate-600">
-          Mostrando {firstVisible}-{lastVisible} de {proposalTemplates.length} templates
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
-            disabled={page <= 1}
-            type="button"
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-          >
-            Anterior
-          </button>
-          <span className="min-w-20 text-center text-sm font-black text-slate-600">
-            {page}/{totalPages}
-          </span>
-          <button
-            className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
-            disabled={page >= totalPages}
-            type="button"
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-          >
-            Proxima
-          </button>
-        </div>
-      </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
         {visibleTemplates.map((template) => (
@@ -3112,9 +3425,9 @@ function MarketingArtsView({
 
         <div>
           <p className="text-xs font-black uppercase text-blue-700">Artes de divulgação</p>
-          <h2 className="text-2xl font-black">Solicitar arte de divulgação</h2>
+          <h2 className="text-2xl font-black">Criar arte de divulgação</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Preencha o pedido para a equipe preparar a arte. Depois ela anexa a imagem pronta para sua aprovação.
+            Peça uma arte para divulgar seu serviço no Instagram ou WhatsApp. A equipe prepara e você aprova antes de baixar.
           </p>
         </div>
 
@@ -3481,7 +3794,7 @@ function PlansView({
         <p className="text-xs font-black uppercase text-blue-700">Assinatura</p>
         <h2 className="text-2xl font-black">Planos do FechaPro</h2>
         <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Escolha um plano e pague online em ambiente seguro. O acesso para criar propostas é liberado quando o Mercado Pago confirmar o pagamento.
+          Escolha o plano ideal e pague com segurança pelo Mercado Pago. O acesso é liberado imediatamente após a confirmação.
         </p>
         {paymentError ? (
           <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{paymentError}</p>
@@ -3521,7 +3834,7 @@ function PlansView({
                 <span className="text-xs font-black uppercase text-blue-700">{active ? "Plano atual" : "Plano"}</span>
                 <h3 className="mt-1 text-2xl font-black">{plan.name}</h3>
                 {plan.code === "premium_site" ? (
-                  <p className="mt-2 text-xs font-black uppercase text-green-700">Oferta até 03/06</p>
+                  <p className="mt-2 text-xs font-black uppercase text-green-700">Pacote completo anual</p>
                 ) : null}
                 {plan.code === "premium_site" ? (
                   <p className="mt-1 text-sm font-black text-slate-400 line-through">R$ 2.997/ano</p>
@@ -3535,7 +3848,7 @@ function PlansView({
                 ) : null}
                 {plan.code === "premium_site" ? (
                   <p className="mt-2 rounded-lg bg-green-50 p-3 text-xs font-black leading-5 text-green-900">
-                    Condição especial de lançamento para os primeiros clientes até 03/06.
+                    Sistema, mini site, implantação assistida, materiais comerciais e treinamento.
                   </p>
                 ) : null}
               </div>
@@ -3829,9 +4142,9 @@ function SupportView({ session }: { session: { name: string; email: string } }) 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase text-blue-700">Suporte</p>
-            <h2 className="mt-1 text-2xl font-black">Fale com o administrador</h2>
+            <h2 className="mt-1 text-2xl font-black">Fale com a equipe</h2>
             <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-slate-600">
-              Envie sua duvida, erro ou pedido de ajuda. A resposta aparece aqui na conversa.
+              Envie sua dúvida, relato de erro ou pedido de ajuda. A resposta aparece aqui na conversa.
             </p>
           </div>
           <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadSupport}>
@@ -3930,7 +4243,7 @@ function BrandView({
   session: { name: string; email: string };
 }) {
   const [form, setForm] = useState<BrandProfile>(
-    brand || {
+    brand ? { ...brand, whatsapp: maskPhone(brand.whatsapp || "") } : {
       businessName: session.name,
       logoUrl: null,
       primaryColor: "#22C55E",
@@ -3958,7 +4271,7 @@ function BrandView({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (brand) setForm(brand);
+    if (brand) setForm({ ...brand, whatsapp: maskPhone(brand.whatsapp || "") });
   }, [brand]);
 
   async function saveBrand(event: React.FormEvent<HTMLFormElement>) {
@@ -4018,7 +4331,7 @@ function BrandView({
           <p className="text-xs font-black uppercase text-blue-700">Configuração</p>
           <h2 className="text-2xl font-black">Marca profissional</h2>
           <p className="mt-2 leading-7 text-slate-600">
-            Esses dados aparecem na proposta pública, no PDF e no contato por WhatsApp.
+            Sua identidade visual aparece em todas as propostas enviadas. Marca completa transmite mais confiança e aumenta o fechamento.
           </p>
         </div>
 
@@ -4067,7 +4380,7 @@ function BrandView({
               />
             </label>
           </div>
-          <TextField label="WhatsApp" autoComplete="tel" maxLength={20} placeholder="5511999999999" value={form.whatsapp || ""} onChange={(value) => setForm({ ...form, whatsapp: value })} />
+          <TextField label="WhatsApp" autoComplete="tel" maxLength={15} placeholder="(11) 99999-9999" value={form.whatsapp || ""} onChange={(value) => setForm({ ...form, whatsapp: maskPhone(value) })} />
           <TextField label="Chave PIX" maxLength={120} placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatoria" value={form.pixKey || ""} onChange={(value) => setForm({ ...form, pixKey: value })} />
           <TextField label="Instagram" maxLength={60} placeholder="@seuperfil" value={form.instagram || ""} onChange={(value) => setForm({ ...form, instagram: value })} />
           <TextField label="E-mail comercial" autoComplete="email" type="email" value={form.email || ""} onChange={(value) => setForm({ ...form, email: value })} />
@@ -4250,12 +4563,14 @@ function CsvImportBox<T>({
 
 function CrudShell({
   children,
+  contentClassName = "",
   description,
   eyebrow,
   form,
   title,
 }: {
   children: React.ReactNode;
+  contentClassName?: string;
   description: string;
   eyebrow: string;
   form: React.ReactNode;
@@ -4271,7 +4586,7 @@ function CrudShell({
         </div>
         {form}
       </aside>
-      <div className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+      <div className={`grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 ${contentClassName}`}>
         {children || <p className="leading-7 text-slate-600">Nenhum registro cadastrado ainda.</p>}
       </div>
     </section>
@@ -4333,9 +4648,9 @@ function AuthScreen() {
     },
   ];
   const salesProof = [
-    { value: "12 meses", label: "de sistema no Premium" },
-    { value: "Até 7 dias", label: "para receber a estrutura pronta" },
-    { value: "R$ 1.500", label: "na oferta de lançamento" },
+    { value: "12 meses", label: "de FechaPro incluso" },
+    { value: "Implantação", label: "para começar acompanhado" },
+    { value: "R$ 1.500", label: "no pacote completo anual" },
   ];
   const dealLeaks = [
     "Você apresenta a empresa em mensagens, fotos e áudios espalhados quando o cliente precisa decidir.",
@@ -4426,33 +4741,33 @@ function AuthScreen() {
       code: "pro",
       name: "Apresentação Profissional",
       price: "R$ 197",
-      priceSuffix: "/mês ou R$ 1.497/ano",
+      priceSuffix: "/mês ou R$ 1.200/ano",
       cta: "Ver plano menor",
       detail: "Para quem vende com frequência e quer propostas mais completas, visuais e fáceis de acompanhar.",
-      items: ["120 propostas por mês", "Tudo do Inicial", "Modelos mais completos", "Personalização visual", "Portfólio e proposta mais fortes", "10 artes para divulgar por mês", "Suporte melhor"],
+      items: ["120 propostas por mês", "Tudo do Start", "Personalização visual", "Portfólio dentro da proposta", "Depoimentos de clientes", "Termos comerciais e aceite profissional", "Visualizações e cliques no WhatsApp", "10 artes por mês", "Mensagens de envio e follow-up", "Suporte prioritário"],
     },
     {
       code: "premium_site",
       name: "Estrutura Comercial Completa",
-      price: "12x de R$ 125",
-      priceSuffix: "Premium com Site por R$ 1.500/ano até 03/06",
+      price: "R$ 1.500 anual",
+      priceSuffix: "ou 12x de R$ 150",
       promoPrice: "De R$ 2.997",
       badge: "Melhor escolha para vender agora",
       cta: "Reservar minha implantação",
-      detail: "Ideal para sair do improviso e começar a vender com apresentação profissional ainda esta semana.",
-      items: ["12 meses de FechaPro", "Mini site profissional", "Implantação e configuração inicial", "Primeiras propostas criadas", "PDF profissional", "Portfólio organizado", "Link para enviar no WhatsApp", "Botão de aceite da proposta", "20 artes mensais de divulgação", "Kit de mensagens para copiar e adaptar", "Calendário de divulgação de 7 dias", "Treinamento rápido para usar"],
+      detail: "Para quem quer sair com sistema, presença digital, materiais comerciais e implantação prontos.",
+      items: ["12 meses de FechaPro", "600 propostas por mês", "Link profissional, PDF e aceite online", "WhatsApp e pagamento na proposta", "Mini site profissional", "Diagnóstico Comercial do Instagram", "Ajuste da logo para uso comercial", "5 artes iniciais + 20 artes mensais", "Ideias, legendas e chamadas para posts", "Mensagens prontas de abordagem e follow-up", "Configuração de marca, serviços, WhatsApp e PIX", "Primeira proposta criada com você", "Treinamento rápido"],
     },
   ];
   const commercialStructure = [
     "Configuração inicial da marca",
-    "Primeiras propostas criadas",
+    "Primeira proposta criada com você",
     "Cadastro dos principais serviços",
     "Modelo de proposta por nicho",
-    "Kit de mensagens para envio e follow-up",
-    "Formulário de satisfação pós-serviço",
+    "Mensagens prontas para abordagem e follow-up",
+    "Diagnóstico Comercial do Instagram",
     "Treinamento rápido e apoio inicial",
     "Artes de divulgação conforme o plano",
-    "Site ou página nos planos completos",
+    "Mini site profissional no pacote completo",
   ];
   const practicalValue = [
     { icon: FileText, title: "Proposta que vende valor", text: "Mostre escopo, prazo, investimento e condições em uma apresentação profissional." },
@@ -4460,7 +4775,7 @@ function AuthScreen() {
     { icon: ImageIcon, title: "Provas no lugar certo", text: "Portfólio e depoimentos aparecem junto da proposta, no momento em que o cliente decide." },
     { icon: MessageSquareQuote, title: "Satisfação e depoimentos", text: "Depois do serviço, peça avaliação e transforme clientes satisfeitos em prova social para próximas vendas." },
     { icon: Megaphone, title: "Artes para puxar demanda", text: "Tenha materiais para postar, divulgar serviços e chamar novas conversas pelo WhatsApp." },
-    { icon: LayoutDashboard, title: "Premium pronto", text: "Receba mini site, configuração, propostas iniciais e orientação para começar sem ficar montando tudo sozinho." },
+    { icon: LayoutDashboard, title: "Estrutura pronta", text: "Receba mini site, configuração, primeira proposta e orientação para começar sem ficar montando tudo sozinho." },
   ];
   const faqs = [
     {
@@ -4469,11 +4784,11 @@ function AuthScreen() {
     },
     {
       question: "É só acesso ao sistema?",
-      answer: "Não. Os planos trazem modelos e recursos para começar; no Premium com Site, você recebe implantação, primeiras propostas, kit de mensagens, treinamento rápido, artes e presença profissional conforme o pacote.",
+      answer: "Não. Os planos trazem modelos e recursos para começar; na Estrutura Comercial Completa, você recebe implantação, mini site, diagnóstico do Instagram, ajuste simples da logo, mensagens prontas, artes, treinamento rápido e presença profissional conforme o pacote.",
     },
     {
       question: "Preciso configurar tudo sozinho?",
-      answer: "Não. No Premium com Site, a equipe do FechaPro configura a estrutura inicial, organiza portfólio, cria as primeiras propostas e entrega o caminho para você sair usando.",
+      answer: "Não. Na Estrutura Comercial Completa, a equipe do FechaPro configura a estrutura inicial, organiza portfólio, cadastra os primeiros serviços, cria a primeira proposta com você e entrega o caminho para sair usando.",
     },
     {
       question: "Posso cancelar?",
@@ -4481,11 +4796,11 @@ function AuthScreen() {
     },
     {
       question: "As artes são feitas por vocês?",
-      answer: "No Premium com Site, você tem 20 imagens por mês. No plano Pro, você também tem créditos mensais para artes.",
+      answer: "Na Estrutura Comercial Completa, você recebe 5 artes iniciais e 20 artes por mês. No plano Pro, você também tem créditos mensais para artes.",
     },
     {
       question: "Qual plano devo escolher para vender mais rápido?",
-      answer: "O Premium com Site é o caminho mais direto: por R$ 1.500/ano na oferta, você recebe sistema por 12 meses, mini site, configuração inicial, primeiras propostas, modelos de mensagens, artes mensais e orientação para começar com mais clareza.",
+      answer: "A Estrutura Comercial Completa é o caminho mais direto: por R$ 1.500/ano, você recebe sistema por 12 meses, mini site, implantação assistida, diagnóstico do Instagram, ajuste simples da logo, mensagens prontas, artes iniciais, artes mensais e orientação para começar com mais clareza.",
     },
     {
       question: "Qual é o limite do site?",
@@ -4497,7 +4812,7 @@ function AuthScreen() {
     },
     {
       question: "O sistema envia mensagens automáticas para o cliente?",
-      answer: "Não. O FechaPro mostra visualizações, aceite, recusa e cliques para você fazer follow-up manual com mais contexto. As mensagens do Premium são modelos para copiar, adaptar e enviar.",
+      answer: "Não. O FechaPro mostra visualizações, aceite, recusa e cliques para você fazer follow-up manual com mais contexto. As mensagens do pacote completo são modelos para copiar, adaptar e enviar.",
     },
     {
       question: "O FechaPro emite nota fiscal?",
@@ -4546,11 +4861,11 @@ function AuthScreen() {
         operatingSystem: "Web",
         url: siteUrl,
         image: `${siteUrl}/landing/hero-proposta.png`,
-        description: "Estrutura comercial para prestadores apresentarem, enviarem e acompanharem propostas profissionais com marca, portfólio, PDF, aceite e apoio para começar.",
+        description: "Estrutura comercial para prestadores apresentarem, enviarem e acompanharem propostas profissionais com marca, portfólio, PDF, aceite, mini site, materiais comerciais e apoio para começar.",
         offers: plans.map((plan) => ({
           "@type": "Offer",
           name: plan.name,
-          price: plan.price.replace("R$ ", ""),
+          price: plan.code === "premium_site" ? "1500" : plan.price.replace("R$ ", ""),
           priceCurrency: "BRL",
           availability: "https://schema.org/InStock",
         })),
@@ -4592,7 +4907,7 @@ function AuthScreen() {
     />
     <div className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950 px-2 py-1.5 text-white shadow-xl shadow-black/20">
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 text-[11px] font-black sm:gap-3 sm:text-sm">
-        <span className="hidden text-white/82 sm:inline">Oferta de lançamento</span>
+        <span className="hidden text-white/82 sm:inline">Pacote completo com implantação</span>
         <span className="text-green-300">{timeUntilOfferEnds.expired ? "Oferta encerrada" : "Encerra em"}</span>
         <span className="grid grid-flow-col gap-1" aria-label={`Faltam ${timeUntilOfferEnds.days} dias, ${timeUntilOfferEnds.hours} horas e ${timeUntilOfferEnds.minutes} minutos para a oferta encerrar`}>
           {[
@@ -4606,7 +4921,7 @@ function AuthScreen() {
             </span>
           ))}
         </span>
-        <span className="hidden text-white/82 md:inline">Premium com Site por R$ 1.500/ano. Depois volta para R$ 2.997.</span>
+        <span className="hidden text-white/82 md:inline">Estrutura Comercial Completa por R$ 1.500/ano. Sistema, mini site, materiais e implantação assistida.</span>
         <a className="rounded-md bg-green-500 px-2.5 py-1 text-slate-950" href="#planos">Ver oferta</a>
       </div>
     </div>
@@ -4688,8 +5003,8 @@ function AuthScreen() {
                 O FechaPro ajuda prestadores de serviço a saírem do orçamento improvisado e criarem propostas com marca, fotos, detalhes, PDF, link, aceite online e acompanhamento.
               </p>
               <div className="fp-landing-note motion-shine mt-5 rounded-lg border border-green-300/35 bg-green-300/12 p-4">
-                <p className="text-sm font-black text-green-100">Oferta até 03/06: Premium com Site por R$1.500/ano, menos que muitos serviços fechados com uma única proposta.</p>
-                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Depois da oferta, o Premium volta para R$ 2.997.</p>
+                <p className="text-sm font-black text-green-100">Planos a partir de R$ 97/mês. Pacote completo com implantação por R$ 1.500 anual.</p>
+                <p className="mt-1 text-xs font-bold leading-5 text-white/70">Sistema, mini site, materiais comerciais e apoio para começar com tudo pronto.</p>
               </div>
               <p className="mt-4 max-w-2xl text-sm font-bold leading-6 text-white/80">
                 Feito para quem quer apresentar valor, transmitir confiança e conduzir o próximo passo sem depender de áudio, texto solto e desconto.
@@ -4808,16 +5123,16 @@ function AuthScreen() {
       <section className="fp-landing-band border-b border-black/10 bg-green-50">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase text-green-700">Condição especial de lançamento</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Plano Completo Anual Promocional por R$ 1.500.</h2>
+            <p className="text-xs font-black uppercase text-green-700">Pacote de maior valor</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Estrutura Comercial Completa por R$ 1.500 anual.</h2>
             <p className="mt-4 max-w-4xl text-sm font-bold leading-6 text-slate-700 sm:text-base sm:leading-7">
-              Você recebe: acesso anual ao FechaPro, implantação inicial, configuração da marca, primeira proposta criada, kit de mensagens, treinamento rápido e apoio para começar a vender melhor ainda esta semana.
+              Você recebe: acesso anual ao FechaPro, mini site profissional, implantação inicial, configuração da marca, primeira proposta criada, kit de mensagens, diagnóstico do Instagram, ajuste simples da logo, artes iniciais, treinamento rápido e apoio para começar a vender melhor.
             </p>
             <p className="mt-3 max-w-4xl text-sm font-black leading-6 text-green-800">
-              Completo mensal: R$ 297/mês + R$ 997 implantação = R$ 1.294 no primeiro mês. Completo anual promocional: R$ 1.500 pelo ano. Por uma diferença pequena, você pega o ano inteiro.
+              Em vez de vender só acesso ao sistema, o pacote entrega FechaPro por 12 meses, mini site, implantação, mensagens prontas, diagnóstico do Instagram, ajuste simples da logo e materiais para vender com mais profissionalismo.
             </p>
             <p className="mt-2 max-w-4xl text-sm font-bold leading-6 text-slate-700">
-              Vagas limitadas para implantação com primeira proposta criada. Após o período promocional, o plano volta para o valor normal.
+              Se fosse contratar separado, sistema, site, artes, ajuste de logo, mensagens comerciais, configuração e treinamento sairiam muito mais caro. Aqui fica tudo em um pacote para vender com mais profissionalismo.
             </p>
           </div>
           <a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-6 font-black text-white" href="#planos">
@@ -5220,28 +5535,28 @@ function AuthScreen() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-black uppercase text-green-300">Planos</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Escolha sua estrutura comercial FechaPro.</h2>
+            <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Planos a partir de R$ 97/mês. Pacote completo para quem quer começar com tudo pronto.</h2>
             <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-              Se você vende serviços por orçamento, pacote ou proposta personalizada, o plano completo é o melhor caminho porque já inclui implantação, primeira proposta pronta e estrutura comercial para começar rápido.
+              Se você vende serviços por orçamento, pacote ou proposta personalizada, pode começar simples. Mas se quiser sair com sistema, presença digital, materiais comerciais e implantação, a Estrutura Comercial Completa é a oferta mais forte.
             </p>
           </div>
 
           <div className="fp-landing-offer motion-shine mt-7 rounded-lg border border-green-300/30 bg-green-300/10 p-5">
-            <p className="text-xs font-black uppercase text-green-200">Condição especial de lançamento</p>
-            <h3 className="mt-2 text-2xl font-black">Você recebe acesso anual, implantação, primeira proposta pronta e materiais para sair do improviso já na primeira semana.</h3>
+            <p className="text-xs font-black uppercase text-green-200">Estrutura Comercial Completa</p>
+            <h3 className="mt-2 text-2xl font-black">Você recebe uma estrutura comercial pronta, não apenas acesso a um sistema.</h3>
             <p className="mt-3 max-w-3xl text-sm font-bold leading-6 text-white/82">
-              Por R$ 1.500/ano, você leva 12 meses de FechaPro, mini site profissional, implantação inicial, configuração da marca, primeira proposta criada, portfólio organizado, PDF, aceite online, 20 artes por mês, calendário de divulgação e kit de mensagens.
+              Por R$ 1.500 anual, você leva 12 meses de FechaPro, propostas com link e PDF, aceite online, acompanhamento de visualizações, botão de WhatsApp e pagamento, portfólio, depoimentos, mini site profissional, configuração da marca, diagnóstico do Instagram, ajuste simples da logo, artes iniciais, mensagens prontas e treinamento rápido.
             </p>
             <p className="mt-3 max-w-3xl text-sm font-black leading-6 text-green-100">
-              Se uma única venda recuperada pagar esse valor, o sistema já deixou de ser custo e virou ferramenta de fechamento.
+              Se essa estrutura ajudar a fechar 1 ou 2 serviços que antes você perderia, ela já começa a se pagar.
             </p>
             <p className="mt-2 max-w-3xl text-sm font-black leading-6 text-green-100">
-              Condição especial para os primeiros clientes com implantação assistida.
+              A ideia é você sair com uma estrutura pronta para vender melhor, não apenas com login e senha.
             </p>
             <div className="mt-4 grid gap-2 rounded-lg border border-white/15 bg-slate-950/60 p-4 text-sm font-bold leading-6 text-white/82 sm:grid-cols-3">
-              <span>Mensal + implantação: R$ 1.294 no primeiro mês</span>
-              <span>Anual promocional: R$ 1.500 pelo ano</span>
-              <span className="text-green-200">Por uma diferença pequena, você pega 12 meses</span>
+              <span>Planos a partir de R$ 97/mês</span>
+              <span>Pacote completo: R$ 1.500 anual</span>
+              <span className="text-green-200">Também pode ser apresentado como 12x de R$ 150</span>
             </div>
           </div>
 
@@ -5358,47 +5673,53 @@ function LandingMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-const currentUpdates = [
+const salesValueUpdates = [
   {
     icon: FileText,
-    title: "Proposta e PDF mais alinhados",
-    description: "Escolha tipo de documento e segmento visual para deixar link público e PDF com cara do serviço vendido.",
-    tag: "Disponível",
+    title: "Propostas que passam mais confianca",
+    description: "Link publico, PDF profissional, aceite online, recusa com motivo, reenvio e copia para montar novas vendas sem recomecar do zero.",
+    tag: "Venda",
   },
   {
-    icon: Settings,
-    title: "Edição de proposta salva",
-    description: "Corrija cliente, valor, escopo, documento, segmento e forma de recebimento sem recriar a proposta.",
-    tag: "Novo",
+    icon: BarChart3,
+    title: "Acompanhamento para puxar o fechamento",
+    description: "Veja status, visualizacoes, cliques no WhatsApp, aceite, pagamento e historico para saber quem precisa de follow-up agora.",
+    tag: "Controle",
   },
   {
     icon: Layers3,
-    title: "Templates e pacotes",
-    description: "Use modelos por nicho ou combine vários serviços cadastrados em uma proposta única com valor total.",
-    tag: "Novo",
+    title: "Modelos, pacotes e nichos prontos",
+    description: "Use templates por segmento, combine varios servicos, salve ofertas recorrentes e mantenha preco, prazo e escopo padronizados.",
+    tag: "Rapidez",
   },
   {
     icon: CreditCard,
     title: "Recebimento por proposta",
-    description: "Defina Mercado Pago ou PIX direto em cada proposta, com QR Code e copia e cola quando usar sua chave PIX.",
-    tag: "Ativo",
+    description: "Defina Mercado Pago ou PIX direto em cada proposta, com QR Code, copia e cola e acompanhamento de pagamento no fluxo integrado.",
+    tag: "Caixa",
   },
   {
     icon: Palette,
-    title: "Artes de divulgação guiadas",
-    description: "Envie briefing, acompanhe aprovação, copie legenda, copie mensagem para WhatsApp e baixe a arte final.",
-    tag: "Novo",
+    title: "Divulgacao pronta para atrair clientes",
+    description: "Solicite artes para post, story e status, envie referencias, acompanhe aprovacao, copie legenda e mensagem para chamar no WhatsApp.",
+    tag: "Atracao",
+  },
+  {
+    icon: BriefcaseBusiness,
+    title: "Marca, portfolio e prova social",
+    description: "Logo, cores, contatos, chave PIX, portfolio, depoimentos e textos comerciais entram na proposta e reforcam autoridade.",
+    tag: "Autoridade",
   },
 ];
 
 const upcomingFeatures = [
-  "Fechamento pelo WhatsApp com ações em um clique.",
-  "Reengajamento de clientes que abriram a proposta e não responderam.",
-  "Timeline única com abertura, aceite, pagamento e conversa.",
-  "Editor rápido com bônus, garantias e comparação de planos.",
-  "Relatórios de conversão e receita por serviço.",
+  "Fechamento pelo WhatsApp com acoes em um clique.",
+  "Reengajamento de clientes que abriram a proposta e nao responderam.",
+  "Timeline unica com abertura, aceite, pagamento e conversa.",
+  "Editor rapido com bonus, garantias e comparacao de planos.",
+  "Relatorios de conversao e receita por servico.",
   "Portal do cliente com status, arquivos e checklist.",
-  "Histórico de e-mails enviados e novos controles de entrega.",
+  "Historico de e-mails enviados e novos controles de entrega.",
 ];
 
 function ProductUpdatesModal({
@@ -5426,13 +5747,13 @@ function ProductUpdatesModal({
       <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-lg border border-black/10 bg-white shadow-xl shadow-slate-950/30 sm:mx-auto sm:max-w-2xl sm:rounded-lg">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-black/10 bg-white p-4 sm:p-5">
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase text-green-700">Novidades do FechaPro</p>
+            <p className="text-xs font-black uppercase text-green-700">O que o FechaPro entrega</p>
             <h2 id="updates-modal-title" className="mt-1 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              Veja o que mudou no seu painel
+              Valor claro para vender melhor
             </h2>
           </div>
           <button
-            aria-label="Fechar novidades"
+            aria-label="Fechar resumo do FechaPro"
             className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-black/10 bg-white text-slate-800"
             type="button"
             onClick={onClose}
@@ -5445,9 +5766,9 @@ function ProductUpdatesModal({
           <section className="rounded-lg bg-slate-950 p-4 text-white sm:p-5">
             <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
               <div>
-                <p className="text-xs font-black uppercase text-green-200">Agora no painel</p>
+                <p className="text-xs font-black uppercase text-green-200">Resumo comercial</p>
                 <p className="mt-2 text-lg font-black leading-snug">
-                  Propostas mais fáceis de ajustar, recebimento por proposta e artes de divulgação já estão prontos para usar.
+                  O FechaPro junta proposta bonita, acompanhamento, pagamento, portfolio, depoimentos e divulgacao para o cliente perceber valor antes de discutir preco.
                 </p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
@@ -5458,8 +5779,8 @@ function ProductUpdatesModal({
           </section>
 
           <section className="grid gap-3">
-            <p className="text-xs font-black uppercase text-green-700">Recursos disponíveis</p>
-            {currentUpdates.map((item) => {
+            <p className="text-xs font-black uppercase text-green-700">Argumentos para vender</p>
+            {salesValueUpdates.map((item) => {
               const Icon = item.icon;
               return (
                 <article className="grid grid-cols-[auto_1fr] gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:p-4" key={item.title}>
@@ -5481,9 +5802,9 @@ function ProductUpdatesModal({
           </section>
 
           <section className="rounded-lg border border-black/10 p-4">
-            <p className="text-xs font-black uppercase text-blue-700">Próximos recursos</p>
+            <p className="text-xs font-black uppercase text-blue-700">Proximos recursos</p>
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-              Estes itens estão planejados e podem mudar de ordem ou formato conforme os testes do produto.
+              Estes itens estao planejados para aumentar fechamento, recompra e clareza no atendimento comercial.
             </p>
             <div className="mt-3 grid gap-4">
               {nextFeatureGroups.map((group) => (
@@ -6128,22 +6449,29 @@ function ProposalCard({
   onStatusChange: (status: ProposalStatus) => void;
   proposal: Proposal;
 }) {
+  const [showMore, setShowMore] = useState(false);
   const isExpired = proposal.status === "expired";
   const canResend = isExpired || proposal.status === "declined";
+  const publicUrl = proposal.publicSlug ? `${getPublicAppUrl()}/p/${proposal.publicSlug}` : "";
+  const whatsappUrl = proposal.publicSlug
+    ? `https://wa.me/?text=${encodeURIComponent(`Oi, ${proposal.clientName}! Preparei sua proposta de ${proposal.serviceName} com escopo, valor, prazo, PDF e aceite online. Pode acessar aqui: ${publicUrl}`)}`
+    : "";
+  const currentStatusConfig = statusConfig[proposal.status];
 
   return (
     <article className="grid gap-3 rounded-lg border border-black/10 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-black">{proposal.clientName}</h3>
-            {isExpired && (
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-black text-orange-700">
-                Expirado
+            {currentStatusConfig ? (
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${currentStatusConfig.className}`}>
+                {currentStatusConfig.label}
               </span>
-            )}
+            ) : null}
           </div>
           <p className="mt-1 leading-6 text-slate-600">{proposal.serviceName}</p>
+          <p className="mt-1 text-sm font-bold leading-5 text-slate-500">{proposalStatusHelp(proposal)}</p>
         </div>
         <IconButton
           label="Remover proposta"
@@ -6158,136 +6486,164 @@ function ProposalCard({
         <span className="text-sm font-bold text-slate-500">{proposal.deadline}</span>
       </div>
       {proposal.publicSlug ? (
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <a
-            className="rounded-lg bg-slate-100 px-3 py-2 text-center text-sm font-black text-green-700"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Send className="shrink-0" size={15} />
+            WhatsApp
+          </a>
+          <a
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-center text-sm font-black text-green-700"
             href={`/p/${proposal.publicSlug}`}
             target="_blank"
+            rel="noreferrer"
           >
-            Ver online
+            <Eye className="shrink-0" size={15} />
+            Ver proposta
           </a>
-          <a
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700"
-            href={`/p/${proposal.publicSlug}/pdf`}
-            target="_blank"
-          >
-            <FileDown size={15} />
-            PDF
-          </a>
-          <a
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
-            href={`/p/${proposal.publicSlug}/contrato`}
-            target="_blank"
-          >
-            <FileDown size={15} />
-            Contrato
-          </a>
-          {currentPlan && canUseProposalSlides(currentPlan) ? (
-            <a
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-black text-white"
-              href={`/p/${proposal.publicSlug}/slides`}
-              target="_blank"
-            >
-              <Presentation size={15} />
-              Slides
-            </a>
-          ) : null}
           <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
             type="button"
             onClick={onCopyLink}
           >
-            <Copy size={15} />
+            <Copy className="shrink-0" size={15} />
             Copiar link
           </button>
+          <a
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700"
+            href={`/p/${proposal.publicSlug}/pdf`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <FileDown className="shrink-0" size={15} />
+            PDF
+          </a>
         </div>
       ) : null}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {(Object.keys(statusConfig) as ProposalStatus[]).map((status) => {
-          const config = statusConfig[status]!;
-          const Icon = config.icon;
-          const active = proposal.status === status;
-          return (
-            <button
-              className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-2 text-xs font-black ${
-                active ? config.className : "bg-white text-slate-500"
-              }`}
-              key={status}
-              type="button"
-              onClick={() => onStatusChange(status)}
-            >
-              <Icon size={15} />
-              {config.label}
-            </button>
-          );
-        })}
-      </div>
-      <div className="grid gap-2 sm:grid-cols-3">
-        {proposal.status === "accepted" && !proposal.satisfactionSurvey?.respondedAt ? (
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-sm font-black text-blue-700"
-            type="button"
-            onClick={onSatisfactionSurveySend}
-          >
-            <MessageSquareQuote size={15} />
-            {proposal.satisfactionSurvey?.sentAt ? "Reenviar pesquisa" : "Finalizar e pesquisar"}
-          </button>
-        ) : null}
-        {proposal.satisfactionSurvey?.serviceCompletedAt && !proposal.satisfactionSurvey?.respondedAt ? (
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-sm font-black text-blue-700"
-            type="button"
-            onClick={onSatisfactionSurveyLinkCopy}
-          >
-            <Copy size={15} />
-            Link pesquisa
-          </button>
-        ) : null}
-        {proposal.satisfactionSurvey?.respondedAt ? (
-          <span className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700">
-            <MessageSquareQuote size={15} />
-            Avaliado
-          </span>
-        ) : null}
-        {canResend && (
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-            type="button"
-            onClick={onResend}
-          >
-            <RotateCcw size={15} />
-            Reenviar
-          </button>
-        )}
-        {onOpenDetail ? (
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-            type="button"
-            onClick={onOpenDetail}
-          >
-            <FileText size={15} />
-            Detalhes
-          </button>
-        ) : null}
-        {onEdit ? (
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-            type="button"
-            onClick={onEdit}
-          >
-            <Settings size={15} />
-            Editar
-          </button>
-        ) : null}
-        <button
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-          type="button"
-          onClick={onDuplicate}
-        >
-          <Files size={15} />
-          Duplicar
-        </button>
-      </div>
+      <button
+        className="justify-self-start text-sm font-black text-slate-500 underline-offset-2 hover:underline"
+        type="button"
+        onClick={() => setShowMore((v) => !v)}
+      >
+        {showMore ? "Menos ações" : "Mais ações"}
+      </button>
+      {showMore ? (
+        <>
+          {proposal.publicSlug ? (
+            <div className="grid gap-2 sm:grid-cols-3">
+              {proposal.status === "accepted" ? (
+                <a
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
+                  href={`/p/${proposal.publicSlug}/contrato`}
+                  target="_blank"
+                >
+                  <FileDown className="shrink-0" size={15} />
+                  Contrato
+                </a>
+              ) : null}
+              {currentPlan && canUseProposalSlides(currentPlan) ? (
+                <a
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-black text-white"
+                  href={`/p/${proposal.publicSlug}/slides`}
+                  target="_blank"
+                >
+                  <Presentation className="shrink-0" size={15} />
+                  Slides
+                </a>
+              ) : null}
+              {canResend ? (
+                <button
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                  type="button"
+                  onClick={onResend}
+                >
+                  <RotateCcw className="shrink-0" size={15} />
+                  Reenviar
+                </button>
+              ) : null}
+              {onOpenDetail ? (
+                <button
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                  type="button"
+                  onClick={onOpenDetail}
+                >
+                  <FileText className="shrink-0" size={15} />
+                  Detalhes
+                </button>
+              ) : null}
+              {onEdit ? (
+                <button
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                  type="button"
+                  onClick={onEdit}
+                >
+                  <Settings className="shrink-0" size={15} />
+                  Editar
+                </button>
+              ) : null}
+              <button
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                type="button"
+                onClick={onDuplicate}
+              >
+                <Files className="shrink-0" size={15} />
+                Duplicar
+              </button>
+              {proposal.status === "accepted" && !proposal.satisfactionSurvey?.respondedAt ? (
+                <button
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-center text-sm font-black text-blue-700"
+                  type="button"
+                  onClick={onSatisfactionSurveySend}
+                >
+                  <MessageSquareQuote className="shrink-0" size={15} />
+                  {proposal.satisfactionSurvey?.sentAt ? "Reenviar pesquisa" : "Finalizar e pesquisar"}
+                </button>
+              ) : null}
+              {proposal.satisfactionSurvey?.serviceCompletedAt && !proposal.satisfactionSurvey?.respondedAt ? (
+                <button
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-sm font-black text-blue-700"
+                  type="button"
+                  onClick={onSatisfactionSurveyLinkCopy}
+                >
+                  <Copy className="shrink-0" size={15} />
+                  Link pesquisa
+                </button>
+              ) : null}
+              {proposal.satisfactionSurvey?.respondedAt ? (
+                <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700">
+                  <MessageSquareQuote className="shrink-0" size={15} />
+                  Avaliado
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="grid grid-cols-2 gap-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <p className="col-span-full text-xs font-black uppercase text-slate-400">Mudar status</p>
+            {(Object.keys(statusConfig) as ProposalStatus[]).map((status) => {
+              const config = statusConfig[status]!;
+              const Icon = config.icon;
+              const active = proposal.status === status;
+              return (
+                <button
+                  className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-xs font-black ${
+                    active ? config.className : "bg-white text-slate-500"
+                  }`}
+                  key={status}
+                  type="button"
+                  onClick={() => onStatusChange(status)}
+                >
+                  <Icon className="shrink-0" size={15} />
+                  <span className="min-w-0 text-center leading-4">{config.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
     </article>
   );
 }
@@ -6440,6 +6796,17 @@ function proposalStatusLabel(status: ProposalStatus) {
     expired: "Expirada",
   };
   return labels[status] || status;
+}
+
+function proposalStatusHelp(proposal: Proposal) {
+  if (proposal.status === "draft") return "Ainda não foi enviada. Revise e salve como proposta quando estiver pronta.";
+  if (proposal.status === "sent") return "Cliente ainda não abriu o link. Bom momento para enviar ou lembrar pelo WhatsApp.";
+  if (proposal.status === "viewed") return "Cliente abriu a proposta. Bom momento para chamar e tirar dúvidas.";
+  if (proposal.status === "awaiting_response") return "Cliente interagiu. Vale fazer follow-up com contexto.";
+  if (proposal.status === "accepted") return proposal.paymentStatus === "paid" ? "Proposta aceita e pagamento confirmado." : "Proposta aceita. Confira pagamento e próximos passos.";
+  if (proposal.status === "declined") return "Cliente recusou. Veja o motivo e considere reenviar uma nova versão.";
+  if (proposal.status === "expired") return "Validade encerrada. Reenvie ou duplique para atualizar condições.";
+  return "";
 }
 
 function proposalTimeline(proposal: Proposal) {

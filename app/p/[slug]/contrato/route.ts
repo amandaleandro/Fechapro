@@ -191,8 +191,17 @@ function drawSignatures(doc: PDFKit.PDFDocument, data: ContractPdfData, y: numbe
   const signatureY = ensureSpace(doc, Math.max(y, 630), 120);
 
   doc.strokeColor("#CBD5E1").moveTo(70, signatureY).lineTo(260, signatureY).stroke();
-  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(10).text(data.businessName, 70, signatureY + 12, { width: 190, align: "center" });
-  doc.fillColor("#64748B").font("Helvetica").fontSize(9).text("Contratada", 70, signatureY + 28, { width: 190, align: "center" });
+  const nameFontSize = data.businessName.length > 28 ? 8 : 10;
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(nameFontSize).text(data.businessName, 70, signatureY + 10, {
+    width: 190,
+    align: "center",
+    lineBreak: false,
+    ellipsis: true,
+  });
+  doc.fillColor("#64748B").font("Helvetica").fontSize(9).text("Contratada", 70, signatureY + 10 + nameFontSize + 4, { width: 190, align: "center" });
+
+  const isFallbackDate = data.acceptedAtFull === "Aceite digital registrado";
+  const dateLabel = isFallbackDate ? data.acceptedAtFull : `Aceito em ${data.acceptedAtFull}`;
 
   doc.roundedRect(326, signatureY - 18, 208, 72, 10).fill("#ECFDF5").stroke("#BBF7D0");
   doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8).text("ASSINATURA DIGITAL DO CONTRATANTE", 342, signatureY - 2, {
@@ -201,9 +210,11 @@ function drawSignatures(doc: PDFKit.PDFDocument, data: ContractPdfData, y: numbe
     characterSpacing: 0.5,
   });
   doc.fillColor("#0F172A").fontSize(10).text(data.acceptedBy, 342, signatureY + 17, { width: 176, align: "center" });
-  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(`Aceito digitalmente em ${data.acceptedAtFull}`, 342, signatureY + 34, {
+  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(dateLabel, 342, signatureY + 34, {
     width: 176,
     align: "center",
+    lineBreak: false,
+    ellipsis: true,
   });
 }
 
@@ -213,6 +224,7 @@ function drawContractFooter(doc: PDFKit.PDFDocument, data: ContractPdfData) {
     if (i === range.start) continue;
     doc.switchToPage(i);
     const footerY = 808;
+    doc.page.margins.bottom = 0;
     doc.rect(48, footerY - 6, 499, 1).fill("#E2E8F0");
     doc.fillColor("#94A3B8").font("Helvetica").fontSize(7.5).text(
       `${data.businessName}  ·  Cód. ${data.proposalCode}`,
@@ -222,6 +234,7 @@ function drawContractFooter(doc: PDFKit.PDFDocument, data: ContractPdfData) {
       `${i + 1} / ${range.count}`,
       48, footerY + 4, { width: 499, align: "right" },
     );
+    doc.page.margins.bottom = 48;
   }
 }
 
