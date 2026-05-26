@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard, ShieldCheck } from "lucide-react";
 import { SignupCheckoutClient } from "@/app/checkout/cadastro/[plan]/SignupCheckoutClient";
-import { plans, type PlanCode } from "@/lib/plans";
+import { formatProposalLimit, plans, type PlanCode } from "@/lib/plans";
 
 export default async function SignupCheckoutPage({ params }: { params: Promise<{ plan: string }> }) {
   const { plan: rawPlan } = await params;
@@ -58,16 +58,17 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
                 <CheckoutMetric label={oneTime ? "Pagamento único" : hasSetup ? "Pagamento facilitado" : "Mensalidade recorrente"} value={recurringPrice} />
-                <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mês`} />
+                <CheckoutMetric label="Limite" value={`${formatProposalLimit(plan.proposalLimit)}/mês`} />
               </div>
 
               <div className="rounded-lg border border-black/10 bg-slate-50 p-4">
                 <p className="text-xs font-black uppercase text-blue-700">O que acontece depois</p>
                 <ul className="mt-3 grid gap-2 leading-7 text-slate-700">
-                  {(hasSetup
-                    ? ["Sistema FechaPro por 12 meses", "Mini site profissional de até 5 seções", "Implantação assistida para começar com tudo pronto"]
-                    : ["Pagamento confirmado pelo Mercado Pago", "Cadastro liberado com o plano escolhido", "Conta criada já com plano ativo"]
-                  ).map((item) => (
+                  {[
+                    "Pagamento confirmado pelo Mercado Pago",
+                    "Cadastro liberado com o plano escolhido",
+                    ...(plan.serviceEntitlements?.length ? plan.serviceEntitlements : hasSetup ? ["Implantação assistida para começar com tudo pronto"] : ["Conta criada já com plano ativo"]),
+                  ].map((item) => (
                     <li className="grid grid-cols-[auto_1fr] gap-2 font-bold" key={item}>
                       <CheckCircle2 className="mt-1 text-green-600" size={18} />
                       {item}

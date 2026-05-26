@@ -29,6 +29,7 @@ export const plans: Record<
     artLimit: number;
     public: boolean;
     features: string[];
+    serviceEntitlements?: string[];
     excluded?: string[];
   }
 > = {
@@ -42,7 +43,8 @@ export const plans: Record<
     proposalLimit: 20,
     artLimit: 0,
     public: true,
-    features: ["Acesso ao FechaPro Start", "10 a 20 propostas por mês", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "Limite mensal renovado e acumulativo", "Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"],
+    features: ["Acesso ao FechaPro Start", "10 a 20 propostas por mês", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "Limite mensal renovado e acumulativo"],
+    serviceEntitlements: ["Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"],
     excluded: ["Não inclui site", "Não inclui artes", "Não inclui implantação feita pela equipe", "Não inclui primeira proposta criada pela equipe", "Não inclui kit completo de mensagens", "Não inclui suporte personalizado contínuo"],
   },
   essential: {
@@ -55,7 +57,8 @@ export const plans: Record<
     proposalLimit: 60,
     artLimit: 0,
     public: true,
-    features: ["Tudo da cota Start", "30 a 60 propostas por mês", "Contrato gerado após aceite", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos", "Treinamento rápido", "Limite mensal renovado e acumulativo", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"],
+    features: ["Tudo da cota Start", "30 a 60 propostas por mês", "Contrato gerado após aceite", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos", "Limite mensal renovado e acumulativo"],
+    serviceEntitlements: ["Treinamento rápido", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"],
     excluded: ["Não inclui site", "Não inclui artes mensais", "Não inclui implantação completa"],
   },
   professional: {
@@ -68,7 +71,8 @@ export const plans: Record<
     proposalLimit: 200,
     artLimit: 5,
     public: true,
-    features: ["Tudo da cota Essencial", "60 a 200 propostas por mês", "Contrato gerado após aceite", "Implantação inicial", "Configuração da marca", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio para começar a vender", "Limite mensal renovado e acumulativo", "Até 5 artes iniciais no primeiro mês", "Entrega: implantação em até 5 dias úteis"],
+    features: ["Tudo da cota Essencial", "60 a 200 propostas por mês", "Contrato gerado após aceite", "Solicitação de artes de divulgação", "Limite mensal renovado e acumulativo"],
+    serviceEntitlements: ["Implantação inicial em até 5 dias úteis após envio das informações", "Configuração da marca no painel", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio inicial para começar a vender", "Até 5 artes iniciais no primeiro mês"],
     excluded: ["Não inclui site completo", "Não inclui manutenção contínua de artes", "Não inclui suporte ilimitado"],
   },
   complete: {
@@ -81,7 +85,8 @@ export const plans: Record<
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
     artLimit: 10,
     public: true,
-    features: ["Tudo da cota Profissional", "Propostas ilimitadas", "Contrato gerado após aceite", "FechaPro completo", "Site institucional de até 5 páginas", "Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Entrega: estrutura completa e site em até 15 dias úteis"],
+    features: ["Tudo da cota Profissional", "Propostas ilimitadas", "Contrato gerado após aceite", "FechaPro completo", "Solicitação de artes de divulgação"],
+    serviceEntitlements: ["Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Site institucional de até 5 páginas"],
     excluded: ["Domínio pago à parte, se necessário", "Manutenção futura do site não inclusa", "Alterações do site incluídas apenas na implantação inicial", "Novas páginas podem ser cobradas à parte"],
   },
   pro: {
@@ -127,7 +132,8 @@ export const plans: Record<
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
     artLimit: 20,
     public: false,
-    features: ["12 meses de FechaPro", "Propostas ilimitadas", "Propostas profissionais com link e PDF", "Contrato gerado após aceite", "Aceite online e botão para WhatsApp", "Acompanhamento de visualizações e cliques", "Pagamentos via Mercado Pago ou PIX direto", "Mini site profissional", "Diagnóstico Comercial do Instagram", "Ajuste e preparação da logo para uso comercial", "5 artes iniciais e 20 artes mensais", "Legendas, ideias de posts e chamadas para WhatsApp", "Mensagens prontas de abordagem e follow-up", "Configuração da marca, WhatsApp e PIX", "Cadastro dos primeiros serviços", "Primeira proposta criada com você", "Treinamento rápido de uso"],
+    features: ["12 meses de FechaPro", "Propostas ilimitadas", "Propostas profissionais com link e PDF", "Contrato gerado após aceite", "Aceite online e botão para WhatsApp", "Acompanhamento de visualizações e cliques", "Pagamentos via Mercado Pago ou PIX direto", "20 artes mensais"],
+    serviceEntitlements: ["Mini site profissional", "Diagnóstico Comercial do Instagram", "Ajuste e preparação da logo para uso comercial", "5 artes iniciais", "Legendas, ideias de posts e chamadas para WhatsApp", "Mensagens prontas de abordagem e follow-up", "Configuração da marca, WhatsApp e PIX", "Cadastro dos primeiros serviços", "Primeira proposta criada com você", "Treinamento rápido de uso"],
   },
   founder_start: {
     code: "founder_start",
@@ -139,7 +145,8 @@ export const plans: Record<
     proposalLimit: 20,
     artLimit: 0,
     public: false,
-    features: ["Acesso ao FechaPro Start", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "10 a 20 propostas por mês", "Limite mensal renovado e acumulativo", "Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"],
+    features: ["Acesso ao FechaPro Start", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "10 a 20 propostas por mês", "Limite mensal renovado e acumulativo"],
+    serviceEntitlements: ["Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"],
     excluded: ["Não inclui site", "Não inclui artes", "Não inclui implantação feita pela equipe", "Não inclui primeira proposta criada pela equipe", "Não inclui kit completo de mensagens", "Não inclui suporte personalizado contínuo"],
   },
   founder_essential: {
@@ -152,7 +159,8 @@ export const plans: Record<
     proposalLimit: 60,
     artLimit: 0,
     public: false,
-    features: ["Tudo da cota Start", "Mais limite de propostas", "Contrato gerado após aceite", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos", "Treinamento rápido", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"],
+    features: ["Tudo da cota Start", "Mais limite de propostas", "Contrato gerado após aceite", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos"],
+    serviceEntitlements: ["Treinamento rápido", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"],
     excluded: ["Não inclui site", "Não inclui artes mensais", "Não inclui implantação completa"],
   },
   founder_professional: {
@@ -165,7 +173,8 @@ export const plans: Record<
     proposalLimit: 200,
     artLimit: 5,
     public: false,
-    features: ["Tudo da cota Essencial", "60 a 200 propostas por mês", "Contrato gerado após aceite", "Implantação inicial", "Configuração da marca", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio para começar a vender", "Limite mensal renovado e acumulativo", "Até 5 artes iniciais no primeiro mês", "Entrega: implantação em até 5 dias úteis"],
+    features: ["Tudo da cota Essencial", "60 a 200 propostas por mês", "Contrato gerado após aceite", "Solicitação de artes de divulgação", "Limite mensal renovado e acumulativo"],
+    serviceEntitlements: ["Implantação inicial em até 5 dias úteis após envio das informações", "Configuração da marca no painel", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio inicial para começar a vender", "Até 5 artes iniciais no primeiro mês"],
     excluded: ["Não inclui site completo", "Não inclui manutenção contínua de artes", "Não inclui suporte ilimitado"],
   },
   founder_complete_site: {
@@ -178,7 +187,8 @@ export const plans: Record<
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
     artLimit: 10,
     public: false,
-    features: ["Tudo da cota Profissional", "Propostas ilimitadas", "Contrato gerado após aceite", "FechaPro completo", "Site institucional de até 5 páginas", "Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Entrega: estrutura completa e site em até 15 dias úteis"],
+    features: ["Tudo da cota Profissional", "Propostas ilimitadas", "Contrato gerado após aceite", "FechaPro completo", "Solicitação de artes de divulgação"],
+    serviceEntitlements: ["Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Site institucional de até 5 páginas"],
     excluded: ["Domínio pago à parte, se necessário", "Manutenção futura do site não inclusa", "Alterações do site incluídas apenas na implantação inicial", "Novas páginas podem ser cobradas à parte"],
   },
 };

@@ -34,8 +34,9 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
 
   if (!proposal) notFound();
 
-  const [portfolio, testimonials] = await Promise.all([
+  const [portfolio, serviceImages, testimonials] = await Promise.all([
     findProposalPortfolio(proposal.userId, proposal.publicSlug),
+    findProposalServiceImages(proposal.userId, proposal.serviceName),
     prisma.testimonialAsset.findMany({
       where: { userId: proposal.userId },
       orderBy: { createdAt: "desc" },
@@ -88,6 +89,7 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
     paymentStatus: proposal.paymentStatus,
     paymentMethod: proposal.paymentMethod || "",
     paymentPaidAt: proposal.paymentPaidAt ? formatDate(proposal.paymentPaidAt.toISOString().slice(0, 10)) : "",
+    serviceImages,
     portfolio,
     testimonials,
   });
@@ -130,6 +132,37 @@ async function findProposalPortfolio(userId: string, slug: string) {
   });
 
   return [...related, ...fill];
+}
+
+async function findProposalServiceImages(userId: string, serviceName: string) {
+  const names = splitProposalServiceNames(serviceName);
+  if (!names.length) return [];
+
+  const services = await prisma.serviceAsset.findMany({
+    where: {
+      userId,
+      OR: names.map((name) => ({ name: { equals: name, mode: "insensitive" as const } })),
+      imageUrl: { not: null },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 4,
+  });
+
+  return names
+    .map((name) => services.find((service) => service.name.trim().toLowerCase() === name.toLowerCase()))
+    .filter((service): service is NonNullable<typeof service> => Boolean(service?.imageUrl))
+    .map((service) => ({
+      title: service.name,
+      category: "Servico cadastrado",
+      imageUrl: service.imageUrl,
+    }));
+}
+
+function splitProposalServiceNames(serviceName: string) {
+  return serviceName
+    .split(/\s+\+\s+/)
+    .map((name) => name.trim())
+    .filter(Boolean);
 }
 
 function demoPortfolioCategories(slug: string) {
@@ -264,7 +297,7 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
     { width: CONTENT_WIDTH - 188, height: 28, lineGap: 3, ellipsis: true },
   );
 
-  const images = data.portfolio.slice(0, 2);
+  const images = [...data.serviceImages, ...data.portfolio].slice(0, 2);
   for (let index = 0; index < 2; index++) {
     const x = MARGIN + index * (imageW + imageGap);
     doc.roundedRect(x + 2, imageY + 3, imageW, imageH, 8).fill("#CBD5E1");
@@ -457,7 +490,7 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
 
   doc.roundedRect(coverImageX + 4, coverImageY + 5, coverImageWidth, coverImageHeight, 12).fill("#020617");
   doc.roundedRect(coverImageX, coverImageY, coverImageWidth, coverImageHeight, 12).fill("#FFFFFF");
-  const coverImage = await readImageFromUrl(data.portfolio[0]?.imageUrl || "", data.assetOrigin);
+  const coverImage = await readImageFromUrl(data.serviceImages[0]?.imageUrl || data.portfolio[0]?.imageUrl || "", data.assetOrigin);
   if (coverImage) {
     const didDraw = drawPdfImage(doc, coverImage, coverImageX + 9, coverImageY + 9, {
       fit: [coverImageWidth - 18, coverImageHeight - 18],
@@ -2023,6 +2056,7 @@ type ProposalPdfData = {
   paymentStatus: string;
   paymentMethod: string;
   paymentPaidAt: string;
+  serviceImages: Array<{ title: string; category: string | null; imageUrl: string | null }>;
   portfolio: Array<{ title: string; category: string | null; imageUrl: string | null }>;
   testimonials: Array<{ authorName: string; company: string | null; quote: string }>;
 };

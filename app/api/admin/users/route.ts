@@ -13,7 +13,7 @@ export async function GET() {
   await requireAdmin();
 
   const { start, end } = currentMonthRange();
-  const [users, proposalUsage, proposalAccumulatedUsage, artUsage] = await Promise.all([
+  const [users, proposalUsage, artUsage] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -42,10 +42,6 @@ export async function GET() {
       where: { createdAt: { gte: start, lt: end } },
       _count: { userId: true },
     }),
-    prisma.proposalAsset.groupBy({
-      by: ["userId"],
-      _count: { userId: true },
-    }),
     prisma.marketingArtAsset.groupBy({
       by: ["userId"],
       where: { createdAt: { gte: start, lt: end } },
@@ -54,13 +50,22 @@ export async function GET() {
   ]);
 
   const proposalUsageByUser = new Map(proposalUsage.map((row) => [row.userId, row._count.userId]));
-  const proposalAccumulatedUsageByUser = new Map(proposalAccumulatedUsage.map((row) => [row.userId, row._count.userId]));
   const artUsageByUser = new Map(artUsage.map((row) => [row.userId, row._count.userId]));
+  const accumulatedProposalUsage = await Promise.all(
+    users.map((user) =>
+      prisma.proposalAsset.count({
+        where: {
+          userId: user.id,
+          createdAt: { gte: user.subscription?.startedAt || user.createdAt },
+        },
+      }),
+    ),
+  );
 
   return NextResponse.json(
     {
       plans: Object.values(plans),
-      users: users.map((user) => {
+      users: users.map((user, index) => {
         const plan = user.subscription?.plan || "start";
         return {
           ...user,
@@ -75,7 +80,7 @@ export async function GET() {
           usage: {
             proposalsThisMonth: proposalUsageByUser.get(user.id) || 0,
             proposalLimit: plans[plan].proposalLimit,
-            proposalsUsedSinceSubscriptionStart: proposalAccumulatedUsageByUser.get(user.id) || 0,
+            proposalsUsedSinceSubscriptionStart: accumulatedProposalUsage[index] || 0,
             accumulatedProposalLimit: accumulatedProposalLimit(plans[plan].proposalLimit, user.subscription?.startedAt),
             artsThisMonth: artUsageByUser.get(user.id) || 0,
             artLimit: plans[plan].artLimit,

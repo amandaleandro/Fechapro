@@ -409,7 +409,7 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-[var(--ui-bg)] text-slate-950">
-      <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Link className="mb-3 inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-slate-950" href="/">
@@ -417,7 +417,7 @@ export default function AdminPage() {
               Voltar ao painel
             </Link>
             <p className="text-xs font-black uppercase text-blue-700">Admin geral</p>
-            <h1 className="mt-1 text-3xl font-black tracking-normal">Liberação manual de planos</h1>
+            <h1 className="mt-1 text-3xl font-black tracking-normal sm:text-4xl">Liberação manual de planos</h1>
             <p className="mt-2 max-w-2xl text-sm font-bold text-slate-600">
               Use esta tela para liberar clientes sem pagamento confirmado, reativar assinaturas atrasadas ou bloquear acessos.
             </p>
@@ -434,11 +434,11 @@ export default function AdminPage() {
           <AdminStat icon={ShieldCheck} label="Bloqueados" value={String(blockedUsers)} />
         </section>
 
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-green-700">WhatsApp FechaPro</p>
-              <h2 className="text-2xl font-black">Numero oficial de notificacoes</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Numero oficial de notificacoes</h2>
               <p className="mt-1 max-w-3xl text-sm font-bold text-slate-600">
                 O admin geral conecta um unico numero remetente. As notificacoes de proposta sao enviadas para o WhatsApp cadastrado na Marca do usuario dono da proposta.
               </p>
@@ -469,11 +469,11 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Suporte ao usuário</p>
-              <h2 className="text-2xl font-black">Chat com clientes</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Chat com clientes</h2>
               <p className="mt-1 text-sm font-bold text-slate-600">
                 Responda as mensagens enviadas pela aba Suporte do painel do cliente.
               </p>
@@ -484,7 +484,7 @@ export default function AdminPage() {
             </button>
           </div>
           {supportThreads.length ? (
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid gap-3 xl:grid-cols-2">
               {supportThreads.map((thread) => (
                 <AdminSupportCard key={thread.id} thread={thread} saving={savingId === thread.id} onAnswer={answerSupport} />
               ))}
@@ -496,11 +496,11 @@ export default function AdminPage() {
           )}
         </section>
 
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Metricas gerais</p>
-              <h2 className="text-2xl font-black">Acessos e receita</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Acessos e receita</h2>
               <p className="mt-1 text-sm font-bold text-slate-600">
                 Acompanhamento diario, semanal, mensal e anual dos acessos registrados e pagamentos confirmados.
               </p>
@@ -517,11 +517,11 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Artes solicitadas</p>
-              <h2 className="text-2xl font-black">Upload do agente para aprovação</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Upload do agente para aprovação</h2>
               <p className="mt-1 text-sm font-bold text-slate-600">
                 Os pedidos feitos pelo cliente em Artes de divulgação aparecem aqui. Anexe a arte pronta para enviar ao cliente aprovar.
               </p>
@@ -532,7 +532,7 @@ export default function AdminPage() {
             </button>
           </div>
           {arts.length ? (
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid gap-3 xl:grid-cols-2">
               {arts.map((item) => (
                 <AdminArtCard key={item.id} item={item} saving={savingId === item.id} onUpload={uploadArt} />
               ))}
@@ -544,12 +544,12 @@ export default function AdminPage() {
           )}
         </section>
 
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
-          <form className="grid gap-4 rounded-lg border border-green-700/20 bg-green-50 p-4" onSubmit={createUser}>
+        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+          <form className="grid gap-4 rounded-lg border border-green-700/20 bg-green-50 p-4 sm:p-5" onSubmit={createUser}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase text-green-700">Criar usuário manual</p>
-                <h2 className="text-2xl font-black">Acesso sem pagamento</h2>
+                <h2 className="text-xl font-black sm:text-2xl">Acesso sem pagamento</h2>
                 <p className="mt-1 text-sm font-bold text-slate-600">
                   Cadastre nome, e-mail e senha para entregar o login ao cliente. O plano fica com provedor admin e não passa pelo checkout.
                 </p>
@@ -560,7 +560,7 @@ export default function AdminPage() {
               </span>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_1fr_1fr_1fr]">
               <AdminInput
                 autoComplete="name"
                 label="Nome"
@@ -625,7 +625,7 @@ export default function AdminPage() {
             <div className="rounded-lg border border-black/10 p-5 text-sm font-bold text-slate-500">Carregando usuarios...</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] border-separate border-spacing-y-2 text-left text-sm">
+              <table className="w-full min-w-[1120px] border-separate border-spacing-y-2 text-left text-sm">
                 <thead className="text-xs font-black uppercase text-slate-500">
                   <tr>
                     <th className="px-3 py-2">Usuário</th>
@@ -633,7 +633,7 @@ export default function AdminPage() {
                     <th className="px-3 py-2">Totais</th>
                     <th className="px-3 py-2">Plano</th>
                     <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Acao</th>
+                    <th className="w-[220px] px-3 py-2">Acao</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -651,10 +651,10 @@ export default function AdminPage() {
             </div>
           )}
         </section>
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
+        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div>
             <p className="text-xs font-black uppercase text-purple-700">Propostas demonstração</p>
-            <h2 className="text-2xl font-black">Demo por nicho</h2>
+            <h2 className="text-xl font-black sm:text-2xl">Demo por nicho</h2>
             <p className="mt-1 text-sm font-bold text-slate-600">
               Cria propostas reais de demonstração no perfil do admin, com clientes fictícios, fotos de portfólio por nicho, PDF e link público para copiar e enviar como exemplo.
             </p>
@@ -764,13 +764,13 @@ function AdminUserRow({
   }, [user.subscription.plan, user.subscription.status]);
 
   return (
-    <tr className="rounded-lg bg-slate-50 align-top shadow-sm">
-      <td className="rounded-l-lg px-3 py-3">
+    <tr className="rounded-lg bg-white align-top shadow-sm ring-1 ring-slate-200">
+      <td className="rounded-l-lg px-4 py-4">
         <p className="font-black">{user.name}</p>
         <p className="mt-1 text-xs font-bold text-slate-500">{user.email}</p>
         <p className="mt-2 text-xs text-slate-500">{user.brandProfile?.businessName || "Empresa não configurada"}</p>
       </td>
-      <td className="px-3 py-3 font-bold text-slate-700">
+      <td className="px-4 py-4 font-bold text-slate-700">
         <p>
           {isUnlimitedProposalLimit(user.usage.proposalLimit)
             ? `${user.usage.proposalsThisMonth} propostas este mês, ilimitado`
@@ -783,13 +783,13 @@ function AdminUserRow({
         ) : null}
         <p className="mt-1">{user.usage.artsThisMonth}/{user.usage.artLimit} artes</p>
       </td>
-      <td className="px-3 py-3 text-slate-600">
+      <td className="px-4 py-4 text-slate-600">
         <p>{user._count.proposalAssets} propostas</p>
         <p>{user._count.clientAssets} clientes</p>
         <p>{user._count.marketingArtAssets} artes</p>
       </td>
-      <td className="px-3 py-3">
-        <select className="min-h-10 rounded-lg border border-black/10 bg-white px-3 font-bold" value={plan} onChange={(event) => setPlan(event.target.value as PlanCode)}>
+      <td className="px-4 py-4">
+        <select className="min-h-10 w-full rounded-lg border border-black/10 bg-white px-3 font-bold" value={plan} onChange={(event) => setPlan(event.target.value as PlanCode)}>
           {plans.map((item) => (
             <option key={item.code} value={item.code}>
               {item.name}
@@ -797,8 +797,8 @@ function AdminUserRow({
           ))}
         </select>
       </td>
-      <td className="px-3 py-3">
-        <select className="min-h-10 rounded-lg border border-black/10 bg-white px-3 font-bold" value={status} onChange={(event) => setStatus(event.target.value)}>
+      <td className="px-4 py-4">
+        <select className="min-h-10 w-full rounded-lg border border-black/10 bg-white px-3 font-bold" value={status} onChange={(event) => setStatus(event.target.value)}>
           {statuses.map((item) => (
             <option key={item} value={item}>
               {statusLabels[item] || item}
@@ -812,9 +812,9 @@ function AdminUserRow({
           Salvar como liberado define o provedor como admin e libera o painel mesmo sem pagamento confirmado.
         </p>
       </td>
-      <td className="rounded-r-lg px-3 py-3">
+      <td className="w-[220px] rounded-r-lg px-4 py-4">
         <div className="grid gap-2">
-          <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="button" onClick={() => onSave(user, plan, status)}>
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="button" onClick={() => onSave(user, plan, status)}>
             <CheckCircle2 size={15} />
             {saving ? "Salvando..." : "Salvar"}
           </button>
@@ -850,7 +850,7 @@ function AdminArtCard({
   }, [item.caption, item.id, item.whatsappMessage]);
 
   return (
-    <article className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+    <article className="grid gap-4 rounded-lg border border-black/10 bg-slate-50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-black">{item.title}</p>
@@ -862,7 +862,7 @@ function AdminArtCard({
           {adminArtStatusLabel(item.source)}
         </span>
       </div>
-      <div className="grid gap-2 text-sm leading-6 text-slate-700">
+      <div className="grid gap-2 rounded-lg bg-white p-3 text-sm leading-6 text-slate-700 ring-1 ring-slate-200">
         <p><span className="font-black">Formato:</span> {item.format.replace("_", " ")}</p>
         <p><span className="font-black">Serviço:</span> {item.serviceName || "Não informado"}</p>
         <p><span className="font-black">Pedido:</span> {item.objective}</p>
@@ -912,7 +912,7 @@ function AdminSupportCard({
   const lastMessage = thread.messages[thread.messages.length - 1];
 
   return (
-    <article className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-4">
+    <article className="grid gap-4 rounded-lg border border-black/10 bg-slate-50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-black">{thread.user.name}</p>
@@ -926,7 +926,7 @@ function AdminSupportCard({
         </span>
       </div>
 
-      <div className="grid max-h-72 gap-2 overflow-y-auto rounded-lg border border-black/10 bg-white p-3">
+      <div className="grid max-h-80 gap-2 overflow-y-auto rounded-lg border border-black/10 bg-white p-3">
         {thread.messages.map((item) => (
           <div className={`max-w-[88%] rounded-lg p-3 ${item.role === "admin" ? "justify-self-end bg-green-600 text-white" : "justify-self-start bg-slate-100 text-slate-900"}`} key={item.id}>
             <p className="text-[11px] font-black uppercase opacity-75">{item.role === "admin" ? "Admin" : "Cliente"}</p>
@@ -1009,8 +1009,8 @@ function QuickAction({
   onClick: () => void;
 }) {
   return (
-    <button className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg border border-black/10 bg-white px-2 text-xs font-black text-slate-700 disabled:opacity-60" disabled={disabled} type="button" onClick={onClick}>
-      <Icon size={14} />
+    <button className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-black/10 bg-white px-3 text-xs font-black leading-none text-slate-700 disabled:opacity-60" disabled={disabled} type="button" onClick={onClick}>
+      <Icon className="shrink-0" size={14} />
       {label}
     </button>
   );
@@ -1058,12 +1058,12 @@ function statusBadgeClass(status: string) {
 
 function AdminStat({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-black/10 bg-white p-4">
+    <div className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-black uppercase text-slate-500">{label}</p>
         <Icon className="text-blue-700" size={20} />
       </div>
-      <p className="mt-3 text-3xl font-black">{value}</p>
+      <p className="mt-3 text-3xl font-black sm:text-4xl">{value}</p>
     </div>
   );
 }

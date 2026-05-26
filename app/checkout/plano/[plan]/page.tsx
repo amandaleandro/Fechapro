@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard, ShieldCheck } from "lucide-react";
 import { PlanCheckoutClient } from "@/app/checkout/plano/[plan]/PlanCheckoutClient";
-import { type PlanCode, plans } from "@/lib/plans";
+import { formatProposalLimit, type PlanCode, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { canUsePaidFeatures } from "@/lib/billing-access";
@@ -66,7 +66,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
               <div className="grid gap-3 sm:grid-cols-3">
                 <CheckoutMetric label="Plano" value={plan.name} />
                 <CheckoutMetric label={oneTime ? "Pagamento único" : hasSetup ? "Pagamento facilitado" : "Mensalidade recorrente"} value={recurringPrice} />
-                <CheckoutMetric label="Limite" value={`${plan.proposalLimit} propostas/mês`} />
+                <CheckoutMetric label="Limite" value={`${formatProposalLimit(plan.proposalLimit)}/mês`} />
               </div>
 
               <div className="rounded-lg border border-black/10 bg-slate-50 p-4">
@@ -80,6 +80,19 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
                   ))}
                 </ul>
               </div>
+              {plan.serviceEntitlements?.length ? (
+                <div className="rounded-lg border border-green-700/20 bg-green-50 p-4">
+                  <p className="text-xs font-black uppercase text-green-700">Entregas da equipe</p>
+                  <ul className="mt-3 grid gap-2 leading-7 text-green-900">
+                    {plan.serviceEntitlements.map((item) => (
+                      <li className="grid grid-cols-[auto_1fr] gap-2 font-bold" key={item}>
+                        <CheckCircle2 className="mt-1 text-green-700" size={18} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               <div className="grid gap-3 rounded-lg border border-green-700/20 bg-green-50 p-4 sm:grid-cols-3">
                 <TrustItem title="Pagamento externo" text="Cartao e Pix ficam no ambiente Mercado Pago." />

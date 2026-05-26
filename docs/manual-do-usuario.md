@@ -356,9 +356,9 @@ Acesse **Planos** para ver seu plano atual, limites e pacotes extras.
 
 Planos públicos disponíveis no sistema:
 
-- **Start:** até 20 propostas por mês, 5 artes por mês, link profissional, PDF, aceite online, modelos prontos e suporte básico.
-- **Pro:** até 120 propostas por mês, 10 artes por mês, personalização visual, portfólio, depoimentos, termos comerciais, acompanhamento de visualizações, acompanhamento de cliques no WhatsApp, mensagens de envio/follow-up e suporte prioritário.
-- **Estrutura Comercial Completa:** até 600 propostas por mês, 20 artes por mês, 12 meses de FechaPro, mini site profissional, implantação assistida, diagnóstico comercial do Instagram, ajuste simples da logo para uso comercial, artes iniciais, mensagens prontas, primeira proposta criada com você e treinamento rápido.
+- **Start:** 10 a 20 propostas por mês, limite renovado mensalmente e acumulativo, link profissional, PDF, aceite online, modelos prontos e suporte básico.
+- **Pro:** até 200 propostas por mês, limite renovado mensalmente e acumulativo, 10 artes por mês, personalização visual, portfólio, depoimentos, termos comerciais, acompanhamento de visualizações, acompanhamento de cliques no WhatsApp, mensagens de envio/follow-up e suporte prioritário.
+- **Estrutura Comercial Completa:** propostas ilimitadas, 20 artes por mês, 12 meses de FechaPro, mini site profissional, implantação assistida, diagnóstico comercial do Instagram, ajuste simples da logo para uso comercial, artes iniciais, mensagens prontas, primeira proposta criada com você e treinamento rápido.
 
 Também podem existir planos internos ou legados, como **Profissional** e **Pro Site**, conforme a configuração comercial vigente.
 

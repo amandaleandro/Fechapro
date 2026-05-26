@@ -135,9 +135,9 @@ Mensagem central:
 
 Os planos ficam em `lib/plans.ts`.
 
-- **Start - R$ 97/mes:** para quem quer comecar a enviar propostas mais profissionais. Inclui 20 propostas por mes, 5 artes por mes, link profissional, PDF, aceite online, status da proposta, modelos prontos e suporte basico.
-- **Pro - R$ 197/mes ou R$ 1.200 anual:** para quem quer usar melhor o FechaPro para vender. Inclui 120 propostas por mes, personalizacao visual, portfolio, depoimentos, servicos cadastrados, termos comerciais, acompanhamento de visualizacoes e cliques no WhatsApp, 10 artes por mes, mensagens de envio/follow-up e suporte prioritario.
-- **Estrutura Comercial Completa - R$ 1.500 anual ou 12x de R$ 150:** para quem quer sair com tudo pronto. Inclui 12 meses de FechaPro, 600 propostas por mes, link profissional, PDF, aceite online, WhatsApp, pagamentos, portfolio, depoimentos, FAQ, mini site profissional, Diagnostico Comercial do Instagram, ajuste e preparacao simples da logo, 5 artes iniciais, 20 artes mensais, ideias e legendas para posts, mensagens prontas de abordagem/follow-up, configuracao de marca, cadastro dos primeiros servicos, primeira proposta criada com o cliente e treinamento rapido.
+- **Start - R$ 97/mes:** para quem quer comecar a enviar propostas mais profissionais. Inclui 10 a 20 propostas por mes, creditos acumulativos, link profissional, PDF, aceite online, status da proposta, modelos prontos e suporte basico.
+- **Pro - R$ 197/mes ou R$ 1.200 anual:** para quem quer usar melhor o FechaPro para vender. Inclui ate 200 propostas por mes, creditos acumulativos, personalizacao visual, portfolio, depoimentos, servicos cadastrados, termos comerciais, acompanhamento de visualizacoes e cliques no WhatsApp, 10 artes por mes, mensagens de envio/follow-up e suporte prioritario.
+- **Estrutura Comercial Completa - R$ 1.500 anual ou 12x de R$ 150:** para quem quer sair com tudo pronto. Inclui 12 meses de FechaPro, propostas ilimitadas, link profissional, PDF, aceite online, WhatsApp, pagamentos, portfolio, depoimentos, FAQ, mini site profissional, Diagnostico Comercial do Instagram, ajuste e preparacao simples da logo, 5 artes iniciais, 20 artes mensais, ideias e legendas para posts, mensagens prontas de abordagem/follow-up, configuracao de marca, cadastro dos primeiros servicos, primeira proposta criada com o cliente e treinamento rapido.
 
 O plano completo nao deve ser vendido como "Premium anual". Use preferencialmente:
 

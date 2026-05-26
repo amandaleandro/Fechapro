@@ -194,6 +194,7 @@ type BillingPlan = {
   proposalLimit: number;
   artLimit: number;
   features: string[];
+  serviceEntitlements?: string[];
 };
 
 type BillingArtPack = {
@@ -3842,6 +3843,21 @@ function PlansView({
             Créditos extras de artes: {billing.usage.artCreditBalance}
           </span>
         </div>
+        {billing.plans.find((plan) => plan.code === billing.subscription.plan)?.serviceEntitlements?.length ? (
+          <div className="mt-3 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm text-green-900">
+            <span className="block text-xs font-black uppercase text-green-700">Entregas contratadas</span>
+            <ul className="mt-2 grid gap-1 font-bold">
+              {billing.plans
+                .find((plan) => plan.code === billing.subscription.plan)
+                ?.serviceEntitlements?.map((item) => (
+                  <li className="grid grid-cols-[auto_1fr] gap-2" key={item}>
+                    <CheckCircle2 className="mt-0.5 text-green-700" size={15} />
+                    {item}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -3900,6 +3916,19 @@ function PlansView({
                   <li key={feature}>{feature}</li>
                 ))}
               </ul>
+              {plan.serviceEntitlements?.length ? (
+                <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold leading-6 text-green-900">
+                  <span className="block text-xs font-black uppercase text-green-700">Entregas da equipe</span>
+                  <ul className="mt-2 grid gap-1">
+                    {plan.serviceEntitlements.map((item) => (
+                      <li className="grid grid-cols-[auto_1fr] gap-2" key={item}>
+                        <CheckCircle2 className="mt-1 text-green-700" size={15} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               <button
                 className={`min-h-11 rounded-lg px-4 font-black ${
                   active ? "border border-green-600 text-green-800" : "bg-green-600 text-white"
@@ -4664,10 +4693,10 @@ function AuthScreen() {
   const [openFaq, setOpenFaq] = useState(0);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
   const plans = [
-    { code: "start", name: "Start", price: "R$ 250", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com baixo investimento. Acesso liberado em até 24h úteis.", items: ["Acesso ao FechaPro Start", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "Até 10 propostas por mês", "Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"], excluded: ["Não inclui site", "Não inclui artes", "Não inclui implantação feita pela equipe", "Não inclui primeira proposta criada pela equipe", "Não inclui kit completo de mensagens", "Não inclui suporte personalizado contínuo"], cta: "Garantir cota Start", href: "/checkout/cadastro/start" },
-    { code: "essential", name: "Essencial", price: "R$ 500", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com uma estrutura mais profissional. Setup básico entregue em até 48h úteis.", items: ["Tudo da cota Start", "Até 20 propostas por mês", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos", "Treinamento rápido", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"], excluded: ["Não inclui site", "Não inclui artes mensais", "Não inclui implantação completa"], cta: "Garantir cota Essencial", href: "/checkout/cadastro/essential" },
-    { code: "professional", name: "Profissional", price: "R$ 1.000", period: "pagamento único · acesso vitalício", description: "Para quem quer apoio para começar vendendo melhor. Implantação inicial em até 5 dias úteis após envio das informações.", items: ["Tudo da cota Essencial", "Até 60 propostas por mês", "Implantação inicial", "Configuração da marca", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio para começar a vender", "Até 5 artes iniciais no primeiro mês", "Entrega: implantação em até 5 dias úteis"], excluded: ["Não inclui site completo", "Não inclui manutenção contínua de artes", "Não inclui suporte ilimitado"], cta: "Garantir cota Profissional", href: "/checkout/cadastro/professional", featured: true },
-    { code: "complete", name: "Completo", price: "R$ 2.000", period: "pagamento único · acesso vitalício", description: "Para negócios com ticket alto que querem sair com estrutura completa. Site entregue em até 15 dias úteis após envio das informações.", items: ["Tudo da cota Profissional", "Até 120 propostas por mês", "FechaPro completo", "Site institucional de até 5 páginas", "Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Entrega: estrutura completa e site em até 15 dias úteis"], excluded: ["Domínio pago à parte, se necessário", "Manutenção futura do site não inclusa", "Alterações do site incluídas apenas na implantação inicial", "Novas páginas podem ser cobradas à parte"], cta: "Garantir cota Completa", href: "/checkout/cadastro/complete" },
+    { code: "start", name: "Start", price: "R$ 250", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com baixo investimento. Acesso liberado em até 24h úteis.", items: ["Acesso ao FechaPro Start", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "10 a 20 propostas por mês", "Limite mensal renovado e acumulativo", "Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"], excluded: ["Não inclui site", "Não inclui artes", "Não inclui implantação feita pela equipe", "Não inclui primeira proposta criada pela equipe", "Não inclui kit completo de mensagens", "Não inclui suporte personalizado contínuo"], cta: "Garantir cota Start", href: "/checkout/cadastro/start" },
+    { code: "essential", name: "Essencial", price: "R$ 500", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com uma estrutura mais profissional. Setup básico entregue em até 48h úteis.", items: ["Tudo da cota Start", "30 a 60 propostas por mês", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos", "Treinamento rápido", "Limite mensal renovado e acumulativo", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"], excluded: ["Não inclui site", "Não inclui artes mensais", "Não inclui implantação completa"], cta: "Garantir cota Essencial", href: "/checkout/cadastro/essential" },
+    { code: "professional", name: "Profissional", price: "R$ 1.000", period: "pagamento único · acesso vitalício", description: "Para quem quer apoio para começar vendendo melhor. Implantação inicial em até 5 dias úteis após envio das informações.", items: ["Tudo da cota Essencial", "60 a 200 propostas por mês", "Contrato gerado após aceite", "Implantação inicial", "Configuração da marca", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio para começar a vender", "Limite mensal renovado e acumulativo", "Até 5 artes iniciais no primeiro mês", "Entrega: implantação em até 5 dias úteis"], excluded: ["Não inclui site completo", "Não inclui manutenção contínua de artes", "Não inclui suporte ilimitado"], cta: "Garantir cota Profissional", href: "/checkout/cadastro/professional", featured: true },
+    { code: "complete", name: "Completo", price: "R$ 2.000", period: "pagamento único · acesso vitalício", description: "Para negócios com ticket alto que querem sair com estrutura completa. Site entregue em até 15 dias úteis após envio das informações.", items: ["Tudo da cota Profissional", "Propostas ilimitadas", "FechaPro completo", "Site institucional de até 5 páginas", "Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Entrega: estrutura completa e site em até 15 dias úteis"], excluded: ["Domínio pago à parte, se necessário", "Manutenção futura do site não inclusa", "Alterações do site incluídas apenas na implantação inicial", "Novas páginas podem ser cobradas à parte"], cta: "Garantir cota Completa", href: "/checkout/cadastro/complete" },
   ];
   const features = [
     { label: "01 - Proposta", title: "Link profissional com tudo que o cliente precisa ver", text: "Marca, portfólio, depoimentos, escopo, prazo, valor e FAQ em uma página limpa, sem cadastro para o cliente.", icon: FileText },
