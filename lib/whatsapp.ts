@@ -18,10 +18,36 @@ type ProposalWhatsAppNotification = {
 
 type BaileysSocket = Awaited<ReturnType<typeof createBaileysSocket>>;
 
-let baileysSocketPromise: Promise<BaileysSocket> | null = null;
-let baileysConnected = false;
-let baileysQr: string | null = null;
-let baileysPhone: string | null = null;
+// Turbopack compiles whatsapp.ts into multiple chunks (one per route), so
+// module-level variables are NOT shared between routes. globalThis is.
+declare global {
+  // eslint-disable-next-line no-var
+  var __baileysSocketPromise: Promise<BaileysSocket> | null;
+  // eslint-disable-next-line no-var
+  var __baileysConnected: boolean;
+  // eslint-disable-next-line no-var
+  var __baileysQr: string | null;
+  // eslint-disable-next-line no-var
+  var __baileysPhone: string | null;
+}
+
+if (globalThis.__baileysConnected === undefined) globalThis.__baileysConnected = false;
+if (globalThis.__baileysQr === undefined) globalThis.__baileysQr = null;
+if (globalThis.__baileysPhone === undefined) globalThis.__baileysPhone = null;
+if (globalThis.__baileysSocketPromise === undefined) globalThis.__baileysSocketPromise = null;
+
+function getState() {
+  return {
+    get socketPromise() { return globalThis.__baileysSocketPromise; },
+    set socketPromise(v) { globalThis.__baileysSocketPromise = v; },
+    get connected() { return globalThis.__baileysConnected; },
+    set connected(v) { globalThis.__baileysConnected = v; },
+    get qr() { return globalThis.__baileysQr; },
+    set qr(v) { globalThis.__baileysQr = v; },
+    get phone() { return globalThis.__baileysPhone; },
+    set phone(v) { globalThis.__baileysPhone = v; },
+  };
+}
 
 export function isWhatsAppNotificationConfigured() {
   return Boolean(provider === "baileys" || webhookUrl || (cloudPhoneNumberId && cloudAccessToken));
@@ -32,7 +58,8 @@ export async function connectBaileysWhatsApp(options: { resetSession?: boolean }
     throw new Error('Configure WHATSAPP_PROVIDER="baileys" para conectar pelo painel admin.');
   }
 
-  if (options.resetSession && !baileysConnected) {
+  const state = getState();
+  if (options.resetSession && !state.connected) {
     await resetBaileysSession();
   }
 
@@ -42,12 +69,13 @@ export async function connectBaileysWhatsApp(options: { resetSession?: boolean }
 }
 
 export function getBaileysWhatsAppStatus() {
+  const state = getState();
   return {
     authDir: baileysAuthDir,
     configured: provider === "baileys",
-    connected: baileysConnected,
-    phone: baileysPhone,
-    qr: baileysQr,
+    connected: state.connected,
+    phone: state.phone,
+    qr: state.qr,
   };
 }
 
@@ -85,7 +113,7 @@ export async function sendProposalWhatsAppNotification(userId: string, input: Pr
 
     await sendViaCloudApi(phone, message);
   } catch (error) {
-    console.error("Nao foi possivel enviar notificacao por WhatsApp.", error);
+    console.error("Não foi possível enviar notificação por WhatsApp.", error);
   }
 }
 
@@ -98,7 +126,7 @@ function formatWhatsAppPhone(value?: string | null) {
 
 async function sendViaBaileys(phone: string, message: string) {
   const socket = await getBaileysSocket();
-  if (!baileysConnected) {
+  if (!getState().connected) {
     await socket.waitForConnectionUpdate(async (update) => update.connection === "open", 30_000);
   }
 
@@ -106,52 +134,63 @@ async function sendViaBaileys(phone: string, message: string) {
 }
 
 async function getBaileysSocket() {
-  if (!baileysSocketPromise) {
-    baileysSocketPromise = createBaileysSocket().catch((error) => {
-      baileysSocketPromise = null;
+  const state = getState();
+  if (!state.socketPromise) {
+    state.socketPromise = createBaileysSocket().catch((error) => {
+      state.socketPromise = null;
       throw error;
     });
   }
 
-  return baileysSocketPromise;
+  return state.socketPromise;
 }
 
 async function resetBaileysSession() {
-  baileysSocketPromise = null;
-  baileysQr = null;
-  baileysPhone = null;
+  const state = getState();
+  state.socketPromise = null;
+  state.connected = false;
+  state.qr = null;
+  state.phone = null;
   await rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
 }
 
 async function waitForBaileysQrOrConnection() {
-  const timeoutAt = Date.now() + 12_000;
-  while (!baileysConnected && !baileysQr && Date.now() < timeoutAt) {
+  const timeoutAt = Date.now() + 30_000;
+  while (!getState().connected && !getState().qr && Date.now() < timeoutAt) {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
 }
 
 async function createBaileysSocket() {
+  console.log("[Baileys] Iniciando socket, authDir:", baileysAuthDir);
   const baileys = await import("@whiskeysockets/baileys");
-  const { state, saveCreds } = await baileys.useMultiFileAuthState(baileysAuthDir);
+  const { state: authState, saveCreds } = await baileys.useMultiFileAuthState(baileysAuthDir);
+  console.log("[Baileys] Auth state carregado");
   const socket = baileys.makeWASocket({
-    auth: state,
+    auth: authState,
     logger: silentLogger,
-    printQRInTerminal: true,
+    printQRInTerminal: false,
   });
 
   socket.ev.on("creds.update", saveCreds);
   socket.ev.on("connection.update", (update) => {
-    baileysConnected = update.connection === "open";
-    if (update.qr) baileysQr = update.qr;
+    console.log("[Baileys] connection.update:", update.connection, "qr:", !!update.qr, "error:", update.lastDisconnect?.error?.message);
+    const state = getState();
+    state.connected = update.connection === "open";
+    if (update.qr) {
+      state.qr = update.qr;
+      console.log("[Baileys] QR gerado, tamanho:", update.qr.length);
+    }
 
     if (update.connection === "close") {
       const statusCode = getDisconnectStatusCode(update.lastDisconnect?.error);
       if (statusCode !== baileys.DisconnectReason.loggedOut) {
-        baileysSocketPromise = null;
+        state.socketPromise = null;
       }
     } else if (update.connection === "open") {
-      baileysQr = null;
-      baileysPhone = socket.user?.id || null;
+      state.qr = null;
+      state.phone = socket.user?.id || null;
+      console.log("[Baileys] Conectado! Numero:", state.phone);
     }
   });
 

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const subscription = body.subscription;
 
   if (!subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
-    return jsonError("Inscricao push invalida.", 400);
+    return jsonError("Inscrição push inválida.", 400);
   }
 
   await prisma.pushSubscription.upsert({

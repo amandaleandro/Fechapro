@@ -16,7 +16,7 @@ const adminEmail = (configuredAdminEmail || "admin@fechapro.local").trim().toLow
 const adminPassword = process.env.ADMIN_PASSWORD || "FechaProAdmin123!";
 
 if (process.env.NODE_ENV === "production" && (!configuredAdminEmail || !process.env.ADMIN_PASSWORD)) {
-  throw new Error("Configure ADMIN_EMAIL ou ADMIN_EMAILS e ADMIN_PASSWORD antes de iniciar em producao.");
+  throw new Error("Configure ADMIN_EMAIL ou ADMIN_EMAILS e ADMIN_PASSWORD antes de iniciar em produção.");
 }
 
 function loadEnvFile(filename, options = {}) {

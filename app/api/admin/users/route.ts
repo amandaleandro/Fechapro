@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { requireAdmin } from "@/lib/admin";
-import { accumulatedProposalLimit, currentMonthRange, plans, type PlanCode } from "@/lib/plans";
+import { accumulatedProposalLimit, currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/session";
 import { isValidEmail } from "@/lib/validation";
@@ -64,7 +64,7 @@ export async function GET() {
 
   return NextResponse.json(
     {
-      plans: Object.values(plans),
+      plans: publicPlans,
       users: users.map((user, index) => {
         const plan = user.subscription?.plan || "start";
         return {
@@ -132,11 +132,12 @@ export async function POST(request: Request) {
   }
 
   const user = await prisma.$transaction(async (tx) => {
+    const passwordHash = await hashPassword(password);
     const created = await tx.user.create({
       data: {
         email,
         name,
-        passwordHash: hashPassword(password),
+        passwordHash,
       },
       select: {
         id: true,

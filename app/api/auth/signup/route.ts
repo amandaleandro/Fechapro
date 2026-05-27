@@ -59,9 +59,11 @@ export async function POST(request: Request) {
     return jsonError("E-mail já cadastrado.", 409);
   }
 
+  const passwordHash = await hashPassword(password);
+
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
-      data: { name, email, niche, segment, passwordHash: hashPassword(password) },
+      data: { name, email, niche, segment, passwordHash },
     });
     await tx.planSubscription.create({
       data: {

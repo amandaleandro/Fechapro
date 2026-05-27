@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
+  if (!user?.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
     return jsonError("Credenciais inválidas.", 401);
   }
 

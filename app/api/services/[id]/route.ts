@@ -15,7 +15,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   if (!name) return jsonError("Serviço obrigatório.");
   if (price === null || price < 0) return jsonError("Informe um valor válido para o serviço.");
 
-  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem invalida.");
+  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem inválida.");
 
   await prisma.serviceAsset.updateMany({
     where: { id, userId: session.id },

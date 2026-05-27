@@ -135,7 +135,7 @@ async function assertSafeImage(image: sharp.Sharp) {
   const height = metadata.height || 0;
 
   if (!width || !height || width * height > MAX_IMAGE_PIXELS) {
-    throw new Error("Imagem invalida ou grande demais.");
+    throw new Error("Imagem inválida ou grande demais.");
   }
 }
 

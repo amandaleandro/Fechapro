@@ -56,7 +56,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
   if (body.validUntil !== undefined) {
     const validUntil = cleanOptionalString(body.validUntil);
-    if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade invalida.");
+    if (validUntil && !isValidDateOnly(validUntil)) return jsonError("Data de validade inválida.");
     data.validUntil = validUntil;
   }
   if (body.clientEmail !== undefined) {

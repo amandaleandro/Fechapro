@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   if (!name) return jsonError("Serviço obrigatório.");
   if (price === null || price < 0) return jsonError("Informe um valor válido para o serviço.");
 
-  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem invalida.");
+  if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem inválida.");
 
   const item = await prisma.serviceAsset.create({
     data: {

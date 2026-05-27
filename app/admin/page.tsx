@@ -192,11 +192,11 @@ export default function AdminPage() {
   async function loadWhatsAppStatus() {
     try {
       const response = await fetch("/api/admin/whatsapp", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel carregar o WhatsApp."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível carregar o WhatsApp."));
       setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
       setWhatsappError(null);
     } catch (caught) {
-      setWhatsappError(caught instanceof Error ? caught.message : "Nao foi possivel carregar o WhatsApp.");
+      setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível carregar o WhatsApp.");
     }
   }
 
@@ -238,11 +238,11 @@ export default function AdminPage() {
         body: JSON.stringify({ resetSession: true }),
       })
         .then(async (response) => {
-          if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel recarregar o QR Code."));
+          if (!response.ok) throw new Error(await readApiError(response, "Não foi possível recarregar o QR Code."));
           setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
         })
         .catch((caught) => {
-          setWhatsappError(caught instanceof Error ? caught.message : "Nao foi possivel recarregar o QR Code.");
+          setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível recarregar o QR Code.");
         })
         .finally(() => {
           setConnectingWhatsApp(false);
@@ -263,12 +263,12 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resetSession: !whatsappStatus?.connected }),
       });
-      if (!response.ok) throw new Error(await readApiError(response, "Nao foi possivel conectar o WhatsApp."));
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível conectar o WhatsApp."));
       const status = (await response.json()) as AdminWhatsAppStatus;
       setWhatsappStatus(status);
       setNotice(status.connected ? "WhatsApp FechaPro conectado." : "Escaneie o QR Code para conectar o WhatsApp FechaPro.");
     } catch (caught) {
-      setWhatsappError(caught instanceof Error ? caught.message : "Nao foi possivel conectar o WhatsApp.");
+      setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível conectar o WhatsApp.");
     } finally {
       setConnectingWhatsApp(false);
     }
@@ -457,7 +457,7 @@ export default function AdminPage() {
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700">
               <p>Status: <span className={whatsappStatus?.connected ? "text-green-700" : "text-amber-700"}>{whatsappStatus?.connected ? "Conectado" : "Aguardando conexao"}</span></p>
-              <p className="mt-2">Sessao: {whatsappStatus?.authDir || "Nao configurada"}</p>
+              <p className="mt-2">Sessão: {whatsappStatus?.authDir || "Não configurada"}</p>
               {whatsappStatus?.phone ? <p className="mt-2">Numero conectado: {whatsappStatus.phone}</p> : null}
             </div>
             {whatsappStatus?.qrImage ? (
@@ -633,7 +633,7 @@ export default function AdminPage() {
                     <th className="px-3 py-2">Totais</th>
                     <th className="px-3 py-2">Plano</th>
                     <th className="px-3 py-2">Status</th>
-                    <th className="w-[220px] px-3 py-2">Acao</th>
+                    <th className="w-[220px] px-3 py-2">Ação</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -869,7 +869,7 @@ function AdminArtCard({
         {item.referenceImageUrl ? (
           <a className="inline-flex items-center gap-2 text-sm font-black text-blue-700" href={item.referenceImageUrl} target="_blank" rel="noreferrer">
             <ImageIcon size={15} />
-            Ver referencia enviada
+            Ver referência enviada
           </a>
         ) : null}
       </div>

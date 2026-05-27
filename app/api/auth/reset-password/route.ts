@@ -33,9 +33,11 @@ export async function POST(request: Request) {
     return jsonError("Link inválido ou expirado.", 400);
   }
 
+  const passwordHash = await hashPassword(password);
+
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: hashPassword(password) },
+    data: { passwordHash },
   });
 
   return NextResponse.json({ ok: true });

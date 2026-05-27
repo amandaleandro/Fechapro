@@ -596,8 +596,8 @@ const proposalTemplates: ProposalTemplate[] = [
   {
     id: "esteticista",
     niche: "Esteticista",
-    title: "Protocolo estetico",
-    serviceName: "Protocolo estetico personalizado",
+    title: "Protocolo estético",
+    serviceName: "Protocolo estético personalizado",
     price: 350,
     deadline: "Sessão de 60 a 90 minutos",
     payment: "50% para agendar e 50% no atendimento",
@@ -771,7 +771,7 @@ export default function Home() {
   }, [onboardingIncomplete, session]);
 
   async function loadDashboardData() {
-    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData, marketingArtsData, proposalTemplatesData] = await Promise.all([
+    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData, marketingArtsData, proposalTemplatesData] = await Promise.allSettled([
       apiGet<BrandProfile>("/api/brand"),
       apiGet<BillingState>("/api/billing/plan"),
       apiGet<Client[]>("/api/clients"),
@@ -783,18 +783,32 @@ export default function Home() {
       apiGet<ProposalTemplate[]>("/api/proposal-templates"),
     ]);
 
-    setBrand(brandData);
-    setBilling(billingData);
-    setClients(clientsData);
-    setServices(servicesData);
-    setPortfolio(portfolioData);
-    setTestimonials(testimonialsData);
-    setProposals(proposalsData);
-    setMarketingArts(marketingArtsData);
-    setCustomProposalTemplates(proposalTemplatesData);
-    if (!(["active", "trial"].includes(billingData.subscription.status) && ["mercadopago", "admin"].includes(billingData.subscription.provider || ""))) {
+    const failedLoads: string[] = [];
+    const applyResult = <T,>(result: PromiseSettledResult<T>, setter: (value: T) => void, label: string) => {
+      if (result.status === "fulfilled") {
+        setter(result.value);
+      } else {
+        failedLoads.push(label);
+      }
+    };
+
+    applyResult(brandData, setBrand, "marca");
+    applyResult(billingData, setBilling, "assinatura");
+    applyResult(clientsData, setClients, "clientes");
+    applyResult(servicesData, setServices, "serviços");
+    applyResult(portfolioData, setPortfolio, "portfólio");
+    applyResult(testimonialsData, setTestimonials, "depoimentos");
+    applyResult(proposalsData, setProposals, "propostas");
+    applyResult(marketingArtsData, setMarketingArts, "artes");
+    applyResult(proposalTemplatesData, setCustomProposalTemplates, "templates");
+
+    if (billingData.status === "fulfilled" && !(["active", "trial"].includes(billingData.value.subscription.status) && ["mercadopago", "admin"].includes(billingData.value.subscription.provider || ""))) {
       setNotice("Escolha um plano e conclua o pagamento pelo Mercado Pago para liberar a criação de propostas.");
       setActiveView("plans");
+    }
+
+    if (failedLoads.length) {
+      setNotice((current) => current || `Alguns dados não carregaram agora: ${failedLoads.join(", ")}. Você ainda pode usar o painel e tentar novamente.`);
     }
   }
 
@@ -884,7 +898,7 @@ export default function Home() {
           });
           setClients((current) => [client, ...current]);
         } catch {
-          setNotice("Proposta salva. Nao foi possivel salvar o cliente automaticamente.");
+          setNotice("Proposta salva. Não foi possível salvar o cliente automaticamente.");
         }
       }
       if (!existingService && !draft.serviceName.includes(" + ")) {
@@ -897,7 +911,7 @@ export default function Home() {
           });
           setServices((current) => [service, ...current]);
         } catch {
-          setNotice("Proposta salva. Nao foi possivel salvar o servico automaticamente.");
+          setNotice("Proposta salva. Não foi possível salvar o serviço automaticamente.");
         }
       }
       const emailNote = result.clientEmailSent
@@ -2722,7 +2736,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
                 resetForm();
               }}
             >
-              Cancelar edicao
+              Cancelar edição
             </button>
           ) : null}
         </form>
@@ -2851,7 +2865,7 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
                 setForm({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
               }}
             >
-              Cancelar edicao
+              Cancelar edição
             </button>
           ) : null}
         </form>
@@ -3006,7 +3020,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
                 setRemoveBackground(false);
               }}
             >
-              Cancelar edicao
+              Cancelar edição
             </button>
           ) : null}
         </form>
@@ -3127,7 +3141,7 @@ function TestimonialsView({
                 setForm({ authorName: "", company: "", quote: "" });
               }}
             >
-              Cancelar edicao
+              Cancelar edição
             </button>
           ) : null}
         </form>
@@ -3586,7 +3600,7 @@ function MarketingArtsView({
               onChange={(event) => setForm({ ...form, useImageAsBackground: event.target.checked })}
             />
             <span>
-              Usar a referencia como fundo
+              Usar a referência como fundo
               <span className="block text-xs font-bold text-slate-500">Marque quando a foto enviada deve ser a base visual da arte.</span>
             </span>
           </label>
@@ -4745,7 +4759,7 @@ function AuthScreen() {
         <section id="como-funciona" className="bg-[#0d1409] px-4 py-20 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-300">Como funciona</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Da criação ao fechamento em 4 passos.</h2><div className="mt-10 grid gap-4 md:grid-cols-4">{steps.map((step, index) => <article className="rounded-lg border border-white/10 bg-white/5 p-5" key={step}><span className="grid h-12 w-12 place-items-center rounded-full bg-white text-lg font-black text-green-800">{index + 1}</span><h3 className="mt-5 font-black">{step}</h3><p className="mt-2 text-sm leading-6 text-white/65">{index === 0 ? "Logo, cores, WhatsApp, PIX e nicho." : index === 1 ? "Template, cliente, serviço, valor e prazo." : index === 2 ? "Um link único para enviar no WhatsApp." : "Visualização, aceite, recusa e pagamento no painel."}</p></article>)}</div><div className="mt-10 grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-2 lg:items-center"><div><h3 className="text-2xl font-black">Você para de adivinhar. Começa a acompanhar.</h3><p className="mt-3 leading-7 text-white/70">Cada movimentação importante entra no histórico da proposta para você fazer o próximo contato com contexto.</p></div><div className="grid gap-3">{["Proposta visualizada", "Cliente clicou no WhatsApp", "Proposta aceita", "Pagamento confirmado"].map((item) => <div className="rounded-lg border border-white/10 bg-[#1c2616] p-4 font-bold" key={item}>{item}</div>)}</div></div></div></section>
         <section className="px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">Depoimentos</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Profissionais que pararam de vender só por mensagem.</h2><div className="mt-10 grid gap-4 md:grid-cols-3">{testimonials.map(([name, role, quote]) => <article className="rounded-lg border border-black/10 bg-white p-6 shadow-sm" key={name}><p className="text-[#b88d13]">★★★★★</p><p className="mt-4 text-sm italic leading-7 text-slate-700">&quot;{quote}&quot;</p><div className="mt-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-green-700 font-black text-white">{name[0]}</span><p><strong className="block text-sm">{name}</strong><span className="text-xs font-bold text-slate-500">{role}</span></p></div></article>)}</div></div></section>
         <section id="planos" className="bg-[#f5f2ec] px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">Planos</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Escolha sua cota de fundador enquanto ainda há vagas.</h2><div className="mt-10 grid gap-5 lg:grid-cols-4">{plans.map((plan) => <article className={`relative flex flex-col rounded-lg bg-white p-6 shadow-sm ${plan.featured ? "border-2 border-green-700" : "border border-black/10"}`} key={plan.code}>{plan.featured ? <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-700 px-4 py-1 text-xs font-black text-white">Mais escolhido</span> : null}<p className="text-xs font-black uppercase text-slate-500">{plan.name}</p><strong className="mt-4 text-5xl font-black">{plan.price}</strong><span className="mt-1 text-sm font-bold text-slate-500">{plan.period}</span><p className="mt-5 min-h-20 border-b border-black/10 pb-5 text-sm leading-7 text-slate-600">{plan.description}</p><ul className="mt-5 grid gap-3">{plan.items.map((item) => <li className="flex gap-2 text-sm font-bold text-slate-700" key={item}><CheckCircle2 className="shrink-0 text-green-700" size={18} />{item}</li>)}</ul><div className="mt-5 rounded-lg bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-500">Não inclui / limites</p><ul className="mt-3 grid gap-2">{plan.excluded.map((item) => <li className="flex gap-2 text-xs font-bold leading-5 text-slate-500" key={item}><X className="mt-0.5 shrink-0 text-slate-400" size={14} />{item}</li>)}</ul></div><a className={`mt-8 grid min-h-12 place-items-center rounded-lg px-4 text-center font-black ${plan.featured ? "bg-green-700 text-white" : "border border-green-700 text-green-800"}`} href={plan.href}>{plan.cta}</a></article>)}</div></div></section>
-        <section className="px-4 py-16 bg-white"><div className="mx-auto grid max-w-7xl gap-6 rounded-lg border border-black/10 bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 lg:grid-cols-[0.8fr_1.2fr] lg:p-8"><div><p className="text-xs font-black uppercase text-green-300">Depois da compra</p><h2 className="mt-3 text-3xl font-black leading-tight">O que acontece depois de garantir sua cota?</h2><p className="mt-3 leading-7 text-white/70">Você recebe o acesso, preenche um formulário rápido e, quando a cota inclui implantação, nossa equipe agenda a configuração inicial.</p></div><div className="grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Acesso e formulário</strong><p className="mt-2 text-sm leading-6 text-white/70">Start recebe acesso em até 24h úteis. Essencial recebe acesso e setup básico em até 48h úteis. Profissional e Completo iniciam pelo briefing de implantação.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Prazos de entrega</strong><p className="mt-2 text-sm leading-6 text-white/70">Implantação inicial em até 5 dias úteis. Site da cota Completa em até 15 dias úteis após envio das informações.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Duração do acesso</strong><p className="mt-2 text-sm leading-6 text-white/70">Todas as cotas incluem 12 meses de acesso ao FechaPro. Renovação futura será combinada antes do fim do período.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Vagas limitadas</strong><p className="mt-2 text-sm leading-6 text-white/70">Oferta válida por tempo limitado ou até preencher as 20 cotas de fundador disponíveis.</p></div></div></div></section><section id="faq" className="bg-[#0d1409] px-4 py-20 text-white"><div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.8fr_1.2fr]"><div><p className="text-xs font-black uppercase text-green-300">FAQ</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">As dúvidas antes de comprar.</h2></div><div className="grid gap-3">{faqs.map(([question, answer], index) => <article className="border-b border-white/10" key={question}><button className="flex w-full items-center justify-between gap-4 py-5 text-left font-black" type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}><span>{question}</span><Plus className={openFaq === index ? "rotate-45" : ""} size={20} /></button>{openFaq === index ? <p className="pb-5 text-sm leading-7 text-white/65">{answer}</p> : null}</article>)}</div></div></section>
+        <section className="px-4 py-16 bg-white"><div className="mx-auto grid max-w-7xl gap-6 rounded-lg border border-black/10 bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 lg:grid-cols-[0.8fr_1.2fr] lg:p-8"><div><p className="text-xs font-black uppercase text-green-300">Depois da compra</p><h2 className="mt-3 text-3xl font-black leading-tight">O que acontece depois de garantir sua cota?</h2><p className="mt-3 leading-7 text-white/70">Você recebe o acesso, preenche um formulário rápido e, quando a cota inclui implantação, nossa equipe agenda a configuração inicial.</p></div><div className="grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Acesso e formulário</strong><p className="mt-2 text-sm leading-6 text-white/70">Start recebe acesso em até 24h úteis. Essencial recebe acesso e setup básico em até 48h úteis. Profissional e Completo iniciam pelo briefing de implantação.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Prazos de entrega</strong><p className="mt-2 text-sm leading-6 text-white/70">Implantação inicial em até 5 dias úteis. Site da cota Completa em até 15 dias úteis após envio das informações.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Duração do acesso</strong><p className="mt-2 text-sm leading-6 text-white/70">As cotas de sócio fundador incluem acesso vitalício ao FechaPro, conforme o plano contratado.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Vagas limitadas</strong><p className="mt-2 text-sm leading-6 text-white/70">Oferta válida por tempo limitado ou até preencher as 20 cotas de fundador disponíveis.</p></div></div></div></section><section id="faq" className="bg-[#0d1409] px-4 py-20 text-white"><div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.8fr_1.2fr]"><div><p className="text-xs font-black uppercase text-green-300">FAQ</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">As dúvidas antes de comprar.</h2></div><div className="grid gap-3">{faqs.map(([question, answer], index) => <article className="border-b border-white/10" key={question}><button className="flex w-full items-center justify-between gap-4 py-5 text-left font-black" type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}><span>{question}</span><Plus className={openFaq === index ? "rotate-45" : ""} size={20} /></button>{openFaq === index ? <p className="pb-5 text-sm leading-7 text-white/65">{answer}</p> : null}</article>)}</div></div></section>
         <section className="bg-green-900 px-4 py-20 text-center text-white"><div className="mx-auto max-w-3xl"><h2 className="text-3xl font-black leading-tight sm:text-5xl">Sua primeira proposta profissional em poucos minutos.</h2><p className="mt-5 text-lg leading-8 text-white/75">Envie um link com sua marca, escopo, valor, aceite e pagamento. Pare de vender no improviso.</p><a className="mt-8 inline-flex min-h-14 items-center justify-center rounded-lg bg-white px-8 font-black text-green-900" href="#planos">Escolher meu plano</a></div></section>
         <footer className="flex flex-col gap-4 bg-[#0d1409] px-4 py-8 text-sm text-white/55 sm:flex-row sm:items-center sm:justify-between"><strong className="text-lg text-white">Fecha<span className="text-green-300">Pro</span></strong><div className="flex gap-5"><a href="/privacidade">Política de Privacidade</a><a href="/termos">Termos de Uso</a><a href="/interesse">Suporte</a></div><span>© 2026 FechaPro. Todos os direitos reservados.</span></footer>
       </main>
@@ -4789,9 +4803,9 @@ const salesValueUpdates = [
   },
   {
     icon: Palette,
-    title: "Divulgacao pronta para atrair clientes",
-    description: "Solicite artes para post, story e status, envie referencias, acompanhe aprovacao, copie legenda e mensagem para chamar no WhatsApp.",
-    tag: "Atracao",
+    title: "Divulgação pronta para atrair clientes",
+    description: "Solicite artes para post, story e status, envie referências, acompanhe aprovação, copie legenda e mensagem para chamar no WhatsApp.",
+    tag: "Atração",
   },
   {
     icon: BriefcaseBusiness,
@@ -5327,7 +5341,7 @@ function ProposalDetailPanel({
               <li>• Entre em contato para confirmar início do serviço</li>
               {proposal.clientEmail ? <li>• E-mail do cliente: {proposal.clientEmail}</li> : null}
               <li>• Combine forma e data de pagamento se ainda não realizado</li>
-              <li>• Crie nova proposta para proxima etapa quando necessario</li>
+              <li>• Crie nova proposta para próxima etapa quando necessário</li>
             </ul>
           </div>
         ) : null}

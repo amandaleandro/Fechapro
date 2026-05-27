@@ -14,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!item.imageUrl) return jsonError("A arte ainda não foi enviada para aprovação.", 400);
 
   const body = (await request.json().catch(() => ({}))) as { action?: string };
-  if (body.action !== "approve") return jsonError("Acao invalida.", 400);
+  if (body.action !== "approve") return jsonError("Ação inválida.", 400);
 
   const updated = await prisma.marketingArtAsset.update({
     where: { id },

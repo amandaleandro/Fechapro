@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     await connectBaileysWhatsApp({ resetSession: Boolean(body?.resetSession) });
     return NextResponse.json(await statusPayload());
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "Nao foi possivel conectar o WhatsApp.", 502);
+    return jsonError(error instanceof Error ? error.message : "Não foi possível conectar o WhatsApp.", 502);
   }
 }
 

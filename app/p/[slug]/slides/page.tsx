@@ -111,7 +111,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
         </Slide>
 
         <Slide>
-          <Header eyebrow="Prova visual" title={portfolio.length ? "Referencias que sustentam a proposta" : "Uma entrega pensada para apresentar bem"} />
+          <Header eyebrow="Prova visual" title={portfolio.length ? "Referências que sustentam a proposta" : "Uma entrega pensada para apresentar bem"} />
           {portfolio.length ? (
             <div className="fp-slide-gallery">
               {portfolio.map((item) => (
@@ -190,7 +190,7 @@ function initials(value: string) {
 }
 
 function defaultIntro(serviceName: string, clientName: string) {
-  return `${serviceName} apresentado com escopo, referencias e investimento para ${clientName} decidir com seguranca.`;
+  return `${serviceName} apresentado com escopo, referências e investimento para ${clientName} decidir com segurança.`;
 }
 
 function formatDate(value: string) {

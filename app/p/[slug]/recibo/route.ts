@@ -97,10 +97,10 @@ function createPaymentReceiptPdf(data: {
     doc.fillColor("#166534").font("Helvetica").fontSize(10).text(`Forma: ${data.method}`, 78, confirmationY + 66, { width: 428, height: 14, ellipsis: true });
 
     const cardsY = confirmationY + 122;
-    infoCard(doc, 58, cardsY, "Cliente", data.clientName, data.clientEmail || "E-mail nao informado");
-    infoCard(doc, 302, cardsY, "Servico", data.serviceName, `Aceite: ${data.acceptedAt}`);
+    infoCard(doc, 58, cardsY, "Cliente", data.clientName, data.clientEmail || "E-mail não informado");
+    infoCard(doc, 302, cardsY, "Serviço", data.serviceName, `Aceite: ${data.acceptedAt}`);
     infoCard(doc, 58, cardsY + 104, "Recebedor", data.businessName, contactLine(data.businessEmail, data.businessWhatsapp));
-    infoCard(doc, 302, cardsY + 104, "Emissao", data.createdAt, "Recibo vinculado a proposta aceita");
+    infoCard(doc, 302, cardsY + 104, "Emissão", data.createdAt, "Recibo vinculado a proposta aceita");
 
     doc.strokeColor("#CBD5E1").moveTo(90, 696).lineTo(286, 696).stroke();
     doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(10).text(data.businessName, 90, 708, { width: 196, align: "center" });

@@ -5,7 +5,7 @@ export function productionEnv(name: string, devFallback?: string): string {
   if (value) return value;
 
   if (production) {
-    throw new Error(`${name} precisa estar configurado em producao.`);
+    throw new Error(`${name} precisa estar configurado em produção.`);
   }
 
   return devFallback || "";

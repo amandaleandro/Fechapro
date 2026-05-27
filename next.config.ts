@@ -11,7 +11,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["@whiskeysockets/baileys"],
   outputFileTracingIncludes: {
+    "/api/admin/whatsapp": ["./node_modules/@whiskeysockets/baileys/**/*"],
     "/p/[slug]/pdf": ["./node_modules/pdfkit/js/data/*.afm"],
   },
   async headers() {

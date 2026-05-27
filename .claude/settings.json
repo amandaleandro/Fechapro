@@ -4,7 +4,16 @@
       "Bash(cd /tmp/pw-test && npm install playwright-core --quiet 2>&1 | tail -3 && ls node_modules | head -10)",
       "Read(//tmp/**)",
       "Read(//c/Users/amandalscarmo/AppData/Local/Temp/pw-test/**)",
-      "WebFetch(domain:www.propoz.com.br)"
+      "WebFetch(domain:www.propoz.com.br)",
+      "Bash(scp -o StrictHostKeyChecking=no /tmp/fechapro-deploy.tar.gz root@191.252.208.234:/opt/fechapro-deploy.tar.gz)",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"cd /opt/fechapro && tar -xzf /opt/fechapro-deploy.tar.gz --exclude='.env*' && rm /opt/fechapro-deploy.tar.gz && echo 'Extração concluída'\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"cd /opt/fechapro && docker compose build --no-cache 2>&1\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"cd /opt/fechapro && docker compose --profile tools run --rm migrate 2>&1\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"cd /opt/fechapro && docker compose up -d --force-recreate app 2>&1 && echo '---' && docker ps --format 'table {{.Names}}\\\\t{{.Status}}\\\\t{{.Image}}'\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"sleep 5 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}\\\\t{{.Image}}' && echo '---' && docker logs fechapro-app --tail 20 2>&1\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"grep -i healthcheck /opt/fechapro/.env.production 2>/dev/null || echo 'Variável não encontrada no .env.production'\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"openssl rand -hex 32\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"echo 'HEALTHCHECK_TOKEN=6d3c6bb70c0e138affc5a1d39bc6c63f9fb3e61db711f060304043c732668fcf' >> /opt/fechapro/.env.production && echo 'Adicionado com sucesso'\")"
     ]
   }
 }

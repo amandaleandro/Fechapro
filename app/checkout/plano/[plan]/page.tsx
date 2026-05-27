@@ -123,7 +123,7 @@ export default async function PlanCheckoutPage({ params }: { params: Promise<{ p
             <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-700">
               <CheckoutLine label="Ambiente" value="Mercado Pago" />
               <CheckoutLine label="Cartão" value="Não armazenado" />
-              <CheckoutLine label="Status" value={active ? "Plano ativo" : "Aguardando pagamento/liberacao"} />
+              <CheckoutLine label="Status" value={active ? "Plano ativo" : "Aguardando pagamento/liberação"} />
             </div>
 
             {active ? (

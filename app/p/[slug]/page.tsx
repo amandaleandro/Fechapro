@@ -39,13 +39,31 @@ export default async function PublicProposalPage({
   const currentViewCount = shouldTrackView ? proposal.viewCount + 1 : proposal.viewCount;
 
   if (shouldTrackView) {
-    await prisma.proposalAsset.update({
-      where: { id: proposal.id },
-      data: {
-        viewCount: { increment: 1 },
-        status: currentStatus,
-      },
-    });
+    if (isFirstView) {
+      const firstViewUpdate = await prisma.proposalAsset.updateMany({
+        where: { id: proposal.id, status: "sent" },
+        data: {
+          viewCount: { increment: 1 },
+          status: "viewed",
+        },
+      });
+
+      if (!firstViewUpdate.count) {
+        await prisma.proposalAsset.update({
+          where: { id: proposal.id },
+          data: {
+            viewCount: { increment: 1 },
+          },
+        });
+      }
+    } else {
+      await prisma.proposalAsset.update({
+        where: { id: proposal.id },
+        data: {
+          viewCount: { increment: 1 },
+        },
+      });
+    }
   }
 
   if (isFirstView && proposal.user.email) {
@@ -945,7 +963,7 @@ function getPublicSegmentStyle(
       primary: secondary,
       accent: "#D6D3D1",
       segmentName: "Imóveis",
-      eyebrow: "Proposta imobiliaria",
+      eyebrow: "Proposta imobiliária",
       intro: "Escopo, imóvel atendido, responsabilidades e condições comerciais apresentados com objetividade.",
       headerBackground: `linear-gradient(135deg, #292524, ${secondary} 58%, ${primary})`,
     };
@@ -1029,7 +1047,7 @@ function getPublicSegmentStyle(
       primary: secondary,
       accent: "#FBBF24",
       segmentName: "Segurança",
-      eyebrow: "Proposta de protecao",
+      eyebrow: "Proposta de proteção",
       intro: "Diagnóstico, equipamentos, instalação, treinamento e suporte organizados para aprovar o projeto.",
       headerBackground: `linear-gradient(135deg, #020617, ${secondary} 50%, ${primary})`,
     };

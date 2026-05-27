@@ -40,6 +40,7 @@ RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefo
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
+RUN mkdir -p /app/baileys-session && chown -R nextjs:nodejs /app/baileys-session
 RUN mkdir -p /ROOT/node_modules/pdfkit/js/data
 
 # Copiar arquivos necessarios para rodar o Next em producao

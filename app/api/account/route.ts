@@ -56,10 +56,12 @@ export async function PUT(request: Request) {
       return jsonError("A nova senha precisa ter pelo menos 8 caracteres.");
     }
 
-    if (!user.passwordHash || !verifyPassword(currentPassword, user.passwordHash)) {
+    if (!user.passwordHash || !(await verifyPassword(currentPassword, user.passwordHash))) {
       return jsonError("Senha atual incorreta.", 401);
     }
   }
+
+  const passwordHash = shouldChangePassword ? await hashPassword(newPassword) : undefined;
 
   const updated = await prisma.user.update({
     where: { id: session.id },
@@ -68,7 +70,7 @@ export async function PUT(request: Request) {
       email,
       niche,
       segment,
-      ...(shouldChangePassword ? { passwordHash: hashPassword(newPassword) } : {}),
+      ...(passwordHash ? { passwordHash } : {}),
     },
     select: { id: true, name: true, email: true, niche: true, segment: true },
   });
