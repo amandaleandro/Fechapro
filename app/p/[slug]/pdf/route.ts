@@ -442,22 +442,29 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
     for (let y = 0; y < 402; y += 34) doc.rect(0, y, PAGE.width, 0.35).fill("#334155");
   }
 
+  // White logo card — garante visibilidade de logos escuros sobre o fundo escuro do cover
+  doc.roundedRect(logoX, logoY, logoWidth, logoHeight, 9).fill("#FFFFFF");
+  doc.rect(logoX, logoY + logoHeight - 3, logoWidth, 3).fill(data.brandColor);
+
   const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
+  const iSize = 46;
+  const iCenterX = logoX + (logoWidth - iSize) / 2;
+  const iCenterY = logoY + (logoHeight - iSize) / 2;
   if (logo) {
     const didDrawLogo = drawLogoImageInFrame(doc, logo, logoX, logoY, logoWidth, logoHeight, 12, 9);
     if (!didDrawLogo) {
-      drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
+      drawLogoInitials(doc, data.brandName, iCenterX, iCenterY, iSize, data.brandColor);
     }
   } else {
-    drawLogoInitials(doc, data.brandName, logoX, logoY, 58, data.brandColor);
+    drawLogoInitials(doc, data.brandName, iCenterX, iCenterY, iSize, data.brandColor);
   }
 
-  const brandTextX = logo ? MARGIN + 150 : MARGIN + 76;
+  const brandTextX = MARGIN + logoWidth + 18;
   doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text(style.eyebrow, brandTextX, 49, {
     characterSpacing: 1.1,
   });
   doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12.5).text(data.brandName, brandTextX, 65, {
-    width: PAGE.width - brandTextX - MARGIN - 122,
+    width: PAGE.width - MARGIN - 132 - brandTextX - 12,
     height: 32,
     lineGap: 1,
     ellipsis: true,
@@ -521,8 +528,9 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
     height: 11,
     ellipsis: true,
   });
-  drawCoverDetail(doc, "Prazo", data.deadline || "A combinar", MARGIN + 250, 464, 220, design);
-  drawCoverDetail(doc, "Validade", data.validUntil, MARGIN + 250, 510, 220, design);
+  doc.rect(MARGIN + 242, 444, 1, 116).fill(LINE);
+  drawCoverDetail(doc, "Prazo", data.deadline || "A combinar", MARGIN + 258, 464, 220, design);
+  drawCoverDetail(doc, "Validade", data.validUntil, MARGIN + 258, 510, 220, design);
 
   doc.roundedRect(MARGIN, 612, CONTENT_WIDTH, 82, 10).fill(design.soft);
   doc.rect(MARGIN + 20, 634, 3, 36).fill(data.brandAccentColor);
@@ -655,9 +663,18 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pdf
   const itemValueWidth = itemWidth - 62;
   const startY = doc.y + 10;
 
-  doc.roundedRect(MARGIN + 2, startY + 3, featureWidth, 138, 9).fill("#E2E8F0");
-  doc.roundedRect(MARGIN, startY, featureWidth, 138, 9).fill(design.soft);
-  doc.rect(MARGIN, startY, 6, 138).fill(design.primary);
+  // Calcula altura do card esquerdo com base na altura real dos itens da direita
+  const previewItemHeights = items.map(([, value]) => {
+    const v = value || "A combinar";
+    doc.font("Helvetica-Bold").fontSize(10.5);
+    return Math.max(42, doc.heightOfString(v, { width: itemValueWidth, lineGap: 2 }) + 31);
+  });
+  const totalItemsH = previewItemHeights.reduce((sum, h, i) => sum + h + (i < previewItemHeights.length - 1 ? itemGap : 0), 0);
+  const leftCardH = Math.max(148, totalItemsH);
+
+  doc.roundedRect(MARGIN + 2, startY + 3, featureWidth, leftCardH, 9).fill("#E2E8F0");
+  doc.roundedRect(MARGIN, startY, featureWidth, leftCardH, 9).fill(design.soft);
+  doc.rect(MARGIN, startY, 6, leftCardH).fill(design.primary);
   doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(7.5).text("SERVIÇO PROPOSTO", MARGIN + 22, startY + 24);
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(13).text(data.serviceName, MARGIN + 22, startY + 44, {
     width: featureWidth - 42,
@@ -693,7 +710,7 @@ function drawSummary(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pdf
     itemY += itemHeight + itemGap;
   });
 
-  doc.y = Math.max(startY + 162, itemY + 10);
+  doc.y = Math.max(startY + leftCardH + 22, itemY + 10);
 }
 
 function drawServiceMark(doc: PDFKit.PDFDocument, brandName: string, x: number, y: number, size: number, color: string) {
@@ -1387,7 +1404,7 @@ function drawPremiumTextPanel(doc: PDFKit.PDFDocument, text: string, height: num
 function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   const items = parseCustomFaq(data.proposalFaq);
   if (!items.length) return;
-  ensureSpace(doc, 40);
+  ensureSpace(doc, 120); // reserva espaço para título + pelo menos um item de FAQ
   sectionTitle(doc, "Perguntas frequentes", "FAQ", design);
   const colGap = 22;
   const colWidth = (CONTENT_WIDTH - colGap) / 2;
@@ -1430,38 +1447,33 @@ function drawFaq(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegm
 }
 
 function drawServicesTable(doc: PDFKit.PDFDocument, items: string[], design: PdfSegmentDesign) {
-  const markerWidth = 46;
-  const serviceWidth = CONTENT_WIDTH - markerWidth - 18;
-  doc.rect(MARGIN, doc.y, CONTENT_WIDTH, 1).fill(LINE);
-  doc.y += 10;
+  const markerWidth = 54;
+  const serviceWidth = CONTENT_WIDTH - markerWidth - 8;
+  doc.y += 8;
 
   items.forEach((item, index) => {
-    const descriptionHeight = doc.heightOfString(item, {
-      width: serviceWidth,
-      lineGap: 3,
-    });
-    const rowHeight = Math.max(44, descriptionHeight + 24);
+    const descriptionHeight = doc.heightOfString(item, { width: serviceWidth, lineGap: 3 });
+    const rowHeight = Math.max(48, descriptionHeight + 28);
 
     if (doc.y + rowHeight > PAGE_BOTTOM) {
       doc.addPage();
       doc.y = MARGIN;
-      doc.rect(MARGIN, doc.y, CONTENT_WIDTH, 1).fill(LINE);
-      doc.y += 10;
     }
 
     const y = doc.y;
-    doc.roundedRect(MARGIN, y + 5, 30, 20, 10).fill(design.soft);
-    doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text(String(index + 1).padStart(2, "0"), MARGIN, y + 12, {
-      width: 30,
+    doc.roundedRect(MARGIN, y, CONTENT_WIDTH, rowHeight, 7).fill(index % 2 === 0 ? design.soft : "#FFFFFF");
+    doc.rect(MARGIN, y, 5, rowHeight).fill(design.primary);
+    const circleY = y + Math.min(24, rowHeight / 2);
+    doc.circle(MARGIN + 27, circleY, 12).fill(design.primary);
+    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5).text(String(index + 1), MARGIN + 20.5, circleY - 5, {
+      width: 13,
       align: "center",
     });
-    doc.fillColor("#334155").font("Helvetica").fontSize(10.5).text(item, MARGIN + markerWidth, y + 8, {
+    doc.fillColor("#334155").font("Helvetica").fontSize(10.5).text(item, MARGIN + markerWidth, y + 12, {
       width: serviceWidth,
       lineGap: 3,
     });
-    doc.rect(MARGIN + markerWidth, y + rowHeight - 1, serviceWidth, 1).fill(LINE);
-
-    doc.y = y + rowHeight;
+    doc.y = y + rowHeight + 3;
   });
 
   doc.y += 14;
@@ -1469,7 +1481,7 @@ function drawServicesTable(doc: PDFKit.PDFDocument, items: string[], design: Pdf
 
 async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   if (!data.portfolio.length) return;
-  ensureSpace(doc, 200);
+  ensureSpace(doc, 260); // reserva espaço para título + pelo menos a primeira linha de cards
   sectionTitle(doc, "Portfólio relacionado", "Prova visual", design);
 
   const cardWidth = (CONTENT_WIDTH - 16) / 2;
@@ -1491,12 +1503,17 @@ async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData, des
         width: cardWidth,
         height: 102,
       });
-      if (!rendered) drawPortfolioImageFallback(doc, x, y, cardWidth, 102, item.category || "Portfolio", design);
+      const fallbackLabel = (item.category || "Portfólio").split(":").pop() || "Portfólio";
+      if (!rendered) drawPortfolioImageFallback(doc, x, y, cardWidth, 102, fallbackLabel, design);
     } else {
+      const categoryLabel = (item.category || "Portfólio").split(":").pop() || "Portfólio";
       doc.roundedRect(x, y, cardWidth, 102, 6).fill(design.soft);
-      doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(12).text(item.category || "Portfólio", x + 12, y + 44, {
+      doc.rect(x, y, cardWidth, 4).fill(design.primary);
+      doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(12).text(categoryLabel, x + 12, y + 44, {
         align: "center",
         width: cardWidth - 24,
+        height: 14,
+        ellipsis: true,
       });
     }
     doc.fillColor(INK).font("Helvetica-Bold").fontSize(11).text(item.title, x, y + 124, {
@@ -1516,27 +1533,35 @@ async function drawPortfolio(doc: PDFKit.PDFDocument, data: ProposalPdfData, des
 
 function drawTestimonials(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   if (!data.testimonials.length) return;
-  ensureSpace(doc, 140);
+  ensureSpace(doc, 200); // reserva espaço para título + pelo menos um depoimento
   sectionTitle(doc, "Depoimentos", "Prova social", design);
 
   data.testimonials.forEach((item) => {
     const quote = `"${item.quote}"`;
-    const height = Math.max(58, doc.heightOfString(quote, { width: CONTENT_WIDTH - 126, lineGap: 3 }) + 26);
-    ensureSpace(doc, height + 14);
+    const height = Math.max(88, doc.heightOfString(quote, { width: CONTENT_WIDTH - 50, lineGap: 3 }) + 56);
+    ensureSpace(doc, height + 16);
     const y = doc.y + 8;
-    doc.rect(MARGIN, y, CONTENT_WIDTH, 1).fill(LINE);
-    doc.rect(MARGIN, y + 16, 30, 2).fill(design.primary);
-    doc.fillColor(INK).font("Helvetica-Bold").fontSize(9).text(
-      `${item.authorName}${item.company ? `, ${item.company}` : ""}`,
-      MARGIN,
-      y + 28,
-      { width: 112, lineGap: 2 },
-    );
-    doc.fillColor("#475569").font("Helvetica").fontSize(10).text(quote, MARGIN + 126, y + 16, {
-      width: CONTENT_WIDTH - 126,
+
+    doc.roundedRect(MARGIN + 2, y + 3, CONTENT_WIDTH, height, 8).fill("#E2E8F0");
+    doc.roundedRect(MARGIN, y, CONTENT_WIDTH, height, 8).fill(design.soft);
+    doc.rect(MARGIN, y, 5, height).fill(design.primary);
+
+    doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(40).text('"', MARGIN + 18, y + 8, { lineBreak: false });
+
+    doc.fillColor("#334155").font("Helvetica").fontSize(10.5).text(quote, MARGIN + 22, y + 48, {
+      width: CONTENT_WIDTH - 44,
       lineGap: 3,
     });
-    doc.y = y + height + 8;
+
+    doc.rect(MARGIN + 22, y + height - 22, 20, 2).fill(design.accent);
+    doc.fillColor(INK).font("Helvetica-Bold").fontSize(9).text(
+      `${item.authorName}${item.company ? `, ${item.company}` : ""}`,
+      MARGIN + 22,
+      y + height - 14,
+      { width: CONTENT_WIDTH - 46, height: 12, ellipsis: true },
+    );
+
+    doc.y = y + height + 12;
   });
 }
 
@@ -1550,11 +1575,11 @@ function drawPortfolioImageFallback(
   design: PdfSegmentDesign,
 ) {
   doc.roundedRect(x, y, width, height, 6).fill(design.soft);
-  doc.rect(x + 12, y + 18, width - 24, 2).fill(design.accent);
-  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(12).text(label, x + 12, y + 43, {
+  doc.rect(x, y, width, 4).fill(design.primary);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(12).text(label, x + 12, y + 44, {
     align: "center",
     width: width - 24,
-    height: 18,
+    height: 14,
     ellipsis: true,
   });
 }
@@ -1629,7 +1654,7 @@ function drawPageNumbers(doc: PDFKit.PDFDocument) {
   for (let index = pageRange.start; index < pageRange.start + pageRange.count; index++) {
     if (index === pageRange.start) continue;
     doc.switchToPage(index);
-    doc.fillColor("#94A3B8").font("Helvetica").fontSize(8).text(`${index + 1}/${pageRange.count}`, PAGE.width - 74, PAGE.height - 64, {
+    doc.fillColor("#94A3B8").font("Helvetica").fontSize(8).text(`${index + 1}/${pageRange.count}`, PAGE.width - MARGIN - 30, PAGE.height - 64 + 9, {
       align: "right",
       width: 30,
       lineBreak: false,
@@ -1639,16 +1664,20 @@ function drawPageNumbers(doc: PDFKit.PDFDocument) {
 
 function sectionTitle(doc: PDFKit.PDFDocument, title: string, eyebrow: string, designOrColor: PdfSegmentDesign | string = "#2563EB") {
   const color = typeof designOrColor === "string" ? designOrColor : designOrColor.primary;
-  const accent = typeof designOrColor === "string" ? designOrColor : designOrColor.accent;
-  ensureSpace(doc, 44);
+  ensureSpace(doc, 48);
   const lineY = doc.y + 4;
-  const accentY = lineY + 8;
+  const pillY = lineY + 6;
   doc.rect(MARGIN, lineY, CONTENT_WIDTH, 1).fill(LINE);
-  doc.rect(MARGIN, accentY, 42, 2).fill(color);
-  doc.fillColor(color).font("Helvetica-Bold").fontSize(7).text(eyebrow.toUpperCase(), MARGIN, accentY + 6, {
-    characterSpacing: 0.8,
+  const eyebrowText = eyebrow.toUpperCase();
+  const pillWidth = Math.min(180, eyebrowText.length * 5.6 + 24);
+  doc.roundedRect(MARGIN, pillY, pillWidth, 16, 8).fill(color);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(7).text(eyebrowText, MARGIN + 9, pillY + 4.5, {
+    characterSpacing: 0.6,
+    width: pillWidth - 18,
+    height: 8,
+    ellipsis: true,
   });
-  doc.y = accentY + 17;
+  doc.y = pillY + 22;
   doc.fillColor(INK).font("Helvetica-Bold").fontSize(15).text(title, { width: CONTENT_WIDTH });
   doc.moveDown(0.18);
 }

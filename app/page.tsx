@@ -42,7 +42,9 @@ import {
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
+import { AuthScreen } from "./landing";
 import { isUnlimitedProposalLimit } from "@/lib/plans";
+import ProposalPreview from "./components/ProposalPreview";
 
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "support" | "account";
 type SessionProfile = { id?: string; name: string; email: string; niche?: string | null; segment?: string | null; isAdmin?: boolean };
@@ -180,7 +182,7 @@ type BrandProfile = {
   showFaq: boolean;
 };
 
-type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site";
+type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site" | "founder";
 type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
 
 type BillingPlan = {
@@ -349,6 +351,7 @@ const planAccessRank: Record<PlanCode, number> = {
   founder_essential: 2,
   founder_professional: 3,
   founder_complete_site: 5,
+  founder: 5,
 };
 
 const planLabels: Record<PlanCode, string> = {
@@ -364,6 +367,7 @@ const planLabels: Record<PlanCode, string> = {
   founder_essential: "Essencial",
   founder_professional: "Profissional",
   founder_complete_site: "Completo",
+  founder: "Fundador",
 };
 
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
@@ -705,6 +709,7 @@ export default function Home() {
   const [editingProposalId, setEditingProposalId] = useState<string | null>(null);
   const [lastSavedProposal, setLastSavedProposal] = useState<Proposal | null>(null);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [proposalsSummary, setProposalsSummary] = useState<any | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
@@ -771,14 +776,14 @@ export default function Home() {
   }, [onboardingIncomplete, session]);
 
   async function loadDashboardData() {
-    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalsData, marketingArtsData, proposalTemplatesData] = await Promise.allSettled([
+    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, marketingArtsData, proposalTemplatesData] = await Promise.allSettled([
       apiGet<BrandProfile>("/api/brand"),
       apiGet<BillingState>("/api/billing/plan"),
       apiGet<Client[]>("/api/clients"),
       apiGet<ServiceItem[]>("/api/services"),
       apiGet<PortfolioItem[]>("/api/portfolio"),
       apiGet<Testimonial[]>("/api/testimonials"),
-      apiGet<Proposal[]>("/api/proposals"),
+      // proposals list will be loaded paginated below to avoid fetching the full array
       apiGet<MarketingArt[]>("/api/marketing-arts"),
       apiGet<ProposalTemplate[]>("/api/proposal-templates"),
     ]);
@@ -798,7 +803,27 @@ export default function Home() {
     applyResult(servicesData, setServices, "serviços");
     applyResult(portfolioData, setPortfolio, "portfólio");
     applyResult(testimonialsData, setTestimonials, "depoimentos");
-    applyResult(proposalsData, setProposals, "propostas");
+    // load first page and summary separately to reduce payload
+    try {
+      const pageResponse = await apiGet<{ items: Proposal[]; total: number; page: number; pageSize: number; totalPages: number }>(`/api/proposals?page=1&pageSize=50`);
+      setProposals(pageResponse.items);
+    } catch {
+      // fallback: try the old endpoint
+      try {
+        // @ts-ignore
+        const all = await apiGet<Proposal[]>("/api/proposals");
+        setProposals(all);
+      } catch {
+        // ignore
+      }
+    }
+
+    try {
+      const summary = await apiGet<any>("/api/proposals/summary");
+      setProposalsSummary(summary);
+    } catch {
+      setProposalsSummary(null);
+    }
     applyResult(marketingArtsData, setMarketingArts, "artes");
     applyResult(proposalTemplatesData, setCustomProposalTemplates, "templates");
 
@@ -813,14 +838,16 @@ export default function Home() {
   }
 
   const openValue = useMemo(
-    () =>
-      proposals
+    () => {
+      if (proposalsSummary) return proposalsSummary.openValue || 0;
+      return proposals
         .filter((proposal) => !["draft", "accepted", "declined", "expired"].includes(proposal.status))
-        .reduce((sum, proposal) => sum + proposal.price, 0),
-    [proposals],
+        .reduce((sum, proposal) => sum + proposal.price, 0);
+    },
+    [proposals, proposalsSummary],
   );
 
-  const accepted = proposals.filter((proposal) => proposal.status === "accepted").length;
+  const accepted = proposalsSummary ? proposalsSummary.accepted : proposals.filter((proposal) => proposal.status === "accepted").length;
 
   if (!session) {
     return (
@@ -868,7 +895,12 @@ export default function Home() {
           included: includedItems,
           status,
         });
-        setProposals((current) => current.map((item) => (item.id === result.id ? result : item)));
+          setProposals((current) => current.map((item) => (item.id === result.id ? result : item)));
+          try {
+            const summary = await apiGet<any>("/api/proposals/summary");
+            setProposalsSummary(summary);
+          } catch {}
+          if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("fechapro:proposals-updated"));
         setLastSavedProposal(result);
         setNotice("Proposta atualizada com sucesso.");
         setActiveView("dashboard");
@@ -884,6 +916,11 @@ export default function Home() {
         status,
       });
       setProposals((current) => [result, ...current]);
+      try {
+        const summary = await apiGet<any>("/api/proposals/summary");
+        setProposalsSummary(summary);
+      } catch {}
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("fechapro:proposals-updated"));
       setLastSavedProposal(result);
       if (!existingClient) {
         try {
@@ -1307,6 +1344,7 @@ export default function Home() {
             lastSavedProposal={lastSavedProposal}
             onLastSavedProposalDismiss={() => setLastSavedProposal(null)}
             openValue={openValue}
+            proposalsSummary={proposalsSummary}
             portfolio={portfolio}
             proposals={proposals}
             proposalTemplates={allProposalTemplates}
@@ -1330,6 +1368,7 @@ export default function Home() {
                 onSatisfactionSurveyLinkCopy={copySatisfactionSurveyLink}
                 onStatusChange={changeProposalStatus}
                 proposals={proposals}
+                proposalsSummary={proposalsSummary}
                 onNewProposal={() => {
                   setEditingProposalId(null);
                   setDraft({ ...blankDraft, validUntil: nextWeekDate() });
@@ -1549,6 +1588,7 @@ function DashboardView({
   lastSavedProposal,
   onLastSavedProposalDismiss,
   openValue,
+  proposalsSummary,
   portfolio,
   proposals,
   services,
@@ -1577,6 +1617,7 @@ function DashboardView({
   lastSavedProposal: Proposal | null;
   onLastSavedProposalDismiss: () => void;
   openValue: number;
+  proposalsSummary?: any | null;
   portfolio: PortfolioItem[];
   proposals: Proposal[];
   services: ServiceItem[];
@@ -2065,76 +2106,16 @@ function DashboardView({
           </div>
         </form>
 
-        <aside id="proposal-preview" className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
-          <SectionHeading eyebrow="Veja como seu cliente vai receber" title={draft.clientName ? `Proposta para ${draft.clientName}` : "Prévia da proposta profissional"} />
-
-          <div className="grid gap-4 overflow-hidden rounded-lg border border-black/10 bg-slate-50">
-            <div className="h-2" style={{ background: `linear-gradient(90deg, ${brand.primaryColor}, ${brand.accentColor})` }} />
-            <div className="grid gap-4 p-4">
-            <div className="flex items-center gap-3">
-              {brand.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img alt="" className="h-12 w-12 rounded-lg object-cover" src={brand.logoUrl} />
-              ) : (
-                <div className="grid h-12 w-12 place-items-center rounded-lg font-black text-white" style={{ background: brand.primaryColor }}>
-                  {initials(brand.businessName)}
-                </div>
-              )}
-              <div>
-                <strong>{brand.businessName}</strong>
-                <span className="block text-sm font-bold text-slate-500">Proposta comercial</span>
-              </div>
-            </div>
-
-            <dl className="grid gap-3 sm:grid-cols-2">
-              <PreviewItem label="Serviço" value={draft.serviceName || "Preencha os dados"} />
-              <PreviewItem label="Investimento" value={money.format(draft.price)} />
-              <PreviewItem label="Prazo" value={draft.deadline || "-"} />
-              <PreviewItem label="Pagamento" value={draft.payment || "A combinar"} />
-              <PreviewItem label="Recebimento" value={(draft.checkoutMode || "mercadopago") === "pix" ? "PIX direto" : "Mercado Pago"} />
-            </dl>
-
-            <div>
-              <h3 className="font-black">Inclui</h3>
-              <ul className="mt-2 list-disc pl-5 text-slate-600">
-                {previewIncludedItems.map((item, index) => (
-                  <li key={`${item}-${index}`}>{item}</li>
-                ))}
-              </ul>
-            </div>
-
-            <PortfolioStrip portfolio={portfolio} />
-
-            <blockquote className="border-l-4 pl-3 leading-7 text-slate-600" style={{ borderColor: brand.accentColor }}>
-              "{testimonials[0]?.quote || "Excelente entrega, muito profissional e antes do prazo."}"
-              <cite className="mt-1 block font-black not-italic text-slate-900">
-                {testimonials[0]?.authorName || "Cliente verificado"}
-              </cite>
-            </blockquote>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white"
-                style={{ background: brand.primaryColor }}
-                type="button"
-                onClick={() => onProposalSave("sent")}
-              >
-                <Send size={18} />
-                Salvar proposta
-              </button>
-              <button
-                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black"
-                style={{ color: brand.secondaryColor }}
-                type="button"
-                onClick={() => onProposalPdf()}
-              >
-                <FileDown size={18} />
-                Gerar PDF
-              </button>
-            </div>
-            </div>
-          </div>
-        </aside>
+        <ProposalPreview
+          brand={brand}
+          draft={draft}
+          portfolio={portfolio}
+          testimonials={testimonials}
+          SectionHeading={SectionHeading}
+          PreviewItem={PreviewItem}
+          onProposalSave={onProposalSave}
+          onProposalPdf={onProposalPdf}
+        />
       </section>
 
       <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
@@ -2372,6 +2353,7 @@ function ProposalsView({
   onSatisfactionSurveyLinkCopy,
   onStatusChange,
   proposals,
+  proposalsSummary,
 }: {
   currentPlan: PlanCode;
   notice: string | null;
@@ -2387,15 +2369,17 @@ function ProposalsView({
   onSatisfactionSurveyLinkCopy: (proposal: Proposal) => void;
   onStatusChange: (id: string, status: ProposalStatus) => void;
   proposals: Proposal[];
+  proposalsSummary?: any | null;
 }) {
   const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null);
   const detailPanelRef = useRef<HTMLDivElement | null>(null);
   const [page, setPage] = useState(1);
-  const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(proposals.length / pageSize));
-  const visibleProposals = proposals.slice((page - 1) * pageSize, page * pageSize);
-  const firstVisible = proposals.length ? (page - 1) * pageSize + 1 : 0;
-  const lastVisible = Math.min(page * pageSize, proposals.length);
+  const [pageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [visibleProposals, setVisibleProposals] = useState<Proposal[]>([]);
+  const firstVisible = total ? (page - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(page * pageSize, total);
   const selectedProposal = proposals.find((proposal) => proposal.id === selectedProposalId) || null;
   const acceptedValue = proposals
     .filter((proposal) => proposal.status === "accepted")
@@ -2410,10 +2394,43 @@ function ProposalsView({
     setPage((current) => Math.min(current, totalPages));
   }, [totalPages]);
 
+  async function loadPage(p: number) {
+    try {
+      const response = await apiGet<{ items: Proposal[]; total: number; page: number; pageSize: number; totalPages: number }>(`/api/proposals?page=${p}&pageSize=${pageSize}`);
+      setVisibleProposals(response.items);
+      setTotal(response.total);
+      setTotalPages(response.totalPages);
+      setPage(response.page);
+      try {
+        onNotice?.("Lista de propostas atualizada.");
+        setTimeout(() => onNotice?.(null), 2500);
+      } catch {}
+    } catch (err) {
+      // fallback to client-side slice when server call fails
+      setVisibleProposals(proposals.slice((p - 1) * pageSize, p * pageSize));
+      setTotal(proposals.length);
+      setTotalPages(Math.max(1, Math.ceil(proposals.length / pageSize)));
+    }
+  }
+
   useEffect(() => {
     if (!selectedProposal) return;
     detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selectedProposal]);
+
+  useEffect(() => {
+    loadPage(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  useEffect(() => {
+    function onUpdated() {
+      loadPage(page);
+    }
+    window.addEventListener("fechapro:proposals-updated", onUpdated);
+    return () => window.removeEventListener("fechapro:proposals-updated", onUpdated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   return (
     <section className="grid gap-4">
@@ -2440,12 +2457,12 @@ function ProposalsView({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-6">
-        <Metric label="Total" value={String(proposals.length)} />
-        <Metric label="Enviadas" value={String(sent)} />
-        <Metric label="Visualizadas" value={String(viewed)} />
-        <Metric label="Aguardando resposta" value={String(awaitingResponse)} />
-        <Metric label="Aceitas" value={String(accepted)} />
-        <Metric label="Valor aceito" value={money.format(acceptedValue)} />
+        <Metric label="Total" value={String(proposalsSummary ? proposalsSummary.total : proposals.length)} />
+        <Metric label="Enviadas" value={String(proposalsSummary ? proposalsSummary.sent : sent)} />
+        <Metric label="Visualizadas" value={String(proposalsSummary ? proposalsSummary.viewed : viewed)} />
+        <Metric label="Aguardando resposta" value={String(proposalsSummary ? proposalsSummary.awaitingResponse : awaitingResponse)} />
+        <Metric label="Aceitas" value={String(proposalsSummary ? proposalsSummary.accepted : accepted)} />
+        <Metric label="Valor aceito" value={money.format(proposalsSummary ? proposalsSummary.acceptedValue : acceptedValue)} />
       </div>
 
       {selectedProposal ? (
@@ -2474,7 +2491,7 @@ function ProposalsView({
 
       <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-slate-600">
-          Mostrando {firstVisible}-{lastVisible} de {proposals.length} propostas
+          Mostrando {firstVisible}-{lastVisible} de {total} propostas
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -2500,7 +2517,7 @@ function ProposalsView({
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        {proposals.length ? (
+        {visibleProposals.length ? (
           visibleProposals.map((proposal) => (
             <ProposalCard
               currentPlan={currentPlan}
@@ -2519,9 +2536,7 @@ function ProposalsView({
           ))
         ) : (
           <div className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-            <p className="leading-7 text-slate-600">
-              Nenhuma proposta salva ainda. Clique em Nova proposta para montar a primeira.
-            </p>
+            <p className="leading-7 text-slate-600">Nenhuma proposta encontrada nesta página.</p>
           </div>
         )}
       </div>
@@ -4703,78 +4718,6 @@ function LandingRange({
   );
 }
 
-function AuthScreen() {
-  const [openFaq, setOpenFaq] = useState(0);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
-  const plans = [
-    { code: "start", name: "Start", price: "R$ 250", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com baixo investimento. Acesso liberado em até 24h úteis.", items: ["Acesso ao FechaPro Start", "Propostas profissionais com link", "PDF da proposta", "Contrato gerado após aceite", "Aceite online", "Cadastro de marca", "Cadastro de clientes e serviços", "10 a 20 propostas por mês", "Limite mensal renovado e acumulativo", "Entrega: acesso em até 24h úteis", "Suporte básico por 7 dias"], excluded: ["Não inclui site", "Não inclui artes", "Não inclui implantação feita pela equipe", "Não inclui primeira proposta criada pela equipe", "Não inclui kit completo de mensagens", "Não inclui suporte personalizado contínuo"], cta: "Garantir cota Start", href: "/checkout/cadastro/start" },
-    { code: "essential", name: "Essencial", price: "R$ 500", period: "pagamento único · acesso vitalício", description: "Para quem quer começar com uma estrutura mais profissional. Setup básico entregue em até 48h úteis.", items: ["Tudo da cota Start", "30 a 60 propostas por mês", "Portfólio básico", "Acompanhamento de visualizações", "Modelos prontos", "Treinamento rápido", "Limite mensal renovado e acumulativo", "Entrega: acesso e setup básico em até 48h úteis", "Suporte inicial melhor"], excluded: ["Não inclui site", "Não inclui artes mensais", "Não inclui implantação completa"], cta: "Garantir cota Essencial", href: "/checkout/cadastro/essential" },
-    { code: "professional", name: "Profissional", price: "R$ 1.000", period: "pagamento único · acesso vitalício", description: "Para quem quer apoio para começar vendendo melhor. Implantação inicial em até 5 dias úteis após envio das informações.", items: ["Tudo da cota Essencial", "60 a 200 propostas por mês", "Contrato gerado após aceite", "Implantação inicial", "Configuração da marca", "Primeira proposta criada com ajuda", "Kit de mensagens para envio e follow-up", "Apoio para começar a vender", "Limite mensal renovado e acumulativo", "Até 5 artes iniciais no primeiro mês", "Entrega: implantação em até 5 dias úteis"], excluded: ["Não inclui site completo", "Não inclui manutenção contínua de artes", "Não inclui suporte ilimitado"], cta: "Garantir cota Profissional", href: "/checkout/cadastro/professional", featured: true },
-    { code: "complete", name: "Completo", price: "R$ 2.000", period: "pagamento único · acesso vitalício", description: "Para negócios com ticket alto que querem sair com estrutura completa. Site entregue em até 15 dias úteis após envio das informações.", items: ["Tudo da cota Profissional", "Propostas ilimitadas", "FechaPro completo", "Site institucional de até 5 páginas", "Implantação assistida", "Primeira proposta profissional criada", "Kit de mensagens de venda", "Até 10 artes iniciais no primeiro mês", "Suporte inicial por 30 dias", "Entrega: estrutura completa e site em até 15 dias úteis"], excluded: ["Domínio pago à parte, se necessário", "Manutenção futura do site não inclusa", "Alterações do site incluídas apenas na implantação inicial", "Novas páginas podem ser cobradas à parte"], cta: "Garantir cota Completa", href: "/checkout/cadastro/complete" },
-  ];
-  const features = [
-    { label: "01 - Proposta", title: "Link profissional com tudo que o cliente precisa ver", text: "Marca, portfólio, depoimentos, escopo, prazo, valor e FAQ em uma página limpa, sem cadastro para o cliente.", icon: FileText },
-    { label: "02 - Rastreamento", title: "Você sabe quando o cliente abriu", text: "Acompanhe visualizações, cliques, aceite, recusa e pagamento para fazer follow-up com contexto.", icon: Eye },
-    { label: "03 - Pagamento", title: "PIX e Mercado Pago direto na proposta", text: "O cliente aceita e encontra o próximo passo de pagamento no mesmo link, com QR Code PIX ou checkout.", icon: CreditCard },
-    { label: "04 - Marca", title: "Sua identidade visual em cada proposta", text: "Logo, cores, WhatsApp, bio e textos comerciais deixam a apresentação com cara de empresa organizada.", icon: Palette },
-    { label: "05 - Templates", title: "22 nichos com modelos prontos", text: "Design, saúde, eventos, reformas, marketing, beleza e mais. Menos tela em branco, mais proposta enviada.", icon: Layers3 },
-    { label: "06 - Artes", title: "Divulgação para Instagram e WhatsApp", text: "Créditos de artes ajudam você a divulgar serviços e puxar novas conversas comerciais.", icon: Megaphone },
-  ];
-  const problems = [
-    { title: "Cliente some depois do preço", text: "Você não sabe se ele leu, comparou, esqueceu ou desistiu.", icon: MessageSquareQuote },
-    { title: "PDF ou texto sem identidade", text: "Planilha, print ou mensagem solta passam menos segurança antes mesmo do valor.", icon: FileDown },
-    { title: "Cobrança fora da proposta", text: "Depois do aceite ainda precisa pedir PIX, mandar link e conferir comprovante.", icon: QrCode },
-    { title: "Follow-up no escuro", text: "Você chama sem saber se é hora de explicar, pressionar ou esperar.", icon: Bell },
-  ];
-  const steps = ["Configure sua marca", "Crie a proposta", "Envie o link", "Acompanhe o aceite"];
-  const testimonials = [
-    ["Ana Clara R.", "Designer - São Paulo", "Antes eu mandava só o valor e o cliente pedia desconto. Agora ele vê escopo, prazo e referências antes de negociar."],
-    ["Rafael M.", "Consultor de marketing - BH", "O melhor foi parar de explicar tudo por áudio. Envio o link, vejo quando abriu e faço follow-up com mais contexto."],
-    ["Juliana F.", "Nutricionista - Curitiba", "Transformei orçamento em plano de cuidado. O paciente entende as etapas e aceita pelo link sem aquela troca infinita de mensagem."],
-  ];
-  const faqs = [
-    ["Preciso instalar algum app?", "Não. O FechaPro funciona pelo navegador, no celular ou computador. Seu cliente também acessa pelo link, sem cadastro obrigatório."],
-    ["Meu cliente vai conseguir usar?", "Sim. Ele recebe o link no WhatsApp, abre a proposta, vê escopo, valor, prazo e escolhe aceitar, recusar ou pagar."],
-    ["Funciona para o meu nicho?", "O FechaPro tem templates para 22 nichos, incluindo design, saúde, eventos, reformas, beleza, marketing digital, consultoria, educação e gastronomia."],
-    ["O pagamento pelo link é seguro?", "O checkout usa Mercado Pago ou PIX direto configurado pelo profissional. O FechaPro organiza o fluxo da proposta e do pagamento."],
-    ["Tem garantia ou teste?", "Você pode começar pelo plano que faz sentido e cancelar conforme as condições contratadas. A Estrutura Completa inclui implantação assistida."],
-  ];
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@graph": [
-      { "@type": "SoftwareApplication", name: "FechaPro", applicationCategory: "BusinessApplication", operatingSystem: "Web", url: siteUrl, description: "Propostas profissionais com link, PDF, aceite online, pagamento integrado, rastreamento e artes de divulgação para prestadores de serviço.", offers: plans.map((plan) => ({ "@type": "Offer", name: plan.name, price: plan.price.replace("R$ ", ""), priceCurrency: "BRL", availability: "https://schema.org/InStock" })) },
-      { "@type": "FAQPage", mainEntity: faqs.map(([question, answer]) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })) },
-    ],
-  };
-
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-      <main className="fp-landing min-h-screen bg-[#faf8f3] text-[#0d1409]">
-        <div className="sticky top-0 z-50 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black text-[#5c3a00] sm:text-sm">Cotas de fundador limitadas a 20 vagas: comece por R$ 250 ou saia com estrutura completa + site por R$ 2.000.</div>
-        <header className="sticky top-[32px] z-40 border-b border-black/10 bg-[#f5f2ec]/90 px-4 backdrop-blur sm:top-[36px]"><div className="mx-auto flex max-w-7xl items-center justify-between gap-4 py-3"><a className="text-xl font-black text-green-900" href="#top">Fecha<span className="text-green-600">Pro</span></a><nav className="hidden items-center gap-6 text-sm font-bold text-slate-700 md:flex"><a href="#funcionalidades">Funcionalidades</a><a href="#como-funciona">Como funciona</a><a href="#planos">Planos</a><a href="#faq">FAQ</a></nav><div className="flex items-center gap-2"><a className="hidden rounded-lg px-4 py-2 text-sm font-black text-slate-700 sm:inline-flex" href="/login">Entrar</a><a className="rounded-lg bg-green-700 px-4 py-2 text-sm font-black text-white" href="#planos">Começar</a></div></div></header>
-        <section id="top" className="relative overflow-hidden px-4 py-20 sm:py-24"><div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_35%,rgba(34,160,96,0.18),transparent_55%),linear-gradient(rgba(212,207,197,0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(212,207,197,0.45)_1px,transparent_1px)] bg-[length:auto,60px_60px,60px_60px]" /><div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center"><div><h1 className="max-w-3xl text-4xl font-black leading-tight tracking-normal sm:text-6xl">Pare de mandar preço solto. <span className="text-green-700">Comece a fechar com proposta.</span></h1><p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">Proposta profissional com link, PDF, aceite online e pagamento por PIX ou Mercado Pago, enviada pelo WhatsApp. Você acompanha quando o cliente abre e age na hora certa.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row"><a className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-700 px-6 font-black text-white shadow-lg shadow-green-900/15" href="#planos">Criar minha primeira proposta</a><a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-black/10 px-6 font-black text-slate-700" href="#como-funciona">Ver como funciona</a></div><div className="mt-10 grid gap-3 sm:grid-cols-3">{[["Link profissional", "uma página com marca, escopo, provas e botão de aceite"], ["PDF para enviar", "documento organizado para o cliente guardar e comparar"], ["Aceite e acompanhamento", "você vê visualização, resposta e pagamento no painel"]].map(([value,label]) => <div className="rounded-lg border border-black/10 bg-white p-4 shadow-sm" key={value}><strong className="block text-base font-black text-green-800">{value}</strong><span className="mt-2 block text-sm leading-6 text-slate-600">{label}</span></div>)}</div></div><div className="rounded-lg border border-black/10 bg-white p-4 shadow-2xl shadow-green-950/10"><div className="rounded-lg bg-slate-950 p-4 text-white"><div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4"><strong>Proposta Comercial</strong><span className="rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">Visualizada agora</span></div><div className="mt-5 grid gap-4 rounded-lg bg-white p-5 text-slate-950"><div className="flex items-center gap-3"><span className="grid h-12 w-12 place-items-center rounded-lg bg-green-700 text-lg font-black text-white">LS</span><div><p className="text-xs font-black uppercase text-green-700">Lumina Studio</p><h2 className="text-2xl font-black">Identidade visual completa</h2></div></div><div className="grid gap-3 rounded-lg bg-slate-50 p-4"><p className="text-sm font-black text-slate-900">Inclui logo principal, paleta de cores, tipografia, manual simples e 2 rodadas de ajuste.</p><div className="grid gap-2 sm:grid-cols-3"><span className="rounded-lg bg-green-50 p-3 text-sm font-black text-green-800">R$ 1.800</span><span className="rounded-lg bg-blue-50 p-3 text-sm font-black text-blue-800">10 dias úteis</span><span className="rounded-lg bg-amber-50 p-3 text-sm font-black text-amber-800">50% + 50%</span></div></div><div className="grid grid-cols-3 gap-2"><div className="h-20 rounded-lg bg-gradient-to-br from-emerald-600 to-slate-950" /><div className="h-20 rounded-lg bg-gradient-to-br from-blue-700 to-emerald-500" /><div className="h-20 rounded-lg bg-gradient-to-br from-slate-200 to-white ring-1 ring-black/10" /></div><button className="min-h-12 rounded-lg bg-green-700 font-black text-white" type="button">Aceitar proposta</button></div></div></div></div></section>
-        <section className="px-4 py-16"><div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-2"><article className="rounded-lg border border-rose-200 bg-white p-6 shadow-sm"><p className="text-xs font-black uppercase text-rose-700">Preço solto no WhatsApp</p><div className="mt-5 rounded-lg bg-[#e9f7ef] p-4 text-slate-900"><p className="max-w-sm rounded-lg bg-white px-4 py-3 text-sm font-bold shadow-sm">Fica R$ 850. Faço em 5 dias.</p></div><h2 className="mt-6 text-2xl font-black">O cliente compara só preço.</h2><p className="mt-2 leading-7 text-slate-600">Sem escopo, sem prova, sem condição de pagamento e sem próximo passo claro. A conversa vira desconto.</p></article><article className="rounded-lg border border-green-700 bg-slate-950 p-6 text-white shadow-xl shadow-green-950/20"><p className="text-xs font-black uppercase text-green-300">Proposta profissional FechaPro</p><div className="mt-5 rounded-lg bg-white p-4 text-slate-950"><div className="flex items-center justify-between gap-3"><strong>Instalação elétrica residencial</strong><span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-800">Link aberto</span></div><div className="mt-4 grid gap-2 text-sm font-bold text-slate-700"><span>Escopo: revisão, instalação e teste de segurança</span><span>Prazo: 5 dias úteis</span><span>Pagamento: PIX ou Mercado Pago</span><span>PDF + aceite online</span></div></div><h2 className="mt-6 text-2xl font-black">O cliente entende valor.</h2><p className="mt-2 leading-7 text-white/70">Marca, fotos, itens inclusos, prazo, pagamento e botão para aceitar. A proposta vende antes do follow-up.</p></article></div></section><section className="bg-[#0d1409] px-4 py-16 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-300">O problema</p><h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">O WhatsApp manda a mensagem. Ele não vende sua proposta por você.</h2><div className="mt-10 grid gap-3 md:grid-cols-4">{problems.map((item) => <article className="rounded-lg border border-white/10 bg-white/5 p-5" key={item.title}><item.icon className="text-green-300" size={24} /><h3 className="mt-4 font-black">{item.title}</h3><p className="mt-2 text-sm leading-6 text-white/65">{item.text}</p></article>)}</div></div></section>
-        <section id="funcionalidades" className="px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">A solução</p><h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">Tudo que você precisa para fechar mais no mesmo link.</h2><div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{features.map((feature) => <article className="rounded-lg border border-black/10 bg-white p-6 shadow-sm" key={feature.title}><feature.icon className="text-green-700" size={26} /><p className="mt-5 text-xs font-black uppercase text-green-700">{feature.label}</p><h3 className="mt-2 text-xl font-black">{feature.title}</h3><p className="mt-3 text-sm leading-7 text-slate-600">{feature.text}</p></article>)}</div></div></section>
-        <section id="como-funciona" className="bg-[#0d1409] px-4 py-20 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-300">Como funciona</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Da criação ao fechamento em 4 passos.</h2><div className="mt-10 grid gap-4 md:grid-cols-4">{steps.map((step, index) => <article className="rounded-lg border border-white/10 bg-white/5 p-5" key={step}><span className="grid h-12 w-12 place-items-center rounded-full bg-white text-lg font-black text-green-800">{index + 1}</span><h3 className="mt-5 font-black">{step}</h3><p className="mt-2 text-sm leading-6 text-white/65">{index === 0 ? "Logo, cores, WhatsApp, PIX e nicho." : index === 1 ? "Template, cliente, serviço, valor e prazo." : index === 2 ? "Um link único para enviar no WhatsApp." : "Visualização, aceite, recusa e pagamento no painel."}</p></article>)}</div><div className="mt-10 grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-2 lg:items-center"><div><h3 className="text-2xl font-black">Você para de adivinhar. Começa a acompanhar.</h3><p className="mt-3 leading-7 text-white/70">Cada movimentação importante entra no histórico da proposta para você fazer o próximo contato com contexto.</p></div><div className="grid gap-3">{["Proposta visualizada", "Cliente clicou no WhatsApp", "Proposta aceita", "Pagamento confirmado"].map((item) => <div className="rounded-lg border border-white/10 bg-[#1c2616] p-4 font-bold" key={item}>{item}</div>)}</div></div></div></section>
-        <section className="px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">Depoimentos</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Profissionais que pararam de vender só por mensagem.</h2><div className="mt-10 grid gap-4 md:grid-cols-3">{testimonials.map(([name, role, quote]) => <article className="rounded-lg border border-black/10 bg-white p-6 shadow-sm" key={name}><p className="text-[#b88d13]">★★★★★</p><p className="mt-4 text-sm italic leading-7 text-slate-700">&quot;{quote}&quot;</p><div className="mt-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-green-700 font-black text-white">{name[0]}</span><p><strong className="block text-sm">{name}</strong><span className="text-xs font-bold text-slate-500">{role}</span></p></div></article>)}</div></div></section>
-        <section id="planos" className="bg-[#f5f2ec] px-4 py-20"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase text-green-700">Planos</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Escolha sua cota de fundador enquanto ainda há vagas.</h2><div className="mt-10 grid gap-5 lg:grid-cols-4">{plans.map((plan) => <article className={`relative flex flex-col rounded-lg bg-white p-6 shadow-sm ${plan.featured ? "border-2 border-green-700" : "border border-black/10"}`} key={plan.code}>{plan.featured ? <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-700 px-4 py-1 text-xs font-black text-white">Mais escolhido</span> : null}<p className="text-xs font-black uppercase text-slate-500">{plan.name}</p><strong className="mt-4 text-5xl font-black">{plan.price}</strong><span className="mt-1 text-sm font-bold text-slate-500">{plan.period}</span><p className="mt-5 min-h-20 border-b border-black/10 pb-5 text-sm leading-7 text-slate-600">{plan.description}</p><ul className="mt-5 grid gap-3">{plan.items.map((item) => <li className="flex gap-2 text-sm font-bold text-slate-700" key={item}><CheckCircle2 className="shrink-0 text-green-700" size={18} />{item}</li>)}</ul><div className="mt-5 rounded-lg bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-500">Não inclui / limites</p><ul className="mt-3 grid gap-2">{plan.excluded.map((item) => <li className="flex gap-2 text-xs font-bold leading-5 text-slate-500" key={item}><X className="mt-0.5 shrink-0 text-slate-400" size={14} />{item}</li>)}</ul></div><a className={`mt-8 grid min-h-12 place-items-center rounded-lg px-4 text-center font-black ${plan.featured ? "bg-green-700 text-white" : "border border-green-700 text-green-800"}`} href={plan.href}>{plan.cta}</a></article>)}</div></div></section>
-        <section className="px-4 py-16 bg-white"><div className="mx-auto grid max-w-7xl gap-6 rounded-lg border border-black/10 bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 lg:grid-cols-[0.8fr_1.2fr] lg:p-8"><div><p className="text-xs font-black uppercase text-green-300">Depois da compra</p><h2 className="mt-3 text-3xl font-black leading-tight">O que acontece depois de garantir sua cota?</h2><p className="mt-3 leading-7 text-white/70">Você recebe o acesso, preenche um formulário rápido e, quando a cota inclui implantação, nossa equipe agenda a configuração inicial.</p></div><div className="grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Acesso e formulário</strong><p className="mt-2 text-sm leading-6 text-white/70">Start recebe acesso em até 24h úteis. Essencial recebe acesso e setup básico em até 48h úteis. Profissional e Completo iniciam pelo briefing de implantação.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Prazos de entrega</strong><p className="mt-2 text-sm leading-6 text-white/70">Implantação inicial em até 5 dias úteis. Site da cota Completa em até 15 dias úteis após envio das informações.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Duração do acesso</strong><p className="mt-2 text-sm leading-6 text-white/70">As cotas de sócio fundador incluem acesso vitalício ao FechaPro, conforme o plano contratado.</p></div><div className="rounded-lg border border-white/10 bg-white/5 p-4"><strong>Vagas limitadas</strong><p className="mt-2 text-sm leading-6 text-white/70">Oferta válida por tempo limitado ou até preencher as 20 cotas de fundador disponíveis.</p></div></div></div></section><section id="faq" className="bg-[#0d1409] px-4 py-20 text-white"><div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.8fr_1.2fr]"><div><p className="text-xs font-black uppercase text-green-300">FAQ</p><h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">As dúvidas antes de comprar.</h2></div><div className="grid gap-3">{faqs.map(([question, answer], index) => <article className="border-b border-white/10" key={question}><button className="flex w-full items-center justify-between gap-4 py-5 text-left font-black" type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}><span>{question}</span><Plus className={openFaq === index ? "rotate-45" : ""} size={20} /></button>{openFaq === index ? <p className="pb-5 text-sm leading-7 text-white/65">{answer}</p> : null}</article>)}</div></div></section>
-        <section className="bg-green-900 px-4 py-20 text-center text-white"><div className="mx-auto max-w-3xl"><h2 className="text-3xl font-black leading-tight sm:text-5xl">Sua primeira proposta profissional em poucos minutos.</h2><p className="mt-5 text-lg leading-8 text-white/75">Envie um link com sua marca, escopo, valor, aceite e pagamento. Pare de vender no improviso.</p><a className="mt-8 inline-flex min-h-14 items-center justify-center rounded-lg bg-white px-8 font-black text-green-900" href="#planos">Escolher meu plano</a></div></section>
-        <footer className="flex flex-col gap-4 bg-[#0d1409] px-4 py-8 text-sm text-white/55 sm:flex-row sm:items-center sm:justify-between"><strong className="text-lg text-white">Fecha<span className="text-green-300">Pro</span></strong><div className="flex gap-5"><a href="/privacidade">Política de Privacidade</a><a href="/termos">Termos de Uso</a><a href="/interesse">Suporte</a></div><span>© 2026 FechaPro. Todos os direitos reservados.</span></footer>
-      </main>
-    </>
-  );
-}
-
-function LandingMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="rounded-lg bg-white/12 p-3 text-center">
-      <strong className="block text-lg font-black">{value}</strong>
-      <span className="text-xs font-bold text-white/70">{label}</span>
-    </article>
-  );
-}
 
 const salesValueUpdates = [
   {

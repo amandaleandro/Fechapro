@@ -7,6 +7,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     where: { id },
     select: {
       claimedAt: true,
+      email: true,
       plan: true,
       status: true,
     },
@@ -18,6 +19,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 
   return NextResponse.json({
     claimed: Boolean(checkout.claimedAt),
+    email: checkout.email ?? null,
     plan: checkout.plan,
     status: checkout.status,
   });

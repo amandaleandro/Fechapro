@@ -24,28 +24,38 @@ declare global {
   // eslint-disable-next-line no-var
   var __baileysSocketPromise: Promise<BaileysSocket> | null;
   // eslint-disable-next-line no-var
+  var __baileysSocketInstance: BaileysSocket | null;
+  // eslint-disable-next-line no-var
   var __baileysConnected: boolean;
   // eslint-disable-next-line no-var
   var __baileysQr: string | null;
   // eslint-disable-next-line no-var
   var __baileysPhone: string | null;
+  // eslint-disable-next-line no-var
+  var __baileysError: string | null;
 }
 
 if (globalThis.__baileysConnected === undefined) globalThis.__baileysConnected = false;
 if (globalThis.__baileysQr === undefined) globalThis.__baileysQr = null;
 if (globalThis.__baileysPhone === undefined) globalThis.__baileysPhone = null;
 if (globalThis.__baileysSocketPromise === undefined) globalThis.__baileysSocketPromise = null;
+if (globalThis.__baileysSocketInstance === undefined) globalThis.__baileysSocketInstance = null;
+if (globalThis.__baileysError === undefined) globalThis.__baileysError = null;
 
 function getState() {
   return {
     get socketPromise() { return globalThis.__baileysSocketPromise; },
     set socketPromise(v) { globalThis.__baileysSocketPromise = v; },
+    get socketInstance() { return globalThis.__baileysSocketInstance; },
+    set socketInstance(v) { globalThis.__baileysSocketInstance = v; },
     get connected() { return globalThis.__baileysConnected; },
     set connected(v) { globalThis.__baileysConnected = v; },
     get qr() { return globalThis.__baileysQr; },
     set qr(v) { globalThis.__baileysQr = v; },
     get phone() { return globalThis.__baileysPhone; },
     set phone(v) { globalThis.__baileysPhone = v; },
+    get error() { return globalThis.__baileysError; },
+    set error(v) { globalThis.__baileysError = v; },
   };
 }
 
@@ -63,9 +73,25 @@ export async function connectBaileysWhatsApp(options: { resetSession?: boolean }
     await resetBaileysSession();
   }
 
-  await getBaileysSocket();
-  await waitForBaileysQrOrConnection();
+  state.error = null;
+
+  const socketPromise = getBaileysSocket().catch((error: unknown) => {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("[Baileys] Erro ao iniciar socket:", msg);
+    getState().error = msg;
+    throw error;
+  });
+
+  await Promise.race([
+    socketPromise.then(() => waitForBaileysQrOrConnection(15_000)),
+    waitForBaileysQrOrConnection(15_000),
+  ]).catch(() => null);
+
   return getBaileysWhatsAppStatus();
+}
+
+export async function disconnectBaileysWhatsApp() {
+  await resetBaileysSession();
 }
 
 export function getBaileysWhatsAppStatus() {
@@ -76,6 +102,7 @@ export function getBaileysWhatsAppStatus() {
     connected: state.connected,
     phone: state.phone,
     qr: state.qr,
+    error: state.error,
   };
 }
 
@@ -147,6 +174,11 @@ async function getBaileysSocket() {
 
 async function resetBaileysSession() {
   const state = getState();
+  const existing = state.socketInstance;
+  if (existing) {
+    try { (existing.ws as any)?.terminate?.(); } catch {}
+    state.socketInstance = null;
+  }
   state.socketPromise = null;
   state.connected = false;
   state.qr = null;
@@ -154,8 +186,8 @@ async function resetBaileysSession() {
   await rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
 }
 
-async function waitForBaileysQrOrConnection() {
-  const timeoutAt = Date.now() + 30_000;
+async function waitForBaileysQrOrConnection(timeoutMs = 30_000) {
+  const timeoutAt = Date.now() + timeoutMs;
   while (!getState().connected && !getState().qr && Date.now() < timeoutAt) {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
@@ -172,6 +204,7 @@ async function createBaileysSocket() {
     printQRInTerminal: false,
   });
 
+  getState().socketInstance = socket;
   socket.ev.on("creds.update", saveCreds);
   socket.ev.on("connection.update", (update) => {
     console.log("[Baileys] connection.update:", update.connection, "qr:", !!update.qr, "error:", update.lastDisconnect?.error?.message);
@@ -184,8 +217,14 @@ async function createBaileysSocket() {
 
     if (update.connection === "close") {
       const statusCode = getDisconnectStatusCode(update.lastDisconnect?.error);
-      if (statusCode !== baileys.DisconnectReason.loggedOut) {
-        state.socketPromise = null;
+      // Always clear the promise so the next getBaileysSocket() creates a fresh socket.
+      // For loggedOut, also wipe session files so a new QR is generated on reconnect.
+      state.socketPromise = null;
+      state.socketInstance = null;
+      if (statusCode === baileys.DisconnectReason.loggedOut) {
+        state.qr = null;
+        state.phone = null;
+        rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
       }
     } else if (update.connection === "open") {
       state.qr = null;

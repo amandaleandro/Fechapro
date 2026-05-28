@@ -14,7 +14,7 @@ export const revalidate = 0;
 const allowedDocumentTypes = new Set(["auto", "budget", "commercial_proposal", "technical_proposal", "care_plan", "event_proposal"]);
 const allowedSegments = new Set(["auto", "home_reform", "automotive", "beauty", "health", "business", "events", "technology", "education", "food", "pet", "real_estate", "fashion_retail", "transport", "finance", "industry", "agriculture", "tourism", "security", "general"]);
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await requireSession();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -27,12 +27,37 @@ export async function GET() {
     data: { status: "expired" },
   });
 
-  const items = await prisma.proposalAsset.findMany({
-    where: { userId: session.id },
-    include: { satisfactionSurvey: true },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(items, { headers: { "Cache-Control": "no-store" } });
+  const url = new URL(request.url);
+  const pageParam = url.searchParams.get("page");
+  const pageSizeParam = url.searchParams.get("pageSize");
+
+  // If no pagination params provided, keep historical behavior (return full list)
+  if (!pageParam && !pageSizeParam) {
+    const items = await prisma.proposalAsset.findMany({
+      where: { userId: session.id },
+      include: { satisfactionSurvey: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(items, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  const page = Math.max(1, Number(pageParam || "1"));
+  const pageSize = Math.min(100, Math.max(1, Number(pageSizeParam || "10")));
+
+  const [total, items] = await Promise.all([
+    prisma.proposalAsset.count({ where: { userId: session.id } }),
+    prisma.proposalAsset.findMany({
+      where: { userId: session.id },
+      include: { satisfactionSurvey: true },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  return NextResponse.json({ items, total, page, pageSize, totalPages }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request) {

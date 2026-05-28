@@ -188,6 +188,15 @@ export async function sendProposalViewedEmail(ownerEmail: string, ownerName: str
   );
 }
 
+export async function sendProposalFollowUpEmail(ownerEmail: string, ownerName: string, businessName: string | null | undefined, proposalCount: number, acceptedProposalCount: number) {
+  await sendMarketingEmail(ownerEmail, "proposalFollowUp", {
+    name: ownerName,
+    businessName,
+    proposalCount,
+    acceptedProposalCount,
+  });
+}
+
 export async function sendProposalAcceptedEmail(ownerEmail: string, ownerName: string, clientName: string, serviceName: string, slug: string) {
   const link = `${APP_URL}/p/${slug}`;
   const safeOwnerName = escapeHtml(ownerName);

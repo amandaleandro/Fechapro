@@ -2,7 +2,7 @@ import QRCode from "qrcode";
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { requireAdmin } from "@/lib/admin";
-import { connectBaileysWhatsApp, getBaileysWhatsAppStatus } from "@/lib/whatsapp";
+import { connectBaileysWhatsApp, disconnectBaileysWhatsApp, getBaileysWhatsAppStatus } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -20,6 +20,16 @@ export async function POST(request: Request) {
     return NextResponse.json(await statusPayload());
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "Não foi possível conectar o WhatsApp.", 502);
+  }
+}
+
+export async function DELETE() {
+  await requireAdmin();
+  try {
+    await disconnectBaileysWhatsApp();
+    return NextResponse.json(await statusPayload());
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : "Não foi possível desconectar o WhatsApp.", 502);
   }
 }
 

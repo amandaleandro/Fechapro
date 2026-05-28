@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, LayoutTemplate, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Trash2, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
 import { isUnlimitedProposalLimit } from "@/lib/plans";
 
-type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site";
+type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site" | "founder";
 
 type AdminPlan = {
   code: PlanCode;
@@ -70,6 +70,7 @@ type AdminWhatsAppStatus = {
   phone: string | null;
   qr: string | null;
   qrImage: string | null;
+  error: string | null;
 };
 
 type AdminMarketingArt = {
@@ -193,8 +194,13 @@ export default function AdminPage() {
     try {
       const response = await fetch("/api/admin/whatsapp", { cache: "no-store" });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível carregar o WhatsApp."));
-      setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
-      setWhatsappError(null);
+      const status = (await response.json()) as AdminWhatsAppStatus;
+      setWhatsappStatus(status);
+      if (status.error) {
+        setWhatsappError(status.error);
+      } else {
+        setWhatsappError(null);
+      }
     } catch (caught) {
       setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível carregar o WhatsApp.");
     }
@@ -250,6 +256,22 @@ export default function AdminPage() {
     }, 60_000);
     return () => window.clearTimeout(timeout);
   }, [connectingWhatsApp, whatsappModalOpen, whatsappStatus?.connected, whatsappStatus?.qr]);
+
+  async function disconnectWhatsApp() {
+    if (!window.confirm("Desconectar o número do WhatsApp? A sessão será encerrada e as notificações serão pausadas até reconectar.")) return;
+    setConnectingWhatsApp(true);
+    setWhatsappError(null);
+    try {
+      const response = await fetch("/api/admin/whatsapp", { method: "DELETE" });
+      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível desconectar o WhatsApp."));
+      setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
+      setNotice("WhatsApp desconectado.");
+    } catch (caught) {
+      setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível desconectar o WhatsApp.");
+    } finally {
+      setConnectingWhatsApp(false);
+    }
+  }
 
   async function connectWhatsApp() {
     setConnectingWhatsApp(true);
@@ -448,6 +470,12 @@ export default function AdminPage() {
                 <RefreshCcw size={15} />
                 Atualizar
               </button>
+              {whatsappStatus?.connected || whatsappStatus?.qr ? (
+                <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-rose-700/30 bg-rose-50 px-3 text-sm font-black text-rose-700 disabled:opacity-60" disabled={connectingWhatsApp} type="button" onClick={disconnectWhatsApp}>
+                  <XCircle size={15} />
+                  Desconectar
+                </button>
+              ) : null}
               <button className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-black text-white disabled:opacity-60" disabled={connectingWhatsApp} type="button" onClick={connectWhatsApp}>
                 <MessageCircle size={16} />
                 {connectingWhatsApp ? "Conectando..." : whatsappStatus?.connected ? "Reconectar" : "Conectar numero"}
@@ -731,6 +759,10 @@ export default function AdminPage() {
               <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadWhatsAppStatus}>
                 <RefreshCcw size={15} />
                 Atualizar QR
+              </button>
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-rose-700/30 bg-rose-50 px-3 text-sm font-black text-rose-700 disabled:opacity-60" disabled={connectingWhatsApp} type="button" onClick={disconnectWhatsApp}>
+                <XCircle size={15} />
+                Desconectar
               </button>
               <button className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-black text-white disabled:opacity-60" disabled={connectingWhatsApp} type="button" onClick={connectWhatsApp}>
                 <MessageCircle size={16} />

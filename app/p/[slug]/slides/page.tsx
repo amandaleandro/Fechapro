@@ -55,7 +55,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
       </div>
 
       <article className="fp-slides-deck">
-        <Slide className="fp-slide-cover">
+        <Slide className="fp-slide-cover" footer={<><span>{brandName}</span><span>1 / 5</span></>}>
           <div className="fp-slide-brand">
             {brand?.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -83,7 +83,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
           </div>
         </Slide>
 
-        <Slide>
+        <Slide footer={<><span>{brandName}</span><span>2 / 5</span></>}>
           <Header eyebrow="Contexto" title={`O que ${proposal.clientName} recebe`} />
           <div className="fp-slide-grid">
             <div className="fp-slide-statement">
@@ -98,7 +98,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
           </div>
         </Slide>
 
-        <Slide>
+        <Slide footer={<><span>{brandName}</span><span>3 / 5</span></>}>
           <Header eyebrow="Escopo" title="Entrega organizada em etapas claras" />
           <ol className="fp-slide-scope">
             {included.slice(0, 7).map((item, index) => (
@@ -110,7 +110,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
           </ol>
         </Slide>
 
-        <Slide>
+        <Slide footer={<><span>{brandName}</span><span>4 / 5</span></>}>
           <Header eyebrow="Prova visual" title={portfolio.length ? "Referências que sustentam a proposta" : "Uma entrega pensada para apresentar bem"} />
           {portfolio.length ? (
             <div className="fp-slide-gallery">
@@ -134,7 +134,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
           )}
         </Slide>
 
-        <Slide>
+        <Slide footer={<><span>{brandName}</span><span>5 / 5</span></>}>
           <Header eyebrow="Fechamento" title="Pronto para seguir" />
           <div className="fp-slide-close">
             <div>
@@ -163,8 +163,13 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
   );
 }
 
-function Slide({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`fp-slide ${className}`}>{children}</div>;
+function Slide({ children, className = "", footer }: { children: ReactNode; className?: string; footer?: ReactNode }) {
+  return (
+    <div className={`fp-slide ${className}`}>
+      {children}
+      {footer !== undefined ? <footer className="fp-slide-footer">{footer}</footer> : null}
+    </div>
+  );
 }
 
 function Header({ eyebrow, title }: { eyebrow: string; title: string }) {

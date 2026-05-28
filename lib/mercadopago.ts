@@ -214,14 +214,14 @@ export async function createSignupPlanCheckout(input: {
       externalReference: `signup_plan:${input.checkoutId}`,
       origin: input.origin,
       payerEmail: input.email,
-      successPath: `/cadastro?checkout=${input.checkoutId}&plan=${plan.code}&payment=success`,
+      successPath: `/checkout/conta?checkout=${input.checkoutId}&plan=${plan.code}`,
       title: `FechaPro ${plan.name}`,
     });
   }
 
   return createSubscriptionCheckout({
     amountCents: recurringAmountCents(input.plan),
-    backPath: `/cadastro?checkout=${input.checkoutId}&plan=${plan.code}&payment=success`,
+    backPath: `/checkout/conta?checkout=${input.checkoutId}&plan=${plan.code}`,
     externalReference: `signup_plan:${input.checkoutId}`,
     origin: input.origin,
     payerEmail: input.email,

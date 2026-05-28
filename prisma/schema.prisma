@@ -341,4 +341,5 @@ enum PlanCode {
   founder_essential
   founder_professional
   founder_complete_site
+  founder
 }

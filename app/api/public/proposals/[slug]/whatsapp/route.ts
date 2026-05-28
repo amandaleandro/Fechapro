@@ -7,6 +7,7 @@ const intentMessages: Record<string, string> = {
   doubt: "Olá, vi a proposta e tenho uma dúvida.",
   negotiate: "Olá, vi a proposta e quero negociar.",
   contact: "Olá, vi a proposta e quero falar sobre ela.",
+  service: "Olá, tenho interesse em contratar um serviço.",
 };
 
 function formatWhatsAppPhone(value?: string | null) {
@@ -20,6 +21,7 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
   const { slug } = await context.params;
   const url = new URL(request.url);
   const intent = url.searchParams.get("intent") || "contact";
+  const serviceParam = url.searchParams.get("service");
 
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
@@ -40,7 +42,9 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
   const phone = formatWhatsAppPhone(proposal?.user.brandProfile?.whatsapp);
   if (!proposal || !phone) redirect(`/p/${slug}?error=whatsapp`);
 
-  const message = intentMessages[intent] || intentMessages.contact;
+  const message = intent === "service" && serviceParam
+    ? `Olá, tenho interesse no serviço: ${serviceParam}.`
+    : (intentMessages[intent] || intentMessages.contact);
   const nextStatus = ["sent", "viewed"].includes(proposal.status) ? "awaiting_response" : proposal.status;
 
   await prisma.proposalAsset.update({

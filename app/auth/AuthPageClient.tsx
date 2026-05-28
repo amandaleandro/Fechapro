@@ -11,6 +11,13 @@ import { businessSegments, proposalTemplateNiches } from "@/lib/proposal-templat
 
 type AuthMode = "login" | "signup";
 
+const PANEL_FEATURES = [
+  { icon: Link2, text: "Proposta em link profissional e PDF" },
+  { icon: ShieldCheck, text: "Aceite digital com status em tempo real" },
+  { icon: FileText, text: "Templates por nicho e segmento" },
+  { icon: CreditCard, text: "Cobrança integrada via PIX e cartão" },
+];
+
 export function AuthPageClient({ mode }: { mode: AuthMode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,14 +37,19 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
   useEffect(() => {
     window.onFechaProTurnstile = setTurnstileToken;
     window.onFechaProTurnstileExpired = () => setTurnstileToken("");
-
     return () => {
       delete window.onFechaProTurnstile;
       delete window.onFechaProTurnstileExpired;
     };
   }, []);
 
-  async function submitAuth(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (isSignup && !checkoutId) {
+      router.replace("/#planos");
+    }
+  }, [isSignup, checkoutId, router]);
+
+  async function submitAuth(event: { preventDefault(): void }) {
     event.preventDefault();
     setAuthError(null);
 
@@ -91,96 +103,100 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
     }
   }
 
+  if (isSignup && !checkoutId) return null;
+
   return (
     <main className="min-h-screen overflow-hidden bg-[var(--ui-bg)] text-slate-950">
       {isSignup && turnstileSiteKey ? (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
       ) : null}
       <div className="mx-auto grid min-h-screen w-full max-w-5xl gap-4 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <section className="relative isolate grid min-h-[380px] overflow-hidden rounded-lg border border-slate-200/10 bg-[#102033] p-5 text-white shadow-xl shadow-slate-900/10 sm:min-h-[480px] sm:p-7 lg:min-h-[540px]">
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(145deg,rgba(20,83,45,0.45),rgba(15,23,42,0.2)_42%,rgba(30,64,175,0.16))]" />
 
-          <Link className="inline-flex w-fit items-center gap-2 font-black" href="/">
+        {/* Left panel */}
+        <section className="relative isolate grid min-h-[380px] overflow-hidden rounded-xl border border-white/5 bg-[#0d1f2d] p-6 text-white shadow-2xl shadow-slate-900/20 sm:min-h-[480px] sm:p-8 lg:min-h-[580px]">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_60%_at_100%_0%,rgba(16,185,129,0.18),transparent),linear-gradient(160deg,transparent,rgba(30,64,175,0.12))]" />
+
+          <Link className="inline-flex w-fit" href="/">
             <span className="grid h-12 w-40 place-items-center rounded-lg bg-white px-3 shadow-sm shadow-black/10">
               <Image alt="FechaPro" className="h-9 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
             </span>
           </Link>
 
-          <div className="self-center">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-3 py-2 text-xs font-bold uppercase tracking-wide text-emerald-100 shadow-sm">
-              <Sparkles size={14} />
-              {isSignup ? "Cadastro" : "Acesso"}
+          <div className="self-center space-y-7">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-emerald-300">
+                <Sparkles size={12} />
+                {isSignup ? "Cadastro" : "Acesso"}
+              </div>
+              <h1 className="text-4xl font-extrabold leading-[1.15] tracking-tight sm:text-5xl">
+                {isSignup ? (
+                  <>Configure seu<br className="hidden sm:block" /> painel.</>
+                ) : (
+                  <>Entre no<br className="hidden sm:block" /> painel.</>
+                )}
+              </h1>
+              <p className="mt-4 text-base leading-7 text-slate-300/75 sm:text-lg">
+                {isSignup
+                  ? "Finalize o cadastro e comece a enviar propostas profissionais hoje."
+                  : "Gerencie clientes, propostas e fechamentos em um só lugar."}
+              </p>
             </div>
-            <h1 className="max-w-[12ch] text-3xl font-extrabold leading-tight tracking-normal sm:max-w-[11ch] sm:text-5xl">
-              {isSignup ? "Configure seu painel de propostas." : "Entre no painel."}
-            </h1>
-            <p className="mt-6 max-w-md text-base leading-7 text-slate-200/85 sm:text-lg">
-              {isSignup
-                ? "Finalize o cadastro para criar propostas, acompanhar status e manter seus dados comerciais organizados."
-                : "Gerencie clientes, serviços, propostas, portfólio e conta em um só lugar."}
-            </p>
+
+            <ul className="grid gap-3">
+              {PANEL_FEATURES.map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3 text-sm text-slate-200/70">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-500/20">
+                    <Icon className="text-emerald-400" size={13} />
+                  </span>
+                  {text}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 text-center sm:text-left">
-            {[
-              { icon: Link2, label: "Link" },
-              { icon: FileText, label: "PDF" },
-              { icon: ShieldCheck, label: "Aceite" },
-            ].map(({ icon: Icon, label }) => (
-              <div className="grid min-h-16 content-between rounded-lg border border-white/10 bg-white/[0.06] p-3 text-sm font-bold shadow-sm backdrop-blur" key={label}>
-                <Icon className="text-emerald-200" size={21} />
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
+          <div className="h-px w-full bg-gradient-to-r from-emerald-500/50 via-emerald-400/30 to-transparent" />
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/8 sm:p-5">
-          <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-[var(--ui-bg)] p-1">
-            <a className={`grid min-h-10 place-items-center rounded-md text-sm font-bold transition hover:text-slate-950 ${!isSignup ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200" : "text-slate-500"}`} href="/login">
-              Entrar
-            </a>
-            <a className={`grid min-h-10 place-items-center rounded-md text-sm font-bold transition hover:text-slate-950 ${isSignup ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200" : "text-slate-500"}`} href="/cadastro">
-              Criar conta
-            </a>
-          </div>
-
-          {isSignup && !checkoutId ? (
-            <div className="grid gap-5">
-              <div className="space-y-1">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Plano obrigatório</p>
-                <h2 className="text-2xl font-extrabold leading-tight text-slate-900">Escolha um plano para liberar o cadastro</h2>
-                <p className="max-w-xl text-sm leading-6 text-slate-500">
-                  O acesso é liberado depois da confirmação do pagamento pelo Mercado Pago.
-                </p>
-              </div>
-              <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-bold text-white shadow-sm shadow-green-700/10 transition hover:bg-green-700" href="/#planos">
-                <CreditCard size={18} />
-                Escolher plano
-              </Link>
-              <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-semibold leading-6 text-green-900">
-                Depois do pagamento, você volta para esta tela para finalizar nome, e-mail e senha.
-              </div>
+        {/* Right panel */}
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-900/8 sm:p-6">
+          {isSignup ? (
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-[var(--ui-bg)] p-1">
+              <a
+                className="grid min-h-10 place-items-center rounded-md text-sm font-bold text-slate-500 transition hover:text-slate-950"
+                href="/login"
+              >
+                Entrar
+              </a>
+              <span className="grid min-h-10 place-items-center rounded-md bg-white text-sm font-bold text-slate-950 shadow-sm ring-1 ring-slate-200">
+                Criar conta
+              </span>
             </div>
-          ) : (
+          ) : null}
+
           <form className="grid gap-5" onSubmit={submitAuth}>
-            <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{isSignup ? "Cadastro" : "Login"}</p>
-              <h2 className="text-2xl font-extrabold leading-tight">{isSignup ? "Finalize sua conta" : "Entre no FechaPro"}</h2>
-              <p className="max-w-xl text-sm leading-6 text-slate-500">
-                {isSignup ? `Pagamento ${plan ? `do plano ${plan}` : "do plano"} confirmado? Complete os dados para acessar o painel.` : "Continue de onde parou e acompanhe suas propostas."}
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                {isSignup ? "Cadastro" : "Login"}
+              </p>
+              <h2 className="text-2xl font-extrabold leading-tight text-slate-900">
+                {isSignup ? "Finalize sua conta" : "Bem-vindo de volta"}
+              </h2>
+              <p className="text-sm leading-6 text-slate-500">
+                {isSignup
+                  ? `Pagamento${plan ? ` do plano ${plan}` : ""} confirmado. Complete os dados abaixo.`
+                  : "Entre para continuar acompanhando suas propostas."}
               </p>
             </div>
 
             {authError ? (
-              <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-3 text-sm font-bold text-rose-900">
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
                 {authError}
               </div>
             ) : null}
 
             <div className="grid gap-4">
-              {isSignup ? <AuthField autoComplete="name" icon={User} label="Nome" maxLength={80} placeholder="Seu nome completo" required value={name} onChange={setName} /> : null}
-              {isSignup ? <AuthField icon={Sparkles} label="Nicho" list="signup-template-niches" maxLength={80} placeholder="Ex: Contabilidade" required value={niche} onChange={setNiche} /> : null}
+              {isSignup ? <AuthField autoComplete="name" icon={User} label="Nome completo" maxLength={80} placeholder="Seu nome completo" required value={name} onChange={setName} /> : null}
+              {isSignup ? <AuthField icon={Sparkles} label="Nicho" list="signup-template-niches" maxLength={80} placeholder="Ex: Contabilidade, Design, Marketing…" required value={niche} onChange={setNiche} /> : null}
               {isSignup ? <AuthSelect icon={User} label="Segmento" required value={segment} onChange={setSegment} /> : null}
               {isSignup ? (
                 <datalist id="signup-template-niches">
@@ -188,7 +204,18 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
                 </datalist>
               ) : null}
               <AuthField autoComplete="email" icon={Mail} label="E-mail" placeholder="voce@email.com" required type="email" value={email} onChange={setEmail} />
-              <AuthField autoComplete={isSignup ? "new-password" : "current-password"} icon={Lock} label="Senha" hint={isSignup ? "Mínimo de 8 caracteres." : undefined} minLength={isSignup ? 8 : undefined} placeholder="Sua senha" required type="password" value={password} onChange={setPassword} />
+              <AuthField
+                autoComplete={isSignup ? "new-password" : "current-password"}
+                icon={Lock}
+                label="Senha"
+                hint={isSignup ? "Mínimo 8 caracteres" : undefined}
+                minLength={isSignup ? 8 : undefined}
+                placeholder="Sua senha"
+                required
+                type="password"
+                value={password}
+                onChange={setPassword}
+              />
             </div>
 
             {isSignup && turnstileSiteKey ? (
@@ -201,30 +228,33 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             ) : null}
 
             {!isSignup ? (
-              <div className="text-right">
-                <a href="/esqueci-senha" className="text-sm text-slate-500 hover:text-slate-800 hover:underline">
+              <div className="flex justify-end">
+                <a href="/esqueci-senha" className="text-sm text-slate-400 underline-offset-2 transition hover:text-slate-700 hover:underline">
                   Esqueci minha senha
                 </a>
               </div>
             ) : null}
 
-            <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-bold text-white shadow-sm shadow-green-700/10 transition hover:bg-green-700 focus-visible:outline focus-visible:outline-3 focus-visible:outline-green-700/25 disabled:cursor-not-allowed disabled:opacity-60" disabled={authLoading} type="submit">
-              {authLoading ? <Lock size={18} /> : <ArrowRight size={18} />}
+            <button
+              className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl bg-green-600 px-5 font-bold text-white shadow-md shadow-green-700/20 transition hover:bg-green-700 focus-visible:outline focus-visible:outline-3 focus-visible:outline-green-700/25 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={authLoading}
+              type="submit"
+            >
+              {authLoading ? <Lock size={16} /> : <ArrowRight size={16} />}
               {authLoading ? "Aguarde..." : isSignup ? "Criar conta e entrar" : "Entrar no FechaPro"}
             </button>
 
-            <div className="grid gap-2 border-t border-slate-100 pt-1 text-sm leading-6 text-slate-500 sm:grid-cols-2">
+            <div className="grid gap-2 border-t border-slate-100 pt-3 text-sm leading-6 text-slate-500 sm:grid-cols-2">
               <span className="inline-flex items-center gap-2">
-                <Check className="text-green-700" size={16} />
+                <Check className="text-green-600" size={14} />
                 Propostas em PDF e link
               </span>
               <span className="inline-flex items-center gap-2">
-                <Check className="text-green-700" size={16} />
+                <Check className="text-green-600" size={14} />
                 Aceite com status
               </span>
             </div>
           </form>
-          )}
         </section>
       </div>
     </main>
@@ -259,14 +289,25 @@ function AuthField({
   value: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+    <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
       <span className="flex items-center justify-between gap-3">
         {label}
-        {hint ? <span className="text-xs font-bold text-slate-400">{hint}</span> : null}
+        {hint ? <span className="text-xs font-medium text-slate-400">{hint}</span> : null}
       </span>
-      <span className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 transition focus-within:border-green-600 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
-        <Icon className="shrink-0 text-slate-500" size={16} />
-        <input className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400" autoComplete={autoComplete} list={list} maxLength={maxLength} minLength={minLength} placeholder={placeholder} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      <span className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 px-4 transition focus-within:border-green-500 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-600/15">
+        <Icon className="shrink-0 text-slate-400" size={15} />
+        <input
+          className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
+          autoComplete={autoComplete}
+          list={list}
+          maxLength={maxLength}
+          minLength={minLength}
+          placeholder={placeholder}
+          required={required}
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
       </span>
     </label>
   );
@@ -286,11 +327,16 @@ function AuthSelect({
   value: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+    <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
       {label}
-      <span className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 transition focus-within:border-green-600 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-700/20">
-        <Icon className="shrink-0 text-slate-500" size={16} />
-        <select className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none" required={required} value={value} onChange={(event) => onChange(event.target.value)}>
+      <span className="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 px-4 transition focus-within:border-green-500 focus-within:bg-white focus-within:outline focus-within:outline-3 focus-within:outline-green-600/15">
+        <Icon className="shrink-0 text-slate-400" size={15} />
+        <select
+          className="min-h-10 flex-1 bg-transparent text-slate-900 outline-none"
+          required={required}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        >
           <option value="">Selecione</option>
           {businessSegments.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
@@ -309,9 +355,7 @@ declare global {
 async function apiPost<T = unknown>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 

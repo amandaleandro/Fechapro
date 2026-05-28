@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { prisma } from "@/lib/prisma";
-import { sendProposalViewedEmail } from "@/lib/email";
+import { sendProposalFollowUpEmail } from "@/lib/email";
 import { sendProposalPushNotification } from "@/lib/push";
 import { proposalNotification } from "@/lib/proposal-notifications";
 import { getSession } from "@/lib/session";
@@ -67,13 +67,7 @@ export default async function PublicProposalPage({
   }
 
   if (isFirstView && proposal.user.email) {
-    await sendProposalViewedEmail(
-      proposal.user.email,
-      proposal.user.name,
-      proposal.clientName,
-      proposal.serviceName,
-      proposal.publicSlug
-    );
+    // follow-up email will be sent after we compute proposal counts below
   }
 
   if (isFirstView) {
@@ -88,7 +82,7 @@ export default async function PublicProposalPage({
   }
 
   const demoCategories = demoPortfolioCategories(proposal.publicSlug);
-  const [portfolio, testimonials, services] = await Promise.all([
+  const [portfolio, testimonials, services, proposalCount, acceptedProposalCount] = await Promise.all([
     prisma.portfolioAsset.findMany({
       where: { userId: proposal.userId, ...(demoCategories.length ? { category: { in: demoCategories } } : {}) },
       orderBy: { createdAt: "desc" },
@@ -104,9 +98,20 @@ export default async function PublicProposalPage({
       orderBy: { createdAt: "desc" },
       take: 4,
     }),
+    prisma.proposalAsset.count({ where: { userId: proposal.userId } }),
+    prisma.proposalAsset.count({ where: { userId: proposal.userId, status: "accepted" } }),
   ]);
   const brand = proposal.user.brandProfile;
   const brandName = brand?.businessName || proposal.user.name;
+  if (isFirstView && proposal.user.email) {
+    await sendProposalFollowUpEmail(
+      proposal.user.email,
+      proposal.user.name,
+      brandName,
+      proposalCount,
+      acceptedProposalCount
+    );
+  }
   const brandColor = brand?.primaryColor || "#22C55E";
   const brandSecondaryColor = brand?.secondaryColor || "#0F172A";
   const brandAccentColor = brand?.accentColor || "#2563EB";
@@ -202,6 +207,16 @@ export default async function PublicProposalPage({
           </div>
         ) : null}
 
+        {!expired && daysLeft !== null && daysLeft >= 1 && daysLeft <= 3 ? (
+          <div className="rounded-lg border border-orange-700/20 bg-orange-50 p-4 text-orange-900 shadow-xl shadow-slate-900/5">
+            <strong>Esta proposta vence em {daysLeft === 1 ? "1 dia" : `${daysLeft} dias`}.</strong>
+            <p className="mt-1 text-sm">Aceite online para garantir as condições apresentadas.</p>
+            <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg bg-orange-700 px-4 text-sm font-black text-white" href="#aceite">
+              Aceitar agora
+            </a>
+          </div>
+        ) : null}
+
         <header className={`fp-proposal-hero overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${segmentStyle.primary}, ${segmentStyle.accent})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
@@ -239,6 +254,11 @@ export default async function PublicProposalPage({
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-white/80">
                   {proposalStyle.badges[3]}
                 </span>
+                {acceptedProposalCount > 0 ? (
+                  <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase text-green-300">
+                    {acceptedProposalCount} aprovações
+                  </span>
+                ) : null}
               </div>
 
               <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-6xl">
@@ -320,12 +340,16 @@ export default async function PublicProposalPage({
           </div>
         </header>
 
-        <section className={`fp-proposal-summary grid gap-3 border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 sm:grid-cols-5 ${proposalStyle.radiusClass}`}>
+        <section className={`fp-proposal-summary grid gap-3 border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/5 ${isOwnerView ? "sm:grid-cols-5" : "sm:grid-cols-3"} ${proposalStyle.radiusClass}`}>
           <PreviewBox label="Serviço" value={proposal.serviceName} />
           <PreviewBox label="Prazo" value={proposal.deadline} />
           <PreviewBox label="Pagamento" value={proposal.payment || "A combinar"} />
-          <PreviewBox label="Visualizações" value={String(currentViewCount)} />
-          <PreviewBox label="Cliques WhatsApp" value={String(proposal.whatsappClickCount)} />
+          {isOwnerView ? (
+            <>
+              <PreviewBox label="Visualizações" value={String(currentViewCount)} />
+              <PreviewBox label="Cliques WhatsApp" value={String(proposal.whatsappClickCount)} />
+            </>
+          ) : null}
         </section>
 
         {brand?.proposalClosing ? (
@@ -398,9 +422,15 @@ export default async function PublicProposalPage({
             <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Contato</p>
               <div className="mt-3 grid gap-2 text-sm font-bold text-slate-600">
-                {brand?.email ? <p>E-mail: {brand.email}</p> : null}
-                {brand?.instagram ? <p>Instagram: {brand.instagram}</p> : null}
-                {brand?.website ? <p>Site: {brand.website}</p> : null}
+                {brand?.email ? (
+                  <p><a className="underline underline-offset-2" href={`mailto:${brand.email}`}>E-mail: {brand.email}</a></p>
+                ) : null}
+                {brand?.instagram ? (
+                  <p><a className="underline underline-offset-2" href={brand.instagram.startsWith("http") ? brand.instagram : `https://instagram.com/${brand.instagram.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer">Instagram: {brand.instagram}</a></p>
+                ) : null}
+                {brand?.website ? (
+                  <p><a className="underline underline-offset-2" href={brand.website.startsWith("http") ? brand.website : `https://${brand.website}`} target="_blank" rel="noopener noreferrer">Site: {brand.website}</a></p>
+                ) : null}
               </div>
               {whatsappUrl ? (
                 <a className="mt-4 grid min-h-11 place-items-center rounded-lg px-5 text-center font-black text-white" href={whatsappUrl} style={{ background: brandColor }} target="_blank">
@@ -452,6 +482,16 @@ export default async function PublicProposalPage({
                     <span className="mt-1 block text-sm font-bold text-slate-500">
                       A partir de {money.format(service.price)} {service.deadline ? `- ${service.deadline}` : ""}
                     </span>
+                    {whatsappUrl ? (
+                      <a
+                        className="mt-3 inline-flex min-h-9 items-center justify-center rounded-lg px-3 text-sm font-black text-white"
+                        href={`/api/public/proposals/${proposal.publicSlug}/whatsapp?intent=service&service=${encodeURIComponent(service.name)}`}
+                        style={{ background: brandColor }}
+                        target="_blank"
+                      >
+                        Solicitar proposta
+                      </a>
+                    ) : null}
                   </div>
                 </div>
               ))}
