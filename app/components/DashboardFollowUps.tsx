@@ -33,15 +33,15 @@ export default function DashboardFollowUps({ followUps, onNotice }: { followUps:
         const followUpMessages = [
           {
             label: "Enviar follow-up",
-            text: `Oi, ${proposal.clientName}! Passando para saber se conseguiu olhar a proposta de ${proposal.serviceName}. Posso tirar alguma duvida? ${proposalUrl}`,
+            text: `Oi, ${proposal.clientName}! Passando para saber se conseguiu olhar a proposta de ${proposal.serviceName}. Posso tirar alguma dúvida? ${proposalUrl}`,
           },
           {
             label: "Chamar no WhatsApp",
-            text: `Oi, ${proposal.clientName}! Vi que a proposta de ${proposal.serviceName} esta em aberto. Quer que eu explique algum ponto do escopo, prazo ou pagamento? ${proposalUrl}`,
+            text: `Oi, ${proposal.clientName}! Vi que a proposta de ${proposal.serviceName} está em aberto. Quer que eu explique algum ponto do escopo, prazo ou pagamento? ${proposalUrl}`,
           },
           {
             label: "Reforçar validade",
-            text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale ate ${new Date(proposal.validUntil).toLocaleDateString("pt-BR")}` : " esta disponivel para aceite"}. Segue o link: ${proposalUrl}`,
+            text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale até ${new Date(proposal.validUntil).toLocaleDateString("pt-BR")}` : " está disponível para aceite"}. Segue o link: ${proposalUrl}`,
           },
         ];
         return (

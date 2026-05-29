@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const DEMO_SERVICE_IMAGE_URL = "/landing/hero-proposta.png";
+
 function demoSlug(label: string) {
   return `demo-${label}-${randomBytes(6).toString("base64url")}`;
 }
@@ -935,14 +937,8 @@ const demoProposals: DemoProposal[] = [
   },
 ];
 
-function demoImageForNiche(nicheLabel: string) {
-  const parts = nicheLabel.split("-");
-  for (let index = 0; index < parts.length; index += 1) {
-    const niche = parts.slice(0, parts.length - index).join("-");
-    const item = demoPortfolioItems.find((photo) => photo.nicheLabel === niche);
-    if (item?.imageUrl) return item.imageUrl;
-  }
-  return demoPortfolioItems[0]?.imageUrl || null;
+function demoServiceImageUrl() {
+  return DEMO_SERVICE_IMAGE_URL;
 }
 
 export async function POST(request: Request) {
@@ -1039,7 +1035,7 @@ export async function POST(request: Request) {
             userId: adminUser.id,
             title: item.title,
             category: item.category,
-            imageUrl: item.imageUrl,
+            imageUrl: DEMO_SERVICE_IMAGE_URL,
             createdAt: new Date(now.getTime() - index * 60 * 1000),
           },
         }),
@@ -1078,7 +1074,7 @@ export async function POST(request: Request) {
             price: p.price,
             deadline: p.deadline,
             includes: p.included.slice(0, 30),
-            imageUrl: demoImageForNiche(p.nicheLabel),
+            imageUrl: demoServiceImageUrl(),
             createdAt: new Date(now.getTime() - index * 60 * 1000),
           },
         }),

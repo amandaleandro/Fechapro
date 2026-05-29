@@ -32,8 +32,8 @@ Todas as chamadas de dados do frontend passam pelos endpoints de API. Não há c
 ## Autenticação e sessão
 
 - Autenticação por email + senha.
-- Senhas armazenadas como hash (bcrypt, via `lib/session.ts`).
-- Sessão baseada em cookie criptografado com `AUTH_SECRET`.
+- Senhas armazenadas como hash (scrypt, via `hashPassword`/`verifyPassword` em `lib/session.ts`).
+- Sessão baseada em cookie assinado com HMAC-SHA256 usando `AUTH_SECRET`.
 - A função `getSession()` em `lib/session.ts` valida o cookie e retorna o usuário.
 - Role de admin verificada por email: se o email do usuário estiver em `ADMIN_EMAIL` ou `ADMIN_EMAILS`, ele tem acesso ao painel em `/admin`.
 - Reset de senha via token de uso único gerado em `lib/token.ts`, enviado por email.
@@ -125,6 +125,7 @@ enum PlanCode {
   founder_essential
   founder_professional
   founder_complete_site
+  founder
 }
 ```
 
@@ -134,11 +135,13 @@ enum PlanCode {
 
 Definidos em `lib/plans.ts`. Cada `PlanCode` tem um objeto com:
 
-- `maxProposalsPerMonth` — limite de propostas mensais
-- `hasPortfolio`, `hasTestimonials`, `hasCsv`, `hasTemplates` — features por plano
-- `artCreditsPerMonth` — créditos de artes mensais incluídos
+- `proposalLimit` — limite de propostas mensais (`UNLIMITED_PROPOSAL_LIMIT` para ilimitado)
+- `artLimit` — créditos de artes mensais incluídos
+- `priceCents`, `billingMode` (`subscription` | `one_time`), `public`, `features`, `serviceEntitlements`
 
-O acesso a features é verificado em `lib/billing-access.ts` com a função `getPlanAccess(planCode)`.
+O limite de propostas é **acumulativo**: `accumulatedProposalLimit()` multiplica o `proposalLimit` pelo número de meses desde `startedAt`, então o saldo não usado acumula mês a mês.
+
+O acesso a features pagas é verificado em `lib/billing-access.ts` com `canUsePaidFeatures(subscription)`, que exige status usável (`active`/`trial`) **e** provider confiável (`mercadopago`/`admin`). Recursos de apresentação premium usam `canUseProposalPresentation()`.
 
 ---
 

@@ -126,7 +126,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
             </div>
           ) : (
             <div className="fp-slide-statement fp-slide-empty">
-              <p>{brand?.bio || `${brandName} conduz o trabalho com escopo, prazo e investimento definidos para a decisao do cliente.`}</p>
+              <p>{brand?.bio || `${brandName} conduz o trabalho com escopo, prazo e investimento definidos para a decisão do cliente.`}</p>
             </div>
           )}
         </Slide>

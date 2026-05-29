@@ -6,6 +6,7 @@ import {
   BarChart3,
   Bell,
   BriefcaseBusiness,
+  Calculator,
   CheckCircle2,
   Eye,
   Copy,
@@ -680,11 +681,11 @@ const marketingArtBriefs = [
 const quickIncludedSuggestions = [
   "Atendimento inicial",
   "Diagnostico ou briefing",
-  "Execucao do servico",
+  "Execução do serviço",
   "Materiais inclusos",
   "Ajustes combinados",
   "Entrega final",
-  "Suporte apos entrega",
+  "Suporte após entrega",
 ];
 
 const quickExampleProposal: ProposalDraft = {
@@ -695,9 +696,203 @@ const quickExampleProposal: ProposalDraft = {
   deadline: "7 dias uteis",
   validUntil: nextWeekDate(),
   payment: "50% na entrada e 50% na entrega",
-  included: ["Atendimento inicial", "Execucao do servico", "Ajustes combinados", "Entrega final"],
-  notes: "Esta proposta pode ser ajustada conforme combinacao com o cliente.",
+  included: ["Atendimento inicial", "Execução do serviço", "Ajustes combinados", "Entrega final"],
+  notes: "Esta proposta pode ser ajustada conforme combinação com o cliente.",
 };
+
+type MaterialMode = "general" | "paint" | "area";
+type CalculatorNiche = "construction" | "food" | "beauty" | "events" | "technology" | "automotive" | "health" | "general";
+type MaterialItem = {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  mode: MaterialMode;
+  area: number;
+  coats: number;
+  coverage: number;
+  wastePercent: number;
+  packageSize: number;
+};
+
+const emptyMaterialItem: MaterialItem = {
+  name: "",
+  quantity: 1,
+  unitPrice: 0,
+  mode: "general",
+  area: 0,
+  coats: 2,
+  coverage: 90,
+  wastePercent: 10,
+  packageSize: 18,
+};
+
+type CalculatorPreset = { label: string; serviceName: string; niches: CalculatorNiche[]; laborValue: number; marginPercent: number; items: MaterialItem[] };
+
+const calculatorPresets: CalculatorPreset[] = [
+  {
+    label: "Pintura",
+    serviceName: "Pintura residencial",
+    niches: ["construction"],
+    laborValue: 900,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Tinta acrilica 18L", mode: "paint", unitPrice: 320, area: 80, coats: 2, coverage: 90, packageSize: 18, wastePercent: 10 },
+      { ...emptyMaterialItem, name: "Massa corrida", mode: "area", unitPrice: 8, area: 30, wastePercent: 10 },
+      { ...emptyMaterialItem, name: "Lixa", mode: "general", quantity: 10, unitPrice: 4 },
+      { ...emptyMaterialItem, name: "Fita crepe", mode: "general", quantity: 3, unitPrice: 12 },
+    ],
+  },
+  {
+    label: "Piso/revestimento",
+    serviceName: "Instalacao de piso ou revestimento",
+    niches: ["construction"],
+    laborValue: 1200,
+    marginPercent: 18,
+    items: [
+      { ...emptyMaterialItem, name: "Piso ou revestimento", mode: "area", unitPrice: 75, area: 25, wastePercent: 12 },
+      { ...emptyMaterialItem, name: "Argamassa", mode: "general", quantity: 8, unitPrice: 32 },
+      { ...emptyMaterialItem, name: "Rejunte", mode: "general", quantity: 3, unitPrice: 28 },
+    ],
+  },
+  {
+    label: "Alvenaria/tijolo",
+    serviceName: "Servico de alvenaria",
+    niches: ["construction"],
+    laborValue: 1400,
+    marginPercent: 18,
+    items: [
+      { ...emptyMaterialItem, name: "Tijolo/bloco", mode: "area", unitPrice: 65, area: 20, wastePercent: 10 },
+      { ...emptyMaterialItem, name: "Cimento", mode: "general", quantity: 8, unitPrice: 38 },
+      { ...emptyMaterialItem, name: "Areia", mode: "general", quantity: 2, unitPrice: 180 },
+      { ...emptyMaterialItem, name: "Cal/aditivo", mode: "general", quantity: 3, unitPrice: 32 },
+      { ...emptyMaterialItem, name: "Ferragens e amarracoes", mode: "general", quantity: 1, unitPrice: 160 },
+    ],
+  },
+  {
+    label: "Eletrica",
+    serviceName: "Instalacao eletrica",
+    niches: ["construction"],
+    laborValue: 850,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Cabo eletrico", mode: "general", quantity: 50, unitPrice: 4 },
+      { ...emptyMaterialItem, name: "Tomadas/interruptores", mode: "general", quantity: 8, unitPrice: 18 },
+      { ...emptyMaterialItem, name: "Disjuntores", mode: "general", quantity: 3, unitPrice: 35 },
+    ],
+  },
+  {
+    label: "Hidraulica",
+    serviceName: "Servico hidraulico",
+    niches: ["construction"],
+    laborValue: 750,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Tubos e conexoes", mode: "general", quantity: 1, unitPrice: 220 },
+      { ...emptyMaterialItem, name: "Registros/valvulas", mode: "general", quantity: 2, unitPrice: 65 },
+      { ...emptyMaterialItem, name: "Vedantes e cola", mode: "general", quantity: 1, unitPrice: 45 },
+    ],
+  },
+  {
+    label: "Buffet por pessoa",
+    serviceName: "Buffet para evento",
+    niches: ["food", "events"],
+    laborValue: 900,
+    marginPercent: 25,
+    items: [
+      { ...emptyMaterialItem, name: "Comida por convidado", mode: "general", quantity: 50, unitPrice: 42 },
+      { ...emptyMaterialItem, name: "Bebidas por convidado", mode: "general", quantity: 50, unitPrice: 18 },
+      { ...emptyMaterialItem, name: "Descartaveis/loucas", mode: "general", quantity: 50, unitPrice: 6 },
+      { ...emptyMaterialItem, name: "Equipe de atendimento", mode: "general", quantity: 3, unitPrice: 180 },
+      { ...emptyMaterialItem, name: "Frete/logistica", mode: "general", quantity: 1, unitPrice: 250 },
+    ],
+  },
+  {
+    label: "Doces e salgados",
+    serviceName: "Doces e salgados para evento",
+    niches: ["food", "events"],
+    laborValue: 250,
+    marginPercent: 30,
+    items: [
+      { ...emptyMaterialItem, name: "Salgados cento", mode: "general", quantity: 5, unitPrice: 85 },
+      { ...emptyMaterialItem, name: "Docinhos cento", mode: "general", quantity: 3, unitPrice: 95 },
+      { ...emptyMaterialItem, name: "Bolo kg", mode: "general", quantity: 5, unitPrice: 75 },
+      { ...emptyMaterialItem, name: "Embalagens", mode: "general", quantity: 1, unitPrice: 90 },
+    ],
+  },
+  {
+    label: "Decoracao evento",
+    serviceName: "Decoracao de evento",
+    niches: ["events"],
+    laborValue: 700,
+    marginPercent: 25,
+    items: [
+      { ...emptyMaterialItem, name: "Flores/baloes", mode: "general", quantity: 1, unitPrice: 480 },
+      { ...emptyMaterialItem, name: "Paineis e estruturas", mode: "general", quantity: 1, unitPrice: 650 },
+      { ...emptyMaterialItem, name: "Mesa e suportes", mode: "general", quantity: 1, unitPrice: 260 },
+      { ...emptyMaterialItem, name: "Transporte/montagem", mode: "general", quantity: 1, unitPrice: 300 },
+    ],
+  },
+  {
+    label: "Beleza/estetica",
+    serviceName: "Procedimento estetico",
+    niches: ["beauty", "health"],
+    laborValue: 180,
+    marginPercent: 35,
+    items: [
+      { ...emptyMaterialItem, name: "Produtos profissionais", mode: "general", quantity: 1, unitPrice: 90 },
+      { ...emptyMaterialItem, name: "Descartaveis", mode: "general", quantity: 1, unitPrice: 25 },
+      { ...emptyMaterialItem, name: "Equipamentos/uso sala", mode: "general", quantity: 1, unitPrice: 60 },
+    ],
+  },
+  {
+    label: "Site/sistema",
+    serviceName: "Desenvolvimento de site ou sistema",
+    niches: ["technology"],
+    laborValue: 2500,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Horas de desenvolvimento", mode: "general", quantity: 40, unitPrice: 90 },
+      { ...emptyMaterialItem, name: "Dominio/hospedagem/setup", mode: "general", quantity: 1, unitPrice: 280 },
+      { ...emptyMaterialItem, name: "Ferramentas/licencas", mode: "general", quantity: 1, unitPrice: 180 },
+    ],
+  },
+  {
+    label: "Automotivo",
+    serviceName: "Servico automotivo",
+    niches: ["automotive"],
+    laborValue: 350,
+    marginPercent: 22,
+    items: [
+      { ...emptyMaterialItem, name: "Pecas", mode: "general", quantity: 1, unitPrice: 420 },
+      { ...emptyMaterialItem, name: "Oleo/fluidos/insumos", mode: "general", quantity: 1, unitPrice: 180 },
+      { ...emptyMaterialItem, name: "Deslocamento/logistica", mode: "general", quantity: 1, unitPrice: 80 },
+    ],
+  },
+  {
+    label: "Servico geral",
+    serviceName: "Servico personalizado",
+    niches: ["general"],
+    laborValue: 500,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Material principal", mode: "general", quantity: 1, unitPrice: 250 },
+      { ...emptyMaterialItem, name: "Insumos", mode: "general", quantity: 1, unitPrice: 90 },
+      { ...emptyMaterialItem, name: "Deslocamento", mode: "general", quantity: 1, unitPrice: 80 },
+    ],
+  },
+];
+
+function calculatorNicheFromProfile(niche?: string | null, segment?: string | null, proposalSegment?: string | null): CalculatorNiche {
+  const text = `${niche || ""} ${segment || ""} ${proposalSegment || ""}`.toLowerCase();
+  if (/(constru|obra|reforma|pedreiro|pint|piso|revest|arquitet|engenh|eletric|hidraul|marcen|moveis|imovel|condomini)/.test(text)) return "construction";
+  if (/(buffet|alimenta|comida|doce|salgad|bolo|gastronom|restaurante|food|bar|bebida)/.test(text)) return "food";
+  if (/(evento|festa|casamento|decor|fotograf|cerimonial)/.test(text)) return "events";
+  if (/(beleza|estet|manicure|cabelo|sobrancelha|maqui|spa)/.test(text)) return "beauty";
+  if (/(saude|clinica|terapia|fisio|nutri|personal|bem-estar)/.test(text)) return "health";
+  if (/(tecnolog|site|sistema|software|design|marketing|social media|trafego)/.test(text)) return "technology";
+  if (/(auto|carro|mecan|oficina|veiculo|funilaria)/.test(text)) return "automotive";
+  return "general";
+}
 
 
 export default function Home() {
@@ -870,7 +1065,7 @@ export default function Home() {
       return null;
     }
     const includedItems = cleanIncludedItems(draft.included);
-    if (!includedItems.length && !window.confirm("Sua proposta esta sem itens inclusos. Deseja salvar assim mesmo?")) {
+    if (!includedItems.length && !window.confirm("Sua proposta está sem itens inclusos. Deseja salvar assim mesmo?")) {
       return null;
     }
 
@@ -1193,7 +1388,7 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <Image alt="FechaPro" className="mb-3 h-9 w-36 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
-            <h1 className="max-w-xs text-2xl font-black leading-tight tracking-normal sm:max-w-none sm:text-3xl">
+            <h1 className="max-w-xs text-xl font-black leading-tight tracking-normal sm:max-w-none sm:text-3xl">
               Sua central comercial para criar propostas que vendem.
             </h1>
             <p className="mt-1 text-sm font-bold text-slate-500">
@@ -1266,7 +1461,7 @@ export default function Home() {
           />
         ) : (
           <>
-            <nav className="fp-nav grid grid-cols-3 gap-1 rounded-lg border p-1.5 min-[430px]:grid-cols-4 sm:flex sm:overflow-x-auto sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
+            <nav className="fp-nav flex gap-1 overflow-x-auto rounded-lg border p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeView === item.id;
@@ -1274,7 +1469,7 @@ export default function Home() {
                 const tourFocus = currentTourStep?.view === item.id;
                 return (
                   <button
-                    className={`fp-nav-item flex min-h-[58px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:min-w-[52px] sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
+                    className={`fp-nav-item flex min-h-[58px] w-[4.25rem] shrink-0 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:w-auto sm:min-w-[52px] sm:flex-1 sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
                     data-active={active}
                     data-locked={locked}
                     key={item.id}
@@ -1290,7 +1485,7 @@ export default function Home() {
                     }}
                   >
                     <Icon size={16} />
-                    <span className="mt-0.5 max-w-full truncate sm:whitespace-nowrap">{item.label}</span>
+                    <span className="mt-0.5 line-clamp-2 max-w-full text-center sm:line-clamp-none sm:whitespace-nowrap">{item.label}</span>
                     {locked ? <LockKeyhole size={10} /> : null}
                   </button>
                 );
@@ -1348,6 +1543,7 @@ export default function Home() {
             portfolio={portfolio}
             proposals={proposals}
             proposalTemplates={allProposalTemplates}
+            session={session}
             services={services}
             testimonials={testimonials}
           />
@@ -1592,6 +1788,7 @@ function DashboardView({
   portfolio,
   proposals,
   services,
+  session,
   testimonials,
   billing,
   notice,
@@ -1620,6 +1817,7 @@ function DashboardView({
   proposalsSummary?: any | null;
   portfolio: PortfolioItem[];
   proposals: Proposal[];
+  session: SessionProfile;
   services: ServiceItem[];
   testimonials: Testimonial[];
   billing: BillingState | null;
@@ -1630,6 +1828,9 @@ function DashboardView({
   const [includedText, setIncludedText] = useState(() => draft.included.join("\n"));
   const [dashboardProposalPage, setDashboardProposalPage] = useState(1);
   const [showAdvancedProposalOptions, setShowAdvancedProposalOptions] = useState(false);
+  const [materialItems, setMaterialItems] = useState<MaterialItem[]>([{ ...emptyMaterialItem }]);
+  const [laborValue, setLaborValue] = useState(0);
+  const [marginPercent, setMarginPercent] = useState(20);
   const dashboardProposalPageSize = 5;
   const dashboardProposalTotalPages = Math.max(1, Math.ceil(proposals.length / dashboardProposalPageSize));
   const dashboardProposalFirstVisible = proposals.length ? (dashboardProposalPage - 1) * dashboardProposalPageSize + 1 : 0;
@@ -1655,6 +1856,39 @@ function DashboardView({
   const acceptanceRate = proposals.length ? Math.round((accepted / proposals.length) * 100) : 0;
   const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
   const followUps = proposals.filter((proposal) => ["sent", "viewed", "awaiting_response"].includes(proposal.status) && daysSince(proposal.updatedAt || proposal.createdAt) >= 2).slice(0, 3);
+  const calculatedMaterialItems = materialItems.map((item) => {
+    const area = Number(item.area || 0);
+    const coats = Math.max(1, Number(item.coats || 1));
+    const coverage = Math.max(1, Number(item.coverage || 1));
+    const wasteMultiplier = 1 + Number(item.wastePercent || 0) / 100;
+    const packageSize = Math.max(1, Number(item.packageSize || 1));
+    const calculatedQuantity =
+      item.mode === "paint"
+        ? Math.ceil(((area * coats) / coverage) * wasteMultiplier)
+        : item.mode === "area"
+          ? Math.ceil(area * wasteMultiplier)
+          : Number(item.quantity || 0);
+
+    return {
+      ...item,
+      calculatedQuantity,
+      total: calculatedQuantity * Number(item.unitPrice || 0),
+      liters: item.mode === "paint" ? calculatedQuantity * packageSize : 0,
+    };
+  });
+  const materialsTotal = calculatedMaterialItems.reduce((sum, item) => sum + item.total, 0);
+  const calculatorSubtotal = materialsTotal + Number(laborValue || 0);
+  const marginValue = calculatorSubtotal * (Number(marginPercent || 0) / 100);
+  const calculatedTotal = Math.round(calculatorSubtotal + marginValue);
+  const calculatorSummary = [
+    `Materiais: ${money.format(materialsTotal)}`,
+    `Mao de obra: ${money.format(laborValue || 0)}`,
+    `Margem (${marginPercent || 0}%): ${money.format(marginValue)}`,
+    `Total calculado: ${money.format(calculatedTotal)}`,
+  ].join(" | ");
+  const selectedCalculatorNiche = calculatorNicheFromProfile(session.niche, session.segment, draft.segment);
+  const visibleCalculatorPresets = session.isAdmin ? calculatorPresets : calculatorPresets.filter((preset) => preset.niches.includes(selectedCalculatorNiche));
+  const fallbackCalculatorPresets = visibleCalculatorPresets.length ? visibleCalculatorPresets : calculatorPresets.filter((preset) => preset.niches.includes("general"));
   const isFirstProposalExperience = !proposals.length && !lastSavedProposal;
   const setupChecklist = [
     { done: Boolean(brand.businessName && brand.whatsapp), label: "Marca e WhatsApp" },
@@ -1731,6 +1965,56 @@ function DashboardView({
     const currentItems = cleanIncludedItems(draft.included);
     if (currentItems.some((current) => current.toLowerCase() === item.toLowerCase())) return;
     onDraftChange("included", [...currentItems, item]);
+  }
+
+  function updateMaterialItem(index: number, field: keyof MaterialItem, value: string) {
+    setMaterialItems((items) =>
+      items.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [field]: field === "name" || field === "mode" ? value : Number(value || 0),
+            }
+          : item,
+      ),
+    );
+  }
+
+  function addMaterialItem() {
+    setMaterialItems((items) => [...items, { ...emptyMaterialItem }]);
+  }
+
+  function removeMaterialItem(index: number) {
+    setMaterialItems((items) => (items.length === 1 ? [{ ...emptyMaterialItem }] : items.filter((_, itemIndex) => itemIndex !== index)));
+  }
+
+  function applyCalculatorPreset(label: string) {
+    const preset = calculatorPresets.find((item) => item.label === label);
+    if (!preset) return;
+    setMaterialItems(preset.items.map((item) => ({ ...item })));
+    setLaborValue(preset.laborValue);
+    setMarginPercent(preset.marginPercent);
+    if (!draft.serviceName.trim()) onDraftChange("serviceName", preset.serviceName);
+    onNotice(`Modelo de ${preset.label.toLowerCase()} aplicado. Ajuste medidas e valores antes de salvar.`);
+  }
+
+  function applyCalculatedValue() {
+    onDraftChange("price", calculatedTotal);
+    const materialLines = calculatedMaterialItems
+      .filter((item) => item.name.trim() || item.unitPrice > 0)
+      .map((item) => {
+        const suffix = item.mode === "paint" ? `, aprox. ${item.liters}L` : "";
+        return `${item.name.trim() || "Material"} (${item.calculatedQuantity} x ${money.format(item.unitPrice || 0)}${suffix})`;
+      });
+    const nextItems = Array.from(new Set([...cleanIncludedItems(draft.included), ...materialLines, calculatorSummary]));
+    if (nextItems.length) onDraftChange("included", nextItems);
+    const notesWithoutOldSummary = String(draft.notes || "").replace(/\n?\n?Resumo do calculo:[\s\S]*$/i, "").trim();
+    const materialDetails = calculatedMaterialItems
+      .filter((item) => item.name.trim() || item.unitPrice > 0)
+      .map((item) => `- ${item.name.trim() || "Material"}: ${item.calculatedQuantity} x ${money.format(item.unitPrice || 0)} = ${money.format(item.total)}`)
+      .join("\n");
+    onDraftChange("notes", `${notesWithoutOldSummary ? `${notesWithoutOldSummary}\n\n` : ""}Resumo do calculo:\n${calculatorSummary}${materialDetails ? `\n${materialDetails}` : ""}`);
+    onNotice("Valor calculado aplicado na proposta.");
   }
 
   function useQuickExample() {
@@ -1810,7 +2094,7 @@ function DashboardView({
             <p className="text-xs font-black uppercase text-blue-700">Primeira proposta</p>
             <h2 className="mt-1 text-2xl font-black leading-tight text-blue-950">Comece pelo basico e envie no WhatsApp.</h2>
             <p className="mt-2 text-sm font-bold leading-6 text-blue-900">
-              O caminho mais rapido e preencher cliente, servico, valor, prazo e inclusos. Marca, PDF e link entram automaticamente.
+              O caminho mais rápido é preencher cliente, serviço, valor, prazo e inclusos. Marca, PDF e link entram automaticamente.
             </p>
           </div>
           <div className="grid gap-2 sm:min-w-64">
@@ -1949,10 +2233,96 @@ function DashboardView({
             <TextField label="Prazo" maxLength={80} placeholder="7 dias úteis" required value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
           </div>
 
+          <div className="grid gap-3 rounded-lg border border-blue-700/20 bg-blue-50 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="inline-flex items-center gap-2 text-sm font-black text-slate-900">
+                  <Calculator size={16} />
+                  Calculadora de materiais e valores
+                </h3>
+                <p className="mt-1 text-xs font-bold leading-5 text-slate-500">Some materiais, mao de obra e margem antes de fechar o valor da proposta.</p>
+              </div>
+              <strong className="rounded-lg bg-white px-3 py-2 text-sm text-blue-700">{money.format(calculatedTotal)}</strong>
+            </div>
+
+            <div className="grid gap-2">
+              <span className="text-xs font-black uppercase text-slate-500">Modelos do seu nicho</span>
+              <p className="text-xs font-bold leading-5 text-slate-500">
+                {session.isAdmin ? "Administrador: todos os nichos disponíveis." : `Exibindo calculadoras para ${session.niche || session.segment || "serviço geral"}.`}
+              </p>
+              <div className="flex flex-wrap gap-2">
+              {fallbackCalculatorPresets.map((preset) => (
+                <button className="min-h-9 rounded-full border border-black/10 bg-white px-3 text-xs font-black text-slate-700" key={preset.label} type="button" onClick={() => applyCalculatorPreset(preset.label)}>
+                  {preset.label}
+                </button>
+              ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              {calculatedMaterialItems.map((item, index) => (
+                <div className="grid gap-2 rounded-lg border border-black/10 bg-white p-2" key={index}>
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_2.75rem]">
+                    <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" placeholder="Material" value={item.name} onChange={(event) => updateMaterialItem(index, "name", event.target.value)} />
+                    <select className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" value={item.mode} onChange={(event) => updateMaterialItem(index, "mode", event.target.value)}>
+                      <option value="general">Quantidade</option>
+                      <option value="paint">Tinta</option>
+                      <option value="area">Área/m²</option>
+                    </select>
+                    <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Valor un." step="0.01" type="number" value={item.unitPrice || ""} onChange={(event) => updateMaterialItem(index, "unitPrice", event.target.value)} />
+                    <button className="grid h-11 w-11 place-items-center rounded-lg border border-black/10 bg-white text-slate-700" type="button" title="Remover material" aria-label="Remover material" onClick={() => removeMaterialItem(index)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+
+                  {item.mode === "paint" ? (
+                    <div className="grid gap-2 sm:grid-cols-5">
+                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="m² parede" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
+                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Demaos" step="1" type="number" value={item.coats || ""} onChange={(event) => updateMaterialItem(index, "coats", event.target.value)} />
+                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Rend. m2/lata" step="1" type="number" value={item.coverage || ""} onChange={(event) => updateMaterialItem(index, "coverage", event.target.value)} />
+                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Litros/lata" step="0.01" type="number" value={item.packageSize || ""} onChange={(event) => updateMaterialItem(index, "packageSize", event.target.value)} />
+                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
+                    </div>
+                  ) : item.mode === "area" ? (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Área m²" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
+                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
+                    </div>
+                  ) : (
+                    <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold sm:max-w-40" min={0} placeholder="Qtd." step="0.01" type="number" value={item.quantity || ""} onChange={(event) => updateMaterialItem(index, "quantity", event.target.value)} />
+                  )}
+
+                  <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                    <span>Qtd. calculada: {item.calculatedQuantity}</span>
+                    {item.mode === "paint" ? <span>Volume aprox.: {item.liters}L</span> : null}
+                    <span>Total: {money.format(item.total)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+              <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-slate-700" type="button" onClick={addMaterialItem}>
+                <Plus size={16} />
+                Material
+              </button>
+              <TextField label="Mao de obra" min={0} placeholder="500" step="1" type="number" value={laborValue || ""} onChange={(value) => setLaborValue(Number(value || 0))} />
+              <TextField label="Margem (%)" min={0} placeholder="20" step="1" type="number" value={marginPercent || ""} onChange={(value) => setMarginPercent(Number(value || 0))} />
+              <button className="min-h-11 rounded-lg bg-blue-700 px-4 text-sm font-black text-white" type="button" onClick={applyCalculatedValue}>
+                Aplicar valor
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-black/10 bg-white p-3 text-xs font-bold leading-5 text-slate-600">
+              <span className="block font-black text-slate-900">Resumo do calculo</span>
+              <span>{calculatorSummary}</span>
+            </div>
+          </div>
+
           <TextAreaField
             label="O que esta incluso"
             maxLength={1200}
-            placeholder={"Ex:\nBriefing inicial\nExecucao do servico\nAjustes combinados\nEntrega final"}
+            placeholder={"Ex:\nBriefing inicial\nExecução do serviço\nAjustes combinados\nEntrega final"}
             value={includedText}
             onChange={(value) => {
               setIncludedText(value);
@@ -1982,7 +2352,7 @@ function DashboardView({
               onClick={() => setShowAdvancedProposalOptions((current) => !current)}
             >
               <Settings size={16} />
-              {showAdvancedProposalOptions ? "Ocultar opcoes avancadas" : "Mostrar opcoes avancadas"}
+              {showAdvancedProposalOptions ? "Ocultar opções avançadas" : "Mostrar opções avançadas"}
             </button>
             <span className="text-xs font-bold text-slate-500">Template, validade, pagamento, e-mail, recebimento e visual.</span>
           </div>
@@ -2093,7 +2463,7 @@ function DashboardView({
           </div>
           {showAdvancedProposalOptions ? (
             <button className="justify-self-start text-sm font-black text-blue-700" type="button" onClick={onSeed}>
-              Criar clientes e servicos exemplo
+              Criar clientes e serviços exemplo
             </button>
           ) : null}
           <div className="sticky bottom-3 z-10 grid grid-cols-2 gap-2 rounded-lg border border-black/10 bg-white/95 p-2 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
@@ -2271,15 +2641,15 @@ function DashboardView({
             const followUpMessages = [
               {
                 label: "Enviar follow-up",
-                text: `Oi, ${proposal.clientName}! Passando para saber se conseguiu olhar a proposta de ${proposal.serviceName}. Posso tirar alguma duvida? ${proposalUrl}`,
+                text: `Oi, ${proposal.clientName}! Passando para saber se conseguiu olhar a proposta de ${proposal.serviceName}. Posso tirar alguma dúvida? ${proposalUrl}`,
               },
               {
                 label: "Chamar no WhatsApp",
-                text: `Oi, ${proposal.clientName}! Vi que a proposta de ${proposal.serviceName} esta em aberto. Quer que eu explique algum ponto do escopo, prazo ou pagamento? ${proposalUrl}`,
+                text: `Oi, ${proposal.clientName}! Vi que a proposta de ${proposal.serviceName} está em aberto. Quer que eu explique algum ponto do escopo, prazo ou pagamento? ${proposalUrl}`,
               },
               {
                 label: "Reforçar validade",
-                text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale ate ${formatDateOnly(proposal.validUntil)}` : " esta disponivel para aceite"}. Segue o link: ${proposalUrl}`,
+                text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale até ${formatDateOnly(proposal.validUntil)}` : " está disponível para aceite"}. Segue o link: ${proposalUrl}`,
               },
             ];
             return (
@@ -4722,26 +5092,26 @@ function LandingRange({
 const salesValueUpdates = [
   {
     icon: FileText,
-    title: "Propostas que passam mais confianca",
-    description: "Link publico, PDF profissional, aceite online, recusa com motivo, reenvio e copia para montar novas vendas sem recomecar do zero.",
+    title: "Propostas que passam mais confiança",
+    description: "Link público, PDF profissional, aceite online, recusa com motivo, reenvio e cópia para montar novas vendas sem recomeçar do zero.",
     tag: "Venda",
   },
   {
     icon: BarChart3,
-    title: "Acompanhamento para puxar o fechamento",
-    description: "Veja status, visualizacoes, cliques no WhatsApp, aceite, pagamento e historico para saber quem precisa de follow-up agora.",
+    title: "Saiba a hora exata que o cliente abriu",
+    description: "Veja status, visualizações, cliques no WhatsApp, aceite, pagamento e histórico para puxar o follow-up no momento certo — não no escuro.",
     tag: "Controle",
   },
   {
     icon: Layers3,
     title: "Modelos, pacotes e nichos prontos",
-    description: "Use templates por segmento, combine varios servicos, salve ofertas recorrentes e mantenha preco, prazo e escopo padronizados.",
+    description: "Use templates por segmento, combine vários serviços, salve ofertas recorrentes e mantenha preço, prazo e escopo padronizados.",
     tag: "Rapidez",
   },
   {
     icon: CreditCard,
     title: "Recebimento por proposta",
-    description: "Defina Mercado Pago ou PIX direto em cada proposta, com QR Code, copia e cola e acompanhamento de pagamento no fluxo integrado.",
+    description: "Defina Mercado Pago ou PIX direto em cada proposta, com QR Code, código copia e cola e acompanhamento de pagamento no fluxo integrado.",
     tag: "Caixa",
   },
   {
@@ -4752,20 +5122,20 @@ const salesValueUpdates = [
   },
   {
     icon: BriefcaseBusiness,
-    title: "Marca, portfolio e prova social",
-    description: "Logo, cores, contatos, chave PIX, portfolio, depoimentos e textos comerciais entram na proposta e reforcam autoridade.",
+    title: "Marca, portfólio e prova social",
+    description: "Logo, cores, contatos, chave PIX, portfólio, depoimentos e textos comerciais entram na proposta e reforçam autoridade.",
     tag: "Autoridade",
   },
 ];
 
 const upcomingFeatures = [
-  "Fechamento pelo WhatsApp com acoes em um clique.",
-  "Reengajamento de clientes que abriram a proposta e nao responderam.",
-  "Timeline unica com abertura, aceite, pagamento e conversa.",
-  "Editor rapido com bonus, garantias e comparacao de planos.",
-  "Relatorios de conversao e receita por servico.",
+  "Fechamento pelo WhatsApp com ações em um clique.",
+  "Reengajamento de clientes que abriram a proposta e não responderam.",
+  "Timeline única com abertura, aceite, pagamento e conversa.",
+  "Editor rápido com bônus, garantias e comparação de planos.",
+  "Relatórios de conversão e receita por serviço.",
   "Portal do cliente com status, arquivos e checklist.",
-  "Historico de e-mails enviados e novos controles de entrega.",
+  "Histórico de e-mails enviados e novos controles de entrega.",
 ];
 
 function ProductUpdatesModal({
@@ -4793,9 +5163,9 @@ function ProductUpdatesModal({
       <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-lg border border-black/10 bg-white shadow-xl shadow-slate-950/30 sm:mx-auto sm:max-w-2xl sm:rounded-lg">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-black/10 bg-white p-4 sm:p-5">
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase text-green-700">O que o FechaPro entrega</p>
+            <p className="text-xs font-black uppercase text-green-700">Novidades do produto</p>
             <h2 id="updates-modal-title" className="mt-1 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">
-              Valor claro para vender melhor
+              Novidades e próximos recursos
             </h2>
           </div>
           <button
@@ -4812,9 +5182,9 @@ function ProductUpdatesModal({
           <section className="rounded-lg bg-slate-950 p-4 text-white sm:p-5">
             <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
               <div>
-                <p className="text-xs font-black uppercase text-green-200">Resumo comercial</p>
+                <p className="text-xs font-black uppercase text-green-200">Atualização de maio</p>
                 <p className="mt-2 text-lg font-black leading-snug">
-                  O FechaPro junta proposta bonita, acompanhamento, pagamento, portfolio, depoimentos e divulgacao para o cliente perceber valor antes de discutir preco.
+                  O FechaPro ficou mais completo para apresentar valor, acompanhar interesse, receber pagamentos e transformar proposta enviada em próximo passo claro.
                 </p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
@@ -4825,7 +5195,7 @@ function ProductUpdatesModal({
           </section>
 
           <section className="grid gap-3">
-            <p className="text-xs font-black uppercase text-green-700">Argumentos para vender</p>
+            <p className="text-xs font-black uppercase text-green-700">Já disponível</p>
             {salesValueUpdates.map((item) => {
               const Icon = item.icon;
               return (
@@ -4839,6 +5209,10 @@ function ProductUpdatesModal({
                       <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black uppercase text-blue-700">
                         {item.tag}
                       </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-black uppercase text-green-700">
+                        <CheckCircle2 size={12} />
+                        Disponível
+                      </span>
                     </div>
                     <p className="mt-1 text-sm font-bold leading-6 text-slate-600">{item.description}</p>
                   </div>
@@ -4848,9 +5222,9 @@ function ProductUpdatesModal({
           </section>
 
           <section className="rounded-lg border border-black/10 p-4">
-            <p className="text-xs font-black uppercase text-blue-700">Proximos recursos</p>
+            <p className="text-xs font-black uppercase text-blue-700">Próximos recursos</p>
             <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-              Estes itens estao planejados para aumentar fechamento, recompra e clareza no atendimento comercial.
+              Estes itens estão planejados para aumentar fechamento, recompra e clareza no atendimento comercial. A ordem pode mudar conforme testes e integrações disponíveis.
             </p>
             <div className="mt-3 grid gap-4">
               {nextFeatureGroups.map((group) => (

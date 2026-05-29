@@ -89,8 +89,8 @@ export async function sendWelcomeEmail(to: string, name: string) {
       title: "Sua conta FechaPro está pronta",
       preheader: "Comece criando sua marca, seus serviços e sua primeira proposta.",
       heroImageUrl: `${APP_URL}/email/email-bemvindo.png`,
-      heroImageAlt: "Bem-vindo ao FechaPro: guia rapido para comecar",
-      intro: `Ola, ${escapeHtml(name)}!`,
+      heroImageAlt: "Bem-vindo ao FechaPro: guia rápido para começar",
+      intro: `Olá, ${escapeHtml(name)}!`,
       body: `
         <p>Que bom ter você por aqui. O FechaPro foi criado para transformar orçamentos soltos em propostas bonitas, claras e prontas para fechar negócio.</p>
         <p>Para começar bem, configure sua marca, cadastre seus serviços principais e gere sua primeira proposta com link público, PDF e aceite digital.</p>
@@ -99,7 +99,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
       buttonUrl: APP_URL,
       secondaryButtonLabel: "Abrir manual de primeiro acesso",
       secondaryButtonUrl: manualUrl,
-      footer: "Este email confirma a criacao da sua conta FechaPro.",
+      footer: "Este email confirma a criação da sua conta FechaPro.",
     })
   );
 }
@@ -153,7 +153,7 @@ export async function sendProposalSentToClientEmail(clientEmail: string, clientN
     emailTemplate({
       title: "Você recebeu uma proposta",
       preheader: `${ownerName} preparou uma proposta de ${serviceName} para você.`,
-      intro: `Ola, ${safeClientName}!`,
+      intro: `Olá, ${safeClientName}!`,
       body: `
         <p><strong>${safeOwnerName}</strong> preparou uma proposta de <strong>${safeServiceName}</strong> especialmente para você.</p>
         <p>Acesse o link para visualizar os detalhes, baixar o PDF e registrar sua resposta.</p>
@@ -177,7 +177,7 @@ export async function sendProposalViewedEmail(ownerEmail: string, ownerName: str
     emailTemplate({
       title: "Sua proposta foi visualizada",
       preheader: `${clientName} acabou de abrir sua proposta de ${serviceName}.`,
-      intro: `Ola, ${safeOwnerName}!`,
+      intro: `Olá, ${safeOwnerName}!`,
       body: `
         <p><strong>${safeClientName}</strong> acabou de abrir sua proposta de <strong>${safeServiceName}</strong>.</p>
         <p>Este pode ser um bom momento para fazer um contato rápido e tirar dúvidas.</p>
@@ -209,7 +209,7 @@ export async function sendProposalAcceptedEmail(ownerEmail: string, ownerName: s
     emailTemplate({
       title: "Proposta aceita",
       preheader: `${clientName} aceitou sua proposta de ${serviceName}.`,
-      intro: `Ola, ${safeOwnerName}!`,
+      intro: `Olá, ${safeOwnerName}!`,
       body: `
         <p><strong>${safeClientName}</strong> aceitou sua proposta de <strong>${safeServiceName}</strong>.</p>
         <p>Entre em contato com o cliente para combinar os próximos passos e formalizar o atendimento.</p>
@@ -232,7 +232,7 @@ export async function sendProposalAcceptedToClientEmail(clientEmail: string, cli
     emailTemplate({
       title: "Aceite registrado",
       preheader: `Seu aceite da proposta de ${serviceName} foi registrado.`,
-      intro: `Ola, ${safeClientName}!`,
+      intro: `Olá, ${safeClientName}!`,
       body: `
         <p>Confirmamos o aceite da proposta de <strong>${safeServiceName}</strong>, enviada por <strong>${safeOwnerName}</strong>.</p>
         <p>O responsável pela proposta também foi notificado e deve entrar em contato para combinar os próximos passos.</p>
@@ -255,15 +255,15 @@ export async function sendSatisfactionSurveyEmail(clientEmail: string, clientNam
     `Como foi o atendimento? - ${serviceName}`,
     emailTemplate({
       title: "Conte como foi o atendimento",
-      preheader: `${ownerName} quer saber como foi sua experiencia com ${serviceName}.`,
-      intro: `Ola, ${safeClientName}!`,
+      preheader: `${ownerName} quer saber como foi sua experiência com ${serviceName}.`,
+      intro: `Olá, ${safeClientName}!`,
       body: `
-        <p><strong>${safeOwnerName}</strong> marcou o servico <strong>${safeServiceName}</strong> como concluido e enviou uma pesquisa rapida de satisfacao.</p>
-        <p>Sua resposta ajuda a melhorar o atendimento e, se voce autorizar, pode virar depoimento para novos clientes.</p>
+        <p><strong>${safeOwnerName}</strong> marcou o serviço <strong>${safeServiceName}</strong> como concluído e enviou uma pesquisa rápida de satisfação.</p>
+        <p>Sua resposta ajuda a melhorar o atendimento e, se você autorizar, pode virar depoimento para novos clientes.</p>
       `,
       buttonLabel: "Responder pesquisa",
       buttonUrl: link,
-      footer: "Este email foi enviado porque voce recebeu uma proposta pelo FechaPro.",
+      footer: "Este email foi enviado porque você recebeu uma proposta pelo FechaPro.",
     })
   );
 }
@@ -280,7 +280,7 @@ export async function sendProposalDeclinedEmail(ownerEmail: string, ownerName: s
     emailTemplate({
       title: "Proposta recusada",
       preheader: `${clientName} recusou sua proposta de ${serviceName}.`,
-      intro: `Ola, ${safeOwnerName}!`,
+      intro: `Olá, ${safeOwnerName}!`,
       body: `
         <p><strong>${safeClientName}</strong> recusou sua proposta de <strong>${safeServiceName}</strong>.</p>
         ${safeReason ? `<p><strong>Motivo informado:</strong> ${safeReason}</p>` : ""}
@@ -303,7 +303,7 @@ export async function sendProposalDeclinedToClientEmail(clientEmail: string, cli
     emailTemplate({
       title: "Resposta registrada",
       preheader: `Registramos sua recusa da proposta de ${serviceName}.`,
-      intro: `Ola, ${safeClientName}!`,
+      intro: `Olá, ${safeClientName}!`,
       body: `
         <p>Registramos sua recusa da proposta de <strong>${safeServiceName}</strong>, enviada por <strong>${safeOwnerName}</strong>.</p>
         ${safeReason ? `<p><strong>Motivo informado:</strong> ${safeReason}</p>` : ""}
@@ -328,7 +328,7 @@ export async function sendPixPaymentConfirmedToClientEmail(clientEmail: string, 
     emailTemplate({
       title: "Pagamento confirmado",
       preheader: `${ownerName} confirmou o recebimento do PIX para ${serviceName}.`,
-      intro: `Ola, ${safeClientName}!`,
+      intro: `Olá, ${safeClientName}!`,
       body: `
         <p><strong>${safeOwnerName}</strong> confirmou o recebimento do seu pagamento via PIX para <strong>${safeServiceName}</strong>.</p>
         <p>O atendimento está confirmado. Em breve o profissional entrará em contato para combinar os próximos passos.</p>
@@ -352,14 +352,14 @@ export async function sendProposalFollowUpReminderEmail(ownerEmail: string, owne
     emailTemplate({
       title: "Proposta sem visualização",
       preheader: `${clientName} não abriu sua proposta de ${serviceName} em ${daysSince} dias.`,
-      intro: `Ola, ${safeOwnerName}!`,
+      intro: `Olá, ${safeOwnerName}!`,
       body: `
         <p>Sua proposta de <strong>${safeServiceName}</strong> para <strong>${safeClientName}</strong> foi enviada há <strong>${daysSince} dia${daysSince === 1 ? "" : "s"}</strong> e ainda não foi visualizada.</p>
         <p>Este pode ser um bom momento para enviar uma mensagem rápida e perguntar se chegou bem.</p>
       `,
       buttonLabel: "Ver proposta",
       buttonUrl: link,
-      footer: "Lembrete automatico do FechaPro para acompanhamento de propostas.",
+      footer: "Lembrete automático do FechaPro para acompanhamento de propostas.",
     })
   );
 }
@@ -369,7 +369,7 @@ export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerN
   const safeOwnerName = escapeHtml(ownerName);
   const safeClientName = escapeHtml(clientName);
   const safeServiceName = escapeHtml(serviceName);
-  const intentLabel = intent === "negotiate" ? "quer negociar" : intent === "doubt" ? "tem uma duvida" : "clicou no WhatsApp";
+  const intentLabel = intent === "negotiate" ? "quer negociar" : intent === "doubt" ? "tem uma dúvida" : "clicou no WhatsApp";
 
   await sendEmail(
     ownerEmail,
@@ -377,7 +377,7 @@ export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerN
     emailTemplate({
       title: "Cliente chamou no WhatsApp",
       preheader: `${clientName} interagiu com sua proposta pelo WhatsApp.`,
-      intro: `Ola, ${safeOwnerName}!`,
+      intro: `Olá, ${safeOwnerName}!`,
       body: `
         <p><strong>${safeClientName}</strong> ${intentLabel} na proposta de <strong>${safeServiceName}</strong>.</p>
         <p>Responda enquanto o interesse ainda está quente.</p>
@@ -478,7 +478,7 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: "Crie sua primeira proposta no FechaPro",
         preheader: "Configure sua marca, cadastre um serviço e envie um link profissional hoje.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>O jeito mais rápido de sentir valor no FechaPro é criar uma proposta real, mesmo que seja para um cliente em negociação.</p>
           <p>Comece por três passos: ajuste a identidade de <strong>${businessName}</strong>, cadastre seu serviço principal e gere o link da proposta para enviar no WhatsApp ou email.</p>
@@ -493,14 +493,14 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: "Deixe suas propostas com cara de marca",
         preheader: "Logo, cores, WhatsApp e PIX deixam cada proposta pronta para vender.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>Uma proposta com identidade clara passa mais confiança antes mesmo do cliente ler o preço.</p>
           <p>Complete logo, cores, WhatsApp, portfólio e depoimentos para transformar cada link em uma experiência comercial mais forte.</p>
         `,
         buttonLabel: "Configurar marca",
         buttonUrl: `${APP_URL}/?view=brand`,
-        footer: "Email de ativacao do FechaPro.",
+        footer: "Email de ativação do FechaPro.",
       },
     },
     proposalFollowUp: {
@@ -508,7 +508,7 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: "Acompanhe suas propostas abertas",
         preheader: "Veja visualizações, respostas e pagamentos para priorizar o próximo contato.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>Você já criou <strong>${proposalCount}</strong> proposta${proposalCount === 1 ? "" : "s"} no FechaPro.</p>
           <p>Abra a lista de propostas para ver quais clientes visualizaram, quais ainda precisam de resposta e onde vale fazer um follow-up agora.</p>
@@ -523,7 +523,7 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: "Recursos extras para vender com mais ritmo",
         preheader: "Templates, artes, portfólio e limites maiores ajudam quando a operação cresce.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>Quando propostas passam a fazer parte da rotina, pequenos atalhos economizam muito tempo.</p>
           <p>O plano <strong>${planName}</strong> libera mais estrutura para criar, organizar e acompanhar oportunidades sem montar tudo do zero.</p>
@@ -538,14 +538,14 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: "Seu resumo comercial",
         preheader: "Veja propostas criadas, aceites e próximas ações recomendadas.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>Nesta semana, seu painel registrou <strong>${proposalCount}</strong> proposta${proposalCount === 1 ? "" : "s"} e <strong>${acceptedProposalCount}</strong> aceite${acceptedProposalCount === 1 ? "" : "s"}.</p>
           <p>Revise as propostas pendentes e transforme oportunidades paradas em próximos passos claros.</p>
         `,
         buttonLabel: "Abrir dashboard",
         buttonUrl: APP_URL,
-        footer: "Resumo periodico do FechaPro.",
+        footer: "Resumo periódico do FechaPro.",
       },
     },
     winBack: {
@@ -553,14 +553,14 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: "Volte com um próximo envio simples",
         preheader: "Reative seu painel criando uma proposta ou atualizando seus serviços.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>Se o comercial ficou corrido, retomar pode ser simples: atualize um serviço, escolha um template e envie uma proposta nova ainda hoje.</p>
           <p>O FechaPro guarda sua estrutura para você não precisar recomeçar.</p>
         `,
         buttonLabel: "Retomar painel",
         buttonUrl: APP_URL,
-        footer: "Email de reativacao do FechaPro.",
+        footer: "Email de reativação do FechaPro.",
       },
     },
     trialEnding: {
@@ -568,7 +568,7 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: "Seu acesso precisa de atenção",
         preheader: "Escolha um plano para manter propostas, templates e acompanhamento ativos.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>Para continuar usando suas propostas, clientes e materiais comerciais sem interrupção, escolha o plano que combina com sua rotina.</p>
           <p>Se você já tem propostas em negociação, manter o painel ativo ajuda a acompanhar respostas no momento certo.</p>
@@ -583,7 +583,7 @@ function marketingEmailDefinition(key: MarketingEmailKey, context: MarketingEmai
       template: {
         title: featureName,
         preheader: "Uma melhoria nova para deixar seu processo comercial mais simples.",
-        intro: `Ola, ${firstName}!`,
+        intro: `Olá, ${firstName}!`,
         body: `
           <p>Tem recurso novo no FechaPro para ajudar sua rotina comercial a ficar mais leve e organizada.</p>
           <p>Abra o painel, teste a novidade e veja onde ela pode economizar tempo no seu processo de venda.</p>

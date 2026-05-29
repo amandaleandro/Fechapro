@@ -288,7 +288,11 @@ export default function AdminPage() {
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível conectar o WhatsApp."));
       const status = (await response.json()) as AdminWhatsAppStatus;
       setWhatsappStatus(status);
-      setNotice(status.connected ? "WhatsApp FechaPro conectado." : "Escaneie o QR Code para conectar o WhatsApp FechaPro.");
+      if (status.error) {
+        setWhatsappError(status.error);
+      } else {
+        setNotice(status.connected ? "WhatsApp FechaPro conectado." : "Escaneie o QR Code para conectar o WhatsApp FechaPro.");
+      }
     } catch (caught) {
       setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível conectar o WhatsApp.");
     } finally {
@@ -381,7 +385,7 @@ export default function AdminPage() {
       const response = await fetch(`/api/admin/seed-demo-proposals${replace ? "?replace=1" : ""}`, { method: "POST" });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível criar as propostas demo."));
       const result = (await response.json()) as { created: number; photos?: number; services?: number };
-      setNotice(`${result.created} propostas demo, ${result.services || 0} servicos e ${result.photos || 0} fotos de nicho criadas no perfil do admin.`);
+      setNotice(`${result.created} propostas demo, ${result.services || 0} serviços e ${result.photos || 0} fotos de nicho criadas no perfil do admin.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível criar as propostas demo.");
     } finally {
@@ -397,7 +401,7 @@ export default function AdminPage() {
       const response = await fetch("/api/admin/seed-demo-proposals", { method: "DELETE" });
       if (!response.ok) throw new Error(await readApiError(response, "Não foi possível remover as propostas demo."));
       const result = (await response.json()) as { deleted: number; photosDeleted?: number; servicesDeleted?: number };
-      setNotice(`${result.deleted} propostas demo, ${result.servicesDeleted || 0} servicos e ${result.photosDeleted || 0} fotos de nicho removidas.`);
+      setNotice(`${result.deleted} propostas demo, ${result.servicesDeleted || 0} serviços e ${result.photosDeleted || 0} fotos de nicho removidas.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível remover as propostas demo.");
     } finally {
@@ -460,9 +464,9 @@ export default function AdminPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase text-green-700">WhatsApp FechaPro</p>
-              <h2 className="text-xl font-black sm:text-2xl">Numero oficial de notificacoes</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Número oficial de notificações</h2>
               <p className="mt-1 max-w-3xl text-sm font-bold text-slate-600">
-                O admin geral conecta um unico numero remetente. As notificacoes de proposta sao enviadas para o WhatsApp cadastrado na Marca do usuario dono da proposta.
+                O admin geral conecta um único número remetente. As notificações de proposta são enviadas para o WhatsApp cadastrado na Marca do usuário dono da proposta.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -483,10 +487,15 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700">
-              <p>Status: <span className={whatsappStatus?.connected ? "text-green-700" : "text-amber-700"}>{whatsappStatus?.connected ? "Conectado" : "Aguardando conexao"}</span></p>
-              <p className="mt-2">Sessão: {whatsappStatus?.authDir || "Não configurada"}</p>
-              {whatsappStatus?.phone ? <p className="mt-2">Numero conectado: {whatsappStatus.phone}</p> : null}
+            <div className="grid gap-2">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700">
+                <p>Status: <span className={whatsappStatus?.connected ? "text-green-700" : "text-amber-700"}>{whatsappStatus?.connected ? "Conectado" : "Aguardando conexao"}</span></p>
+                <p className="mt-2">Sessão: {whatsappStatus?.authDir || "Não configurada"}</p>
+                {whatsappStatus?.phone ? <p className="mt-2">Numero conectado: {whatsappStatus.phone}</p> : null}
+              </div>
+              {whatsappError && !whatsappStatus?.connected ? (
+                <div className="rounded-lg border border-red-700/20 bg-red-50 p-3 text-sm font-bold text-red-900">{whatsappError}</div>
+              ) : null}
             </div>
             {whatsappStatus?.qrImage ? (
               <button className="grid justify-items-center gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3 text-left" type="button" onClick={() => setWhatsappModalOpen(true)}>
@@ -650,7 +659,7 @@ export default function AdminPage() {
           {notice ? <div className="rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold text-green-900">{notice}</div> : null}
 
           {loading ? (
-            <div className="rounded-lg border border-black/10 p-5 text-sm font-bold text-slate-500">Carregando usuarios...</div>
+            <div className="rounded-lg border border-black/10 p-5 text-sm font-bold text-slate-500">Carregando usuários...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1120px] border-separate border-spacing-y-2 text-left text-sm">
@@ -724,9 +733,9 @@ export default function AdminPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase text-green-700">WhatsApp FechaPro</p>
-                <h2 className="text-2xl font-black">Conectar numero oficial</h2>
+                <h2 className="text-2xl font-black">Conectar número oficial</h2>
                 <p className="mt-1 text-sm font-bold text-slate-600">
-                  Escaneie este QR Code com o WhatsApp que sera usado pelo FechaPro para enviar notificacoes.
+                  Escaneie este QR Code com o WhatsApp que será usado pelo FechaPro para enviar notificações.
                 </p>
               </div>
               <button className="rounded-lg border border-black/10 p-2 text-slate-600 hover:text-slate-950" type="button" onClick={() => setWhatsappModalOpen(false)} aria-label="Fechar modal">
@@ -736,7 +745,7 @@ export default function AdminPage() {
 
             {whatsappStatus?.connected ? (
               <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-sm font-black text-green-800">
-                WhatsApp conectado com sucesso. As notificacoes ja podem ser enviadas.
+                WhatsApp conectado com sucesso. As notificações já podem ser enviadas.
               </div>
             ) : whatsappError ? (
               <div className="rounded-lg border border-red-700/20 bg-red-50 p-4 text-sm font-black text-red-800">

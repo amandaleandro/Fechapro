@@ -42,6 +42,13 @@ type FounderPlan = {
   featured: boolean;
 };
 
+// Parâmetros da oferta de lançamento — ajuste aqui e reflete em toda a landing.
+const OFERTA = {
+  encerra: "08/06", // último dia da Cota Fundador
+  mensalidadeInicio: "09/06", // dia em que os preços mensais entram em vigor
+  vagasTotais: 50,
+};
+
 export function AuthScreen() {
   const [openFaq, setOpenFaq] = useState(0);
 
@@ -316,7 +323,7 @@ export function AuthScreen() {
 
         {/* Urgency bar */}
         <div className="sticky top-0 z-50 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black text-[#5c3a00] sm:text-sm">
-          🔒 <strong>Cota Fundador</strong> — Acesso vitalício a partir de R$ 497 · 50 vagas no total · Encerra 08/06 &nbsp;—&nbsp;{" "}
+          🔒 <strong>Cota Fundador</strong> — Acesso vitalício a partir de R$ 497 · {OFERTA.vagasTotais} vagas no total · Encerra {OFERTA.encerra} &nbsp;—&nbsp;{" "}
           <a href="#fundador" className="underline">
             Garantir minha vaga →
           </a>
@@ -343,7 +350,7 @@ export function AuthScreen() {
             </nav>
             <div className="flex items-center gap-2">
               <a
-                className="hidden rounded-lg px-4 py-2 text-sm font-black text-slate-700 sm:inline-flex"
+                className="inline-flex rounded-lg px-3 py-2 text-sm font-black text-slate-700 sm:px-4"
                 href="/login"
               >
                 Entrar
@@ -378,8 +385,8 @@ export function AuthScreen() {
                 <span className="text-green-700">Comece a fechar com proposta.</span>
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
-                Proposta profissional com link, rastreamento, aceite online e PIX integrado. Você envia no
-                WhatsApp, sabe quando o cliente abre e age na hora certa.
+                Proposta profissional com link, aceite online e PIX no mesmo lugar. Você manda no WhatsApp
+                e vê a hora exata que o cliente abriu — pra cobrar no momento certo, não no escuro.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
@@ -634,13 +641,13 @@ export function AuthScreen() {
             {/* Monthly price anchor */}
             <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 sm:p-8">
               <p className="text-xs font-black uppercase text-amber-700">
-                Atenção — Preços mensais a partir de 09/06
+                Atenção — Preços mensais a partir de {OFERTA.mensalidadeInicio}
               </p>
               <h2 className="mt-2 text-2xl font-black sm:text-3xl">
                 A partir de junho, o FechaPro passa a ter mensalidade.
               </h2>
               <p className="mt-3 max-w-2xl leading-7 text-slate-700">
-                Quem entrar como <strong>Fundador até 08/06</strong> paga uma vez e nunca mais paga nada.
+                Quem entrar como <strong>Fundador até {OFERTA.encerra}</strong> paga uma vez e nunca mais paga nada.
                 Os valores abaixo são a referência de quanto você economiza.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-4">
@@ -661,7 +668,7 @@ export function AuthScreen() {
 
             {/* Founder offer headline */}
             <div className="mt-14 text-center">
-              <p className="text-xs font-black uppercase text-green-700">Cota Fundador · Até 08/06</p>
+              <p className="text-xs font-black uppercase text-green-700">Cota Fundador · Até {OFERTA.encerra}</p>
               <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
                 Pague uma vez. Use para sempre.
               </h2>
@@ -693,7 +700,7 @@ export function AuthScreen() {
                         plan.featured ? "bg-rose-900/60 text-rose-300" : "bg-rose-100 text-rose-700"
                       }`}
                     >
-                      {plan.vagas} vagas · Encerra 08/06
+                      {plan.vagas} vagas · Encerra {OFERTA.encerra}
                     </span>
                   </div>
 
@@ -710,7 +717,7 @@ export function AuthScreen() {
                       plan.featured ? "text-white/35" : "text-slate-400"
                     }`}
                   >
-                    {plan.monthlyPrice} a partir de 09/06
+                    {plan.monthlyPrice} a partir de {OFERTA.mensalidadeInicio}
                   </p>
 
                   <div className="mt-2 flex flex-wrap items-baseline gap-2">
@@ -885,7 +892,7 @@ export function AuthScreen() {
           <div className="mx-auto max-w-3xl">
             <p className="text-xs font-black uppercase text-green-300">Última chamada</p>
             <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
-              50 vagas. Encerra 08/06. Depois é mensalidade.
+              {OFERTA.vagasTotais} vagas. Encerra {OFERTA.encerra}. Depois é mensalidade.
             </h2>
             <p className="mt-5 text-lg leading-8 text-white/75">
               Pague uma vez e use o FechaPro para sempre. Envie sua primeira proposta profissional hoje.

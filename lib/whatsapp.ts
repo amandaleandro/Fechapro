@@ -63,7 +63,7 @@ export function buildProposalClientWhatsAppUrl(clientPhone: string, ownerName: s
   const digits = clientPhone.replace(/\D/g, "");
   const phone = digits.startsWith("55") ? digits : `55${digits}`;
   const proposalUrl = `${APP_URL}/p/${slug}`;
-  const message = `Ola! ${ownerName} preparou uma proposta de ${serviceName} especialmente para voce. Acesse o link para ver os detalhes e confirmar sua resposta: ${proposalUrl}`;
+  const message = `Olá! ${ownerName} preparou uma proposta de ${serviceName} especialmente para você. Acesse o link para ver os detalhes e confirmar sua resposta: ${proposalUrl}`;
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
@@ -73,7 +73,7 @@ export async function sendProposalToClientViaWhatsApp(clientPhone: string, owner
   const digits = clientPhone.replace(/\D/g, "");
   const phone = digits.startsWith("55") ? digits : `55${digits}`;
   const proposalUrl = `${APP_URL}/p/${slug}`;
-  const message = `Ola! ${ownerName} preparou uma proposta de ${serviceName} especialmente para voce. Acesse o link para ver os detalhes: ${proposalUrl}`;
+  const message = `Olá! ${ownerName} preparou uma proposta de ${serviceName} especialmente para você. Acesse o link para ver os detalhes: ${proposalUrl}`;
 
   try {
     await sendViaCloudApi(phone, message);
@@ -207,12 +207,15 @@ async function resetBaileysSession() {
   state.connected = false;
   state.qr = null;
   state.phone = null;
+  state.error = null;
   await rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
 }
 
 async function waitForBaileysQrOrConnection(timeoutMs = 30_000) {
   const timeoutAt = Date.now() + timeoutMs;
-  while (!getState().connected && !getState().qr && Date.now() < timeoutAt) {
+  while (Date.now() < timeoutAt) {
+    const state = getState();
+    if (state.connected || state.qr || state.error) break;
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
 }
@@ -231,29 +234,46 @@ async function createBaileysSocket() {
   getState().socketInstance = socket;
   socket.ev.on("creds.update", saveCreds);
   socket.ev.on("connection.update", (update) => {
-    console.log("[Baileys] connection.update:", update.connection, "qr:", !!update.qr, "error:", update.lastDisconnect?.error?.message);
+    const { connection, qr, lastDisconnect } = update;
+    console.log("[Baileys] connection.update:", connection, "qr:", !!qr, "error:", (lastDisconnect?.error as Error | undefined)?.message);
     const state = getState();
-    state.connected = update.connection === "open";
-    if (update.qr) {
-      state.qr = update.qr;
-      console.log("[Baileys] QR gerado, tamanho:", update.qr.length);
+
+    if (qr) {
+      state.qr = qr;
+      state.error = null;
+      console.log("[Baileys] QR gerado, tamanho:", qr.length);
     }
 
-    if (update.connection === "close") {
-      const statusCode = getDisconnectStatusCode(update.lastDisconnect?.error);
-      // Always clear the promise so the next getBaileysSocket() creates a fresh socket.
-      // For loggedOut, also wipe session files so a new QR is generated on reconnect.
+    if (connection === "open") {
+      state.connected = true;
+      state.qr = null;
+      state.phone = socket.user?.id || null;
+      state.error = null;
+      console.log("[Baileys] Conectado! Numero:", state.phone);
+    } else if (connection === "close") {
+      const hadPhoneOrQr = Boolean(state.phone) || Boolean(state.qr);
+      const statusCode = getDisconnectStatusCode(lastDisconnect?.error);
+
+      state.connected = false;
+      // Clear the promise so the next getBaileysSocket() creates a fresh socket.
       state.socketPromise = null;
       state.socketInstance = null;
+
       if (statusCode === baileys.DisconnectReason.loggedOut) {
         state.qr = null;
         state.phone = null;
+        state.error = "Sessão encerrada pelo WhatsApp. Reconecte para gerar um novo QR Code.";
         rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
+      } else if (!hadPhoneOrQr) {
+        // Fechou antes de gerar QR ou conectar — erro de rede ou rejeição do WhatsApp.
+        const errMsg = (lastDisconnect?.error as Error | undefined)?.message;
+        state.error = errMsg
+          ? `Falha ao conectar ao WhatsApp: ${errMsg}. Verifique a rede do servidor.`
+          : "Não foi possível conectar ao WhatsApp. Verifique a conexão do servidor e tente novamente.";
+        console.error("[Baileys] Conexão encerrada antes do QR/telefone:", errMsg);
       }
-    } else if (update.connection === "open") {
-      state.qr = null;
-      state.phone = socket.user?.id || null;
-      console.log("[Baileys] Conectado! Numero:", state.phone);
+    } else {
+      state.connected = false;
     }
   });
 

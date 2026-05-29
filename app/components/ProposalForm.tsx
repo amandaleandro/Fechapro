@@ -401,10 +401,10 @@ export default function ProposalForm(props: any) {
         </div>
       </div>
 
-      <TextAreaField label="O que esta incluso" maxLength={1200} placeholder={"Ex:\nBriefing inicial\nExecucao do servico\nAjustes combinados\nEntrega final"} value={includedText} onChange={(value: string) => { setIncludedText(value); onDraftChange("included", value.split("\n")); }} />
+      <TextAreaField label="O que está incluso" maxLength={1200} placeholder={"Ex:\nBriefing inicial\nExecução do serviço\nAjustes combinados\nEntrega final"} value={includedText} onChange={(value: string) => { setIncludedText(value); onDraftChange("included", value.split("\n")); }} />
 
       <div className="grid gap-2">
-        <span className="text-xs font-black uppercase text-slate-500">Adicionar rapido</span>
+        <span className="text-xs font-black uppercase text-slate-500">Adicionar rápido</span>
         <div className="flex flex-wrap gap-2">
           {quickIncludedSuggestions.map((item: string) => (
             <button className="min-h-9 rounded-full border border-black/10 bg-slate-50 px-3 text-xs font-black text-slate-700" key={item} type="button" onClick={() => addIncludedSuggestion(item)}>
@@ -417,7 +417,7 @@ export default function ProposalForm(props: any) {
       <div className="flex flex-wrap items-center gap-3">
         <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 bg-slate-50 px-4 text-sm font-black text-slate-800" type="button" onClick={() => setShowAdvancedProposalOptions((c) => !c)}>
           <Settings size={16} />
-          {showAdvancedProposalOptions ? "Ocultar opcoes avancadas" : "Mostrar opcoes avancadas"}
+          {showAdvancedProposalOptions ? "Ocultar opções avançadas" : "Mostrar opções avançadas"}
         </button>
         <span className="text-xs font-bold text-slate-500">Template, validade, pagamento, e-mail, recebimento e visual.</span>
       </div>

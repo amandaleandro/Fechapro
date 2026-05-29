@@ -1,6 +1,6 @@
 # FechaPro
 
-SaaS de propostas comerciais para prestadores de serviço. Criação de proposta com link público, aceite online, rastreamento de visualizações, pagamento via PIX ou Mercado Pago, artes de divulgação por IA e gestão completa de clientes e serviços.
+SaaS de propostas comerciais para prestadores de serviço. Em vez de mandar preço solto no WhatsApp, você envia uma proposta com link próprio, vê a hora exata que o cliente abriu e fecha com aceite online e pagamento (PIX ou Mercado Pago) no mesmo lugar — além de PDF, rastreamento, artes de divulgação por IA e gestão de clientes e serviços.
 
 ---
 
@@ -232,12 +232,28 @@ Definidos em `lib/plans.ts` e no enum `PlanCode` do Prisma.
 
 | Plano           | Propostas/mês | Destaques                         |
 | --------------- | ------------- | --------------------------------- |
-| Start           | 10–20         | Link, PDF, aceite online          |
-| Essencial       | 30–60         | + Portfólio, rastreamento         |
-| Profissional    | 60–200        | + Implantação, kit de mensagens   |
+| Start           | 50            | Link, PDF, aceite online          |
+| Essencial       | 60            | + Portfólio, rastreamento         |
+| Profissional    | 200           | + Implantação, kit de mensagens   |
 | Completo + Site | Ilimitadas    | + Site institucional, artes       |
 
 Variantes `founder_*` para clientes da oferta de lançamento.
+
+---
+
+## Novidades e próximos recursos
+
+O dashboard exibe a modal **Novidades e próximos recursos** no primeiro acesso da versão atual e também pelo botão de megafone no topo do painel. Ela resume:
+
+- **Já disponível:** recursos que o usuário pode testar agora, como documentos por segmento, edição de propostas, templates, pagamento por proposta, artes de divulgação, portfólio e prova social.
+- **Próximos recursos:** roadmap em três grupos: `Em preparo`, `Na fila` e `Em estudo`.
+- **Atalhos de ação:** botões para abrir artes de divulgação, ajustar marca ou fechar o aviso.
+
+Para atualizar o conteúdo da modal, edite em `app/page.tsx`:
+
+- `salesValueUpdates` para recursos já disponíveis.
+- `upcomingFeatures` para itens futuros.
+- `keys.updatesModal` para forçar a exibição novamente aos usuários após uma nova rodada de novidades.
 
 ---
 
