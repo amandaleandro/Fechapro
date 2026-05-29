@@ -28,7 +28,13 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
     acceptedAtFull: proposal.acceptedAt ? formatContractDateTime(acceptedAt) : "Aceite digital registrado",
     acceptedAtShort: proposal.acceptedAt ? formatShortDateTime(acceptedAt) : "Aceite registrado",
     acceptedBy: proposal.acceptedBy || proposal.clientName,
+    acceptedDocument: proposal.acceptedDocument || "",
     acceptedEmail: proposal.acceptedEmail || proposal.clientEmail || "",
+    acceptedIp: proposal.acceptedIp || "",
+    acceptedPhone: proposal.acceptedPhone || proposal.clientPhone || "",
+    acceptedSnapshotHash: proposal.acceptedSnapshotHash || "",
+    acceptedUserAgent: proposal.acceptedUserAgent || "",
+    acceptedContractVersion: proposal.acceptedContractVersion || "service-contract-v2",
     businessEmail: brand?.email || proposal.user.email,
     businessName,
     businessWhatsapp: brand?.whatsapp || "",
@@ -97,7 +103,7 @@ function drawCover(doc: PDFKit.PDFDocument, data: ContractPdfData) {
   doc.roundedRect(58, 202, 3, 20, 1.5).fill(data.primaryColor);
   doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(13).text("Partes", 68, 204);
   infoCard(doc, 58, 232, "Contratada", data.businessName, contactLine(data.businessEmail, data.businessWhatsapp), data.primaryColor);
-  infoCard(doc, 296, 232, "Contratante", data.acceptedBy, data.acceptedEmail || data.clientName, data.primaryColor);
+  infoCard(doc, 296, 232, "Contratante", data.acceptedBy, partyDetail(data.acceptedEmail, data.acceptedDocument), data.primaryColor);
 
   // Seção: Condições comerciais
   doc.roundedRect(58, 360, 3, 20, 1.5).fill(data.primaryColor);
@@ -113,7 +119,7 @@ function drawCover(doc: PDFKit.PDFDocument, data: ContractPdfData) {
     width: 434,
     lineGap: 4,
   });
-  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(`Código da proposta: ${data.proposalCode}`, 78, 596, { width: 434, ellipsis: true });
+  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(`Código da proposta: ${data.proposalCode} | Versão: ${data.acceptedContractVersion}`, 78, 596, { width: 434, ellipsis: true });
 
   // Rodapé da capa
   doc.roundedRect(58, 648, 468, 1, 1).fill("#E2E8F0");
@@ -128,33 +134,48 @@ function drawContractBody(doc: PDFKit.PDFDocument, data: ContractPdfData) {
   // Cabeçalho da página de termos
   doc.rect(0, 0, 595.28, 841.89).fill("#FFFFFF");
   doc.rect(0, 0, 595.28, 6).fill(data.primaryColor);
-  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(17).text("Termos do contrato", 48, 38);
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(17).text("Instrumento particular de prestação de serviços", 48, 38);
   doc.fillColor("#64748B").font("Helvetica").fontSize(9.5).text(`Emitido em ${data.createdAtFull}`, 48, 62);
   doc.rect(48, 80, 499, 1).fill("#E2E8F0");
 
   let y = 104;
-  y = drawClause(doc, y, "1. Partes", `${data.businessName}, doravante denominada Contratada, e ${data.acceptedBy}, doravante denominado(a) Contratante, firmam este contrato a partir do aceite digital da proposta.`, data.primaryColor);
-  y = drawClause(doc, y, "2. Objeto", `A Contratada prestará ao Contratante o serviço "${data.serviceName}", conforme o escopo descrito neste contrato e na proposta aceita digitalmente.`, data.primaryColor);
-  y = drawListClause(doc, y, "3. Escopo contratado", data.included, data.primaryColor);
-  y = drawClause(doc, y, "4. Investimento e pagamento", `O investimento total acordado entre as partes é de ${data.total}. A forma ou condição de pagamento registrada na proposta foi: ${data.payment}. Valores, parcelas, vencimentos ou sinais não informados neste documento seguem o combinado registrado entre as partes.`, data.primaryColor);
-  y = drawClause(doc, y, "5. Prazo de execução", `O prazo combinado para execução ou entrega do serviço é: ${data.deadline}. A contagem do prazo considera o recebimento das informações, materiais, aprovações e pagamentos necessários para o andamento do trabalho.`, data.primaryColor);
-  y = drawClause(doc, y, "6. Responsabilidades do contratante", "O Contratante deverá fornecer informações verdadeiras, materiais solicitados, retornos e aprovações em tempo adequado. Atrasos nessas entregas podem alterar prazos e etapas do serviço.", data.primaryColor);
-  y = drawClause(doc, y, "7. Alterações de escopo", "Pedidos não previstos no escopo contratado poderão exigir novo prazo, novo valor ou proposta complementar, mediante combinação entre as partes.", data.primaryColor);
+  y = drawClause(doc, y, "1. Partes contratantes", `${data.businessName}, doravante denominada Contratada, e ${data.acceptedBy}, doravante denominado(a) Contratante, celebram o presente instrumento particular de prestação de serviços. As partes declaram possuir capacidade para contratar e reconhecem como suficientes, para esta contratação, os dados de identificação e contato informados na proposta aceita digitalmente sob o código ${data.proposalCode}.`, data.primaryColor);
+  y = drawClause(doc, y, "2. Documentos integrantes", "Integram este contrato, para todos os fins, a proposta aceita digitalmente, o comprovante de aceite, eventuais mensagens, anexos, comprovantes de pagamento e demais registros relacionados à contratação. Em caso de divergência, prevalecerão as condições específicas aceitas na proposta, desde que não contrariem disposição expressa deste instrumento.", data.primaryColor);
+  y = drawClause(doc, y, "3. Objeto", `O presente contrato tem por objeto a prestação, pela Contratada ao Contratante, do serviço "${data.serviceName}", conforme escopo, condições comerciais, prazos e demais informações constantes neste documento e na proposta aceita digitalmente.`, data.primaryColor);
+  y = drawListClause(doc, y, "4. Escopo contratado", data.included, data.primaryColor);
+  y = drawClause(doc, y, "5. Itens não incluídos", "Não estão incluídos no preço contratado quaisquer serviços, produtos, deslocamentos, taxas, licenças, despesas de terceiros, alterações, urgências, refações ou entregas que não estejam expressamente descritos no escopo contratado ou em termo complementar aceito pelas partes.", data.primaryColor);
+  y = drawClause(doc, y, "6. Investimento, forma de pagamento e vencimentos", `Pela execução do objeto contratado, o Contratante pagará à Contratada o valor total de ${data.total}. A forma ou condição de pagamento registrada na proposta foi: ${data.payment}. Salvo ajuste expresso em sentido diverso, os pagamentos deverão ocorrer nas datas e condições aceitas, e a execução poderá ficar condicionada ao pagamento de sinal, entrada, parcela vencida ou valor previamente ajustado.`, data.primaryColor);
+  y = drawClause(doc, y, "7. Prazo de execução", `O prazo estimado para execução ou entrega do serviço é: ${data.deadline}. A contagem do prazo fica condicionada ao recebimento, pela Contratada, de informações, documentos, materiais, acessos, aprovações e pagamentos necessários ao regular andamento do trabalho. Atrasos decorrentes de pendências do Contratante suspenderão a contagem do prazo pelo período correspondente e poderão exigir reprogramação da agenda de execução.`, data.primaryColor);
+  y = drawClause(doc, y, "8. Obrigações da contratada", "A Contratada se obriga a executar os serviços com diligência, boa-fé, zelo técnico e observância ao escopo contratado, comunicando ao Contratante fatos relevantes que possam impactar prazos, entregas ou condições previamente acordadas. A Contratada não responde por resultados dependentes de atos de terceiros, plataformas externas, aprovações públicas, disponibilidade de sistemas ou informações fornecidas pelo Contratante.", data.primaryColor);
+  y = drawClause(doc, y, "9. Obrigações do contratante", "O Contratante se obriga a fornecer informações verdadeiras e completas, disponibilizar materiais, documentos e acessos necessários, responder solicitações, validar etapas e efetuar os pagamentos nos prazos combinados. A falta de colaboração, informação, acesso, pagamento ou aprovação poderá suspender a execução, alterar o cronograma e gerar custos adicionais quando houver retrabalho ou reserva de agenda.", data.primaryColor);
+  y = drawClause(doc, y, "10. Aprovações, revisões e aceite das entregas", "Quando o serviço envolver etapas de validação, o Contratante deverá analisar as entregas em prazo razoável ou no prazo informado pela Contratada. A ausência de manifestação após solicitação de aprovação poderá ser interpretada como concordância operacional para continuidade do projeto, sem prejuízo de ajustes previstos no escopo contratado.", data.primaryColor);
+  y = drawClause(doc, y, "11. Alterações de escopo", "Solicitações não previstas no escopo contratado, retrabalhos decorrentes de mudança de orientação, inclusão de novas entregas ou alteração substancial das premissas iniciais dependerão de aceite prévio da Contratada e poderão exigir proposta complementar, novo prazo e/ou cobrança adicional.", data.primaryColor);
+  y = drawClause(doc, y, "12. Inadimplemento e suspensão", "O atraso no pagamento ou o descumprimento de obrigação essencial por qualquer das partes autorizará a parte prejudicada a suspender a execução de suas obrigações, exigir regularização, renegociar o cronograma e cobrar valores vencidos, sem prejuízo de perdas, danos, multas, juros, correção monetária ou encargos eventualmente pactuados em documento complementar.", data.primaryColor);
+  y = drawClause(doc, y, "13. Confidencialidade e proteção de dados", "As partes comprometem-se a manter sigilo sobre informações comerciais, técnicas, financeiras, estratégicas ou pessoais acessadas em razão deste contrato, utilizando-as apenas para a execução do objeto contratado. Quando houver tratamento de dados pessoais, as partes deverão observar a legislação aplicável, inclusive a Lei Geral de Proteção de Dados Pessoais, na medida de suas respectivas responsabilidades.", data.primaryColor);
+  y = drawClause(doc, y, "14. Propriedade intelectual e uso de materiais", "Salvo disposição expressa em contrário, materiais, marcas, imagens, textos, arquivos, acessos e conteúdos fornecidos pelo Contratante permanecerão sob sua responsabilidade quanto à titularidade, licenças e autorizações de uso. Entregas criadas pela Contratada serão licenciadas ou transferidas ao Contratante nos limites do escopo contratado e após a quitação dos valores devidos.", data.primaryColor);
+  y = drawClause(doc, y, "15. Cancelamento e rescisão", "O contrato poderá ser encerrado por comum acordo, por conclusão do objeto ou por descumprimento relevante das obrigações assumidas. Em caso de cancelamento, deverão ser apurados os serviços já executados, despesas incorridas, reservas de agenda, valores pagos e valores eventualmente devidos, conforme as condições comerciais aceitas.", data.primaryColor);
 
   if (data.notes) {
-    y = drawClause(doc, y, "8. Observações da proposta", data.notes, data.primaryColor);
+    y = drawClause(doc, y, "16. Observações da proposta", data.notes, data.primaryColor);
   }
 
   if (data.proposalTerms) {
-    y = drawClause(doc, y, data.notes ? "9. Termos comerciais" : "8. Termos comerciais", data.proposalTerms, data.primaryColor);
+    y = drawClause(doc, y, data.notes ? "17. Termos comerciais complementares" : "16. Termos comerciais complementares", data.proposalTerms, data.primaryColor);
   }
 
-  const acceptanceClauseNumber = data.notes && data.proposalTerms ? "10" : data.notes || data.proposalTerms ? "9" : "8";
+  const acceptanceClauseNumber = data.notes && data.proposalTerms ? "18" : data.notes || data.proposalTerms ? "17" : "16";
   y = drawClause(
     doc,
     y,
     `${acceptanceClauseNumber}. Aceite digital`,
-    `O aceite digital registrado por ${data.acceptedBy} em ${data.acceptedAtFull} comprova a concordância com o escopo, valor, prazo e condições comerciais apresentados na proposta identificada pelo código ${data.proposalCode}. Este documento consolida as condições aceitas e pode ser usado como registro da contratação.`,
+    `O aceite digital registrado por ${data.acceptedBy} em ${data.acceptedAtFull} evidencia a concordância expressa com o escopo, valor, prazo e condições comerciais apresentados na proposta identificada pelo código ${data.proposalCode}. As partes reconhecem a validade do aceite eletrônico e dos registros digitais relacionados, nos termos admitidos pela legislação brasileira, inclusive quanto ao uso de meios eletrônicos de comprovação de autoria e integridade aceitos pelas partes. Dados do registro: ${acceptanceEvidenceLine(data)}.`,
+    data.primaryColor,
+  );
+  y = drawClause(
+    doc,
+    y,
+    `${Number(acceptanceClauseNumber) + 1}. Boa-fé, preservação e foro`,
+    "Este contrato deverá ser interpretado conforme a boa-fé objetiva, a função econômica da contratação e a preservação do negócio jurídico. A eventual tolerância de uma parte quanto ao descumprimento de qualquer obrigação não importará renúncia de direito. Caso alguma disposição seja considerada inválida, as demais permanecerão vigentes. As partes elegem o foro competente nos termos da legislação aplicável para dirimir eventuais controvérsias oriundas deste contrato, salvo acordo escrito em sentido diverso.",
     data.primaryColor,
   );
 
@@ -257,6 +278,25 @@ function contactLine(email: string, whatsapp: string) {
   return [email, whatsapp].filter(Boolean).join(" | ") || "Contato não informado";
 }
 
+function partyDetail(email: string, document: string) {
+  return [email, document ? `Doc. ${document}` : ""].filter(Boolean).join(" | ") || "Contato não informado";
+}
+
+function acceptanceEvidenceLine(data: ContractPdfData) {
+  const items = [
+    data.acceptedEmail ? `e-mail ${data.acceptedEmail}` : "",
+    data.acceptedPhone ? `telefone ${data.acceptedPhone}` : "",
+    data.acceptedIp ? `IP mascarado ${data.acceptedIp}` : "",
+    data.acceptedSnapshotHash ? `hash ${shortHash(data.acceptedSnapshotHash)}` : "",
+    `versão ${data.acceptedContractVersion}`,
+  ].filter(Boolean);
+  return items.join("; ");
+}
+
+function shortHash(value: string) {
+  return value.length > 20 ? `${value.slice(0, 12)}...${value.slice(-8)}` : value;
+}
+
 function formatDateOnly(date: string) {
   return new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
@@ -293,7 +333,13 @@ type ContractPdfData = {
   acceptedAtFull: string;
   acceptedAtShort: string;
   acceptedBy: string;
+  acceptedDocument: string;
   acceptedEmail: string;
+  acceptedIp: string;
+  acceptedPhone: string;
+  acceptedSnapshotHash: string;
+  acceptedUserAgent: string;
+  acceptedContractVersion: string;
   businessEmail: string;
   businessName: string;
   businessWhatsapp: string;

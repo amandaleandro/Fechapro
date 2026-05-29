@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { jsonError, slugify } from "@/lib/api";
+import { isAdminEmail } from "@/lib/admin";
 import { sendProposalSentToClientEmail } from "@/lib/email";
 import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
 import { accumulatedProposalLimit, currentMonthRange, isUnlimitedProposalLimit, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 import { filterReadyProposalTemplates, findProposalTemplate } from "@/lib/proposal-templates";
 import { requireSession } from "@/lib/session";
-import { cleanOptionalString, cleanString, isValidDateOnly, isValidEmail } from "@/lib/validation";
+import { cleanOptionalString, cleanString, isValidDateOnly, isValidEmail, isValidPhone } from "@/lib/validation";
+import { buildProposalClientWhatsAppUrl, sendProposalToClientViaWhatsApp } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,15 +20,17 @@ const allowedSegments = new Set(["auto", "home_reform", "automotive", "beauty", 
 export async function GET(request: Request) {
   const session = await requireSession();
 
-  const today = new Date().toISOString().slice(0, 10);
-  await prisma.proposalAsset.updateMany({
-    where: {
-      userId: session.id,
-      status: { in: ["sent", "viewed"] },
-      validUntil: { not: null, lt: today },
-    },
-    data: { status: "expired" },
-  });
+  if (rateLimit(`expire-proposals:${session.id}`, 1, 60 * 60_000)) {
+    const today = new Date().toISOString().slice(0, 10);
+    await prisma.proposalAsset.updateMany({
+      where: {
+        userId: session.id,
+        status: { in: ["sent", "viewed"] },
+        validUntil: { not: null, lt: today },
+      },
+      data: { status: "expired" },
+    });
+  }
 
   const url = new URL(request.url);
   const pageParam = url.searchParams.get("page");
@@ -62,9 +67,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const session = await requireSession();
+  const isAdmin = isAdminEmail(session.email);
   const body = (await request.json()) as {
     clientName?: string;
     clientEmail?: string;
+    clientPhone?: string;
     templateId?: string;
     serviceName?: string;
     price?: number;
@@ -95,6 +102,7 @@ export async function POST(request: Request) {
   const template = staticTemplate || customTemplate;
   const validUntil = cleanOptionalString(body.validUntil);
   const clientEmail = cleanOptionalString(body.clientEmail);
+  const clientPhone = cleanOptionalString(body.clientPhone);
   const checkoutMode = body.checkoutMode === "pix" ? "pix" : "mercadopago";
   const serviceName = cleanString(body.serviceName || template?.serviceName || "");
   const price = Number(body.price ?? template?.price ?? 0);
@@ -120,6 +128,10 @@ export async function POST(request: Request) {
     return jsonError("E-mail do cliente inválido.");
   }
 
+  if (clientPhone && !isValidPhone(clientPhone)) {
+    return jsonError("Telefone do cliente inválido.");
+  }
+
   if (checkoutMode === "pix") {
     const brand = await prisma.brandProfile.findUnique({
       where: { userId: session.id },
@@ -136,7 +148,7 @@ export async function POST(request: Request) {
     update: {},
   });
 
-  if (!canUsePaidFeatures(subscription)) {
+  if (!isAdmin && !canUsePaidFeatures(subscription)) {
     return jsonError(blockedSubscriptionMessage(subscription.status), 402);
   }
 
@@ -152,7 +164,7 @@ export async function POST(request: Request) {
   });
   const accumulatedLimit = accumulatedProposalLimit(plan.proposalLimit, subscription.startedAt);
 
-  if (!isUnlimitedProposalLimit(accumulatedLimit) && usedSinceSubscriptionStart >= accumulatedLimit) {
+  if (!isAdmin && !isUnlimitedProposalLimit(accumulatedLimit) && usedSinceSubscriptionStart >= accumulatedLimit) {
     return jsonError(`Limite acumulado do plano ${plan.name} atingido. Todo mês o saldo é renovado e o não utilizado fica acumulado.`, 402);
   }
 
@@ -181,6 +193,7 @@ export async function POST(request: Request) {
       userId: session.id,
       clientName,
       clientEmail,
+      clientPhone,
       serviceName,
       price,
       deadline,
@@ -198,16 +211,26 @@ export async function POST(request: Request) {
   });
 
   let clientEmailSent = false;
-  if (clientEmail && item.status === "sent") {
-    await sendProposalSentToClientEmail(
-      clientEmail,
-      item.clientName,
-      item.user.name,
-      item.serviceName,
-      item.publicSlug
-    );
-    clientEmailSent = true;
+  let whatsappSent = false;
+  let whatsappUrl: string | null = null;
+
+  if (item.status === "sent") {
+    if (clientEmail) {
+      await sendProposalSentToClientEmail(
+        clientEmail,
+        item.clientName,
+        item.user.name,
+        item.serviceName,
+        item.publicSlug
+      );
+      clientEmailSent = true;
+    }
+
+    if (clientPhone) {
+      whatsappUrl = buildProposalClientWhatsAppUrl(clientPhone, item.user.name, item.serviceName, item.publicSlug);
+      whatsappSent = await sendProposalToClientViaWhatsApp(clientPhone, item.user.name, item.serviceName, item.publicSlug);
+    }
   }
 
-  return NextResponse.json({ ...item, clientEmailSent }, { status: 201 });
+  return NextResponse.json({ ...item, clientEmailSent, whatsappSent, whatsappUrl }, { status: 201 });
 }

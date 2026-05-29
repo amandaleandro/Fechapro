@@ -32,6 +32,8 @@ export async function GET() {
       showTestimonials: true,
       showServices: true,
       showFaq: true,
+      followUpEnabled: false,
+      followUpDays: 3,
     },
   );
 }
@@ -59,6 +61,8 @@ export async function PUT(request: Request) {
     showTestimonials?: boolean;
     showServices?: boolean;
     showFaq?: boolean;
+    followUpEnabled?: boolean;
+    followUpDays?: number;
   };
 
   const businessName = cleanString(body.businessName) || session.name;
@@ -99,6 +103,8 @@ export async function PUT(request: Request) {
       showTestimonials: body.showTestimonials !== false,
       showServices: body.showServices !== false,
       showFaq: body.showFaq !== false,
+      followUpEnabled: body.followUpEnabled === true,
+      followUpDays: Math.min(30, Math.max(1, Number(body.followUpDays ?? 3))),
     },
     update: {
       businessName,
@@ -121,6 +127,8 @@ export async function PUT(request: Request) {
       showTestimonials: body.showTestimonials !== false,
       showServices: body.showServices !== false,
       showFaq: body.showFaq !== false,
+      followUpEnabled: body.followUpEnabled === true,
+      followUpDays: Math.min(30, Math.max(1, Number(body.followUpDays ?? 3))),
     },
   });
 

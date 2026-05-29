@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { jsonError } from "@/lib/api";
+import { isAdminEmail } from "@/lib/admin";
 import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
 import { renderMarketingArtHtml } from "@/lib/marketing-art-html";
 import { currentMonthRange, plans } from "@/lib/plans";
@@ -43,6 +44,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await requireSession();
+  const isAdmin = isAdminEmail(session.email);
   if (!rateLimit(`marketing-art:${session.id}`, 30, 60 * 60_000)) {
     return rateLimitError();
   }
@@ -88,7 +90,7 @@ export async function POST(request: Request) {
     update: {},
   });
 
-  if (!canUsePaidFeatures(subscription)) {
+  if (!isAdmin && !canUsePaidFeatures(subscription)) {
     return jsonError(blockedSubscriptionMessage(subscription.status), 402);
   }
 
@@ -107,11 +109,11 @@ export async function POST(request: Request) {
   const totalArtLimit = plan.artLimit + subscription.artCreditBalance;
   const shouldUseExtraCredit = usedThisMonth >= plan.artLimit;
 
-  if (totalArtLimit <= 0) {
+  if (!isAdmin && totalArtLimit <= 0) {
     return jsonError("Artes de divulgacao estao disponiveis nos planos acima de R$ 100 ou em pacotes individuais.", 402);
   }
 
-  if (usedThisMonth >= totalArtLimit) {
+  if (!isAdmin && usedThisMonth >= totalArtLimit) {
     return jsonError(`Limite de ${totalArtLimit} artes atingido. Compre um pacote individual para criar mais.`, 402);
   }
 
@@ -142,7 +144,7 @@ export async function POST(request: Request) {
     },
   });
 
-  if (shouldUseExtraCredit) {
+  if (!isAdmin && shouldUseExtraCredit) {
     await prisma.planSubscription.update({
       where: { userId: session.id },
       data: { artCreditBalance: { decrement: 1 } },
@@ -216,120 +218,8 @@ async function createTemplateArt(input: {
   return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
 }
 
-async function createFallbackArt(input: {
-  accentColor: string;
-  brandName: string;
-  callToAction: string;
-  format: string;
-  objective: string;
-  primaryColor: string;
-  referenceImageUrl?: string | null;
-  salesCopy: SalesCopy;
-  secondaryColor: string;
-  serviceName: string | null;
-  supportImage?: Buffer | null;
-  useImageAsBackground?: boolean;
-  whatsapp?: string | null;
-}) {
+async function createFallbackArt(input: Parameters<typeof createCleanFallbackArt>[0]) {
   return createCleanFallbackArt(input);
-
-  const dimensions = artFormats[input.format] || artFormats.instagram_post;
-  const isStory = dimensions.height > dimensions.width;
-  const margin = isStory ? 112 : 76;
-  const brandColor = sanitizeColor(input.primaryColor, "#0f766e");
-  const accentColor = sanitizeColor(input.accentColor, "#2563eb");
-  const darkColor = sanitizeColor(input.secondaryColor, "#07122f");
-  const title = input.serviceName || extractHeadline(input.objective);
-  const titleLines = wrapTitle(title, isStory ? 16 : 15).slice(0, 3);
-  const objectiveLines = wrapTitle(input.objective, isStory ? 32 : 28).slice(0, 3);
-  const price = extractPrice(input.objective);
-  const benefits = buildBenefits(input.objective, input.serviceName);
-  const brandInitial = input.brandName.trim().charAt(0).toUpperCase() || "F";
-  const titleTop = isStory ? 330 : 260;
-  const cardStart = isStory ? 1030 : 650;
-  const cardGap = isStory ? 154 : 112;
-  const ctaY = isStory ? dimensions.height - 240 : dimensions.height - 154;
-  const footerY = isStory ? dimensions.height - 70 : dimensions.height - 44;
-  const titleSvg = titleLines
-    .map((line, index) => {
-      const fill = index === 1 ? accentColor : darkColor;
-      return `<text x="${margin}" y="${titleTop + index * (isStory ? 100 : 82)}" fill="${fill}" font-family="Arial, sans-serif" font-size="${isStory ? 90 : 76}" font-weight="900">${escapeXml(line)}</text>`;
-    })
-    .join("");
-  const objectiveSvg = objectiveLines
-    .map((line, index) => {
-      return `<text x="${margin}" y="${titleTop + (titleLines.length * (isStory ? 100 : 82)) + 52 + index * 42}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 34 : 28}" font-weight="${index === 0 ? 800 : 500}" opacity="0.9">${escapeXml(line)}</text>`;
-    })
-    .join("");
-  const benefitSvg = benefits
-    .map((benefit, index) => {
-      const y = cardStart + index * cardGap;
-      const iconPath = index === 0 ? documentIcon() : index === 1 ? chartIcon() : checkIcon();
-      return `
-        <g filter="url(#softShadow)">
-          <rect x="${margin}" y="${y}" width="${dimensions.width - margin * 2}" height="${isStory ? 122 : 88}" rx="24" fill="#ffffff"/>
-        </g>
-        <rect x="${margin + 28}" y="${y + 20}" width="${isStory ? 82 : 56}" height="${isStory ? 82 : 56}" rx="18" fill="#e9f8ef"/>
-        <g transform="translate(${margin + (isStory ? 47 : 39)} ${y + (isStory ? 39 : 30)}) scale(${isStory ? 1.45 : 1})" fill="none" stroke="${brandColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${iconPath}</g>
-        <circle cx="${margin + (isStory ? 188 : 132)}" cy="${y + (isStory ? 61 : 44)}" r="${isStory ? 22 : 16}" fill="#ffffff" stroke="#16a34a" stroke-width="5"/>
-        <path d="M ${margin + (isStory ? 178 : 124)} ${y + (isStory ? 60 : 43)} l ${isStory ? 8 : 6} ${isStory ? 8 : 6} l ${isStory ? 18 : 13} -${isStory ? 20 : 15}" fill="none" stroke="#16a34a" stroke-width="${isStory ? 6 : 4}" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="${margin + (isStory ? 245 : 178)}" y="${y + (isStory ? 75 : 54)}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 42 : 30}" font-weight="900">${escapeXml(benefit)}</text>
-      `;
-    })
-    .join("");
-  const priceBlock = price
-    ? `
-      <text x="${margin}" y="${isStory ? 790 : 520}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 104 : 78}" font-weight="900">${escapeXml(price)}</text>
-      <text x="${margin + (isStory ? 360 : 270)}" y="${isStory ? 790 : 520}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 44 : 34}" font-weight="500">/mês</text>
-    `
-    : "";
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" viewBox="0 0 ${dimensions.width} ${dimensions.height}">
-      <defs>
-        <linearGradient id="blueGlow" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stop-color="#1d4ed8"/>
-          <stop offset="100%" stop-color="#06b6d4"/>
-        </linearGradient>
-        <linearGradient id="greenCta" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stop-color="#00a63e"/>
-          <stop offset="100%" stop-color="#13c56b"/>
-        </linearGradient>
-        <filter id="softShadow" x="-10%" y="-10%" width="120%" height="130%">
-          <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.14"/>
-        </filter>
-      </defs>
-      <rect width="100%" height="100%" fill="#f8fbff"/>
-      <circle cx="${dimensions.width - 80}" cy="${isStory ? 90 : 70}" r="${isStory ? 220 : 170}" fill="url(#blueGlow)"/>
-      <circle cx="${isStory ? 40 : 30}" cy="${dimensions.height - 70}" r="${isStory ? 180 : 130}" fill="#04b64f"/>
-      <circle cx="${Math.round(dimensions.width * 0.76)}" cy="${Math.round(dimensions.height * 0.08)}" r="${isStory ? 170 : 120}" fill="#eaf2ff"/>
-      <g opacity="0.35" fill="#bfdbfe">
-        ${dotPattern(dimensions.width - (isStory ? 470 : 360), isStory ? 130 : 92, isStory ? 300 : 240)}
-      </g>
-      <g transform="translate(${margin} ${isStory ? 92 : 70})">
-        <text x="0" y="72" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 108 : 82}" font-weight="900">${escapeXml(brandInitial)}</text>
-        <path d="M 4 88 H ${isStory ? 92 : 70}" stroke="${brandColor}" stroke-width="5"/>
-        <text x="0" y="${isStory ? 124 : 106}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 25 : 20}" font-weight="600">${escapeXml(input.brandName.slice(0, 34))}</text>
-      </g>
-      <rect x="${margin}" y="${isStory ? 500 : 405}" width="${isStory ? 350 : 290}" height="${isStory ? 66 : 54}" rx="27" fill="#0bbf5a"/>
-      <circle cx="${margin + (isStory ? 54 : 44)}" cy="${isStory ? 532 : 432}" r="${isStory ? 21 : 17}" fill="#ffffff"/>
-      <path d="M ${margin + (isStory ? 45 : 37)} ${isStory ? 532 : 432} l ${isStory ? 7 : 5} ${isStory ? 8 : 6} l ${isStory ? 15 : 12} -${isStory ? 17 : 13}" fill="none" stroke="#0bbf5a" stroke-width="${isStory ? 6 : 5}" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="${margin + (isStory ? 116 : 88)}" y="${isStory ? 545 : 440}" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 36 : 28}" font-weight="900">Oferta em destaque</text>
-      ${titleSvg}
-      ${objectiveSvg}
-      ${priceBlock}
-      ${benefitSvg}
-      <text x="${margin + (isStory ? 170 : 110)}" y="${isStory ? dimensions.height - 332 : dimensions.height - 232}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 38 : 26}" font-weight="500">Ideal para quem quer</text>
-      <text x="${margin + (isStory ? 170 : 110)}" y="${isStory ? dimensions.height - 284 : dimensions.height - 198}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 38 : 26}" font-weight="900">vender melhor com presença digital.</text>
-      <rect x="${margin + 45}" y="${ctaY}" width="${dimensions.width - (margin + 45) * 2}" height="${isStory ? 116 : 82}" rx="${isStory ? 58 : 41}" fill="url(#greenCta)"/>
-      <circle cx="${margin + (isStory ? 132 : 100)}" cy="${ctaY + (isStory ? 58 : 41)}" r="${isStory ? 38 : 28}" fill="#ffffff"/>
-      <path d="M ${margin + (isStory ? 116 : 90)} ${ctaY + (isStory ? 58 : 41)} h ${isStory ? 32 : 22} m -10 -12 l 12 12 l -12 12" fill="none" stroke="#00a63e" stroke-width="${isStory ? 8 : 6}" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="${dimensions.width / 2}" y="${ctaY + (isStory ? 73 : 52)}" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 46 : 34}" font-weight="900">${escapeXml(input.callToAction.slice(0, 34))}</text>
-      <text x="${margin}" y="${footerY}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 26 : 20}" font-weight="700" opacity="0.78">${escapeXml(input.whatsapp || "Fale conosco")}</text>
-    </svg>
-  `;
-  const bytes = await sharp(Buffer.from(svg)).png().toBuffer();
-  return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
 }
 
 async function createCleanFallbackArt(input: {
@@ -489,121 +379,8 @@ async function createCleanFallbackArt(input: {
   return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
 }
 
-async function createBrandCampaignFallbackArt(input: {
-  accentColor: string;
-  brandName: string;
-  callToAction: string;
-  format: string;
-  objective: string;
-  primaryColor: string;
-  referenceImageUrl?: string | null;
-  salesCopy: SalesCopy;
-  secondaryColor: string;
-  serviceName: string | null;
-  supportImage?: Buffer | null;
-  useImageAsBackground?: boolean;
-  whatsapp?: string | null;
-}) {
+async function createBrandCampaignFallbackArt(input: Parameters<typeof createAudienceCampaignFallbackArt>[0]) {
   return createAudienceCampaignFallbackArt(input);
-
-  const dimensions = artFormats[input.format] || artFormats.instagram_post;
-  const isStory = dimensions.height > dimensions.width;
-  const brandColor = sanitizeColor(input.primaryColor, "#16a34a");
-  const accentColor = sanitizeColor(input.accentColor, "#1455ff");
-  const darkColor = "#061334";
-  const margin = isStory ? 82 : 68;
-  const headline = buildEditorialHeadline(input.salesCopy);
-  const titleLines = wrapTitle(headline, isStory ? 17 : 18).slice(0, isStory ? 4 : 3);
-  const titleTop = isStory ? 330 : 250;
-  const titleSize = isStory ? 82 : 76;
-  const titleLineHeight = isStory ? 90 : 84;
-  const explainTop = titleTop + titleLines.length * titleLineHeight + (isStory ? 54 : 44);
-  const cardTop = explainTop + (isStory ? 150 : 118);
-  const cardCount = input.supportImage && !isStory ? 2 : isStory ? 4 : 4;
-  const cards = buildEditorialCards(input.salesCopy).slice(0, cardCount);
-  const cardWidth = isStory ? Math.floor((dimensions.width - margin * 2 - 42) / 2) : Math.floor((dimensions.width - margin * 2 - 48) / 4);
-  const cardHeight = isStory ? 160 : 150;
-  const ctaHeight = isStory ? 116 : 96;
-  const ctaY = dimensions.height - (isStory ? 210 : 136);
-  const logo = buildLogoParts(input.brandName);
-  const titleSvg = titleLines
-    .map((line, index) => {
-      const fill = index === 1 ? accentColor : darkColor;
-      return `<text x="${margin}" y="${titleTop + index * titleLineHeight}" fill="${fill}" font-family="Arial, sans-serif" font-size="${titleSize}" font-weight="900">${escapeXml(line)}</text>`;
-    })
-    .join("");
-  const cardsSvg = cards
-    .map((card, index) => {
-      const col = isStory ? index % 2 : index;
-      const row = isStory ? Math.floor(index / 2) : 0;
-      const x = margin + col * (cardWidth + (isStory ? 42 : 16));
-      const y = cardTop + row * (cardHeight + 28);
-      const iconPath = index === 0 ? documentIcon() : index === 1 ? checkIcon() : index === 2 ? chartIcon() : peopleIcon();
-      return `
-        <g filter="url(#softShadow)">
-          <rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="22" fill="#ffffff"/>
-        </g>
-        <g transform="translate(${x + 34} ${y + 26}) scale(${isStory ? 1.16 : 1})" fill="none" stroke="${index % 2 ? brandColor : darkColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${iconPath}</g>
-        <text x="${x + 26}" y="${y + cardHeight - 48}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 24 : 18}" font-weight="900">${escapeXml(card[0])}</text>
-        <text x="${x + 26}" y="${y + cardHeight - 20}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 24 : 18}" font-weight="900">${escapeXml(card[1])}</text>
-      `;
-    })
-    .join("");
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" viewBox="0 0 ${dimensions.width} ${dimensions.height}">
-      <defs>
-        <linearGradient id="pageBg" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="56%" stop-color="#f7fbff"/>
-          <stop offset="100%" stop-color="#eef6ff"/>
-        </linearGradient>
-        <linearGradient id="blueBlock" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stop-color="#0d46ff"/>
-          <stop offset="100%" stop-color="#0631a9"/>
-        </linearGradient>
-        <linearGradient id="cta" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stop-color="#061334"/>
-          <stop offset="100%" stop-color="#08245e"/>
-        </linearGradient>
-        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
-          <feDropShadow dx="0" dy="14" stdDeviation="15" flood-color="#0f172a" flood-opacity="0.13"/>
-        </filter>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#pageBg)"/>
-      <path d="M ${dimensions.width * 0.7} 0 C ${dimensions.width * 0.82} ${isStory ? 120 : 80}, ${dimensions.width * 0.93} ${isStory ? 70 : 50}, ${dimensions.width} ${isStory ? 130 : 80} V 0 Z" fill="url(#blueBlock)"/>
-      <path d="M 0 ${dimensions.height - (isStory ? 190 : 130)} C ${dimensions.width * 0.08} ${dimensions.height - (isStory ? 105 : 76)}, ${dimensions.width * 0.2} ${dimensions.height - (isStory ? 80 : 56)}, ${dimensions.width * 0.32} ${dimensions.height} H 0 Z" fill="#0d46ff"/>
-      <circle cx="${dimensions.width - (isStory ? 150 : 125)}" cy="${isStory ? 310 : 250}" r="${isStory ? 135 : 115}" fill="#dbeafe" opacity="0.68"/>
-      <g opacity="0.34" fill="#bfdbfe">${dotPattern(dimensions.width - (isStory ? 520 : 470), isStory ? 180 : 110, isStory ? 260 : 230)}</g>
-      <g transform="translate(${margin} ${isStory ? 74 : 68})">
-        <rect x="0" y="0" width="${isStory ? 64 : 54}" height="${isStory ? 64 : 54}" rx="15" fill="#ffffff" stroke="${darkColor}" stroke-width="4"/>
-        <path d="M ${isStory ? 18 : 15} ${isStory ? 34 : 29} l ${isStory ? 10 : 8} ${isStory ? 10 : 8} l ${isStory ? 21 : 17} -${isStory ? 25 : 20}" fill="none" stroke="${brandColor}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="${isStory ? 82 : 70}" y="${isStory ? 47 : 41}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 48 : 42}" font-weight="900">${escapeXml(logo.main)}</text>
-        <text x="${isStory ? 82 + logo.main.length * 29 : 70 + logo.main.length * 25}" y="${isStory ? 47 : 41}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 48 : 42}" font-weight="900">${escapeXml(logo.accent)}</text>
-      </g>
-      <rect x="${margin}" y="${titleTop - (isStory ? 108 : 86)}" width="${isStory ? 300 : 250}" height="${isStory ? 68 : 58}" rx="18" fill="${accentColor}"/>
-      <path d="M ${margin + 46} ${titleTop - (isStory ? 40 : 32)} l -22 22 h 36 z" fill="${accentColor}"/>
-      <text x="${margin + 34}" y="${titleTop - (isStory ? 63 : 48)}" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 34 : 28}" font-weight="900">${escapeXml(input.salesCopy.badge)}</text>
-      <g filter="url(#softShadow)">
-        <rect x="${margin - 32}" y="${titleTop - 42}" width="${isStory ? dimensions.width - margin * 1.35 : dimensions.width * 0.56}" height="${titleLines.length * titleLineHeight + (isStory ? 80 : 64)}" rx="34" fill="#ffffff" opacity="0.9"/>
-      </g>
-      ${titleSvg}
-      <path d="M ${margin + 160} ${titleTop + titleLines.length * titleLineHeight - 22} C ${margin + 260} ${titleTop + titleLines.length * titleLineHeight - 40}, ${margin + 390} ${titleTop + titleLines.length * titleLineHeight - 36}, ${margin + 500} ${titleTop + titleLines.length * titleLineHeight - 50}" fill="none" stroke="${brandColor}" stroke-width="8" stroke-linecap="round"/>
-      <g>
-        <circle cx="${margin + 48}" cy="${explainTop - 18}" r="${isStory ? 36 : 28}" fill="${accentColor}"/>
-        <path d="M ${margin + 48} ${explainTop - 37} v 38 M ${margin + 30} ${explainTop - 18} h 36" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
-        <text x="${margin + (isStory ? 108 : 90)}" y="${explainTop - 26}" fill="${darkColor}" font-family="Arial, sans-serif" font-size="${isStory ? 32 : 27}" font-weight="500">${escapeXml(wrapTitle(input.salesCopy.subheadline, isStory ? 40 : 45)[0] || "")}</text>
-        <text x="${margin + (isStory ? 108 : 90)}" y="${explainTop + 18}" fill="${accentColor}" font-family="Arial, sans-serif" font-size="${isStory ? 32 : 27}" font-weight="900">${escapeXml(wrapTitle(input.salesCopy.subheadline, isStory ? 40 : 45)[1] || input.salesCopy.proof)}</text>
-      </g>
-      ${cardsSvg}
-      <g filter="url(#softShadow)">
-        <rect x="${margin + (isStory ? 36 : dimensions.width * 0.16)}" y="${ctaY}" width="${isStory ? dimensions.width - margin * 2 - 72 : dimensions.width * 0.68}" height="${ctaHeight}" rx="${ctaHeight / 2}" fill="url(#cta)"/>
-      </g>
-      <text x="${dimensions.width / 2}" y="${ctaY + (isStory ? 72 : 61)}" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="${isStory ? 40 : 34}" font-weight="900">${escapeXml(truncate(input.salesCopy.cta, isStory ? 34 : 30))}</text>
-    </svg>
-  `;
-  const bytes = await sharp(Buffer.from(svg)).png().toBuffer();
-  return saveFile(`${crypto.randomUUID()}.png`, bytes, "image/png");
 }
 
 async function createPolishedFallbackArt(input: {
@@ -1216,7 +993,6 @@ function wrapTitle(value: string, size: number) {
     const next = [lines[lines.length - 1], word].filter(Boolean).join(" ");
     if (!lines.length || next.length > size) lines.push(word);
     else lines[lines.length - 1] = next;
-    if (lines.length === 2) break;
   }
   return lines;
 }

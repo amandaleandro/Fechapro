@@ -22,24 +22,21 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
 
   if (!proposal || !canUseProposalPresentation(proposal.user.subscription)) notFound();
 
-  const [portfolio, testimonials] = await Promise.all([
-    prisma.portfolioAsset.findMany({
-      where: { userId: proposal.userId },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
+  const [portfolio, testimonials, serviceImage] = await Promise.all([
+    findSlidePortfolio(proposal.userId, proposal.publicSlug),
     prisma.testimonialAsset.findMany({
       where: { userId: proposal.userId },
       orderBy: { createdAt: "desc" },
       take: 2,
     }),
+    findSlideServiceImage(proposal.userId, proposal.serviceName),
   ]);
 
   const brand = proposal.user.brandProfile;
   const brandName = brand?.businessName || proposal.user.name;
   const notes = proposal.notes?.trim();
   const included = proposal.included.length ? proposal.included : ["Escopo alinhado com o cliente."];
-  const heroPhoto = portfolio.find((item) => item.imageUrl)?.imageUrl;
+  const heroPhoto = serviceImage || portfolio.find((item) => item.imageUrl)?.imageUrl;
   const cssVars = {
     "--slides-primary": brand?.primaryColor || "#16A34A",
     "--slides-secondary": brand?.secondaryColor || "#0F172A",
@@ -201,4 +198,58 @@ function defaultIntro(serviceName: string, clientName: string) {
 function formatDate(value: string) {
   const [year, month, day] = value.split("-");
   return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function demoPortfolioCategories(slug: string) {
+  if (!slug.startsWith("demo-")) return [];
+  const withoutPrefix = slug.slice("demo-".length);
+  const match = withoutPrefix.match(/^(.+)-[A-Za-z0-9_-]{8}$/);
+  if (!match?.[1]) return [];
+  const niche = match[1];
+  const parts = niche.split("-");
+  return Array.from(
+    new Set(parts.map((_, index) => `Demo:${parts.slice(0, parts.length - index).join("-")}`)),
+  );
+}
+
+async function findSlidePortfolio(userId: string, slug: string) {
+  const categories = demoPortfolioCategories(slug);
+  if (!categories.length) {
+    return prisma.portfolioAsset.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+  }
+
+  const related = await prisma.portfolioAsset.findMany({
+    where: { userId, category: { in: categories } },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  if (related.length >= 3) return related;
+
+  const fill = await prisma.portfolioAsset.findMany({
+    where: {
+      userId,
+      id: { notIn: related.map((item) => item.id) },
+      category: { startsWith: "Demo:" },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5 - related.length,
+  });
+
+  return [...related, ...fill];
+}
+
+async function findSlideServiceImage(userId: string, serviceName: string) {
+  const service = await prisma.serviceAsset.findFirst({
+    where: {
+      userId,
+      name: { equals: serviceName, mode: "insensitive" },
+      imageUrl: { not: null },
+    },
+  });
+  return service?.imageUrl ?? null;
 }

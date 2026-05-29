@@ -1,7 +1,107 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Send, FileDown, Sparkles, Settings } from "lucide-react";
+import { Calculator, Plus, Send, Sparkles, Settings, Trash2 } from "lucide-react";
+
+type MaterialMode = "general" | "paint" | "area";
+type MaterialItem = {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  mode: MaterialMode;
+  area: number;
+  coats: number;
+  coverage: number;
+  wastePercent: number;
+  packageSize: number;
+};
+
+const emptyMaterialItem: MaterialItem = {
+  name: "",
+  quantity: 1,
+  unitPrice: 0,
+  mode: "general",
+  area: 0,
+  coats: 2,
+  coverage: 90,
+  wastePercent: 10,
+  packageSize: 18,
+};
+
+const calculatorPresets: Array<{ label: string; serviceName: string; laborValue: number; marginPercent: number; items: MaterialItem[] }> = [
+  {
+    label: "Pintura",
+    serviceName: "Pintura residencial",
+    laborValue: 900,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Tinta acrilica 18L", mode: "paint", unitPrice: 320, area: 80, coats: 2, coverage: 90, packageSize: 18, wastePercent: 10 },
+      { ...emptyMaterialItem, name: "Massa corrida", mode: "area", unitPrice: 8, area: 30, wastePercent: 10 },
+      { ...emptyMaterialItem, name: "Lixa", mode: "general", quantity: 10, unitPrice: 4 },
+      { ...emptyMaterialItem, name: "Fita crepe", mode: "general", quantity: 3, unitPrice: 12 },
+      { ...emptyMaterialItem, name: "Lona plastica", mode: "general", quantity: 2, unitPrice: 18 },
+      { ...emptyMaterialItem, name: "Rolo e pincel", mode: "general", quantity: 1, unitPrice: 55 },
+    ],
+  },
+  {
+    label: "Piso/revestimento",
+    serviceName: "Instalacao de piso ou revestimento",
+    laborValue: 1200,
+    marginPercent: 18,
+    items: [
+      { ...emptyMaterialItem, name: "Piso ou revestimento", mode: "area", unitPrice: 75, area: 25, wastePercent: 12 },
+      { ...emptyMaterialItem, name: "Argamassa", mode: "general", quantity: 8, unitPrice: 32 },
+      { ...emptyMaterialItem, name: "Rejunte", mode: "general", quantity: 3, unitPrice: 28 },
+      { ...emptyMaterialItem, name: "Espacadores/niveladores", mode: "general", quantity: 1, unitPrice: 60 },
+    ],
+  },
+  {
+    label: "Eletrica",
+    serviceName: "Instalacao eletrica",
+    laborValue: 850,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Cabo eletrico", mode: "general", quantity: 50, unitPrice: 4 },
+      { ...emptyMaterialItem, name: "Tomadas/interruptores", mode: "general", quantity: 8, unitPrice: 18 },
+      { ...emptyMaterialItem, name: "Disjuntores", mode: "general", quantity: 3, unitPrice: 35 },
+      { ...emptyMaterialItem, name: "Conduite e caixas", mode: "general", quantity: 1, unitPrice: 180 },
+    ],
+  },
+  {
+    label: "Hidraulica",
+    serviceName: "Servico hidraulico",
+    laborValue: 750,
+    marginPercent: 20,
+    items: [
+      { ...emptyMaterialItem, name: "Tubos e conexoes", mode: "general", quantity: 1, unitPrice: 220 },
+      { ...emptyMaterialItem, name: "Registros/valvulas", mode: "general", quantity: 2, unitPrice: 65 },
+      { ...emptyMaterialItem, name: "Vedantes e cola", mode: "general", quantity: 1, unitPrice: 45 },
+    ],
+  },
+  {
+    label: "Limpeza",
+    serviceName: "Limpeza pos-obra",
+    laborValue: 650,
+    marginPercent: 15,
+    items: [
+      { ...emptyMaterialItem, name: "Produto multiuso/desengordurante", mode: "general", quantity: 2, unitPrice: 35 },
+      { ...emptyMaterialItem, name: "Sacos, panos e descartaveis", mode: "general", quantity: 1, unitPrice: 80 },
+      { ...emptyMaterialItem, name: "Equipamentos", mode: "general", quantity: 1, unitPrice: 120 },
+    ],
+  },
+  {
+    label: "Marcenaria",
+    serviceName: "Servico de marcenaria",
+    laborValue: 1800,
+    marginPercent: 25,
+    items: [
+      { ...emptyMaterialItem, name: "Chapas MDF/compensado", mode: "general", quantity: 3, unitPrice: 290 },
+      { ...emptyMaterialItem, name: "Ferragens", mode: "general", quantity: 1, unitPrice: 260 },
+      { ...emptyMaterialItem, name: "Fitas de borda/acabamentos", mode: "general", quantity: 1, unitPrice: 110 },
+      { ...emptyMaterialItem, name: "Parafusos, cola e insumos", mode: "general", quantity: 1, unitPrice: 85 },
+    ],
+  },
+];
 
 export default function ProposalForm(props: any) {
   const {
@@ -24,6 +124,41 @@ export default function ProposalForm(props: any) {
 
   const [includedText, setIncludedText] = useState(() => draft.included.join("\n"));
   const [showAdvancedProposalOptions, setShowAdvancedProposalOptions] = useState(false);
+  const [materialItems, setMaterialItems] = useState<MaterialItem[]>([{ ...emptyMaterialItem }]);
+  const [laborValue, setLaborValue] = useState(0);
+  const [marginPercent, setMarginPercent] = useState(20);
+
+  const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  const calculatedMaterialItems = materialItems.map((item) => {
+    const area = Number(item.area || 0);
+    const coats = Math.max(1, Number(item.coats || 1));
+    const coverage = Math.max(1, Number(item.coverage || 1));
+    const wasteMultiplier = 1 + Number(item.wastePercent || 0) / 100;
+    const packageSize = Math.max(1, Number(item.packageSize || 1));
+    const quantity =
+      item.mode === "paint"
+        ? Math.ceil(((area * coats) / coverage) * wasteMultiplier)
+        : item.mode === "area"
+          ? Math.ceil(area * wasteMultiplier)
+          : Number(item.quantity || 0);
+
+    return {
+      ...item,
+      calculatedQuantity: quantity,
+      total: quantity * Number(item.unitPrice || 0),
+      liters: item.mode === "paint" ? quantity * packageSize : 0,
+    };
+  });
+  const materialsTotal = calculatedMaterialItems.reduce((sum, item) => sum + item.total, 0);
+  const subtotal = materialsTotal + Number(laborValue || 0);
+  const marginValue = subtotal * (Number(marginPercent || 0) / 100);
+  const calculatedTotal = Math.round(subtotal + marginValue);
+  const calculatorSummary = [
+    `Materiais: ${currency.format(materialsTotal)}`,
+    `Mao de obra: ${currency.format(laborValue || 0)}`,
+    `Margem (${marginPercent || 0}%): ${currency.format(marginValue)}`,
+    `Total calculado: ${currency.format(calculatedTotal)}`,
+  ].join(" | ");
 
   useEffect(() => {
     const nextIncludedText = draft.included.join("\n");
@@ -81,6 +216,56 @@ export default function ProposalForm(props: any) {
     onDraftChange("included", [...currentItems, item]);
   }
 
+  function updateMaterialItem(index: number, field: "name" | "quantity" | "unitPrice" | "mode" | "area" | "coats" | "coverage" | "wastePercent" | "packageSize", value: string) {
+    setMaterialItems((items) =>
+      items.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [field]: field === "name" || field === "mode" ? value : Number(value || 0),
+            }
+          : item,
+      ),
+    );
+  }
+
+  function addMaterialItem() {
+    setMaterialItems((items) => [...items, { ...emptyMaterialItem }]);
+  }
+
+  function removeMaterialItem(index: number) {
+    setMaterialItems((items) => (items.length === 1 ? [{ ...emptyMaterialItem }] : items.filter((_, itemIndex) => itemIndex !== index)));
+  }
+
+  function applyCalculatorPreset(label: string) {
+    const preset = calculatorPresets.find((item) => item.label === label);
+    if (!preset) return;
+    setMaterialItems(preset.items.map((item) => ({ ...item })));
+    setLaborValue(preset.laborValue);
+    setMarginPercent(preset.marginPercent);
+    if (!draft.serviceName.trim()) onDraftChange("serviceName", preset.serviceName);
+    onNotice(`Modelo de ${preset.label.toLowerCase()} aplicado. Ajuste medidas e valores antes de salvar.`);
+  }
+
+  function applyCalculatedValue() {
+    onDraftChange("price", calculatedTotal);
+    const materialLines = calculatedMaterialItems
+      .filter((item) => item.name.trim() || item.unitPrice > 0)
+      .map((item) => {
+        const suffix = item.mode === "paint" ? `, aprox. ${item.liters}L` : "";
+        return `${item.name.trim() || "Material"} (${item.calculatedQuantity} x ${currency.format(item.unitPrice || 0)}${suffix})`;
+      });
+    const nextItems = Array.from(new Set([...draft.included.map((item: string) => item.trim()).filter(Boolean), ...materialLines, calculatorSummary]));
+    if (nextItems.length) onDraftChange("included", nextItems);
+    const notesWithoutOldSummary = String(draft.notes || "").replace(/\n?\n?Resumo do calculo:[\s\S]*$/i, "").trim();
+    const materialDetails = calculatedMaterialItems
+      .filter((item) => item.name.trim() || item.unitPrice > 0)
+      .map((item) => `- ${item.name.trim() || "Material"}: ${item.calculatedQuantity} x ${currency.format(item.unitPrice || 0)} = ${currency.format(item.total)}`)
+      .join("\n");
+    onDraftChange("notes", `${notesWithoutOldSummary ? `${notesWithoutOldSummary}\n\n` : ""}Resumo do calculo:\n${calculatorSummary}${materialDetails ? `\n${materialDetails}` : ""}`);
+    onNotice("Valor calculado aplicado na proposta.");
+  }
+
   function useQuickExample() {
     onDraftChange("templateId", quickExampleProposal.templateId);
     onDraftChange("clientName", quickExampleProposal.clientName);
@@ -125,6 +310,95 @@ export default function ProposalForm(props: any) {
         <SelectField label="Serviço" value={draft.serviceName} placeholder="Selecione ou digite" required onChange={chooseService} options={services.map((s: any) => s.name)} />
         <TextField label="Valor" min={1} placeholder="1200" required step="1" type="number" value={draft.price || ""} onChange={(value: string) => onDraftChange("price", Number(value || 0))} />
         <TextField label="Prazo" maxLength={80} placeholder="7 dias úteis" required value={draft.deadline} onChange={(value: string) => onDraftChange("deadline", value)} />
+      </div>
+
+      <div className="grid gap-3 rounded-lg border border-blue-700/20 bg-blue-50 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="inline-flex items-center gap-2 text-sm font-black text-slate-900">
+              <Calculator size={16} />
+              Calculadora de materiais e valores
+            </h3>
+            <p className="mt-1 text-xs font-bold leading-5 text-slate-500">Some materiais, mao de obra e margem antes de fechar o valor da proposta.</p>
+          </div>
+          <strong className="rounded-lg bg-white px-3 py-2 text-sm text-blue-700">{currency.format(calculatedTotal)}</strong>
+        </div>
+
+        <div className="grid gap-2">
+          <span className="text-xs font-black uppercase text-slate-500">Modelos rapidos</span>
+          <div className="flex flex-wrap gap-2">
+            {calculatorPresets.map((preset) => (
+              <button className="min-h-9 rounded-full border border-black/10 bg-white px-3 text-xs font-black text-slate-700" key={preset.label} type="button" onClick={() => applyCalculatorPreset(preset.label)}>
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          {calculatedMaterialItems.map((item, index) => (
+            <div className="grid gap-2 rounded-lg border border-black/10 bg-white p-2" key={index}>
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_2.75rem]">
+                <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" placeholder="Material" value={item.name} onChange={(event) => updateMaterialItem(index, "name", event.target.value)} />
+                <select className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" value={item.mode} onChange={(event) => updateMaterialItem(index, "mode", event.target.value)}>
+                  <option value="general">Quantidade</option>
+                  <option value="paint">Tinta</option>
+                  <option value="area">Area/m2</option>
+                </select>
+                <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Valor un." step="0.01" type="number" value={item.unitPrice || ""} onChange={(event) => updateMaterialItem(index, "unitPrice", event.target.value)} />
+                <button className="grid h-11 w-11 place-items-center rounded-lg border border-black/10 bg-white text-slate-700" type="button" title="Remover material" aria-label="Remover material" onClick={() => removeMaterialItem(index)}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+
+              {item.mode === "paint" ? (
+                <div className="grid gap-2 sm:grid-cols-5">
+                  <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="m2 parede" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
+                  <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Demaos" step="1" type="number" value={item.coats || ""} onChange={(event) => updateMaterialItem(index, "coats", event.target.value)} />
+                  <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Rend. m2/lata" step="1" type="number" value={item.coverage || ""} onChange={(event) => updateMaterialItem(index, "coverage", event.target.value)} />
+                  <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Litros/lata" step="0.01" type="number" value={item.packageSize || ""} onChange={(event) => updateMaterialItem(index, "packageSize", event.target.value)} />
+                  <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
+                </div>
+              ) : item.mode === "area" ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Area m2" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
+                  <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
+                </div>
+              ) : (
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold sm:max-w-40" min={0} placeholder="Qtd." step="0.01" type="number" value={item.quantity || ""} onChange={(event) => updateMaterialItem(index, "quantity", event.target.value)} />
+              )}
+
+              <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                <span>Qtd. calculada: {item.calculatedQuantity}</span>
+                {item.mode === "paint" ? <span>Volume aprox.: {item.liters}L</span> : null}
+                <span>Total: {currency.format(item.total)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-slate-700" type="button" onClick={addMaterialItem}>
+            <Plus size={16} />
+            Material
+          </button>
+          <TextField label="Mao de obra" min={0} placeholder="500" step="1" type="number" value={laborValue || ""} onChange={(value: string) => setLaborValue(Number(value || 0))} />
+          <TextField label="Margem (%)" min={0} placeholder="20" step="1" type="number" value={marginPercent || ""} onChange={(value: string) => setMarginPercent(Number(value || 0))} />
+          <button className="min-h-11 rounded-lg bg-blue-700 px-4 text-sm font-black text-white" type="button" onClick={applyCalculatedValue}>
+            Aplicar valor
+          </button>
+        </div>
+
+        <div className="grid gap-2 text-xs font-bold text-slate-600 sm:grid-cols-3">
+          <span>Materiais: {currency.format(materialsTotal)}</span>
+          <span>Mao de obra: {currency.format(laborValue || 0)}</span>
+          <span>Margem: {currency.format(marginValue)}</span>
+        </div>
+
+        <div className="rounded-lg border border-black/10 bg-white p-3 text-xs font-bold leading-5 text-slate-600">
+          <span className="block font-black text-slate-900">Resumo do calculo</span>
+          <span>{calculatorSummary}</span>
+        </div>
       </div>
 
       <TextAreaField label="O que esta incluso" maxLength={1200} placeholder={"Ex:\nBriefing inicial\nExecucao do servico\nAjustes combinados\nEntrega final"} value={includedText} onChange={(value: string) => { setIncludedText(value); onDraftChange("included", value.split("\n")); }} />
@@ -190,7 +464,7 @@ export default function ProposalForm(props: any) {
 
           <TextField label="E-mail do cliente" placeholder="cliente@email.com" type="email" autoComplete="email" value={draft.clientEmail ?? ""} onChange={(value: string) => onDraftChange("clientEmail", value)} />
 
-          <TextAreaField label="Observações" maxLength={800} placeholder="A proposta inclui até 2 rodadas de ajustes." rows={3} value={draft.notes} onChange={(value: string) => onDraftChange("notes", value)} />
+          <TextAreaField label="Observações" maxLength={1800} placeholder="A proposta inclui até 2 rodadas de ajustes." rows={3} value={draft.notes} onChange={(value: string) => onDraftChange("notes", value)} />
         </>
       ) : null}
 

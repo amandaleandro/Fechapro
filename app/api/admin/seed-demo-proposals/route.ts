@@ -993,7 +993,7 @@ export async function POST(request: Request) {
       prisma.serviceAsset.deleteMany({
         where: {
           userId: adminUser.id,
-          imageUrl: { in: demoPortfolioItems.map((item) => item.imageUrl) },
+          name: { in: demoProposals.map((p) => p.serviceName) },
         },
       }),
     ]);
@@ -1172,7 +1172,7 @@ export async function DELETE() {
     prisma.serviceAsset.deleteMany({
       where: {
         userId: adminUser.id,
-        imageUrl: { in: demoPortfolioItems.map((item) => item.imageUrl) },
+        name: { in: demoProposals.map((p) => p.serviceName) },
       },
     }),
   ]);

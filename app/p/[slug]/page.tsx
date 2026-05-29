@@ -688,7 +688,7 @@ export default async function PublicProposalPage({
             <div>
               <p className="text-xs font-black uppercase text-blue-700">Aceite digital</p>
               <h2 className="mt-1 text-2xl font-black">Pronto para seguir?</h2>
-              <p className="mt-2 leading-7 text-slate-600">Preencha seu nome para registrar o aceite desta proposta.</p>
+              <p className="mt-2 leading-7 text-slate-600">Preencha seus dados para registrar o aceite digital desta proposta.</p>
             </div>
             <form action={`/api/public/proposals/${proposal.publicSlug}/accept`} method="post" className="grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -704,7 +704,23 @@ export default async function PublicProposalPage({
                   placeholder="Seu e-mail"
                   type="email"
                 />
+                <input
+                  className="min-h-12 rounded-lg border border-black/10 bg-slate-50 p-3 outline-green-700"
+                  name="signerDocument"
+                  placeholder="CPF ou CNPJ (opcional)"
+                  inputMode="text"
+                />
+                <input
+                  className="min-h-12 rounded-lg border border-black/10 bg-slate-50 p-3 outline-green-700"
+                  name="signerPhone"
+                  placeholder="Telefone/WhatsApp (opcional)"
+                  inputMode="tel"
+                />
               </div>
+              <label className="flex items-start gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-700">
+                <input className="mt-1" name="acceptEvidenceConsent" type="checkbox" required />
+                Declaro que li e aceito as condições da proposta, autorizando o registro eletrônico do aceite para comprovação da contratação.
+              </label>
               {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
                 <div className="cf-turnstile" data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
               ) : null}

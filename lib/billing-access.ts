@@ -25,7 +25,9 @@ export function planLimits(plan: PlanCode) {
   return plans[plan] || plans.start;
 }
 
+const presentationPlans = new Set<PlanCode>(["premium", "premium_site", "founder_complete_site", "founder"]);
+
 export function canUseProposalPresentation(subscription: SubscriptionAccessInput | null | undefined) {
   if (!subscription || !canUsePaidFeatures(subscription)) return false;
-  return subscription.plan === "premium" || subscription.plan === "premium_site";
+  return presentationPlans.has(subscription.plan);
 }

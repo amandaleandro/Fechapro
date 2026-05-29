@@ -59,6 +59,30 @@ function getState() {
   };
 }
 
+export function buildProposalClientWhatsAppUrl(clientPhone: string, ownerName: string, serviceName: string, slug: string) {
+  const digits = clientPhone.replace(/\D/g, "");
+  const phone = digits.startsWith("55") ? digits : `55${digits}`;
+  const proposalUrl = `${APP_URL}/p/${slug}`;
+  const message = `Ola! ${ownerName} preparou uma proposta de ${serviceName} especialmente para voce. Acesse o link para ver os detalhes e confirmar sua resposta: ${proposalUrl}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
+export async function sendProposalToClientViaWhatsApp(clientPhone: string, ownerName: string, serviceName: string, slug: string) {
+  if (!cloudPhoneNumberId || !cloudAccessToken) return false;
+
+  const digits = clientPhone.replace(/\D/g, "");
+  const phone = digits.startsWith("55") ? digits : `55${digits}`;
+  const proposalUrl = `${APP_URL}/p/${slug}`;
+  const message = `Ola! ${ownerName} preparou uma proposta de ${serviceName} especialmente para voce. Acesse o link para ver os detalhes: ${proposalUrl}`;
+
+  try {
+    await sendViaCloudApi(phone, message);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function isWhatsAppNotificationConfigured() {
   return Boolean(provider === "baileys" || webhookUrl || (cloudPhoneNumberId && cloudAccessToken));
 }

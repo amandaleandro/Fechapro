@@ -340,6 +340,30 @@ export async function sendPixPaymentConfirmedToClientEmail(clientEmail: string, 
   );
 }
 
+export async function sendProposalFollowUpReminderEmail(ownerEmail: string, ownerName: string, clientName: string, serviceName: string, slug: string, daysSince: number) {
+  const link = `${APP_URL}/p/${slug}`;
+  const safeOwnerName = escapeHtml(ownerName);
+  const safeClientName = escapeHtml(clientName);
+  const safeServiceName = escapeHtml(serviceName);
+
+  await sendEmail(
+    ownerEmail,
+    `${clientName} ainda não visualizou sua proposta - FechaPro`,
+    emailTemplate({
+      title: "Proposta sem visualização",
+      preheader: `${clientName} não abriu sua proposta de ${serviceName} em ${daysSince} dias.`,
+      intro: `Ola, ${safeOwnerName}!`,
+      body: `
+        <p>Sua proposta de <strong>${safeServiceName}</strong> para <strong>${safeClientName}</strong> foi enviada há <strong>${daysSince} dia${daysSince === 1 ? "" : "s"}</strong> e ainda não foi visualizada.</p>
+        <p>Este pode ser um bom momento para enviar uma mensagem rápida e perguntar se chegou bem.</p>
+      `,
+      buttonLabel: "Ver proposta",
+      buttonUrl: link,
+      footer: "Lembrete automatico do FechaPro para acompanhamento de propostas.",
+    })
+  );
+}
+
 export async function sendProposalWhatsAppIntentEmail(ownerEmail: string, ownerName: string, clientName: string, serviceName: string, intent: string, slug: string) {
   const link = `${APP_URL}/p/${slug}`;
   const safeOwnerName = escapeHtml(ownerName);
