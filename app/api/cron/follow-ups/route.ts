@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canUsePaidFeatures } from "@/lib/billing-access";
 import { sendProposalFollowUpReminderEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { sendProposalPushNotification } from "@/lib/push";
@@ -7,26 +8,42 @@ export const dynamic = "force-dynamic";
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
 
-export async function POST(request: Request) {
-  if (CRON_SECRET && request.headers.get("Authorization") !== `Bearer ${CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+function isAuthorized(request: Request) {
+  // Falha fechado: sem secret configurado, a rota não pode ser disparada.
+  if (!CRON_SECRET) return false;
+  return request.headers.get("Authorization") === `Bearer ${CRON_SECRET}`;
+}
 
+async function runFollowUps() {
   const now = new Date();
 
   const usersWithFollowUp = await prisma.brandProfile.findMany({
     where: { followUpEnabled: true },
-    select: { userId: true, followUpDays: true },
+    select: {
+      userId: true,
+      followUpDays: true,
+      user: {
+        select: {
+          subscription: { select: { plan: true, status: true, provider: true } },
+        },
+      },
+    },
   });
 
-  if (!usersWithFollowUp.length) {
-    return NextResponse.json({ processed: 0 });
+  // Só envia para assinaturas ativas/em trial com provider confiável.
+  const eligibleUsers = usersWithFollowUp.filter(
+    ({ user }) => user.subscription && canUsePaidFeatures(user.subscription),
+  );
+
+  if (!eligibleUsers.length) {
+    return { processed: 0, failed: 0 };
   }
 
   let processed = 0;
+  let failed = 0;
 
   await Promise.all(
-    usersWithFollowUp.map(async ({ userId, followUpDays }) => {
+    eligibleUsers.map(async ({ userId, followUpDays }) => {
       const cutoff = new Date(now.getTime() - followUpDays * 24 * 60 * 60 * 1000);
 
       const proposals = await prisma.proposalAsset.findMany({
@@ -38,10 +55,11 @@ export async function POST(request: Request) {
           createdAt: { lte: cutoff },
         },
         include: { user: { select: { name: true, email: true } } },
+        orderBy: { createdAt: "asc" },
         take: 50,
       });
 
-      await Promise.all(
+      const results = await Promise.allSettled(
         proposals.map(async (proposal) => {
           const daysSince = Math.floor((now.getTime() - proposal.createdAt.getTime()) / (24 * 60 * 60 * 1000));
 
@@ -68,12 +86,34 @@ export async function POST(request: Request) {
             where: { id: proposal.id },
             data: { followUpSentAt: now },
           });
-
-          processed++;
         }),
       );
+
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          processed++;
+        } else {
+          failed++;
+          console.error("[cron/follow-ups] falha ao enviar follow-up", result.reason);
+        }
+      }
     }),
   );
 
-  return NextResponse.json({ processed });
+  return { processed, failed };
+}
+
+export async function GET(request: Request) {
+  // Vercel Cron dispara via GET.
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return NextResponse.json(await runFollowUps());
+}
+
+export async function POST(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return NextResponse.json(await runFollowUps());
 }
