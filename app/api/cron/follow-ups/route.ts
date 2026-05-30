@@ -49,8 +49,7 @@ async function runFollowUps() {
       const proposals = await prisma.proposalAsset.findMany({
         where: {
           userId,
-          status: "sent",
-          viewCount: 0,
+          status: { in: ["sent", "viewed"] },
           followUpSentAt: null,
           createdAt: { lte: cutoff },
         },
@@ -62,11 +61,18 @@ async function runFollowUps() {
       const results = await Promise.allSettled(
         proposals.map(async (proposal) => {
           const daysSince = Math.floor((now.getTime() - proposal.createdAt.getTime()) / (24 * 60 * 60 * 1000));
+          const dias = `${daysSince} dia${daysSince === 1 ? "" : "s"}`;
+          const viewed = proposal.status === "viewed";
+
+          const pushTitle = viewed ? "Proposta vista sem resposta" : "Proposta sem visualização";
+          const pushBody = viewed
+            ? `${proposal.clientName} abriu sua proposta de ${proposal.serviceName} mas não respondeu em ${dias}.`
+            : `${proposal.clientName} não abriu sua proposta de ${proposal.serviceName} em ${dias}.`;
 
           await Promise.all([
             sendProposalPushNotification(userId, {
-              title: "Proposta sem visualização",
-              body: `${proposal.clientName} não abriu sua proposta de ${proposal.serviceName} em ${daysSince} dia${daysSince === 1 ? "" : "s"}.`,
+              title: pushTitle,
+              body: pushBody,
               slug: proposal.publicSlug,
               tag: `follow-up-${proposal.id}`,
             }),
@@ -78,6 +84,7 @@ async function runFollowUps() {
                   proposal.serviceName,
                   proposal.publicSlug,
                   daysSince,
+                  viewed ? "viewed_no_response" : "not_viewed",
                 )
               : Promise.resolve(),
           ]);

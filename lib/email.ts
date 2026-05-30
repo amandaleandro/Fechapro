@@ -340,23 +340,48 @@ export async function sendPixPaymentConfirmedToClientEmail(clientEmail: string, 
   );
 }
 
-export async function sendProposalFollowUpReminderEmail(ownerEmail: string, ownerName: string, clientName: string, serviceName: string, slug: string, daysSince: number) {
+export type ProposalFollowUpVariant = "not_viewed" | "viewed_no_response";
+
+export async function sendProposalFollowUpReminderEmail(
+  ownerEmail: string,
+  ownerName: string,
+  clientName: string,
+  serviceName: string,
+  slug: string,
+  daysSince: number,
+  variant: ProposalFollowUpVariant = "not_viewed",
+) {
   const link = `${APP_URL}/p/${slug}`;
   const safeOwnerName = escapeHtml(ownerName);
   const safeClientName = escapeHtml(clientName);
   const safeServiceName = escapeHtml(serviceName);
+  const dias = `${daysSince} dia${daysSince === 1 ? "" : "s"}`;
+  const viewed = variant === "viewed_no_response";
+
+  const subject = viewed
+    ? `${clientName} viu sua proposta mas ainda não respondeu - FechaPro`
+    : `${clientName} ainda não visualizou sua proposta - FechaPro`;
+
+  const body = viewed
+    ? `
+        <p>Sua proposta de <strong>${safeServiceName}</strong> para <strong>${safeClientName}</strong> foi <strong>visualizada</strong>, mas ainda não houve resposta há <strong>${dias}</strong>.</p>
+        <p>O interesse existe — vale uma mensagem rápida para tirar dúvidas e ajudar a fechar.</p>
+      `
+    : `
+        <p>Sua proposta de <strong>${safeServiceName}</strong> para <strong>${safeClientName}</strong> foi enviada há <strong>${dias}</strong> e ainda não foi visualizada.</p>
+        <p>Este pode ser um bom momento para enviar uma mensagem rápida e perguntar se chegou bem.</p>
+      `;
 
   await sendEmail(
     ownerEmail,
-    `${clientName} ainda não visualizou sua proposta - FechaPro`,
+    subject,
     emailTemplate({
-      title: "Proposta sem visualização",
-      preheader: `${clientName} não abriu sua proposta de ${serviceName} em ${daysSince} dias.`,
+      title: viewed ? "Proposta vista sem resposta" : "Proposta sem visualização",
+      preheader: viewed
+        ? `${clientName} abriu sua proposta de ${serviceName} mas não respondeu em ${dias}.`
+        : `${clientName} não abriu sua proposta de ${serviceName} em ${dias}.`,
       intro: `Olá, ${safeOwnerName}!`,
-      body: `
-        <p>Sua proposta de <strong>${safeServiceName}</strong> para <strong>${safeClientName}</strong> foi enviada há <strong>${daysSince} dia${daysSince === 1 ? "" : "s"}</strong> e ainda não foi visualizada.</p>
-        <p>Este pode ser um bom momento para enviar uma mensagem rápida e perguntar se chegou bem.</p>
-      `,
+      body,
       buttonLabel: "Ver proposta",
       buttonUrl: link,
       footer: "Lembrete automático do FechaPro para acompanhamento de propostas.",
