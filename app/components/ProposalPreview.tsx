@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Send, FileDown } from "lucide-react";
+import { FileDown } from "lucide-react";
 
 export default function ProposalPreview({
   brand,
@@ -10,7 +10,6 @@ export default function ProposalPreview({
   testimonials,
   SectionHeading,
   PreviewItem,
-  onProposalSave,
   onProposalPdf,
 }: any) {
   const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -79,11 +78,7 @@ export default function ProposalPreview({
           </blockquote>
 
           <div className="flex flex-wrap gap-3">
-            <button className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" style={{ background: brand.primaryColor }} type="button" onClick={() => onProposalSave("sent")}>
-              <Send size={18} />
-              Salvar proposta
-            </button>
-            <button className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black" style={{ color: brand.secondaryColor }} type="button" onClick={() => onProposalPdf()}>
+            <button className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black" style={{ color: brand.secondaryColor }} type="button" onClick={() => onProposalPdf()}>
               <FileDown size={18} />
               Gerar PDF
             </button>

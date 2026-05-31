@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   BarChart3,
@@ -902,6 +903,103 @@ function calculatorNicheFromProfile(niche?: string | null, segment?: string | nu
 }
 
 
+function NavGroup({
+  group,
+  activeView,
+  currentPlan,
+  currentTourStep,
+  isOpen,
+  onToggle,
+  onSelectItem,
+}: {
+  group: { id: string; label: string; icon: React.ElementType; items: ActiveView[] };
+  activeView: ActiveView;
+  currentPlan: PlanCode;
+  currentTourStep: TourStep | null;
+  isOpen: boolean;
+  onToggle: () => void;
+  onSelectItem: (view: ActiveView) => void;
+}) {
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  const Icon = group.icon;
+  const groupActive = group.items.includes(activeView);
+  const tourFocus = currentTourStep ? group.items.includes(currentTourStep.view) : false;
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMenuPos(null);
+      return;
+    }
+    function updatePosition() {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const menuWidth = 224; // w-56
+      const left = Math.min(rect.left, window.innerWidth - menuWidth - 8);
+      setMenuPos({ top: rect.bottom + 4, left: Math.max(8, left) });
+    }
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative shrink-0 sm:flex-1">
+      <button
+        ref={buttonRef}
+        className={`fp-nav-item flex min-h-[58px] w-[4.25rem] flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:w-full sm:min-w-[52px] sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
+        data-active={groupActive}
+        type="button"
+        aria-expanded={isOpen}
+        title={group.label}
+        onClick={onToggle}
+      >
+        <Icon size={16} />
+        <span className="mt-0.5 line-clamp-2 max-w-full text-center sm:line-clamp-none sm:whitespace-nowrap">{group.label} ▾</span>
+      </button>
+
+      {isOpen && menuPos
+        ? createPortal(
+            <>
+              <button aria-label="Fechar menu" className="fixed inset-0 z-40 cursor-default" type="button" onClick={onToggle} />
+              <div
+                className="fixed z-50 grid w-56 gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/20"
+                style={{ top: menuPos.top, left: menuPos.left }}
+              >
+                {group.items.map((id) => {
+                  const item = navItems.find((navItem) => navItem.id === id);
+                  if (!item) return null;
+                  const ItemIcon = item.icon;
+                  const active = activeView === item.id;
+                  const locked = !canUseModule(item.id, currentPlan);
+                  return (
+                    <button
+                      className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-slate-700 data-[active=true]:bg-green-50 data-[active=true]:text-green-800 hover:bg-slate-50"
+                      data-active={active}
+                      key={item.id}
+                      type="button"
+                      onClick={() => onSelectItem(item.id)}
+                    >
+                      <ItemIcon size={16} />
+                      <span className="flex-1">{item.label}</span>
+                      {locked ? <LockKeyhole size={12} /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </>,
+            document.body
+          )
+        : null}
+    </div>
+  );
+}
+
 function NavBar({
   activeView,
   currentPlan,
@@ -953,55 +1051,18 @@ function NavBar({
         );
       })}
 
-      {navGroups.map((group) => {
-        const Icon = group.icon;
-        const groupActive = group.items.includes(activeView);
-        const isOpen = openGroup === group.id;
-        const tourFocus = currentTourStep ? group.items.includes(currentTourStep.view) : false;
-        return (
-          <div className="relative shrink-0 sm:flex-1" key={group.id}>
-            <button
-              className={`fp-nav-item flex min-h-[58px] w-[4.25rem] flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:w-full sm:min-w-[52px] sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
-              data-active={groupActive}
-              type="button"
-              aria-expanded={isOpen}
-              title={group.label}
-              onClick={() => setOpenGroup((current) => (current === group.id ? null : group.id))}
-            >
-              <Icon size={16} />
-              <span className="mt-0.5 line-clamp-2 max-w-full text-center sm:line-clamp-none sm:whitespace-nowrap">{group.label} ▾</span>
-            </button>
-
-            {isOpen ? (
-              <>
-                <button aria-label="Fechar menu" className="fixed inset-0 z-20 cursor-default" type="button" onClick={() => setOpenGroup(null)} />
-                <div className="absolute left-0 top-full z-30 mt-1 grid w-56 gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/20">
-                  {group.items.map((id) => {
-                    const item = navItems.find((navItem) => navItem.id === id);
-                    if (!item) return null;
-                    const ItemIcon = item.icon;
-                    const active = activeView === item.id;
-                    const locked = !canUseModule(item.id, currentPlan);
-                    return (
-                      <button
-                        className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-slate-700 data-[active=true]:bg-green-50 data-[active=true]:text-green-800 hover:bg-slate-50"
-                        data-active={active}
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleSelect(item.id)}
-                      >
-                        <ItemIcon size={16} />
-                        <span className="flex-1">{item.label}</span>
-                        {locked ? <LockKeyhole size={12} /> : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            ) : null}
-          </div>
-        );
-      })}
+      {navGroups.map((group) => (
+        <NavGroup
+          key={group.id}
+          group={group}
+          activeView={activeView}
+          currentPlan={currentPlan}
+          currentTourStep={currentTourStep}
+          isOpen={openGroup === group.id}
+          onToggle={() => setOpenGroup((current) => (current === group.id ? null : group.id))}
+          onSelectItem={handleSelect}
+        />
+      ))}
     </nav>
   );
 }
@@ -2192,6 +2253,19 @@ function ProposalFormModal({
       eyebrow={isEditingProposal ? "Editar proposta" : "Proposta rapida"}
       title={isEditingProposal ? "Ajuste os dados da proposta" : "Crie sua proposta rápida"}
       size="full"
+      footer={
+        <div className="grid gap-3 sm:grid-cols-3">
+          <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="submit" form="proposal-form">
+            {isEditingProposal ? "Atualizar proposta" : "Salvar proposta"}
+          </button>
+          <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
+            Salvar rascunho
+          </button>
+          <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={useQuickExample}>
+            Preencher exemplo
+          </button>
+        </div>
+      }
     >
       <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
         <form
@@ -2206,65 +2280,6 @@ function ProposalFormModal({
             <span className="font-black">Preencha cliente, serviço, valor, prazo e itens inclusos.</span>
             <span>Depois envie o link pelo WhatsApp ou baixe em PDF.</span>
           </div>
-
-          {showAdvancedProposalOptions ? (
-            <>
-              <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3">
-                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-                  Template por nicho
-                  <select
-                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                    value={draft.templateId}
-                    onChange={(event) => {
-                      const template = proposalTemplates.find((item) => item.id === event.target.value);
-                      if (!template) return;
-                      onDraftChange("templateId", template.id);
-                      onDraftChange("serviceName", template.serviceName);
-                      onDraftChange("price", template.price);
-                      onDraftChange("deadline", template.deadline);
-                      onDraftChange("payment", template.payment);
-                      onDraftChange("included", template.included);
-                      onDraftChange("notes", template.notes);
-                    }}
-                  >
-                    <option value="">Escolha um modelo pronto</option>
-                    {proposalTemplates.map((template) => (
-                      <option key={template.id} value={template.id}>
-                        {template.niche} - {template.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:grid-cols-2">
-                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-                  Tipo do documento
-                  <select
-                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                    value={draft.documentType}
-                    onChange={(event) => onDraftChange("documentType", event.target.value as ProposalDraft["documentType"])}
-                  >
-                    {documentTypeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-                  Segmento visual
-                  <select
-                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                    value={draft.segment}
-                    onChange={(event) => onDraftChange("segment", event.target.value as ProposalDraft["segment"])}
-                  >
-                    {proposalSegmentOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </>
-          ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <SelectField
@@ -2340,6 +2355,61 @@ function ProposalFormModal({
 
           {showAdvancedProposalOptions ? (
             <>
+              <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                  Template por nicho
+                  <select
+                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                    value={draft.templateId}
+                    onChange={(event) => {
+                      const template = proposalTemplates.find((item) => item.id === event.target.value);
+                      if (!template) return;
+                      onDraftChange("templateId", template.id);
+                      onDraftChange("serviceName", template.serviceName);
+                      onDraftChange("price", template.price);
+                      onDraftChange("deadline", template.deadline);
+                      onDraftChange("payment", template.payment);
+                      onDraftChange("included", template.included);
+                      onDraftChange("notes", template.notes);
+                    }}
+                  >
+                    <option value="">Escolha um modelo pronto</option>
+                    {proposalTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.niche} - {template.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                  Tipo do documento
+                  <select
+                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                    value={draft.documentType}
+                    onChange={(event) => onDraftChange("documentType", event.target.value as ProposalDraft["documentType"])}
+                  >
+                    {documentTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                  Segmento visual
+                  <select
+                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                    value={draft.segment}
+                    onChange={(event) => onDraftChange("segment", event.target.value as ProposalDraft["segment"])}
+                  >
+                    {proposalSegmentOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField label="Validade" type="date" value={draft.validUntil} onChange={(value) => onDraftChange("validUntil", value)} />
                 <TextField label="Pagamento" maxLength={120} placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
@@ -2431,17 +2501,6 @@ function ProposalFormModal({
             </>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
-              {isEditingProposal ? "Atualizar proposta" : "Salvar proposta"}
-            </button>
-            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
-              Salvar rascunho
-            </button>
-            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={useQuickExample}>
-              Preencher exemplo
-            </button>
-          </div>
           {showAdvancedProposalOptions ? (
             <button className="justify-self-start text-sm font-black text-blue-700" type="button" onClick={onSeed}>
               Criar clientes e serviços exemplo
