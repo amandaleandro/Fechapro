@@ -46,6 +46,7 @@ import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches,
 import { AuthScreen } from "./landing";
 import { isUnlimitedProposalLimit } from "@/lib/plans";
 import ProposalPreview from "./components/ProposalPreview";
+import Modal from "./components/Modal";
 
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "support" | "account";
 type SessionProfile = { id?: string; name: string; email: string; niche?: string | null; segment?: string | null; isAdmin?: boolean };
@@ -337,6 +338,12 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
   { id: "plans", label: "Planos", icon: CreditCard },
   { id: "support", label: "Suporte", icon: HelpCircle },
   { id: "account", label: "Conta", icon: UserCircle },
+];
+
+const directNavIds: ActiveView[] = ["dashboard", "proposals", "arts"];
+const navGroups: Array<{ id: string; label: string; icon: React.ElementType; items: ActiveView[] }> = [
+  { id: "catalogo", label: "Catálogo", icon: FolderKanban, items: ["clients", "services", "portfolio", "testimonials", "templates"] },
+  { id: "conta", label: "Conta", icon: UserCircle, items: ["brand", "plans", "account", "support"] },
 ];
 
 const planAccessRank: Record<PlanCode, number> = {
@@ -895,6 +902,110 @@ function calculatorNicheFromProfile(niche?: string | null, segment?: string | nu
 }
 
 
+function NavBar({
+  activeView,
+  currentPlan,
+  currentTourStep,
+  onSelect,
+  onNotice,
+}: {
+  activeView: ActiveView;
+  currentPlan: PlanCode;
+  currentTourStep: TourStep | null;
+  onSelect: (view: ActiveView) => void;
+  onNotice: (message: string | null) => void;
+}) {
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+
+  function handleSelect(view: ActiveView) {
+    setOpenGroup(null);
+    if (!canUseModule(view, currentPlan)) {
+      onNotice(`O módulo ${navItems.find((item) => item.id === view)?.label} está disponível a partir do plano ${requiredPlanLabel(view)}.`);
+      onSelect("plans");
+      return;
+    }
+    onSelect(view);
+  }
+
+  return (
+    <nav className="fp-nav relative flex gap-1 overflow-x-auto rounded-lg border p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {directNavIds.map((id) => {
+        const item = navItems.find((navItem) => navItem.id === id);
+        if (!item) return null;
+        const Icon = item.icon;
+        const active = activeView === item.id;
+        const locked = !canUseModule(item.id, currentPlan);
+        const tourFocus = currentTourStep?.view === item.id;
+        return (
+          <button
+            className={`fp-nav-item flex min-h-[58px] w-[4.25rem] shrink-0 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:w-auto sm:min-w-[52px] sm:flex-1 sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
+            data-active={active}
+            data-locked={locked}
+            key={item.id}
+            type="button"
+            title={locked ? `Disponível a partir do plano ${requiredPlanLabel(item.id)}` : item.label}
+            onClick={() => handleSelect(item.id)}
+          >
+            <Icon size={16} />
+            <span className="mt-0.5 line-clamp-2 max-w-full text-center sm:line-clamp-none sm:whitespace-nowrap">{item.label}</span>
+            {locked ? <LockKeyhole size={10} /> : null}
+          </button>
+        );
+      })}
+
+      {navGroups.map((group) => {
+        const Icon = group.icon;
+        const groupActive = group.items.includes(activeView);
+        const isOpen = openGroup === group.id;
+        const tourFocus = currentTourStep ? group.items.includes(currentTourStep.view) : false;
+        return (
+          <div className="relative shrink-0 sm:flex-1" key={group.id}>
+            <button
+              className={`fp-nav-item flex min-h-[58px] w-[4.25rem] flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:w-full sm:min-w-[52px] sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
+              data-active={groupActive}
+              type="button"
+              aria-expanded={isOpen}
+              title={group.label}
+              onClick={() => setOpenGroup((current) => (current === group.id ? null : group.id))}
+            >
+              <Icon size={16} />
+              <span className="mt-0.5 line-clamp-2 max-w-full text-center sm:line-clamp-none sm:whitespace-nowrap">{group.label} ▾</span>
+            </button>
+
+            {isOpen ? (
+              <>
+                <button aria-label="Fechar menu" className="fixed inset-0 z-20 cursor-default" type="button" onClick={() => setOpenGroup(null)} />
+                <div className="absolute left-0 top-full z-30 mt-1 grid w-56 gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl shadow-slate-900/20">
+                  {group.items.map((id) => {
+                    const item = navItems.find((navItem) => navItem.id === id);
+                    if (!item) return null;
+                    const ItemIcon = item.icon;
+                    const active = activeView === item.id;
+                    const locked = !canUseModule(item.id, currentPlan);
+                    return (
+                      <button
+                        className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-slate-700 data-[active=true]:bg-green-50 data-[active=true]:text-green-800 hover:bg-slate-50"
+                        data-active={active}
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelect(item.id)}
+                      >
+                        <ItemIcon size={16} />
+                        <span className="flex-1">{item.label}</span>
+                        {locked ? <LockKeyhole size={12} /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function Home() {
   const [session, setSession] = useState<SessionProfile | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
@@ -915,6 +1026,7 @@ export default function Home() {
   const [billing, setBilling] = useState<BillingState | null>(null);
   const [tourStepIndex, setTourStepIndex] = useState<number | null>(null);
   const [showUpdatesModal, setShowUpdatesModal] = useState(false);
+  const [showProposalForm, setShowProposalForm] = useState(false);
   const hasPaidAccess = Boolean(
     billing &&
       ["active", "trial"].includes(billing.subscription.status) &&
@@ -1032,18 +1144,6 @@ export default function Home() {
     }
   }
 
-  const openValue = useMemo(
-    () => {
-      if (proposalsSummary) return proposalsSummary.openValue || 0;
-      return proposals
-        .filter((proposal) => !["draft", "accepted", "declined", "expired"].includes(proposal.status))
-        .reduce((sum, proposal) => sum + proposal.price, 0);
-    },
-    [proposals, proposalsSummary],
-  );
-
-  const accepted = proposalsSummary ? proposalsSummary.accepted : proposals.filter((proposal) => proposal.status === "accepted").length;
-
   if (!session) {
     return (
       <AuthScreen />
@@ -1052,6 +1152,12 @@ export default function Home() {
 
   function updateDraft<K extends keyof ProposalDraft>(key: K, value: ProposalDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function openNewProposal() {
+    setEditingProposalId(null);
+    setDraft({ ...blankDraft, validUntil: nextWeekDate() });
+    setShowProposalForm(true);
   }
 
   async function saveProposal(status: ProposalStatus = "sent") {
@@ -1098,7 +1204,7 @@ export default function Home() {
           if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("fechapro:proposals-updated"));
         setLastSavedProposal(result);
         setNotice("Proposta atualizada com sucesso.");
-        setActiveView("dashboard");
+        setShowProposalForm(false);
         setEditingProposalId(null);
         setDraft({ ...blankDraft, validUntil: nextWeekDate() });
         return result;
@@ -1152,7 +1258,7 @@ export default function Home() {
           ? ""
           : " Sem e-mail do cliente - proposta não foi enviada por e-mail.";
       setNotice(`Proposta salva com sucesso.${emailNote}`);
-      setActiveView("dashboard");
+      setShowProposalForm(false);
       setBilling((current) =>
         current
           ? {
@@ -1298,8 +1404,7 @@ export default function Home() {
   function editProposal(proposal: Proposal) {
     setDraft(proposalToDraft(proposal));
     setEditingProposalId(proposal.id);
-    setActiveView("dashboard");
-    setTimeout(() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    setShowProposalForm(true);
   }
 
   async function confirmPixPayment(id: string) {
@@ -1401,6 +1506,16 @@ export default function Home() {
                 Admin geral
               </a>
             ) : null}
+            {!onboardingIncomplete ? (
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
+                type="button"
+                onClick={openNewProposal}
+              >
+                <Plus size={16} />
+                Nova proposta
+              </button>
+            ) : null}
             <IconButton label="Ver novidades" icon={Megaphone} onClick={() => setShowUpdatesModal(true)} />
             <IconButton label="Iniciar acesso guiado" icon={Sparkles} onClick={startTour} />
             <IconButton label={dark ? "Usar tema claro" : "Usar tema escuro"} icon={dark ? Sun : Moon} onClick={() => setDark((current) => !current)} />
@@ -1461,43 +1576,17 @@ export default function Home() {
           />
         ) : (
           <>
-            <nav className="fp-nav flex gap-1 overflow-x-auto rounded-lg border p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const active = activeView === item.id;
-                const locked = !canUseModule(item.id, currentPlan);
-                const tourFocus = currentTourStep?.view === item.id;
-                return (
-                  <button
-                    className={`fp-nav-item flex min-h-[58px] w-[4.25rem] shrink-0 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-black leading-none sm:w-auto sm:min-w-[52px] sm:flex-1 sm:text-[11px] ${tourFocus ? "ring-2 ring-green-300 ring-offset-2 ring-offset-[var(--app-bg)]" : ""}`}
-                    data-active={active}
-                    data-locked={locked}
-                    key={item.id}
-                    type="button"
-                    title={locked ? `Disponível a partir do plano ${requiredPlanLabel(item.id)}` : item.label}
-                    onClick={() => {
-                      if (locked) {
-                        setNotice(`O módulo ${item.label} está disponível a partir do plano ${requiredPlanLabel(item.id)}.`);
-                        setActiveView("plans");
-                        return;
-                      }
-                      setActiveView(item.id);
-                    }}
-                  >
-                    <Icon size={16} />
-                    <span className="mt-0.5 line-clamp-2 max-w-full text-center sm:line-clamp-none sm:whitespace-nowrap">{item.label}</span>
-                    {locked ? <LockKeyhole size={10} /> : null}
-                  </button>
-                );
-              })}
-            </nav>
+            <NavBar
+              activeView={activeView}
+              currentPlan={currentPlan}
+              currentTourStep={currentTourStep}
+              onSelect={setActiveView}
+              onNotice={setNotice}
+            />
 
             {activeView === "dashboard" ? (
           <DashboardView
-            accepted={accepted}
             clients={clients}
-            draft={draft}
-            isEditingProposal={Boolean(editingProposalId)}
             brand={
               brand || {
                 businessName: session.name,
@@ -1522,30 +1611,14 @@ export default function Home() {
                 showFaq: true,
               }
             }
-            onDraftChange={updateDraft}
-            onProposalSave={saveProposal}
-            onSeed={seedExamples}
+            onNewProposal={openNewProposal}
             billing={billing}
             notice={notice}
             onNotice={setNotice}
-            onStatusChange={changeProposalStatus}
-            onProposalRemove={removeProposal}
-            onProposalResend={resendProposal}
-            onSatisfactionSurveySend={sendSatisfactionSurvey}
-            onSatisfactionSurveyLinkCopy={copySatisfactionSurveyLink}
-            onProposalDuplicate={duplicateProposal}
-            onProposalEdit={editProposal}
-            onProposalPdf={saveProposalAndOpenPdf}
             lastSavedProposal={lastSavedProposal}
             onLastSavedProposalDismiss={() => setLastSavedProposal(null)}
-            openValue={openValue}
-            proposalsSummary={proposalsSummary}
-            portfolio={portfolio}
             proposals={proposals}
-            proposalTemplates={allProposalTemplates}
-            session={session}
             services={services}
-            testimonials={testimonials}
           />
             ) : null}
 
@@ -1565,11 +1638,7 @@ export default function Home() {
                 onStatusChange={changeProposalStatus}
                 proposals={proposals}
                 proposalsSummary={proposalsSummary}
-                onNewProposal={() => {
-                  setEditingProposalId(null);
-                  setDraft({ ...blankDraft, validUntil: nextWeekDate() });
-                  setActiveView("dashboard");
-                }}
+                onNewProposal={openNewProposal}
               />
             ) : null}
 
@@ -1682,6 +1751,49 @@ export default function Home() {
           }}
         />
       ) : null}
+      {session && !onboardingIncomplete ? (
+        <ProposalFormModal
+          open={showProposalForm}
+          onClose={() => setShowProposalForm(false)}
+          brand={
+            brand || {
+              businessName: session.name,
+              logoUrl: null,
+              primaryColor: "#22C55E",
+              secondaryColor: "#0F172A",
+              accentColor: "#2563EB",
+              whatsapp: null,
+              pixKey: null,
+              instagram: null,
+              email: session.email,
+              website: null,
+              bio: null,
+              proposalStyle: "executive",
+              proposalIntro: null,
+              proposalClosing: null,
+              proposalTerms: null,
+              proposalFaq: null,
+              showPortfolio: true,
+              showTestimonials: true,
+              showServices: true,
+              showFaq: true,
+            }
+          }
+          clients={clients}
+          draft={draft}
+          isEditingProposal={Boolean(editingProposalId)}
+          onDraftChange={updateDraft}
+          onProposalSave={saveProposal}
+          onProposalPdf={saveProposalAndOpenPdf}
+          onSeed={seedExamples}
+          portfolio={portfolio}
+          proposalTemplates={allProposalTemplates}
+          services={services}
+          session={session}
+          testimonials={testimonials}
+          onNotice={setNotice}
+        />
+      ) : null}
     </main>
   );
 }
@@ -1764,98 +1876,25 @@ function urlBase64ToUint8Array(value: string) {
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
-function DashboardView({
-  accepted,
-  brand,
-  clients,
-  draft,
-  isEditingProposal,
-  onDraftChange,
-  onProposalDuplicate,
-  onProposalEdit,
-  onProposalRemove,
-  onProposalResend,
-  onSatisfactionSurveySend,
-  onSatisfactionSurveyLinkCopy,
-  onProposalPdf,
-  onProposalSave,
-  onSeed,
-  onStatusChange,
-  lastSavedProposal,
-  onLastSavedProposalDismiss,
-  openValue,
-  proposalsSummary,
-  portfolio,
-  proposals,
-  services,
+function CalculatorModal({
+  open,
+  onClose,
   session,
-  testimonials,
-  billing,
-  notice,
+  draft,
+  onDraftChange,
   onNotice,
-  proposalTemplates,
 }: {
-  accepted: number;
-  brand: BrandProfile;
-  clients: Client[];
-  draft: ProposalDraft;
-  isEditingProposal: boolean;
-  onDraftChange: <K extends keyof ProposalDraft>(key: K, value: ProposalDraft[K]) => void;
-  onProposalDuplicate: (id: string) => void;
-  onProposalEdit: (proposal: Proposal) => void;
-  onProposalRemove: (id: string) => void;
-  onProposalResend: (id: string) => void;
-  onSatisfactionSurveySend: (id: string) => void;
-  onSatisfactionSurveyLinkCopy: (proposal: Proposal) => void;
-  onProposalPdf: () => void | Promise<void>;
-  onProposalSave: (status?: ProposalStatus) => void | Promise<Proposal | null>;
-  onSeed: () => void;
-  onStatusChange: (id: string, status: ProposalStatus) => void;
-  lastSavedProposal: Proposal | null;
-  onLastSavedProposalDismiss: () => void;
-  openValue: number;
-  proposalsSummary?: any | null;
-  portfolio: PortfolioItem[];
-  proposals: Proposal[];
+  open: boolean;
+  onClose: () => void;
   session: SessionProfile;
-  services: ServiceItem[];
-  testimonials: Testimonial[];
-  billing: BillingState | null;
-  notice: string | null;
+  draft: ProposalDraft;
+  onDraftChange: <K extends keyof ProposalDraft>(key: K, value: ProposalDraft[K]) => void;
   onNotice: (message: string | null) => void;
-  proposalTemplates: ProposalTemplate[];
 }) {
-  const [includedText, setIncludedText] = useState(() => draft.included.join("\n"));
-  const [dashboardProposalPage, setDashboardProposalPage] = useState(1);
-  const [showAdvancedProposalOptions, setShowAdvancedProposalOptions] = useState(false);
   const [materialItems, setMaterialItems] = useState<MaterialItem[]>([{ ...emptyMaterialItem }]);
   const [laborValue, setLaborValue] = useState(0);
   const [marginPercent, setMarginPercent] = useState(20);
-  const dashboardProposalPageSize = 5;
-  const dashboardProposalTotalPages = Math.max(1, Math.ceil(proposals.length / dashboardProposalPageSize));
-  const dashboardProposalFirstVisible = proposals.length ? (dashboardProposalPage - 1) * dashboardProposalPageSize + 1 : 0;
-  const dashboardProposalLastVisible = Math.min(dashboardProposalPage * dashboardProposalPageSize, proposals.length);
-  const dashboardVisibleProposals = proposals.slice(
-    (dashboardProposalPage - 1) * dashboardProposalPageSize,
-    dashboardProposalPage * dashboardProposalPageSize,
-  );
-  const includedItems = cleanIncludedItems(draft.included);
-  const previewIncludedItems = includedItems.length ? includedItems : ["Itens da proposta aparecem aqui."];
-  const acceptedValue = proposals
-    .filter((proposal) => proposal.status === "accepted")
-    .reduce((sum, proposal) => sum + proposal.price, 0);
-  const sentValue = proposals
-    .filter((proposal) => proposal.status !== "draft")
-    .reduce((sum, proposal) => sum + proposal.price, 0);
-  const viewed = proposals.filter((proposal) => proposal.status === "viewed").length;
-  const awaitingResponse = proposals.filter((proposal) => proposal.status === "awaiting_response").length;
-  const declined = proposals.filter((proposal) => proposal.status === "declined").length;
-  const sent = proposals.filter((proposal) => proposal.status !== "draft").length;
-  const totalViews = proposals.reduce((sum, proposal) => sum + (proposal.viewCount || 0), 0);
-  const whatsappClicks = proposals.reduce((sum, proposal) => sum + (proposal.whatsappClickCount || 0), 0);
-  const acceptanceRate = proposals.length ? Math.round((accepted / proposals.length) * 100) : 0;
-  const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
-  const followUps = proposals.filter((proposal) => ["sent", "viewed", "awaiting_response"].includes(proposal.status) && daysSince(proposal.updatedAt || proposal.createdAt) >= 2).slice(0, 3);
+
   const calculatedMaterialItems = materialItems.map((item) => {
     const area = Number(item.area || 0);
     const coats = Math.max(1, Number(item.coats || 1));
@@ -1889,32 +1928,194 @@ function DashboardView({
   const selectedCalculatorNiche = calculatorNicheFromProfile(session.niche, session.segment, draft.segment);
   const visibleCalculatorPresets = session.isAdmin ? calculatorPresets : calculatorPresets.filter((preset) => preset.niches.includes(selectedCalculatorNiche));
   const fallbackCalculatorPresets = visibleCalculatorPresets.length ? visibleCalculatorPresets : calculatorPresets.filter((preset) => preset.niches.includes("general"));
-  const isFirstProposalExperience = !proposals.length && !lastSavedProposal;
-  const setupChecklist = [
-    { done: Boolean(brand.businessName && brand.whatsapp), label: "Marca e WhatsApp" },
-    { done: services.length > 0, label: "Serviço cadastrado" },
-    { done: clients.length > 0, label: "Cliente salvo" },
-    { done: proposals.length > 0, label: "Primeira proposta" },
-  ];
-  const setupProgress = setupChecklist.filter((item) => item.done).length;
-  const lastSavedUrl = lastSavedProposal?.publicSlug ? `${getPublicAppUrl()}/p/${lastSavedProposal.publicSlug}` : "";
-  const lastSavedWhatsappUrl = lastSavedProposal
-    ? `https://wa.me/?text=${encodeURIComponent(`Oi, ${lastSavedProposal.clientName}! Preparei sua proposta de ${lastSavedProposal.serviceName} com escopo, valor, prazo, PDF e aceite online. Pode acessar aqui: ${lastSavedUrl}`)}`
-    : "";
-  const hasPaidAccess = Boolean(
-    billing &&
-      ["active", "trial"].includes(billing.subscription.status) &&
-      ["mercadopago", "admin"].includes(billing.subscription.provider || ""),
+
+  function updateMaterialItem(index: number, field: keyof MaterialItem, value: string) {
+    setMaterialItems((items) =>
+      items.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [field]: field === "name" || field === "mode" ? value : Number(value || 0),
+            }
+          : item,
+      ),
+    );
+  }
+
+  function addMaterialItem() {
+    setMaterialItems((items) => [...items, { ...emptyMaterialItem }]);
+  }
+
+  function removeMaterialItem(index: number) {
+    setMaterialItems((items) => (items.length === 1 ? [{ ...emptyMaterialItem }] : items.filter((_, itemIndex) => itemIndex !== index)));
+  }
+
+  function applyCalculatorPreset(label: string) {
+    const preset = calculatorPresets.find((item) => item.label === label);
+    if (!preset) return;
+    setMaterialItems(preset.items.map((item) => ({ ...item })));
+    setLaborValue(preset.laborValue);
+    setMarginPercent(preset.marginPercent);
+    if (!draft.serviceName.trim()) onDraftChange("serviceName", preset.serviceName);
+    onNotice(`Modelo de ${preset.label.toLowerCase()} aplicado. Ajuste medidas e valores antes de salvar.`);
+  }
+
+  function applyCalculatedValue() {
+    onDraftChange("price", calculatedTotal);
+    const materialLines = calculatedMaterialItems
+      .filter((item) => item.name.trim() || item.unitPrice > 0)
+      .map((item) => {
+        const suffix = item.mode === "paint" ? `, aprox. ${item.liters}L` : "";
+        return `${item.name.trim() || "Material"} (${item.calculatedQuantity} x ${money.format(item.unitPrice || 0)}${suffix})`;
+      });
+    const nextItems = Array.from(new Set([...cleanIncludedItems(draft.included), ...materialLines, calculatorSummary]));
+    if (nextItems.length) onDraftChange("included", nextItems);
+    const notesWithoutOldSummary = String(draft.notes || "").replace(/\n?\n?Resumo do calculo:[\s\S]*$/i, "").trim();
+    const materialDetails = calculatedMaterialItems
+      .filter((item) => item.name.trim() || item.unitPrice > 0)
+      .map((item) => `- ${item.name.trim() || "Material"}: ${item.calculatedQuantity} x ${money.format(item.unitPrice || 0)} = ${money.format(item.total)}`)
+      .join("\n");
+    onDraftChange("notes", `${notesWithoutOldSummary ? `${notesWithoutOldSummary}\n\n` : ""}Resumo do calculo:\n${calculatorSummary}${materialDetails ? `\n${materialDetails}` : ""}`);
+    onNotice("Valor calculado aplicado na proposta.");
+    onClose();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} eyebrow="Calculadora" title="Calcular valor da proposta" size="lg" zClassName="z-[60]">
+      <p className="text-sm font-bold leading-5 text-slate-500">Some materiais, mao de obra e margem antes de fechar o valor da proposta.</p>
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-700/20 bg-blue-50 p-3">
+        <span className="inline-flex items-center gap-2 text-sm font-black text-slate-900">
+          <Calculator size={16} />
+          Total calculado
+        </span>
+        <strong className="rounded-lg bg-white px-3 py-2 text-sm text-blue-700">{money.format(calculatedTotal)}</strong>
+      </div>
+
+      <div className="grid gap-2">
+        <span className="text-xs font-black uppercase text-slate-500">Modelos do seu nicho</span>
+        <p className="text-xs font-bold leading-5 text-slate-500">
+          {session.isAdmin ? "Administrador: todos os nichos disponíveis." : `Exibindo calculadoras para ${session.niche || session.segment || "serviço geral"}.`}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {fallbackCalculatorPresets.map((preset) => (
+            <button className="min-h-9 rounded-full border border-black/10 bg-white px-3 text-xs font-black text-slate-700" key={preset.label} type="button" onClick={() => applyCalculatorPreset(preset.label)}>
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        {calculatedMaterialItems.map((item, index) => (
+          <div className="grid gap-2 rounded-lg border border-black/10 bg-white p-2" key={index}>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_2.75rem]">
+              <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" placeholder="Material" value={item.name} onChange={(event) => updateMaterialItem(index, "name", event.target.value)} />
+              <select className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" value={item.mode} onChange={(event) => updateMaterialItem(index, "mode", event.target.value)}>
+                <option value="general">Quantidade</option>
+                <option value="paint">Tinta</option>
+                <option value="area">Área/m²</option>
+              </select>
+              <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Valor un." step="0.01" type="number" value={item.unitPrice || ""} onChange={(event) => updateMaterialItem(index, "unitPrice", event.target.value)} />
+              <button className="grid h-11 w-11 place-items-center rounded-lg border border-black/10 bg-white text-slate-700" type="button" title="Remover material" aria-label="Remover material" onClick={() => removeMaterialItem(index)}>
+                <Trash2 size={16} />
+              </button>
+            </div>
+
+            {item.mode === "paint" ? (
+              <div className="grid gap-2 sm:grid-cols-5">
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="m² parede" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Demaos" step="1" type="number" value={item.coats || ""} onChange={(event) => updateMaterialItem(index, "coats", event.target.value)} />
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Rend. m2/lata" step="1" type="number" value={item.coverage || ""} onChange={(event) => updateMaterialItem(index, "coverage", event.target.value)} />
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Litros/lata" step="0.01" type="number" value={item.packageSize || ""} onChange={(event) => updateMaterialItem(index, "packageSize", event.target.value)} />
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
+              </div>
+            ) : item.mode === "area" ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Área m²" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
+                <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
+              </div>
+            ) : (
+              <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold sm:max-w-40" min={0} placeholder="Qtd." step="0.01" type="number" value={item.quantity || ""} onChange={(event) => updateMaterialItem(index, "quantity", event.target.value)} />
+            )}
+
+            <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+              <span>Qtd. calculada: {item.calculatedQuantity}</span>
+              {item.mode === "paint" ? <span>Volume aprox.: {item.liters}L</span> : null}
+              <span>Total: {money.format(item.total)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
+        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-slate-700" type="button" onClick={addMaterialItem}>
+          <Plus size={16} />
+          Material
+        </button>
+        <TextField label="Mao de obra" min={0} placeholder="500" step="1" type="number" value={laborValue || ""} onChange={(value) => setLaborValue(Number(value || 0))} />
+        <TextField label="Margem (%)" min={0} placeholder="20" step="1" type="number" value={marginPercent || ""} onChange={(value) => setMarginPercent(Number(value || 0))} />
+      </div>
+
+      <div className="rounded-lg border border-black/10 bg-white p-3 text-xs font-bold leading-5 text-slate-600">
+        <span className="block font-black text-slate-900">Resumo do calculo</span>
+        <span>{calculatorSummary}</span>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onClose}>
+          Cancelar
+        </button>
+        <button className="min-h-11 rounded-lg bg-blue-700 px-4 font-black text-white" type="button" onClick={applyCalculatedValue}>
+          Aplicar valor na proposta
+        </button>
+      </div>
+    </Modal>
   );
+}
+
+function ProposalFormModal({
+  open,
+  onClose,
+  brand,
+  clients,
+  draft,
+  isEditingProposal,
+  onDraftChange,
+  onProposalSave,
+  onProposalPdf,
+  onSeed,
+  portfolio,
+  proposalTemplates,
+  services,
+  session,
+  testimonials,
+  onNotice,
+}: {
+  open: boolean;
+  onClose: () => void;
+  brand: BrandProfile;
+  clients: Client[];
+  draft: ProposalDraft;
+  isEditingProposal: boolean;
+  onDraftChange: <K extends keyof ProposalDraft>(key: K, value: ProposalDraft[K]) => void;
+  onProposalSave: (status?: ProposalStatus) => void | Promise<Proposal | null>;
+  onProposalPdf: () => void | Promise<void>;
+  onSeed: () => void;
+  portfolio: PortfolioItem[];
+  proposalTemplates: ProposalTemplate[];
+  services: ServiceItem[];
+  session: SessionProfile;
+  testimonials: Testimonial[];
+  onNotice: (message: string | null) => void;
+}) {
+  const [includedText, setIncludedText] = useState(() => draft.included.join("\n"));
+  const [showAdvancedProposalOptions, setShowAdvancedProposalOptions] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   useEffect(() => {
     const nextIncludedText = draft.included.join("\n");
     setIncludedText((current) => (current === nextIncludedText ? current : nextIncludedText));
   }, [draft.included]);
-
-  useEffect(() => {
-    setDashboardProposalPage((current) => Math.min(current, dashboardProposalTotalPages));
-  }, [dashboardProposalTotalPages]);
 
   function chooseService(serviceName: string) {
     const service = services.find((item) => item.name === serviceName);
@@ -1967,56 +2168,6 @@ function DashboardView({
     onDraftChange("included", [...currentItems, item]);
   }
 
-  function updateMaterialItem(index: number, field: keyof MaterialItem, value: string) {
-    setMaterialItems((items) =>
-      items.map((item, itemIndex) =>
-        itemIndex === index
-          ? {
-              ...item,
-              [field]: field === "name" || field === "mode" ? value : Number(value || 0),
-            }
-          : item,
-      ),
-    );
-  }
-
-  function addMaterialItem() {
-    setMaterialItems((items) => [...items, { ...emptyMaterialItem }]);
-  }
-
-  function removeMaterialItem(index: number) {
-    setMaterialItems((items) => (items.length === 1 ? [{ ...emptyMaterialItem }] : items.filter((_, itemIndex) => itemIndex !== index)));
-  }
-
-  function applyCalculatorPreset(label: string) {
-    const preset = calculatorPresets.find((item) => item.label === label);
-    if (!preset) return;
-    setMaterialItems(preset.items.map((item) => ({ ...item })));
-    setLaborValue(preset.laborValue);
-    setMarginPercent(preset.marginPercent);
-    if (!draft.serviceName.trim()) onDraftChange("serviceName", preset.serviceName);
-    onNotice(`Modelo de ${preset.label.toLowerCase()} aplicado. Ajuste medidas e valores antes de salvar.`);
-  }
-
-  function applyCalculatedValue() {
-    onDraftChange("price", calculatedTotal);
-    const materialLines = calculatedMaterialItems
-      .filter((item) => item.name.trim() || item.unitPrice > 0)
-      .map((item) => {
-        const suffix = item.mode === "paint" ? `, aprox. ${item.liters}L` : "";
-        return `${item.name.trim() || "Material"} (${item.calculatedQuantity} x ${money.format(item.unitPrice || 0)}${suffix})`;
-      });
-    const nextItems = Array.from(new Set([...cleanIncludedItems(draft.included), ...materialLines, calculatorSummary]));
-    if (nextItems.length) onDraftChange("included", nextItems);
-    const notesWithoutOldSummary = String(draft.notes || "").replace(/\n?\n?Resumo do calculo:[\s\S]*$/i, "").trim();
-    const materialDetails = calculatedMaterialItems
-      .filter((item) => item.name.trim() || item.unitPrice > 0)
-      .map((item) => `- ${item.name.trim() || "Material"}: ${item.calculatedQuantity} x ${money.format(item.unitPrice || 0)} = ${money.format(item.total)}`)
-      .join("\n");
-    onDraftChange("notes", `${notesWithoutOldSummary ? `${notesWithoutOldSummary}\n\n` : ""}Resumo do calculo:\n${calculatorSummary}${materialDetails ? `\n${materialDetails}` : ""}`);
-    onNotice("Valor calculado aplicado na proposta.");
-  }
-
   function useQuickExample() {
     onDraftChange("templateId", quickExampleProposal.templateId);
     onDraftChange("clientName", quickExampleProposal.clientName);
@@ -2032,8 +2183,337 @@ function DashboardView({
     onDraftChange("included", quickExampleProposal.included);
     onDraftChange("notes", quickExampleProposal.notes);
     onNotice("Exemplo preenchido. Ajuste os dados e salve a proposta.");
-    setTimeout(() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      eyebrow={isEditingProposal ? "Editar proposta" : "Proposta rapida"}
+      title={isEditingProposal ? "Ajuste os dados da proposta" : "Crie sua proposta rápida"}
+      size="full"
+    >
+      <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+        <form
+          id="proposal-form"
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onProposalSave();
+          }}
+        >
+          <div className="grid gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold leading-6 text-green-900">
+            <span className="font-black">Preencha cliente, serviço, valor, prazo e itens inclusos.</span>
+            <span>Depois envie o link pelo WhatsApp ou baixe em PDF.</span>
+          </div>
+
+          {showAdvancedProposalOptions ? (
+            <>
+              <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                  Template por nicho
+                  <select
+                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                    value={draft.templateId}
+                    onChange={(event) => {
+                      const template = proposalTemplates.find((item) => item.id === event.target.value);
+                      if (!template) return;
+                      onDraftChange("templateId", template.id);
+                      onDraftChange("serviceName", template.serviceName);
+                      onDraftChange("price", template.price);
+                      onDraftChange("deadline", template.deadline);
+                      onDraftChange("payment", template.payment);
+                      onDraftChange("included", template.included);
+                      onDraftChange("notes", template.notes);
+                    }}
+                  >
+                    <option value="">Escolha um modelo pronto</option>
+                    {proposalTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.niche} - {template.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                  Tipo do documento
+                  <select
+                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                    value={draft.documentType}
+                    onChange={(event) => onDraftChange("documentType", event.target.value as ProposalDraft["documentType"])}
+                  >
+                    {documentTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                  Segmento visual
+                  <select
+                    className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                    value={draft.segment}
+                    onChange={(event) => onDraftChange("segment", event.target.value as ProposalDraft["segment"])}
+                  >
+                    {proposalSegmentOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <SelectField
+              label="Cliente"
+              value={draft.clientName}
+              placeholder="Selecione ou digite"
+              required
+              options={clients.map((client) => client.name)}
+              onChange={(value) => {
+                onDraftChange("clientName", value);
+                const client = clients.find((c) => c.name === value);
+                if (client?.email) onDraftChange("clientEmail", client.email);
+              }}
+            />
+            <SelectField
+              label="Serviço"
+              value={draft.serviceName}
+              placeholder="Selecione ou digite"
+              required
+              options={services.map((service) => service.name)}
+              onChange={chooseService}
+            />
+            <TextField label="Valor" min={1} placeholder="1200" required step="1" type="number" value={draft.price || ""} onChange={(value) => onDraftChange("price", Number(value || 0))} />
+            <TextField label="Prazo" maxLength={80} placeholder="7 dias úteis" required value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
+          </div>
+
+          <button
+            className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-blue-700/20 bg-blue-50 px-4 text-sm font-black text-blue-700"
+            type="button"
+            onClick={() => setShowCalculator(true)}
+          >
+            <Calculator size={16} />
+            Calcular valor com materiais
+          </button>
+
+          <TextAreaField
+            label="O que esta incluso"
+            maxLength={1200}
+            placeholder={"Ex:\nBriefing inicial\nExecução do serviço\nAjustes combinados\nEntrega final"}
+            value={includedText}
+            onChange={(value) => {
+              setIncludedText(value);
+              onDraftChange("included", value.split("\n"));
+            }}
+          />
+          <div className="grid gap-2">
+            <span className="text-xs font-black uppercase text-slate-500">Adicionar rapido</span>
+            <div className="flex flex-wrap gap-2">
+              {quickIncludedSuggestions.map((item) => (
+                <button
+                  className="min-h-9 rounded-full border border-black/10 bg-slate-50 px-3 text-xs font-black text-slate-700"
+                  key={item}
+                  type="button"
+                  onClick={() => addIncludedSuggestion(item)}
+                >
+                  + {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 bg-slate-50 px-4 text-sm font-black text-slate-800"
+              type="button"
+              onClick={() => setShowAdvancedProposalOptions((current) => !current)}
+            >
+              <Settings size={16} />
+              {showAdvancedProposalOptions ? "Ocultar opções avançadas" : "Mostrar opções avançadas"}
+            </button>
+            <span className="text-xs font-bold text-slate-500">Template, validade, pagamento, e-mail, recebimento e visual.</span>
+          </div>
+
+          {showAdvancedProposalOptions ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <TextField label="Validade" type="date" value={draft.validUntil} onChange={(value) => onDraftChange("validUntil", value)} />
+                <TextField label="Pagamento" maxLength={120} placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
+              </div>
+
+              {services.length ? (
+                <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800">Serviços cadastrados na proposta</h3>
+                      <p className="text-xs font-bold leading-5 text-slate-500">
+                        Marque mais de um serviço para somar valores e montar os itens automaticamente.
+                      </p>
+                    </div>
+                    {selectedServiceNames().length > 1 ? (
+                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-800">
+                        {selectedServiceNames().length} serviços
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="grid gap-2">
+                    {services.map((service) => {
+                      const checked = selectedServiceNames().includes(service.name);
+                      return (
+                        <label
+                          className={`grid min-h-14 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 text-sm font-bold text-slate-700 ${
+                            checked ? "border-green-600 bg-green-50 shadow-sm" : "border-black/10 bg-white"
+                          }`}
+                          key={service.id}
+                        >
+                          <input
+                            className="h-4 w-4 shrink-0 accent-green-700"
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(event) => {
+                              const current = selectedServiceNames();
+                              chooseMultipleServices(
+                                event.target.checked
+                                  ? Array.from(new Set([...current, service.name]))
+                                  : current.filter((name) => name !== service.name),
+                              );
+                            }}
+                          />
+                          <span className="min-w-0">
+                            <span className="block font-black leading-5 text-slate-900">{service.name}</span>
+                            {service.includes.length ? (
+                              <span className="mt-0.5 line-clamp-2 block text-xs leading-4 text-slate-500">{service.includes.slice(0, 3).join(", ")}</span>
+                            ) : null}
+                          </span>
+                          <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700">
+                            {money.format(service.price)}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              <label className="grid gap-2 text-sm font-extrabold text-slate-600">
+                Como receber nesta proposta
+                <select
+                  className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
+                  value={draft.checkoutMode || "mercadopago"}
+                  onChange={(event) => onDraftChange("checkoutMode", event.target.value as ProposalDraft["checkoutMode"])}
+                >
+                  <option value="pix">PIX direto para minha chave</option>
+                  <option value="mercadopago">Mercado Pago: PIX, cartão e boleto</option>
+                </select>
+              </label>
+
+              <TextField
+                label="E-mail do cliente"
+                placeholder="cliente@email.com"
+                type="email"
+                autoComplete="email"
+                value={draft.clientEmail ?? ""}
+                onChange={(value) => onDraftChange("clientEmail", value)}
+              />
+
+              <TextAreaField
+                label="Observações"
+                maxLength={800}
+                placeholder="A proposta inclui até 2 rodadas de ajustes."
+                rows={3}
+                value={draft.notes}
+                onChange={(value) => onDraftChange("notes", value)}
+              />
+            </>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
+              {isEditingProposal ? "Atualizar proposta" : "Salvar proposta"}
+            </button>
+            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
+              Salvar rascunho
+            </button>
+            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={useQuickExample}>
+              Preencher exemplo
+            </button>
+          </div>
+          {showAdvancedProposalOptions ? (
+            <button className="justify-self-start text-sm font-black text-blue-700" type="button" onClick={onSeed}>
+              Criar clientes e serviços exemplo
+            </button>
+          ) : null}
+        </form>
+
+        <ProposalPreview
+          brand={brand}
+          draft={draft}
+          portfolio={portfolio}
+          testimonials={testimonials}
+          SectionHeading={SectionHeading}
+          PreviewItem={PreviewItem}
+          onProposalSave={onProposalSave}
+          onProposalPdf={onProposalPdf}
+        />
+      </div>
+
+      <CalculatorModal
+        open={showCalculator}
+        onClose={() => setShowCalculator(false)}
+        session={session}
+        draft={draft}
+        onDraftChange={onDraftChange}
+        onNotice={onNotice}
+      />
+    </Modal>
+  );
+}
+
+function DashboardView({
+  brand,
+  clients,
+  onNewProposal,
+  lastSavedProposal,
+  onLastSavedProposalDismiss,
+  proposals,
+  services,
+  billing,
+  notice,
+  onNotice,
+}: {
+  brand: BrandProfile;
+  clients: Client[];
+  onNewProposal: () => void;
+  lastSavedProposal: Proposal | null;
+  onLastSavedProposalDismiss: () => void;
+  proposals: Proposal[];
+  services: ServiceItem[];
+  billing: BillingState | null;
+  notice: string | null;
+  onNotice: (message: string | null) => void;
+}) {
+  const followUps = proposals.filter((proposal) => ["sent", "viewed", "awaiting_response"].includes(proposal.status) && daysSince(proposal.updatedAt || proposal.createdAt) >= 2).slice(0, 3);
+  const isFirstProposalExperience = !proposals.length && !lastSavedProposal;
+  const setupChecklist = [
+    { done: Boolean(brand.businessName && brand.whatsapp), label: "Marca e WhatsApp" },
+    { done: services.length > 0, label: "Serviço cadastrado" },
+    { done: clients.length > 0, label: "Cliente salvo" },
+    { done: proposals.length > 0, label: "Primeira proposta" },
+  ];
+  const setupProgress = setupChecklist.filter((item) => item.done).length;
+  const lastSavedUrl = lastSavedProposal?.publicSlug ? `${getPublicAppUrl()}/p/${lastSavedProposal.publicSlug}` : "";
+  const lastSavedWhatsappUrl = lastSavedProposal
+    ? `https://wa.me/?text=${encodeURIComponent(`Oi, ${lastSavedProposal.clientName}! Preparei sua proposta de ${lastSavedProposal.serviceName} com escopo, valor, prazo, PDF e aceite online. Pode acessar aqui: ${lastSavedUrl}`)}`
+    : "";
+  const hasPaidAccess = Boolean(
+    billing &&
+      ["active", "trial"].includes(billing.subscription.status) &&
+      ["mercadopago", "admin"].includes(billing.subscription.provider || ""),
+  );
 
   return (
     <>
@@ -2088,404 +2568,26 @@ function DashboardView({
         </section>
       ) : null}
 
-      {isFirstProposalExperience ? (
-        <section className="grid gap-4 rounded-lg border border-blue-700/20 bg-blue-50 p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[1fr_auto] sm:items-center">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Primeira proposta</p>
-            <h2 className="mt-1 text-2xl font-black leading-tight text-blue-950">Comece pelo basico e envie no WhatsApp.</h2>
-            <p className="mt-2 text-sm font-bold leading-6 text-blue-900">
-              O caminho mais rápido é preencher cliente, serviço, valor, prazo e inclusos. Marca, PDF e link entram automaticamente.
-            </p>
-          </div>
-          <div className="grid gap-2 sm:min-w-64">
-            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 font-black text-white" type="button" onClick={() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-              <FileText size={17} />
-              Criar agora
-            </button>
-            <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 bg-white px-4 font-black text-blue-800" type="button" onClick={useQuickExample}>
-              <Sparkles size={17} />
-              Preencher exemplo
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:min-h-80 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:p-6">
+      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6">
         <div>
-          <h2 className="max-w-[18ch] text-3xl font-black leading-tight text-slate-950 sm:max-w-[20ch] sm:text-5xl lg:text-6xl">
+          {isFirstProposalExperience ? (
+            <p className="text-xs font-black uppercase text-blue-700">Primeira proposta</p>
+          ) : null}
+          <h2 className="mt-1 max-w-[20ch] text-2xl font-black leading-tight text-slate-950 sm:text-4xl">
             Crie uma proposta profissional que valoriza seu serviço.
           </h2>
-          <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Monte uma proposta com sua marca, fotos, valor, prazo, PDF, link e aceite online. Depois envie pelo WhatsApp e acompanhe se o cliente abriu.
+          <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
+            Monte uma proposta com sua marca, valor, prazo, PDF, link e aceite online. Depois envie pelo WhatsApp e acompanhe se o cliente abriu.
           </p>
         </div>
 
-        <div className="grid gap-2 sm:min-w-52">
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={() => document.getElementById("proposal-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-            <FileText size={18} />
-            Criar proposta
+        <div className="grid gap-2 sm:min-w-56">
+          <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onNewProposal}>
+            <Plus size={18} />
+            Nova proposta
           </button>
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black text-slate-700" type="button" onClick={useQuickExample}>
-            <Sparkles size={17} />
-            Ver exemplo de proposta
-          </button>
+          <p className="text-center text-xs font-bold text-slate-500">Abre o gerador de proposta em uma tela só.</p>
         </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-        <form
-          id="proposal-form"
-          className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onProposalSave();
-          }}
-        >
-          <div className="grid gap-3">
-            <SectionHeading eyebrow={isEditingProposal ? "Editar proposta" : "Proposta rapida"} title={isEditingProposal ? "Ajuste os dados da proposta" : "Crie sua proposta rápida"} />
-            <div className="grid gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold leading-6 text-green-900">
-              <span className="font-black">Preencha cliente, serviço, valor, prazo e itens inclusos.</span>
-              <span>Depois envie o link pelo WhatsApp ou baixe em PDF.</span>
-            </div>
-          </div>
-
-          {showAdvancedProposalOptions ? (
-            <>
-          <div className="grid gap-2 rounded-lg border border-black/10 bg-slate-50 p-3">
-            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-              Template por nicho
-              <select
-                className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                value={draft.templateId}
-                onChange={(event) => {
-                  const template = proposalTemplates.find((item) => item.id === event.target.value);
-                  if (!template) return;
-                  onDraftChange("templateId", template.id);
-                  onDraftChange("serviceName", template.serviceName);
-                  onDraftChange("price", template.price);
-                  onDraftChange("deadline", template.deadline);
-                  onDraftChange("payment", template.payment);
-                  onDraftChange("included", template.included);
-                  onDraftChange("notes", template.notes);
-                }}
-              >
-                <option value="">Escolha um modelo pronto</option>
-                {proposalTemplates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.niche} - {template.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-              Tipo do documento
-              <select
-                className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                value={draft.documentType}
-                onChange={(event) => onDraftChange("documentType", event.target.value as ProposalDraft["documentType"])}
-              >
-                {documentTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-              Segmento visual
-              <select
-                className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                value={draft.segment}
-                onChange={(event) => onDraftChange("segment", event.target.value as ProposalDraft["segment"])}
-              >
-                {proposalSegmentOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-            </>
-          ) : null}
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <SelectField
-              label="Cliente"
-              value={draft.clientName}
-              placeholder="Selecione ou digite"
-              required
-              options={clients.map((client) => client.name)}
-              onChange={(value) => {
-                onDraftChange("clientName", value);
-                const client = clients.find((c) => c.name === value);
-                if (client?.email) onDraftChange("clientEmail", client.email);
-              }}
-            />
-            <SelectField
-              label="Serviço"
-              value={draft.serviceName}
-              placeholder="Selecione ou digite"
-              required
-              options={services.map((service) => service.name)}
-              onChange={chooseService}
-            />
-            <TextField label="Valor" min={1} placeholder="1200" required step="1" type="number" value={draft.price || ""} onChange={(value) => onDraftChange("price", Number(value || 0))} />
-            <TextField label="Prazo" maxLength={80} placeholder="7 dias úteis" required value={draft.deadline} onChange={(value) => onDraftChange("deadline", value)} />
-          </div>
-
-          <div className="grid gap-3 rounded-lg border border-blue-700/20 bg-blue-50 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="inline-flex items-center gap-2 text-sm font-black text-slate-900">
-                  <Calculator size={16} />
-                  Calculadora de materiais e valores
-                </h3>
-                <p className="mt-1 text-xs font-bold leading-5 text-slate-500">Some materiais, mao de obra e margem antes de fechar o valor da proposta.</p>
-              </div>
-              <strong className="rounded-lg bg-white px-3 py-2 text-sm text-blue-700">{money.format(calculatedTotal)}</strong>
-            </div>
-
-            <div className="grid gap-2">
-              <span className="text-xs font-black uppercase text-slate-500">Modelos do seu nicho</span>
-              <p className="text-xs font-bold leading-5 text-slate-500">
-                {session.isAdmin ? "Administrador: todos os nichos disponíveis." : `Exibindo calculadoras para ${session.niche || session.segment || "serviço geral"}.`}
-              </p>
-              <div className="flex flex-wrap gap-2">
-              {fallbackCalculatorPresets.map((preset) => (
-                <button className="min-h-9 rounded-full border border-black/10 bg-white px-3 text-xs font-black text-slate-700" key={preset.label} type="button" onClick={() => applyCalculatorPreset(preset.label)}>
-                  {preset.label}
-                </button>
-              ))}
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              {calculatedMaterialItems.map((item, index) => (
-                <div className="grid gap-2 rounded-lg border border-black/10 bg-white p-2" key={index}>
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_2.75rem]">
-                    <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" placeholder="Material" value={item.name} onChange={(event) => updateMaterialItem(index, "name", event.target.value)} />
-                    <select className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" value={item.mode} onChange={(event) => updateMaterialItem(index, "mode", event.target.value)}>
-                      <option value="general">Quantidade</option>
-                      <option value="paint">Tinta</option>
-                      <option value="area">Área/m²</option>
-                    </select>
-                    <input className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Valor un." step="0.01" type="number" value={item.unitPrice || ""} onChange={(event) => updateMaterialItem(index, "unitPrice", event.target.value)} />
-                    <button className="grid h-11 w-11 place-items-center rounded-lg border border-black/10 bg-white text-slate-700" type="button" title="Remover material" aria-label="Remover material" onClick={() => removeMaterialItem(index)}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-
-                  {item.mode === "paint" ? (
-                    <div className="grid gap-2 sm:grid-cols-5">
-                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="m² parede" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
-                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Demaos" step="1" type="number" value={item.coats || ""} onChange={(event) => updateMaterialItem(index, "coats", event.target.value)} />
-                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Rend. m2/lata" step="1" type="number" value={item.coverage || ""} onChange={(event) => updateMaterialItem(index, "coverage", event.target.value)} />
-                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={1} placeholder="Litros/lata" step="0.01" type="number" value={item.packageSize || ""} onChange={(event) => updateMaterialItem(index, "packageSize", event.target.value)} />
-                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
-                    </div>
-                  ) : item.mode === "area" ? (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Área m²" step="0.01" type="number" value={item.area || ""} onChange={(event) => updateMaterialItem(index, "area", event.target.value)} />
-                      <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold" min={0} placeholder="Perda %" step="1" type="number" value={item.wastePercent || ""} onChange={(event) => updateMaterialItem(index, "wastePercent", event.target.value)} />
-                    </div>
-                  ) : (
-                    <input className="min-h-10 rounded-lg border border-black/10 px-3 text-sm font-bold sm:max-w-40" min={0} placeholder="Qtd." step="0.01" type="number" value={item.quantity || ""} onChange={(event) => updateMaterialItem(index, "quantity", event.target.value)} />
-                  )}
-
-                  <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-                    <span>Qtd. calculada: {item.calculatedQuantity}</span>
-                    {item.mode === "paint" ? <span>Volume aprox.: {item.liters}L</span> : null}
-                    <span>Total: {money.format(item.total)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
-              <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-slate-700" type="button" onClick={addMaterialItem}>
-                <Plus size={16} />
-                Material
-              </button>
-              <TextField label="Mao de obra" min={0} placeholder="500" step="1" type="number" value={laborValue || ""} onChange={(value) => setLaborValue(Number(value || 0))} />
-              <TextField label="Margem (%)" min={0} placeholder="20" step="1" type="number" value={marginPercent || ""} onChange={(value) => setMarginPercent(Number(value || 0))} />
-              <button className="min-h-11 rounded-lg bg-blue-700 px-4 text-sm font-black text-white" type="button" onClick={applyCalculatedValue}>
-                Aplicar valor
-              </button>
-            </div>
-
-            <div className="rounded-lg border border-black/10 bg-white p-3 text-xs font-bold leading-5 text-slate-600">
-              <span className="block font-black text-slate-900">Resumo do calculo</span>
-              <span>{calculatorSummary}</span>
-            </div>
-          </div>
-
-          <TextAreaField
-            label="O que esta incluso"
-            maxLength={1200}
-            placeholder={"Ex:\nBriefing inicial\nExecução do serviço\nAjustes combinados\nEntrega final"}
-            value={includedText}
-            onChange={(value) => {
-              setIncludedText(value);
-              onDraftChange("included", value.split("\n"));
-            }}
-          />
-          <div className="grid gap-2">
-            <span className="text-xs font-black uppercase text-slate-500">Adicionar rapido</span>
-            <div className="flex flex-wrap gap-2">
-              {quickIncludedSuggestions.map((item) => (
-                <button
-                  className="min-h-9 rounded-full border border-black/10 bg-slate-50 px-3 text-xs font-black text-slate-700"
-                  key={item}
-                  type="button"
-                  onClick={() => addIncludedSuggestion(item)}
-                >
-                  + {item}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 bg-slate-50 px-4 text-sm font-black text-slate-800"
-              type="button"
-              onClick={() => setShowAdvancedProposalOptions((current) => !current)}
-            >
-              <Settings size={16} />
-              {showAdvancedProposalOptions ? "Ocultar opções avançadas" : "Mostrar opções avançadas"}
-            </button>
-            <span className="text-xs font-bold text-slate-500">Template, validade, pagamento, e-mail, recebimento e visual.</span>
-          </div>
-
-          {showAdvancedProposalOptions ? (
-            <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <TextField label="Validade" type="date" value={draft.validUntil} onChange={(value) => onDraftChange("validUntil", value)} />
-            <TextField label="Pagamento" maxLength={120} placeholder="50% entrada e 50% entrega" value={draft.payment} onChange={(value) => onDraftChange("payment", value)} />
-          </div>
-
-          {services.length ? (
-            <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-sm font-black text-slate-800">Serviços cadastrados na proposta</h3>
-                  <p className="text-xs font-bold leading-5 text-slate-500">
-                    Marque mais de um serviço para somar valores e montar os itens automaticamente.
-                  </p>
-                </div>
-                {selectedServiceNames().length > 1 ? (
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-800">
-                    {selectedServiceNames().length} serviços
-                  </span>
-                ) : null}
-              </div>
-              <div className="grid gap-2">
-                {services.map((service) => {
-                  const checked = selectedServiceNames().includes(service.name);
-                  return (
-                    <label
-                      className={`grid min-h-14 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 text-sm font-bold text-slate-700 ${
-                        checked ? "border-green-600 bg-green-50 shadow-sm" : "border-black/10 bg-white"
-                      }`}
-                      key={service.id}
-                    >
-                      <input
-                        className="h-4 w-4 shrink-0 accent-green-700"
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) => {
-                          const current = selectedServiceNames();
-                          chooseMultipleServices(
-                            event.target.checked
-                              ? Array.from(new Set([...current, service.name]))
-                              : current.filter((name) => name !== service.name),
-                          );
-                        }}
-                      />
-                      <span className="min-w-0">
-                        <span className="block font-black leading-5 text-slate-900">{service.name}</span>
-                        {service.includes.length ? (
-                          <span className="mt-0.5 line-clamp-2 block text-xs leading-4 text-slate-500">{service.includes.slice(0, 3).join(", ")}</span>
-                        ) : null}
-                      </span>
-                      <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700">
-                        {money.format(service.price)}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Como receber nesta proposta
-            <select
-              className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-              value={draft.checkoutMode || "mercadopago"}
-              onChange={(event) => onDraftChange("checkoutMode", event.target.value as ProposalDraft["checkoutMode"])}
-            >
-              <option value="pix">PIX direto para minha chave</option>
-              <option value="mercadopago">Mercado Pago: PIX, cartão e boleto</option>
-            </select>
-          </label>
-
-          <TextField
-            label="E-mail do cliente"
-            placeholder="cliente@email.com"
-            type="email"
-            autoComplete="email"
-            value={draft.clientEmail ?? ""}
-            onChange={(value) => onDraftChange("clientEmail", value)}
-          />
-
-          <TextAreaField
-            label="Observações"
-            maxLength={800}
-            placeholder="A proposta inclui até 2 rodadas de ajustes."
-            rows={3}
-            value={draft.notes}
-            onChange={(value) => onDraftChange("notes", value)}
-          />
-            </>
-          ) : null}
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
-              {isEditingProposal ? "Atualizar proposta" : "Salvar proposta"}
-            </button>
-            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={() => onProposalSave("draft")}>
-              Salvar rascunho
-            </button>
-            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={useQuickExample}>
-              Preencher exemplo
-            </button>
-          </div>
-          {showAdvancedProposalOptions ? (
-            <button className="justify-self-start text-sm font-black text-blue-700" type="button" onClick={onSeed}>
-              Criar clientes e serviços exemplo
-            </button>
-          ) : null}
-          <div className="sticky bottom-3 z-10 grid grid-cols-2 gap-2 rounded-lg border border-black/10 bg-white/95 p-2 shadow-xl shadow-slate-900/20 backdrop-blur sm:hidden">
-            <button className="min-h-11 rounded-lg bg-green-600 px-3 text-sm font-black text-white" type="submit">
-              Salvar
-            </button>
-            <button className="min-h-11 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={() => document.getElementById("proposal-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-              Ver previa
-            </button>
-          </div>
-        </form>
-
-        <ProposalPreview
-          brand={brand}
-          draft={draft}
-          portfolio={portfolio}
-          testimonials={testimonials}
-          SectionHeading={SectionHeading}
-          PreviewItem={PreviewItem}
-          onProposalSave={onProposalSave}
-          onProposalPdf={onProposalPdf}
-        />
       </section>
 
       <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
@@ -2508,83 +2610,6 @@ function DashboardView({
         </p>
       </section>
 
-
-      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SectionHeading eyebrow="Pipeline" title="Propostas recentes" />
-          {proposals.length ? (
-            <p className="text-sm font-bold text-slate-500">
-              Mostrando {dashboardProposalFirstVisible}-{dashboardProposalLastVisible} de {proposals.length}
-            </p>
-          ) : null}
-        </div>
-        <div className="grid gap-3">
-          {proposals.length ? (
-            dashboardVisibleProposals.map((proposal) => (
-              <ProposalCard
-                currentPlan={billing?.subscription.plan || "start"}
-                key={proposal.id}
-                proposal={proposal}
-                onRemove={() => onProposalRemove(proposal.id)}
-                onCopyLink={() => {
-                  if (!proposal.publicSlug) return;
-                  const url = `${window.location.origin}/p/${proposal.publicSlug}`;
-                  navigator.clipboard.writeText(url);
-                  onNotice("Link da proposta copiado.");
-                }}
-                onStatusChange={(status) => onStatusChange(proposal.id, status)}
-                onResend={() => onProposalResend(proposal.id)}
-                onSatisfactionSurveySend={() => onSatisfactionSurveySend(proposal.id)}
-                onSatisfactionSurveyLinkCopy={() => onSatisfactionSurveyLinkCopy(proposal)}
-                onDuplicate={() => onProposalDuplicate(proposal.id)}
-                onEdit={() => onProposalEdit(proposal)}
-              />
-            ))
-          ) : (
-            <p className="leading-7 text-slate-600">
-              Nenhuma proposta salva ainda. Crie a primeira ou carregue exemplos para ver o pipeline.
-            </p>
-          )}
-        </div>
-        {proposals.length > dashboardProposalPageSize ? (
-          <div className="flex flex-col gap-3 border-t border-black/10 pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-sm font-black text-slate-600">
-              Página {dashboardProposalPage}/{dashboardProposalTotalPages}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
-                disabled={dashboardProposalPage <= 1}
-                type="button"
-                onClick={() => setDashboardProposalPage((current) => Math.max(1, current - 1))}
-              >
-                Anterior
-              </button>
-              <button
-                className="min-h-10 rounded-lg border border-black/10 px-4 font-black disabled:opacity-40"
-                disabled={dashboardProposalPage >= dashboardProposalTotalPages}
-                type="button"
-                onClick={() => setDashboardProposalPage((current) => Math.min(dashboardProposalTotalPages, current + 1))}
-              >
-                Proxima
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-4">
-        <Metric label="Clientes que abriram proposta" value={String(totalViews)} />
-        <Metric label="Cliques no WhatsApp" value={String(whatsappClicks)} />
-        <Metric label="Propostas enviadas" value={String(sent)} />
-        <Metric label="Propostas aceitas" value={String(accepted)} />
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-3">
-        <Metric label="Valor total enviado" value={money.format(sentValue)} />
-        <Metric label="Valor aguardando resposta" value={money.format(openValue)} />
-        <Metric label="Taxa de aceite" value={`${acceptanceRate}%`} />
-      </section>
 
       {billing ? (
         <section className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
@@ -2613,25 +2638,6 @@ function DashboardView({
           </div>
         </section>
       ) : null}
-
-      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1fr_0.8fr]">
-        <div>
-          <SectionHeading eyebrow="Indicadores" title="Acompanhamento de vendas" />
-          <div className="mt-4 grid gap-3 sm:grid-cols-5">
-            <FunnelStep label="Enviadas" value={sent} tone="bg-amber-500" />
-            <FunnelStep label="Abertas" value={viewed} tone="bg-sky-600" />
-            <FunnelStep label="Aguardando resposta" value={awaitingResponse} tone="bg-indigo-600" />
-            <FunnelStep label="Aceitas" value={accepted} tone="bg-green-700" />
-            <FunnelStep label="Recusadas" value={declined} tone="bg-rose-700" />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
-          <MiniStat label="Visualizações" value={String(totalViews)} />
-          <MiniStat label="Cliques no WhatsApp" value={String(whatsappClicks)} />
-          <MiniStat label="Vencidas" value={String(expired)} />
-        </div>
-      </section>
 
       {followUps.length ? (
         <section className="grid gap-3 rounded-lg border border-amber-700/20 bg-amber-50 p-4 shadow-xl shadow-slate-900/10">
@@ -2742,7 +2748,6 @@ function ProposalsView({
   proposalsSummary?: any | null;
 }) {
   const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null);
-  const detailPanelRef = useRef<HTMLDivElement | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
@@ -2759,6 +2764,9 @@ function ProposalsView({
   const awaitingResponse = proposals.filter((proposal) => proposal.status === "awaiting_response").length;
   const accepted = proposals.filter((proposal) => proposal.status === "accepted").length;
   const declined = proposals.filter((proposal) => proposal.status === "declined").length;
+  const totalViews = proposals.reduce((sum, proposal) => sum + (proposal.viewCount || 0), 0);
+  const whatsappClicks = proposals.reduce((sum, proposal) => sum + (proposal.whatsappClickCount || 0), 0);
+  const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
 
   useEffect(() => {
     setPage((current) => Math.min(current, totalPages));
@@ -2782,11 +2790,6 @@ function ProposalsView({
       setTotalPages(Math.max(1, Math.ceil(proposals.length / pageSize)));
     }
   }
-
-  useEffect(() => {
-    if (!selectedProposal) return;
-    detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [selectedProposal]);
 
   useEffect(() => {
     loadPage(page);
@@ -2835,12 +2838,36 @@ function ProposalsView({
         <Metric label="Valor aceito" value={money.format(proposalsSummary ? proposalsSummary.acceptedValue : acceptedValue)} />
       </div>
 
+      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1fr_0.8fr]">
+        <div>
+          <SectionHeading eyebrow="Indicadores" title="Acompanhamento de vendas" />
+          <div className="mt-4 grid gap-3 sm:grid-cols-5">
+            <FunnelStep label="Enviadas" value={sent} tone="bg-amber-500" />
+            <FunnelStep label="Abertas" value={viewed} tone="bg-sky-600" />
+            <FunnelStep label="Aguardando resposta" value={awaitingResponse} tone="bg-indigo-600" />
+            <FunnelStep label="Aceitas" value={accepted} tone="bg-green-700" />
+            <FunnelStep label="Recusadas" value={declined} tone="bg-rose-700" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
+          <MiniStat label="Visualizações" value={String(totalViews)} />
+          <MiniStat label="Cliques no WhatsApp" value={String(whatsappClicks)} />
+          <MiniStat label="Vencidas" value={String(expired)} />
+        </div>
+      </section>
+
       {selectedProposal ? (
-        <div ref={detailPanelRef}>
+        <Modal
+          open={Boolean(selectedProposal)}
+          onClose={() => setSelectedProposalId(null)}
+          eyebrow="Detalhes da proposta"
+          title={selectedProposal.clientName}
+          size="lg"
+        >
           <ProposalDetailPanel
             currentPlan={currentPlan}
             proposal={selectedProposal}
-            onClose={() => setSelectedProposalId(null)}
             onConfirmPix={() => onConfirmPix(selectedProposal.id)}
             onCopyLink={() => onCopyLink(selectedProposal.publicSlug)}
             onDuplicate={() => onDuplicate(selectedProposal.id)}
@@ -2856,7 +2883,7 @@ function ProposalsView({
             onSatisfactionSurveySend={() => onSatisfactionSurveySend(selectedProposal.id)}
             onSatisfactionSurveyLinkCopy={() => onSatisfactionSurveyLinkCopy(selectedProposal)}
           />
-        </div>
+        </Modal>
       ) : null}
 
       <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
@@ -5541,7 +5568,6 @@ function ColorTile({ index, label }: { index: number; label: string }) {
 
 function ProposalDetailPanel({
   currentPlan,
-  onClose,
   onConfirmPix,
   onCopyLink,
   onDuplicate,
@@ -5554,7 +5580,6 @@ function ProposalDetailPanel({
   proposal,
 }: {
   currentPlan: PlanCode;
-  onClose: () => void;
   onConfirmPix: () => void;
   onCopyLink: () => void;
   onDuplicate: () => void;
@@ -5570,17 +5595,10 @@ function ProposalDetailPanel({
   const canResend = proposal.status === "expired" || proposal.status === "declined";
 
   return (
-    <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1.1fr_0.9fr]">
+    <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="grid gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase text-blue-700">Detalhes da proposta</p>
-            <h3 className="mt-1 text-2xl font-black">{proposal.clientName}</h3>
-            <p className="mt-1 leading-7 text-slate-600">{proposal.serviceName}</p>
-          </div>
-          <button className="min-h-10 rounded-lg border border-black/10 px-4 text-sm font-black" type="button" onClick={onClose}>
-            Fechar
-          </button>
+        <div>
+          <p className="leading-7 text-slate-600">{proposal.serviceName}</p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-4">
