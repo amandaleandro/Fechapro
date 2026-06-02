@@ -95,13 +95,13 @@ export default function InterestPage() {
           <Link className="grid h-11 w-36 place-items-center rounded-lg bg-slate-950 px-3" href="/">
             <Image alt="FechaPro" className="h-8 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
           </Link>
-          <a
+          <Link
             className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-black/10 px-4 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
             href="/#planos"
           >
             Ver planos
             <ArrowRight size={14} />
-          </a>
+          </Link>
         </div>
       </nav>
 
@@ -163,13 +163,13 @@ export default function InterestPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-3">
-                <a
+                <Link
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-green-600 px-5 font-bold text-white transition-colors hover:bg-green-700"
                   href="/#planos"
                 >
                   Ver planos e assinar
                   <ArrowRight size={16} />
-                </a>
+                </Link>
                 <button
                   className="inline-flex min-h-10 items-center justify-center rounded-xl border border-black/10 px-5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                   type="button"

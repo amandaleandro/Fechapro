@@ -45,7 +45,7 @@ import {
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
 import { AuthScreen } from "./landing";
-import { isUnlimitedProposalLimit, isUnlimitedArtLimit } from "@/lib/plans";
+import { isUnlimitedProposalLimit, isUnlimitedArtLimit, plans, type PlanCode } from "@/lib/plans";
 import ProposalPreview from "./components/ProposalPreview";
 import Modal from "./components/Modal";
 
@@ -185,7 +185,6 @@ type BrandProfile = {
   showFaq: boolean;
 };
 
-type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site" | "founder";
 type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
 
 type BillingPlan = {
@@ -363,28 +362,12 @@ const planAccessRank: Record<PlanCode, number> = {
   founder: 5,
 };
 
-const planLabels: Record<PlanCode, string> = {
-  start: "Start",
-  essential: "Essencial",
-  professional: "Profissional",
-  complete: "Completo",
-  pro: "Pro",
-  plus: "Profissional",
-  premium: "Pro Site",
-  premium_site: "Estrutura Comercial Completa",
-  founder_start: "Start",
-  founder_essential: "Essencial",
-  founder_professional: "Profissional",
-  founder_complete_site: "Completo",
-  founder: "Fundador",
-};
-
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
-  services: "pro",
-  brand: "pro",
+  services: "start",
+  brand: "start",
   portfolio: "plus",
   testimonials: "plus",
-  arts: "pro",
+  arts: "start",
   templates: "plus",
 };
 
@@ -411,7 +394,7 @@ function canUseProposalSlides(plan: PlanCode) {
 
 function requiredPlanLabel(view: ActiveView) {
   const requiredPlan = moduleRequirements[view];
-  return requiredPlan ? planLabels[requiredPlan] : "";
+  return requiredPlan ? plans[requiredPlan].name : "";
 }
 
 function availableModuleLabels(plan: PlanCode) {
@@ -2673,7 +2656,7 @@ function DashboardView({
       {billing ? (
         <section className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `${billing.subscription.plan.toUpperCase()} em uso` : "Pagamento pendente"} />
+            <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `Plano ${plans[billing.subscription.plan]?.name ?? billing.subscription.plan} em uso` : "Pagamento pendente"} />
             <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
               {hasPaidAccess
                 ? isUnlimitedProposalLimit(billing.usage.proposalLimit)
@@ -2924,7 +2907,7 @@ function ProposalsView({
           onClose={() => setSelectedProposalId(null)}
           eyebrow="Detalhes da proposta"
           title={selectedProposal.clientName}
-          size="lg"
+          size="full"
         >
           <ProposalDetailPanel
             currentPlan={currentPlan}
@@ -5667,7 +5650,7 @@ function ProposalDetailPanel({
           <p className="leading-7 text-slate-600">{proposal.serviceName}</p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <MiniStat label="Status" value={proposalStatusLabel(proposal.status)} />
           <MiniStat label="Valor" value={money.format(proposal.price)} />
           <MiniStat label="Visualizações" value={String(proposal.viewCount || 0)} />
