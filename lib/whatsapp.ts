@@ -1,9 +1,13 @@
 import { rm } from "node:fs/promises";
+import path from "node:path";
 import { prisma } from "@/lib/prisma";
 
 const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const provider = process.env.WHATSAPP_PROVIDER || "baileys";
-const baileysAuthDir = process.env.WHATSAPP_BAILEYS_AUTH_DIR || ".baileys-session";
+// Resolve para caminho absoluto: sob o Next standalone o CWD pode variar entre
+// rotas/cron, e um caminho relativo apontaria para pastas diferentes — deixando
+// a sessão "presa" porque o reset apagaria uma pasta e o socket leria outra.
+const baileysAuthDir = path.resolve(process.env.WHATSAPP_BAILEYS_AUTH_DIR || ".baileys-session");
 const webhookUrl = process.env.WHATSAPP_NOTIFICATION_WEBHOOK_URL || "";
 const webhookToken = process.env.WHATSAPP_NOTIFICATION_WEBHOOK_TOKEN || "";
 const cloudPhoneNumberId = process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || "";
@@ -208,7 +212,19 @@ async function resetBaileysSession() {
   state.qr = null;
   state.phone = null;
   state.error = null;
-  await rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
+
+  // A remoção da pasta de credenciais NÃO pode falhar em silêncio: se ela
+  // continua no disco, todo "Conectar" reabre a mesma sessão deslogada e o
+  // painel fica preso no erro "Sessão encerrada". Em vez de engolir o erro,
+  // propagamos uma mensagem clara para o admin.
+  try {
+    await rm(baileysAuthDir, { force: true, recursive: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("[Baileys] Falha ao remover a sessão:", baileysAuthDir, msg);
+    state.error = `Não foi possível limpar a sessão do WhatsApp em "${baileysAuthDir}": ${msg}. Apague essa pasta manualmente no servidor e tente novamente.`;
+    throw new Error(state.error);
+  }
 }
 
 async function waitForBaileysQrOrConnection(timeoutMs = 30_000) {
@@ -234,9 +250,14 @@ async function createBaileysSocket() {
   getState().socketInstance = socket;
   socket.ev.on("creds.update", saveCreds);
   socket.ev.on("connection.update", (update) => {
+    const state = getState();
+    // Ignora eventos de um socket que já foi substituído (ex.: o close atrasado
+    // do socket antigo após um reset). Sem isso, o handler antigo sobrescreve o
+    // estado do socket novo (mesmo globalThis), deixando a sessão órfã.
+    if (state.socketInstance !== socket) return;
+
     const { connection, qr, lastDisconnect } = update;
     console.log("[Baileys] connection.update:", connection, "qr:", !!qr, "error:", (lastDisconnect?.error as Error | undefined)?.message);
-    const state = getState();
 
     if (qr) {
       state.qr = qr;

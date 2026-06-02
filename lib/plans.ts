@@ -139,7 +139,7 @@ export const plans: Record<
     price: "R$ 497/mês",
     priceCents: 49700,
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
-    artLimit: UNLIMITED_PROPOSAL_LIMIT,
+    artLimit: 50,
     public: true,
     features: [
       "Tudo ilimitado",
@@ -240,7 +240,7 @@ export const plans: Record<
     billingMode: "one_time",
     annualPrice: "pagamento único · acesso vitalício",
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
-    artLimit: UNLIMITED_PROPOSAL_LIMIT,
+    artLimit: 50,
     public: false,
     features: [
       "Tudo ilimitado",
@@ -307,6 +307,10 @@ export function currentMonthRange() {
 }
 
 export function isUnlimitedProposalLimit(limit: number) {
+  return limit >= UNLIMITED_PROPOSAL_LIMIT;
+}
+
+export function isUnlimitedArtLimit(limit: number) {
   return limit >= UNLIMITED_PROPOSAL_LIMIT;
 }
 

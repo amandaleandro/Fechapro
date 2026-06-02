@@ -13,7 +13,11 @@
       "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"sleep 5 && docker ps --format 'table {{.Names}}\\\\t{{.Status}}\\\\t{{.Image}}' && echo '---' && docker logs fechapro-app --tail 20 2>&1\")",
       "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"grep -i healthcheck /opt/fechapro/.env.production 2>/dev/null || echo 'Variável não encontrada no .env.production'\")",
       "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"openssl rand -hex 32\")",
-      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"echo 'HEALTHCHECK_TOKEN=6d3c6bb70c0e138affc5a1d39bc6c63f9fb3e61db711f060304043c732668fcf' >> /opt/fechapro/.env.production && echo 'Adicionado com sucesso'\")"
+      "Bash(ssh -o StrictHostKeyChecking=no root@191.252.208.234 \"echo 'HEALTHCHECK_TOKEN=6d3c6bb70c0e138affc5a1d39bc6c63f9fb3e61db711f060304043c732668fcf' >> /opt/fechapro/.env.production && echo 'Adicionado com sucesso'\")",
+      "Bash(curl -s -o tmp/out-demo.pdf -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" --max-time 60 \"http://localhost:3003/p/demo-beleza-Efya7sOO/pdf\")",
+      "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 3000,3001,3002,3003,3004,3005 -ErrorAction SilentlyContinue)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 20 \"http://127.0.0.1:3003/\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" --max-time 20 \"http://127.0.0.1:3000/\")"
     ]
   }
 }

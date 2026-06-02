@@ -3,7 +3,7 @@ import path from "node:path";
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 export function uploadDir() {
-  return process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
+  return process.env.UPLOAD_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads");
 }
 
 function s3Client() {
@@ -44,14 +44,14 @@ export async function saveFile(
   }
 
   await mkdir(uploadDir(), { recursive: true });
-  await writeFile(path.join(uploadDir(), path.basename(filename)), bytes);
+  await writeFile(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ uploadDir(), path.basename(filename)), bytes);
   return `/api/uploads/${filename}`;
 }
 
 export async function readLocalFile(filename: string): Promise<Buffer | null> {
   try {
     const safeFilename = path.basename(filename);
-    return await readFile(path.join(uploadDir(), safeFilename));
+    return await readFile(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ uploadDir(), safeFilename));
   } catch {
     return null;
   }
@@ -61,7 +61,7 @@ export async function readUploadedFile(filename: string): Promise<Buffer | null>
   const safeFilename = path.basename(filename);
 
   try {
-    return await readFile(path.join(uploadDir(), safeFilename));
+    return await readFile(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ uploadDir(), safeFilename));
   } catch {
     // fall through to S3
   }

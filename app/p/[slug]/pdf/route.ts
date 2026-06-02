@@ -1943,12 +1943,21 @@ function drawPdfImage(
   options: PDFKit.Mixins.ImageOption,
 ) {
   try {
-    doc.image(image, x, y, options);
+    // O build standalone do pdfkit traz seu próprio polyfill de Buffer, cujo
+    // `Buffer.isBuffer` não reconhece um Buffer nativo do Node (retornado por sharp/fs).
+    // Sem isso, ele cai no caminho `fs.readFileSync`, que não existe no bundle, e
+    // lança erro — fazendo o PDF sair sem imagem. Passamos um ArrayBuffer, que o
+    // pdfkit aceita via `src instanceof ArrayBuffer`.
+    doc.image(toPdfImageSource(image), x, y, options);
     return true;
   } catch (err) {
     console.error("[PDF] Falha ao renderizar imagem no PDFKit:", err);
     return false;
   }
+}
+
+function toPdfImageSource(image: Buffer): ArrayBuffer {
+  return image.buffer.slice(image.byteOffset, image.byteOffset + image.byteLength) as ArrayBuffer;
 }
 
 function drawLogoImageInFrame(

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, LayoutTemplate, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Trash2, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
-import { isUnlimitedProposalLimit } from "@/lib/plans";
+import { isUnlimitedProposalLimit, isUnlimitedArtLimit } from "@/lib/plans";
 
 type PlanCode = "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site" | "founder";
 
@@ -455,7 +455,7 @@ export default function AdminPage() {
         </header>
 
         <section className="grid gap-3 sm:grid-cols-3">
-          <AdminStat icon={UserCog} label="Usuarios" value={String(totalUsers)} />
+          <AdminStat icon={UserCog} label="Usuários" value={String(totalUsers)} />
           <AdminStat icon={CheckCircle2} label="Liberados" value={String(activeUsers)} />
           <AdminStat icon={ShieldCheck} label="Bloqueados" value={String(blockedUsers)} />
         </section>
@@ -482,16 +482,16 @@ export default function AdminPage() {
               ) : null}
               <button className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-black text-white disabled:opacity-60" disabled={connectingWhatsApp} type="button" onClick={connectWhatsApp}>
                 <MessageCircle size={16} />
-                {connectingWhatsApp ? "Conectando..." : whatsappStatus?.connected ? "Reconectar" : "Conectar numero"}
+                {connectingWhatsApp ? "Conectando..." : whatsappStatus?.connected ? "Reconectar" : "Conectar número"}
               </button>
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <div className="grid gap-2">
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700">
-                <p>Status: <span className={whatsappStatus?.connected ? "text-green-700" : "text-amber-700"}>{whatsappStatus?.connected ? "Conectado" : "Aguardando conexao"}</span></p>
+                <p>Status: <span className={whatsappStatus?.connected ? "text-green-700" : "text-amber-700"}>{whatsappStatus?.connected ? "Conectado" : "Aguardando conexão"}</span></p>
                 <p className="mt-2">Sessão: {whatsappStatus?.authDir || "Não configurada"}</p>
-                {whatsappStatus?.phone ? <p className="mt-2">Numero conectado: {whatsappStatus.phone}</p> : null}
+                {whatsappStatus?.phone ? <p className="mt-2">Número conectado: {whatsappStatus.phone}</p> : null}
               </div>
               {whatsappError && !whatsappStatus?.connected ? (
                 <div className="rounded-lg border border-red-700/20 bg-red-50 p-3 text-sm font-bold text-red-900">{whatsappError}</div>
@@ -536,15 +536,15 @@ export default function AdminPage() {
         <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase text-blue-700">Metricas gerais</p>
+              <p className="text-xs font-black uppercase text-blue-700">Métricas gerais</p>
               <h2 className="text-xl font-black sm:text-2xl">Acessos e receita</h2>
               <p className="mt-1 text-sm font-bold text-slate-600">
-                Acompanhamento diario, semanal, mensal e anual dos acessos registrados e pagamentos confirmados.
+                Acompanhamento diário, semanal, mensal e anual dos acessos registrados e pagamentos confirmados.
               </p>
             </div>
             <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadMetrics}>
               <RefreshCcw size={15} />
-              Atualizar metricas
+              Atualizar métricas
             </button>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -660,31 +660,27 @@ export default function AdminPage() {
 
           {loading ? (
             <div className="rounded-lg border border-black/10 p-5 text-sm font-bold text-slate-500">Carregando usuários...</div>
+          ) : filteredUsers.length ? (
+            <>
+              <p className="text-xs font-bold text-slate-500">
+                {filteredUsers.length} {filteredUsers.length === 1 ? "usuário" : "usuários"}
+                {query ? " encontrado(s) na busca" : ""}
+              </p>
+              <div className="grid gap-3">
+                {filteredUsers.map((user) => (
+                  <AdminUserRow
+                    key={user.id}
+                    plans={data?.plans || []}
+                    saving={savingId === user.id}
+                    user={user}
+                    onSave={updateSubscription}
+                  />
+                ))}
+              </div>
+            </>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1120px] border-separate border-spacing-y-2 text-left text-sm">
-                <thead className="text-xs font-black uppercase text-slate-500">
-                  <tr>
-                    <th className="px-3 py-2">Usuário</th>
-                    <th className="px-3 py-2">Uso do mês</th>
-                    <th className="px-3 py-2">Totais</th>
-                    <th className="px-3 py-2">Plano</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="w-[220px] px-3 py-2">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => (
-                    <AdminUserRow
-                      key={user.id}
-                      plans={data?.plans || []}
-                      saving={savingId === user.id}
-                      user={user}
-                      onSave={updateSubscription}
-                    />
-                  ))}
-                </tbody>
-              </table>
+            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-bold text-slate-500">
+              {query ? "Nenhum usuário encontrado para essa busca." : "Nenhum usuário cadastrado ainda."}
             </div>
           )}
         </section>
@@ -805,69 +801,85 @@ function AdminUserRow({
   }, [user.subscription.plan, user.subscription.status]);
 
   return (
-    <tr className="rounded-lg bg-white align-top shadow-sm ring-1 ring-slate-200">
-      <td className="rounded-l-lg px-4 py-4">
-        <p className="font-black">{user.name}</p>
-        <p className="mt-1 text-xs font-bold text-slate-500">{user.email}</p>
-        <p className="mt-2 text-xs text-slate-500">{user.brandProfile?.businessName || "Empresa não configurada"}</p>
-      </td>
-      <td className="px-4 py-4 font-bold text-slate-700">
-        <p>
-          {isUnlimitedProposalLimit(user.usage.proposalLimit)
-            ? `${user.usage.proposalsThisMonth} propostas este mês, ilimitado`
-            : `${user.usage.proposalsThisMonth}/${user.usage.proposalLimit} propostas`}
-        </p>
-        {!isUnlimitedProposalLimit(user.usage.proposalLimit) ? (
-          <p className="mt-1 text-xs text-slate-500">
-            Acumulado: {user.usage.proposalsUsedSinceSubscriptionStart || 0}/{user.usage.accumulatedProposalLimit || user.usage.proposalLimit}
-          </p>
-        ) : null}
-        <p className="mt-1">{user.usage.artsThisMonth}/{user.usage.artLimit} artes</p>
-      </td>
-      <td className="px-4 py-4 text-slate-600">
-        <p>{user._count.proposalAssets} propostas</p>
-        <p>{user._count.clientAssets} clientes</p>
-        <p>{user._count.marketingArtAssets} artes</p>
-      </td>
-      <td className="px-4 py-4">
-        <select className="min-h-10 w-full rounded-lg border border-black/10 bg-white px-3 font-bold" value={plan} onChange={(event) => setPlan(event.target.value as PlanCode)}>
-          {plans.map((item) => (
-            <option key={item.code} value={item.code}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="px-4 py-4">
-        <select className="min-h-10 w-full rounded-lg border border-black/10 bg-white px-3 font-bold" value={status} onChange={(event) => setStatus(event.target.value)}>
-          {statuses.map((item) => (
-            <option key={item} value={item}>
-              {statusLabels[item] || item}
-            </option>
-          ))}
-        </select>
-        <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-black ${statusBadgeClass(user.subscription.status)}`}>
+    <article className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-black">{user.name}</p>
+          <p className="mt-0.5 truncate text-xs font-bold text-slate-500">{user.email}</p>
+          <p className="mt-1 truncate text-xs text-slate-500">{user.brandProfile?.businessName || "Empresa não configurada"}</p>
+        </div>
+        <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-black ${statusBadgeClass(user.subscription.status)}`}>
           {statusLabels[user.subscription.status] || user.subscription.status}
         </span>
-        <p className="mt-2 text-xs font-bold text-slate-500">
-          Salvar como liberado define o provedor como admin e libera o painel mesmo sem pagamento confirmado.
-        </p>
-      </td>
-      <td className="w-[220px] rounded-r-lg px-4 py-4">
-        <div className="grid gap-2">
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="button" onClick={() => onSave(user, plan, status)}>
-            <CheckCircle2 size={15} />
-            {saving ? "Salvando..." : "Salvar"}
-          </button>
-          <div className="grid grid-cols-2 gap-2">
-            <QuickAction icon={Ban} label="Bloquear" disabled={saving} onClick={() => onSave(user, plan, "blocked")} />
-            <QuickAction icon={RotateCcw} label="Reativar" disabled={saving} onClick={() => onSave(user, plan, "active")} />
-            <QuickAction icon={PauseCircle} label="Pausar" disabled={saving} onClick={() => onSave(user, plan, "paused")} />
-            <QuickAction icon={XCircle} label="Cancelar" disabled={saving} onClick={() => onSave(user, plan, "canceled")} />
-          </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-lg bg-slate-50 p-3 text-sm font-bold text-slate-700 ring-1 ring-slate-200">
+          <p className="text-xs font-black uppercase tracking-wide text-slate-400">Uso do mês</p>
+          <p className="mt-1">
+            {isUnlimitedProposalLimit(user.usage.proposalLimit)
+              ? `${user.usage.proposalsThisMonth} propostas · ilimitado`
+              : `${user.usage.proposalsThisMonth}/${user.usage.proposalLimit} propostas`}
+          </p>
+          {!isUnlimitedProposalLimit(user.usage.proposalLimit) ? (
+            <p className="text-xs font-bold text-slate-500">
+              Acumulado: {user.usage.proposalsUsedSinceSubscriptionStart || 0}/{user.usage.accumulatedProposalLimit || user.usage.proposalLimit}
+            </p>
+          ) : null}
+          <p className="mt-1">
+            {isUnlimitedArtLimit(user.usage.artLimit)
+              ? `${user.usage.artsThisMonth} artes · ilimitado`
+              : `${user.usage.artsThisMonth}/${user.usage.artLimit} artes`}
+          </p>
         </div>
-      </td>
-    </tr>
+        <div className="rounded-lg bg-slate-50 p-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
+          <p className="text-xs font-black uppercase tracking-wide text-slate-400">Totais</p>
+          <p className="mt-1">{user._count.proposalAssets} propostas</p>
+          <p>{user._count.clientAssets} clientes</p>
+          <p>{user._count.marketingArtAssets} artes</p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-xs font-black uppercase tracking-wide text-slate-400">
+          Plano
+          <select className="min-h-11 w-full rounded-lg border border-black/10 bg-white px-3 text-sm font-bold text-slate-900" value={plan} onChange={(event) => setPlan(event.target.value as PlanCode)}>
+            {plans.map((item) => (
+              <option key={item.code} value={item.code}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-xs font-black uppercase tracking-wide text-slate-400">
+          Status
+          <select className="min-h-11 w-full rounded-lg border border-black/10 bg-white px-3 text-sm font-bold text-slate-900" value={status} onChange={(event) => setStatus(event.target.value)}>
+            {statuses.map((item) => (
+              <option key={item} value={item}>
+                {statusLabels[item] || item}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <p className="text-xs font-bold text-slate-500">
+        Salvar como liberado define o provedor como admin e libera o painel mesmo sem pagamento confirmado.
+      </p>
+
+      <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
+        <button className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving} type="button" onClick={() => onSave(user, plan, status)}>
+          <CheckCircle2 size={15} />
+          {saving ? "Salvando..." : "Salvar"}
+        </button>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <QuickAction icon={Ban} label="Bloquear" disabled={saving} onClick={() => onSave(user, plan, "blocked")} />
+          <QuickAction icon={RotateCcw} label="Reativar" disabled={saving} onClick={() => onSave(user, plan, "active")} />
+          <QuickAction icon={PauseCircle} label="Pausar" disabled={saving} onClick={() => onSave(user, plan, "paused")} />
+          <QuickAction icon={XCircle} label="Cancelar" disabled={saving} onClick={() => onSave(user, plan, "canceled")} />
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -1137,7 +1149,7 @@ function metricPeriodLabel(period: MetricsPeriodKey) {
   const labels: Record<MetricsPeriodKey, string> = {
     daily: "Hoje",
     weekly: "Semana",
-    monthly: "Mes",
+    monthly: "Mês",
     yearly: "Ano",
   };
   return labels[period];

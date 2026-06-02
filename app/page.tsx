@@ -45,7 +45,7 @@ import {
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
 import { AuthScreen } from "./landing";
-import { isUnlimitedProposalLimit } from "@/lib/plans";
+import { isUnlimitedProposalLimit, isUnlimitedArtLimit } from "@/lib/plans";
 import ProposalPreview from "./components/ProposalPreview";
 import Modal from "./components/Modal";
 
@@ -2682,7 +2682,9 @@ function DashboardView({
                 : "Pague pelo Mercado Pago ou aguarde liberação do admin"}
             </span>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
-              {`${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes de divulgação`}
+              {isUnlimitedArtLimit(billing.usage.artLimit)
+                ? "Artes de divulgação ilimitadas"
+                : `${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes de divulgação`}
             </span>
           </div>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
@@ -3943,15 +3945,15 @@ function MarketingArtsView({
         </div>
 
         <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-black text-slate-700">
-          Uso atual: {used}/{limit} artes este mês
+          Uso atual: {isUnlimitedArtLimit(limit) ? `${used} artes este mês, sem limite` : `${used}/${limit} artes este mês`}
           <div className="mt-3 h-3 overflow-hidden rounded-full bg-white">
             <div
               className="h-full rounded-full bg-green-600"
-              style={{ width: limit ? `${Math.min(100, Math.round((used / limit) * 100))}%` : "0%" }}
+              style={{ width: isUnlimitedArtLimit(limit) ? "100%" : limit ? `${Math.min(100, Math.round((used / limit) * 100))}%` : "0%" }}
             />
           </div>
           <p className="mt-2 text-xs font-bold text-slate-500">
-            {limit ? `${remaining} crédito(s) restantes neste ciclo.` : "Disponível a partir do plano Profissional e pacote de artes."}
+            {isUnlimitedArtLimit(limit) ? "Artes ilimitadas neste ciclo." : limit ? `${remaining} crédito(s) restantes neste ciclo.` : "Disponível a partir do plano Profissional e pacote de artes."}
           </p>
         </div>
 
@@ -4322,7 +4324,8 @@ function PlansView({
             </span>
           ) : null}
           <span className="mt-1 block">
-            Artes de divulgação: {billing.usage.artsThisMonth}/{billing.usage.artLimit} este mês
+            Artes de divulgação: {billing.usage.artsThisMonth}
+            {isUnlimitedArtLimit(billing.usage.artLimit) ? " este mês, sem limite" : `/${billing.usage.artLimit} este mês`}
           </span>
           <span className="mt-1 block">
             Créditos extras de artes: {billing.usage.artCreditBalance}
@@ -4389,7 +4392,11 @@ function PlansView({
                   <span className="mt-1 block">Renova todo mês e acumula o saldo não usado</span>
                 ) : null}
                 <span className="mt-1 block">
-                  {plan.artLimit > 0 ? `${plan.artLimit} artes de divulgação por mês` : "Artes de divulgação não inclusas"}
+                  {isUnlimitedArtLimit(plan.artLimit)
+                    ? "Artes de divulgação ilimitadas"
+                    : plan.artLimit > 0
+                      ? `${plan.artLimit} artes de divulgação por mês`
+                      : "Artes de divulgação não inclusas"}
                 </span>
               </p>
               <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-600">
@@ -6029,9 +6036,9 @@ function ProposalCard({
         {showMore ? "Menos ações" : "Mais ações"}
       </button>
       {showMore ? (
-        <>
+        <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3">
           {proposal.publicSlug ? (
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {proposal.status === "accepted" ? (
                 <a
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
@@ -6118,7 +6125,7 @@ function ProposalCard({
               ) : null}
             </div>
           ) : null}
-          <div className="grid grid-cols-2 gap-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 border-t border-black/10 pt-3 sm:grid-cols-3 xl:grid-cols-4">
             <p className="col-span-full text-xs font-black uppercase text-slate-400">Mudar status</p>
             {(Object.keys(statusConfig) as ProposalStatus[]).map((status) => {
               const config = statusConfig[status]!;
@@ -6139,7 +6146,7 @@ function ProposalCard({
               );
             })}
           </div>
-        </>
+        </div>
       ) : null}
     </article>
   );
