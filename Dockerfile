@@ -36,7 +36,7 @@ CMD ["npx", "prisma", "db", "push"]
 FROM base AS runner
 ENV NODE_ENV=production
 
-RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont su-exec
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
@@ -55,12 +55,17 @@ COPY --from=builder /app/node_modules/pdfkit/js/data /ROOT/node_modules/pdfkit/j
 RUN chmod -R a+rX /app/public
 RUN chmod -R a+rX /app/prisma
 
-USER nextjs
+COPY --chown=root:root docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
+# Inicia como root apenas para o entrypoint ajustar o dono dos volumes
+# (uploads e sessão do WhatsApp); ele cai para o usuário nextjs antes de subir
+# a aplicação. Sem isso, volumes nomeados criados como root deixam o app sem
+# permissão para gravar/limpar a sessão do Baileys.
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV UPLOAD_DIR=/app/uploads
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-CMD ["sh", "-c", "node scripts/create-admin.js && node server.js"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

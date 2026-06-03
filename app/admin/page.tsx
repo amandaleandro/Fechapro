@@ -233,29 +233,9 @@ export default function AdminPage() {
     return () => window.clearInterval(interval);
   }, [whatsappModalOpen, whatsappStatus?.connected]);
 
-  useEffect(() => {
-    if (!whatsappModalOpen || whatsappStatus?.connected || connectingWhatsApp) return;
-    const timeout = window.setTimeout(() => {
-      setConnectingWhatsApp(true);
-      setWhatsappError(null);
-      fetch("/api/admin/whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resetSession: true }),
-      })
-        .then(async (response) => {
-          if (!response.ok) throw new Error(await readApiError(response, "Não foi possível recarregar o QR Code."));
-          setWhatsappStatus((await response.json()) as AdminWhatsAppStatus);
-        })
-        .catch((caught) => {
-          setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível recarregar o QR Code.");
-        })
-        .finally(() => {
-          setConnectingWhatsApp(false);
-        });
-    }, 60_000);
-    return () => window.clearTimeout(timeout);
-  }, [connectingWhatsApp, whatsappModalOpen, whatsappStatus?.connected, whatsappStatus?.qr]);
+  // O backend renova o QR sozinho (recria o socket quando o QR expira) e o
+  // polling de 3s acima já busca o QR novo, então não forçamos reset pelo
+  // cliente — fazer isso poderia apagar uma sessão recém-escaneada.
 
   async function disconnectWhatsApp() {
     if (!window.confirm("Desconectar o número do WhatsApp? A sessão será encerrada e as notificações serão pausadas até reconectar.")) return;
@@ -756,7 +736,7 @@ export default function AdminPage() {
               </div>
             ) : (
               <div className="rounded-lg border border-amber-700/20 bg-amber-50 p-4 text-sm font-black text-amber-900">
-                Gerando QR Code... se demorar mais de 60 segundos, o sistema tenta recarregar automaticamente.
+                Gerando QR Code... aguarde alguns segundos. Ele é atualizado automaticamente enquanto esta janela estiver aberta.
               </div>
             )}
 

@@ -1,4 +1,4 @@
-import { rm } from "node:fs/promises";
+import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
 
@@ -7,7 +7,7 @@ const provider = process.env.WHATSAPP_PROVIDER || "baileys";
 // Resolve para caminho absoluto: sob o Next standalone o CWD pode variar entre
 // rotas/cron, e um caminho relativo apontaria para pastas diferentes — deixando
 // a sessão "presa" porque o reset apagaria uma pasta e o socket leria outra.
-const baileysAuthDir = path.resolve(process.env.WHATSAPP_BAILEYS_AUTH_DIR || ".baileys-session");
+const baileysAuthDir = path.resolve(/*turbopackIgnore: true*/ process.env.WHATSAPP_BAILEYS_AUTH_DIR || ".baileys-session");
 const webhookUrl = process.env.WHATSAPP_NOTIFICATION_WEBHOOK_URL || "";
 const webhookToken = process.env.WHATSAPP_NOTIFICATION_WEBHOOK_TOKEN || "";
 const cloudPhoneNumberId = process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || "";
@@ -37,6 +37,10 @@ declare global {
   var __baileysPhone: string | null;
   // eslint-disable-next-line no-var
   var __baileysError: string | null;
+  // eslint-disable-next-line no-var
+  var __baileysReconnects: number;
+  // eslint-disable-next-line no-var
+  var __baileysClosing: boolean;
 }
 
 if (globalThis.__baileysConnected === undefined) globalThis.__baileysConnected = false;
@@ -45,6 +49,8 @@ if (globalThis.__baileysPhone === undefined) globalThis.__baileysPhone = null;
 if (globalThis.__baileysSocketPromise === undefined) globalThis.__baileysSocketPromise = null;
 if (globalThis.__baileysSocketInstance === undefined) globalThis.__baileysSocketInstance = null;
 if (globalThis.__baileysError === undefined) globalThis.__baileysError = null;
+if (globalThis.__baileysReconnects === undefined) globalThis.__baileysReconnects = 0;
+if (globalThis.__baileysClosing === undefined) globalThis.__baileysClosing = false;
 
 function getState() {
   return {
@@ -60,8 +66,19 @@ function getState() {
     set phone(v) { globalThis.__baileysPhone = v; },
     get error() { return globalThis.__baileysError; },
     set error(v) { globalThis.__baileysError = v; },
+    get reconnects() { return globalThis.__baileysReconnects; },
+    set reconnects(v) { globalThis.__baileysReconnects = v; },
+    // true enquanto um reset/disconnect manual está em andamento — impede que o
+    // handler de "close" do socket antigo dispare uma reconexão automática.
+    get closing() { return globalThis.__baileysClosing; },
+    set closing(v) { globalThis.__baileysClosing = v; },
   };
 }
+
+// Acima desse número de reconexões automáticas seguidas (sem chegar em "open"),
+// paramos de tentar e mostramos um erro — evita loop infinito quando o WhatsApp
+// recusa a conexão (versão incompatível, número banido, etc.).
+const MAX_BAILEYS_RECONNECTS = 6;
 
 export function buildProposalClientWhatsAppUrl(clientPhone: string, ownerName: string, serviceName: string, slug: string) {
   const digits = clientPhone.replace(/\D/g, "");
@@ -97,23 +114,31 @@ export async function connectBaileysWhatsApp(options: { resetSession?: boolean }
   }
 
   const state = getState();
-  if (options.resetSession && !state.connected) {
+
+  // Já conectado: nada a fazer além de devolver o status atual.
+  if (state.connected && !options.resetSession) {
+    return getBaileysWhatsAppStatus();
+  }
+
+  // "Conectar" sempre começa do zero quando ainda não há sessão ativa: apaga
+  // credenciais antigas/inválidas e zera o contador de reconexões.
+  if (options.resetSession || !state.connected) {
     await resetBaileysSession();
   }
 
   state.error = null;
+  state.reconnects = 0;
 
-  const socketPromise = getBaileysSocket().catch((error: unknown) => {
+  // Dispara a criação do socket. Não dá throw aqui — o resultado (QR, conexão
+  // ou erro) é refletido no estado e o painel faz polling do status.
+  void getBaileysSocket().catch((error: unknown) => {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[Baileys] Erro ao iniciar socket:", msg);
     getState().error = msg;
-    throw error;
   });
 
-  await Promise.race([
-    socketPromise.then(() => waitForBaileysQrOrConnection(15_000)),
-    waitForBaileysQrOrConnection(15_000),
-  ]).catch(() => null);
+  // Espera curta para já devolver o QR (ou a conexão) na própria resposta.
+  await waitForBaileysQrOrConnection(20_000);
 
   return getBaileysWhatsAppStatus();
 }
@@ -182,7 +207,10 @@ function formatWhatsAppPhone(value?: string | null) {
 async function sendViaBaileys(phone: string, message: string) {
   const socket = await getBaileysSocket();
   if (!getState().connected) {
-    await socket.waitForConnectionUpdate(async (update) => update.connection === "open", 30_000);
+    await waitForBaileysConnection(30_000);
+  }
+  if (!getState().connected) {
+    throw new Error("WhatsApp não está conectado. Reconecte o número no painel admin.");
   }
 
   await socket.sendMessage(`${phone}@s.whatsapp.net`, { text: message });
@@ -192,7 +220,8 @@ async function getBaileysSocket() {
   const state = getState();
   if (!state.socketPromise) {
     state.socketPromise = createBaileysSocket().catch((error) => {
-      state.socketPromise = null;
+      // Se a criação falhou, libera a promise para uma nova tentativa futura.
+      if (getState().socketPromise) getState().socketPromise = null;
       throw error;
     });
   }
@@ -202,99 +231,170 @@ async function getBaileysSocket() {
 
 async function resetBaileysSession() {
   const state = getState();
+  state.closing = true;
   const existing = state.socketInstance;
   if (existing) {
-    try { (existing.ws as any)?.terminate?.(); } catch {}
-    state.socketInstance = null;
+    // logout() invalida a sessão no lado do WhatsApp; se falhar (offline),
+    // pelo menos derruba o socket local.
+    try { await existing.logout(); } catch {}
+    try { existing.end?.(undefined); } catch {}
+    try { (existing.ws as any)?.close?.(); } catch {}
   }
+  state.socketInstance = null;
   state.socketPromise = null;
   state.connected = false;
   state.qr = null;
   state.phone = null;
   state.error = null;
+  state.reconnects = 0;
 
   // A remoção da pasta de credenciais NÃO pode falhar em silêncio: se ela
   // continua no disco, todo "Conectar" reabre a mesma sessão deslogada e o
   // painel fica preso no erro "Sessão encerrada". Em vez de engolir o erro,
   // propagamos uma mensagem clara para o admin.
   try {
-    await rm(baileysAuthDir, { force: true, recursive: true });
+    await clearBaileysSession();
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[Baileys] Falha ao remover a sessão:", baileysAuthDir, msg);
-    state.error = `Não foi possível limpar a sessão do WhatsApp em "${baileysAuthDir}": ${msg}. Apague essa pasta manualmente no servidor e tente novamente.`;
+    state.error = `Não foi possível limpar a sessão do WhatsApp em "${baileysAuthDir}": ${msg}. Apague o conteúdo dessa pasta manualmente no servidor e tente novamente.`;
+    state.closing = false;
     throw new Error(state.error);
   }
+
+  state.closing = false;
 }
 
-async function waitForBaileysQrOrConnection(timeoutMs = 30_000) {
+async function clearBaileysSession() {
+  let entries;
+  try {
+    entries = await readdir(baileysAuthDir);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
+  }
+
+  // O diretorio pode ser a raiz de um volume Docker. Preserve o ponto de
+  // montagem e apague somente as credenciais persistidas dentro dele.
+  await Promise.all(entries.map((entry) => rm(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ baileysAuthDir, entry), { force: true, recursive: true })));
+}
+
+// Espera até aparecer QR, conexão estabelecida ou erro — usado para já devolver
+// algo útil na resposta de "Conectar".
+async function waitForBaileysQrOrConnection(timeoutMs = 20_000) {
   const timeoutAt = Date.now() + timeoutMs;
   while (Date.now() < timeoutAt) {
     const state = getState();
     if (state.connected || state.qr || state.error) break;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
+// Espera especificamente até a conexão abrir (para envio de mensagens).
+async function waitForBaileysConnection(timeoutMs = 30_000) {
+  const timeoutAt = Date.now() + timeoutMs;
+  while (Date.now() < timeoutAt) {
+    if (getState().connected) return;
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
 }
 
 async function createBaileysSocket() {
-  console.log("[Baileys] Iniciando socket, authDir:", baileysAuthDir);
   const baileys = await import("@whiskeysockets/baileys");
+  const makeWASocket = baileys.makeWASocket ?? (baileys as unknown as { default: typeof baileys.makeWASocket }).default;
+
   const { state: authState, saveCreds } = await baileys.useMultiFileAuthState(baileysAuthDir);
-  console.log("[Baileys] Auth state carregado");
-  const socket = baileys.makeWASocket({
+  // Buscar a versão atual do WhatsApp Web é ESSENCIAL: sem ela o WhatsApp
+  // costuma recusar a conexão (erro 405) e o QR nunca conecta.
+  const { version } = await baileys.fetchLatestBaileysVersion();
+  console.log("[Baileys] Iniciando socket — versão WA:", version.join("."), "authDir:", baileysAuthDir);
+
+  const socket = makeWASocket({
+    version,
     auth: authState,
     logger: silentLogger,
-    printQRInTerminal: false,
+    browser: baileys.Browsers.ubuntu("Chrome"),
+    qrTimeout: 60_000,
+    connectTimeoutMs: 60_000,
+    keepAliveIntervalMs: 25_000,
+    markOnlineOnConnect: false,
+    syncFullHistory: false,
   });
 
-  getState().socketInstance = socket;
+  const state = getState();
+  state.socketInstance = socket;
   socket.ev.on("creds.update", saveCreds);
   socket.ev.on("connection.update", (update) => {
-    const state = getState();
+    const liveState = getState();
     // Ignora eventos de um socket que já foi substituído (ex.: o close atrasado
     // do socket antigo após um reset). Sem isso, o handler antigo sobrescreve o
     // estado do socket novo (mesmo globalThis), deixando a sessão órfã.
-    if (state.socketInstance !== socket) return;
+    if (liveState.socketInstance !== socket) return;
 
     const { connection, qr, lastDisconnect } = update;
-    console.log("[Baileys] connection.update:", connection, "qr:", !!qr, "error:", (lastDisconnect?.error as Error | undefined)?.message);
+    const errMsg = (lastDisconnect?.error as Error | undefined)?.message;
+    console.log("[Baileys] connection.update:", connection, "qr:", !!qr, "error:", errMsg);
 
     if (qr) {
-      state.qr = qr;
-      state.error = null;
-      console.log("[Baileys] QR gerado, tamanho:", qr.length);
+      liveState.qr = qr;
+      liveState.error = null;
     }
 
     if (connection === "open") {
-      state.connected = true;
-      state.qr = null;
-      state.phone = socket.user?.id || null;
-      state.error = null;
-      console.log("[Baileys] Conectado! Numero:", state.phone);
-    } else if (connection === "close") {
-      const hadPhoneOrQr = Boolean(state.phone) || Boolean(state.qr);
+      liveState.connected = true;
+      liveState.qr = null;
+      liveState.phone = socket.user?.id || null;
+      liveState.error = null;
+      liveState.reconnects = 0;
+      console.log("[Baileys] Conectado! Número:", liveState.phone);
+      return;
+    }
+
+    if (connection === "close") {
+      liveState.connected = false;
+      liveState.socketInstance = null;
+      liveState.socketPromise = null;
+
+      // Reset/disconnect manual em andamento: não reconecta automaticamente.
+      if (liveState.closing) return;
+
       const statusCode = getDisconnectStatusCode(lastDisconnect?.error);
+      const DR = baileys.DisconnectReason;
 
-      state.connected = false;
-      // Clear the promise so the next getBaileysSocket() creates a fresh socket.
-      state.socketPromise = null;
-      state.socketInstance = null;
-
-      if (statusCode === baileys.DisconnectReason.loggedOut) {
-        state.qr = null;
-        state.phone = null;
-        state.error = "Sessão encerrada pelo WhatsApp. Reconecte para gerar um novo QR Code.";
-        rm(baileysAuthDir, { force: true, recursive: true }).catch(() => null);
-      } else if (!hadPhoneOrQr) {
-        // Fechou antes de gerar QR ou conectar — erro de rede ou rejeição do WhatsApp.
-        const errMsg = (lastDisconnect?.error as Error | undefined)?.message;
-        state.error = errMsg
-          ? `Falha ao conectar ao WhatsApp: ${errMsg}. Verifique a rede do servidor.`
-          : "Não foi possível conectar ao WhatsApp. Verifique a conexão do servidor e tente novamente.";
-        console.error("[Baileys] Conexão encerrada antes do QR/telefone:", errMsg);
+      // Sessão encerrada de vez: precisa de novo QR, então limpa credenciais.
+      if (statusCode === DR.loggedOut) {
+        liveState.qr = null;
+        liveState.phone = null;
+        liveState.reconnects = 0;
+        liveState.error = "Sessão encerrada pelo WhatsApp. Clique em Conectar para gerar um novo QR Code.";
+        clearBaileysSession().catch(() => null);
+        return;
       }
-    } else {
-      state.connected = false;
+
+      // Conexão substituída por outro aparelho ou banida: não adianta reconectar.
+      if (statusCode === DR.connectionReplaced || statusCode === DR.forbidden || statusCode === DR.multideviceMismatch) {
+        liveState.qr = null;
+        liveState.error = "Conexão do WhatsApp foi recusada ou substituída. Reconecte gerando um novo QR Code.";
+        return;
+      }
+
+      // Demais casos (restartRequired = 515 logo após escanear o QR, timeout do
+      // QR, queda de rede) são transitórios: recria o socket automaticamente.
+      // restartRequired é o passo NORMAL após o pareamento — sem reconectar aqui
+      // a sessão nunca chega em "open".
+      if (liveState.reconnects >= MAX_BAILEYS_RECONNECTS) {
+        liveState.error = errMsg
+          ? `Não foi possível conectar ao WhatsApp: ${errMsg}. Tente novamente em alguns instantes.`
+          : "Não foi possível conectar ao WhatsApp. Verifique a conexão do servidor e tente novamente.";
+        liveState.reconnects = 0;
+        return;
+      }
+
+      liveState.reconnects += 1;
+      console.log("[Baileys] Reconectando automaticamente (tentativa", liveState.reconnects, ")", statusCode === DR.restartRequired ? "[restartRequired pós-QR]" : "");
+      void getBaileysSocket().catch((error) => {
+        getState().error = error instanceof Error ? error.message : String(error);
+      });
     }
   });
 

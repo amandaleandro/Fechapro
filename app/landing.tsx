@@ -322,9 +322,11 @@ export function AuthScreen() {
       <main className="fp-landing min-h-screen bg-[#faf8f3] text-[#0d1409]">
 
         {/* Urgency bar */}
-        <div className="sticky top-0 z-50 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black text-[#5c3a00] sm:text-sm">
-          🔒 <strong>Cota Fundador</strong> — Acesso vitalício a partir de R$ 497 · {OFERTA.vagasTotais} vagas no total · Encerra {OFERTA.encerra} &nbsp;—&nbsp;{" "}
-          <a href="#fundador" className="underline">
+        <div className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black leading-snug text-[#5c3a00] sm:text-sm">
+          <span>
+            🔒 <strong>Cota Fundador</strong> — vitalício a partir de R$ 497 · {OFERTA.vagasTotais} vagas · encerra {OFERTA.encerra}
+          </span>
+          <a href="#fundador" className="underline decoration-2 underline-offset-2 hover:text-[#3d2700]">
             Garantir minha vaga →
           </a>
         </div>
@@ -888,17 +890,21 @@ export function AuthScreen() {
         </section>
 
         {/* Final CTA */}
-        <section className="bg-green-900 px-4 py-20 text-center text-white">
-          <div className="mx-auto max-w-3xl">
-            <p className="text-xs font-black uppercase text-green-300">Última chamada</p>
-            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
-              {OFERTA.vagasTotais} vagas. Encerra {OFERTA.encerra}. Depois é mensalidade.
+        <section className="relative overflow-hidden bg-green-900 px-4 py-20 text-center text-white sm:py-24">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(74,222,128,0.22),transparent_60%)]" />
+          <div className="relative mx-auto max-w-3xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-green-200 ring-1 ring-white/15">
+              Última chamada
+            </span>
+            <h2 className="mt-5 text-3xl font-black leading-tight sm:text-5xl">
+              <span className="text-green-300">{OFERTA.vagasTotais} vagas.</span> Encerra {OFERTA.encerra}.
+              <br className="hidden sm:block" /> Depois é mensalidade.
             </h2>
-            <p className="mt-5 text-lg leading-8 text-white/75">
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">
               Pague uma vez e use o FechaPro para sempre. Envie sua primeira proposta profissional hoje.
             </p>
             <a
-              className="mt-8 inline-flex min-h-14 items-center justify-center rounded-lg bg-white px-8 font-black text-green-900 hover:bg-green-50"
+              className="mt-9 inline-flex min-h-14 items-center justify-center rounded-xl bg-white px-8 text-base font-black text-green-900 shadow-xl shadow-green-950/40 transition hover:-translate-y-0.5 hover:bg-green-50"
               href="#fundador"
             >
               Garantir minha vaga de Fundador →

@@ -1,5 +1,9 @@
 * text=auto working-tree-encoding=UTF-8
 
+# Scripts executados em containers Linux precisam de fim de linha LF
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
+
 *.png binary
 *.jpg binary
 *.jpeg binary

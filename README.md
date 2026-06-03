@@ -12,6 +12,13 @@ Em vez de mandar um orçamento simples pelo WhatsApp, o profissional entrega uma
 
 ---
 
+## Materiais de uso e vendas
+
+- [Manual completo do usuário](docs/manual-completo-fechapro.md)
+- [Estratégias de vendas e playbook comercial](docs/estrategias-de-vendas-fechapro.md)
+
+---
+
 ## Stack
 
 - **Framework:** Next.js 16 (App Router, modo standalone)
