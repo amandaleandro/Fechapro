@@ -1420,11 +1420,13 @@ export default function Home() {
     setNotice("Link da pesquisa copiado para enviar no WhatsApp.");
   }
 
-  async function duplicateProposal(id: string) {
-    const copy = await apiPost<Proposal>(`/api/proposals/${id}/duplicate`, {});
-    setProposals((current) => [copy, ...current]);
-    editProposal(copy);
-    setNotice("Proposta duplicada como rascunho. Ajuste os dados e salve quando estiver pronta.");
+  function duplicateProposal(id: string) {
+    const original = proposals.find((item) => item.id === id);
+    if (!original) return;
+    setDraft(proposalToDraft(original));
+    setEditingProposalId(null);
+    setShowProposalForm(true);
+    setNotice("Dados copiados da proposta. Ajuste e salve para criar a nova proposta.");
   }
 
   function proposalToDraft(proposal: Proposal): ProposalDraft {
