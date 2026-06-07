@@ -2413,12 +2413,12 @@ function ProposalFormModal({
                       </span>
                     ) : null}
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid max-h-[40rem] gap-2 overflow-y-auto pr-1">
                     {services.map((service) => {
                       const checked = selectedServiceNames().includes(service.name);
                       return (
                         <label
-                          className={`grid min-h-14 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 text-sm font-bold text-slate-700 ${
+                          className={`grid min-h-20 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 text-sm font-bold text-slate-700 ${
                             checked ? "border-green-600 bg-green-50 shadow-sm" : "border-black/10 bg-white"
                           }`}
                           key={service.id}
@@ -5936,7 +5936,7 @@ function ProposalCard({
   onStatusChange: (status: ProposalStatus) => void;
   proposal: Proposal;
 }) {
-  const [showMore, setShowMore] = useState(false);
+  const [showActionsModal, setShowActionsModal] = useState(false);
   const isExpired = proposal.status === "expired";
   const canResend = isExpired || proposal.status === "declined";
   const publicUrl = proposal.publicSlug ? `${getPublicAppUrl()}/p/${proposal.publicSlug}` : "";
@@ -6014,120 +6014,136 @@ function ProposalCard({
       <button
         className="justify-self-start text-sm font-black text-slate-500 underline-offset-2 hover:underline"
         type="button"
-        onClick={() => setShowMore((v) => !v)}
+        onClick={() => setShowActionsModal(true)}
       >
-        {showMore ? "Menos ações" : "Mais ações"}
+        Mais ações
       </button>
-      {showMore ? (
-        <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3">
-          {proposal.publicSlug ? (
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {proposal.status === "accepted" ? (
-                <a
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
-                  href={`/p/${proposal.publicSlug}/contrato`}
-                  target="_blank"
-                >
-                  <FileDown className="shrink-0" size={15} />
-                  Contrato
-                </a>
+      {showActionsModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4">
+          <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-black/10 bg-white p-6 shadow-lg">
+            <button
+              className="absolute right-4 top-4 text-slate-500 hover:text-slate-700"
+              onClick={() => setShowActionsModal(false)}
+              type="button"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="pr-8 font-black">Ações</h2>
+            <div className="mt-4 grid gap-3">
+              {proposal.publicSlug ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {proposal.status === "accepted" ? (
+                    <a
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700"
+                      href={`/p/${proposal.publicSlug}/contrato`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <FileDown className="shrink-0" size={15} />
+                      Contrato
+                    </a>
+                  ) : null}
+                  {currentPlan && canUseProposalSlides(currentPlan) ? (
+                    <a
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-black text-white"
+                      href={`/p/${proposal.publicSlug}/slides`}
+                      target="_blank"
+                    >
+                      <Presentation className="shrink-0" size={15} />
+                      Slides
+                    </a>
+                  ) : null}
+                  {canResend ? (
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                      type="button"
+                      onClick={onResend}
+                    >
+                      <RotateCcw className="shrink-0" size={15} />
+                      Reenviar
+                    </button>
+                  ) : null}
+                  {onOpenDetail ? (
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                      type="button"
+                      onClick={onOpenDetail}
+                    >
+                      <FileText className="shrink-0" size={15} />
+                      Detalhes
+                    </button>
+                  ) : null}
+                  {onEdit ? (
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                      type="button"
+                      onClick={onEdit}
+                    >
+                      <Settings className="shrink-0" size={15} />
+                      Editar
+                    </button>
+                  ) : null}
+                  <button
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
+                    type="button"
+                    onClick={onDuplicate}
+                  >
+                    <Files className="shrink-0" size={15} />
+                    Duplicar
+                  </button>
+                  {proposal.status === "accepted" && !proposal.satisfactionSurvey?.respondedAt ? (
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-center text-sm font-black text-blue-700"
+                      type="button"
+                      onClick={onSatisfactionSurveySend}
+                    >
+                      <MessageSquareQuote className="shrink-0" size={15} />
+                      {proposal.satisfactionSurvey?.sentAt ? "Reenviar pesquisa" : "Finalizar e pesquisar"}
+                    </button>
+                  ) : null}
+                  {proposal.satisfactionSurvey?.serviceCompletedAt && !proposal.satisfactionSurvey?.respondedAt ? (
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-sm font-black text-blue-700"
+                      type="button"
+                      onClick={onSatisfactionSurveyLinkCopy}
+                    >
+                      <Copy className="shrink-0" size={15} />
+                      Link pesquisa
+                    </button>
+                  ) : null}
+                  {proposal.satisfactionSurvey?.respondedAt ? (
+                    <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700">
+                      <MessageSquareQuote className="shrink-0" size={15} />
+                      Avaliado
+                    </span>
+                  ) : null}
+                </div>
               ) : null}
-              {currentPlan && canUseProposalSlides(currentPlan) ? (
-                <a
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-black text-white"
-                  href={`/p/${proposal.publicSlug}/slides`}
-                  target="_blank"
-                >
-                  <Presentation className="shrink-0" size={15} />
-                  Slides
-                </a>
-              ) : null}
-              {canResend ? (
-                <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-                  type="button"
-                  onClick={onResend}
-                >
-                  <RotateCcw className="shrink-0" size={15} />
-                  Reenviar
-                </button>
-              ) : null}
-              {onOpenDetail ? (
-                <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-                  type="button"
-                  onClick={onOpenDetail}
-                >
-                  <FileText className="shrink-0" size={15} />
-                  Detalhes
-                </button>
-              ) : null}
-              {onEdit ? (
-                <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-                  type="button"
-                  onClick={onEdit}
-                >
-                  <Settings className="shrink-0" size={15} />
-                  Editar
-                </button>
-              ) : null}
-              <button
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-                type="button"
-                onClick={onDuplicate}
-              >
-                <Files className="shrink-0" size={15} />
-                Duplicar
-              </button>
-              {proposal.status === "accepted" && !proposal.satisfactionSurvey?.respondedAt ? (
-                <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-center text-sm font-black text-blue-700"
-                  type="button"
-                  onClick={onSatisfactionSurveySend}
-                >
-                  <MessageSquareQuote className="shrink-0" size={15} />
-                  {proposal.satisfactionSurvey?.sentAt ? "Reenviar pesquisa" : "Finalizar e pesquisar"}
-                </button>
-              ) : null}
-              {proposal.satisfactionSurvey?.serviceCompletedAt && !proposal.satisfactionSurvey?.respondedAt ? (
-                <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-700/20 px-3 text-sm font-black text-blue-700"
-                  type="button"
-                  onClick={onSatisfactionSurveyLinkCopy}
-                >
-                  <Copy className="shrink-0" size={15} />
-                  Link pesquisa
-                </button>
-              ) : null}
-              {proposal.satisfactionSurvey?.respondedAt ? (
-                <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-3 text-sm font-black text-green-700">
-                  <MessageSquareQuote className="shrink-0" size={15} />
-                  Avaliado
-                </span>
-              ) : null}
+              <div className="grid grid-cols-2 gap-2 border-t border-black/10 pt-3 sm:grid-cols-3">
+                <p className="col-span-full text-xs font-black uppercase text-slate-400">Mudar status</p>
+                {(Object.keys(statusConfig) as ProposalStatus[]).map((status) => {
+                  const config = statusConfig[status]!;
+                  const Icon = config.icon;
+                  const active = proposal.status === status;
+                  return (
+                    <button
+                      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-xs font-black ${
+                        active ? config.className : "bg-white text-slate-500"
+                      }`}
+                      key={status}
+                      type="button"
+                      onClick={() => {
+                        onStatusChange(status);
+                        setShowActionsModal(false);
+                      }}
+                    >
+                      <Icon className="shrink-0" size={15} />
+                      <span className="min-w-0 text-center leading-4">{config.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          ) : null}
-          <div className="grid grid-cols-2 gap-2 border-t border-black/10 pt-3 sm:grid-cols-3 xl:grid-cols-4">
-            <p className="col-span-full text-xs font-black uppercase text-slate-400">Mudar status</p>
-            {(Object.keys(statusConfig) as ProposalStatus[]).map((status) => {
-              const config = statusConfig[status]!;
-              const Icon = config.icon;
-              const active = proposal.status === status;
-              return (
-                <button
-                  className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-xs font-black ${
-                    active ? config.className : "bg-white text-slate-500"
-                  }`}
-                  key={status}
-                  type="button"
-                  onClick={() => onStatusChange(status)}
-                >
-                  <Icon className="shrink-0" size={15} />
-                  <span className="min-w-0 text-center leading-4">{config.label}</span>
-                </button>
-              );
-            })}
           </div>
         </div>
       ) : null}

@@ -441,11 +441,11 @@ export default function ProposalForm(props: any) {
                   <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-800">{selectedServiceNames().length} serviços</span>
                 ) : null}
               </div>
-              <div className="grid gap-2">
+              <div className="grid max-h-[40rem] gap-2 overflow-y-auto pr-1">
                 {services.map((service: any) => {
                   const checked = selectedServiceNames().includes(service.name);
                   return (
-                    <label className={`grid min-h-14 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 text-sm font-bold text-slate-700 ${checked ? "border-green-600 bg-green-50 shadow-sm" : "border-black/10 bg-white"}`} key={service.id}>
+                    <label className={`grid min-h-20 cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 text-sm font-bold text-slate-700 ${checked ? "border-green-600 bg-green-50 shadow-sm" : "border-black/10 bg-white"}`} key={service.id}>
                       <input className="h-4 w-4 shrink-0 accent-green-700" type="checkbox" checked={checked} onChange={(event) => {
                         const current = selectedServiceNames();
                         chooseMultipleServices(event.target.checked ? Array.from(new Set([...current, service.name])) : current.filter((name: string) => name !== service.name));
