@@ -6080,7 +6080,10 @@ function ProposalCard({
                     <button
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
                       type="button"
-                      onClick={onEdit}
+                      onClick={() => {
+                        setShowActionsModal(false);
+                        onEdit();
+                      }}
                     >
                       <Settings className="shrink-0" size={15} />
                       Editar
@@ -6089,7 +6092,10 @@ function ProposalCard({
                   <button
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
                     type="button"
-                    onClick={onDuplicate}
+                    onClick={() => {
+                      setShowActionsModal(false);
+                      onDuplicate();
+                    }}
                   >
                     <Files className="shrink-0" size={15} />
                     Duplicar
