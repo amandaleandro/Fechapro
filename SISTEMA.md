@@ -175,7 +175,6 @@ O acesso a features pagas é verificado em `lib/billing-access.ts` com `canUsePa
 | PUT | `/api/proposals/[id]` | Atualizar proposta |
 | DELETE | `/api/proposals/[id]` | Excluir proposta |
 | GET | `/api/proposals/summary` | Métricas resumidas |
-| POST | `/api/proposals/[id]/duplicate` | Duplicar proposta |
 | POST | `/api/proposals/[id]/resend` | Reenviar proposta ao cliente |
 | POST | `/api/proposals/[id]/confirm-pix` | Confirmar recebimento PIX manualmente |
 | POST | `/api/proposals/[id]/satisfaction/send` | Enviar pesquisa de satisfação |
