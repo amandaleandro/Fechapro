@@ -32,6 +32,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
   const isSignup = mode === "signup";
   const checkoutId = isSignup ? searchParams.get("checkout") || "" : "";
   const plan = isSignup ? searchParams.get("plan") || "" : "";
+  const isFreeSignup = isSignup && plan === "free";
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
@@ -44,10 +45,10 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
   }, []);
 
   useEffect(() => {
-    if (isSignup && !checkoutId) {
+    if (isSignup && !checkoutId && !isFreeSignup) {
       router.replace("/#planos");
     }
-  }, [isSignup, checkoutId, router]);
+  }, [isSignup, checkoutId, isFreeSignup, router]);
 
   async function submitAuth(event: { preventDefault(): void }) {
     event.preventDefault();
@@ -87,6 +88,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
     try {
       const result = await apiPost<{ isAdmin?: boolean }>(mode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
         checkoutId,
+        plan: isFreeSignup ? "free" : plan,
         name: name.trim(),
         niche: niche.trim(),
         segment,
@@ -103,7 +105,7 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
     }
   }
 
-  if (isSignup && !checkoutId) return null;
+  if (isSignup && !checkoutId && !isFreeSignup) return null;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[var(--ui-bg)] text-slate-950">

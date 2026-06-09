@@ -1,5 +1,6 @@
 import { ArrowLeft, Copy, CreditCard, MessageCircle, QrCode, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
+import { canUseProposalPayments } from "@/lib/billing-access";
 import { createPixPayload } from "@/lib/pix";
 import { prisma } from "@/lib/prisma";
 
@@ -13,10 +14,11 @@ export default async function ProposalCheckoutPage({ params }: { params: Promise
   const { slug } = await params;
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
-    include: { user: { include: { brandProfile: true } } },
+    include: { user: { include: { brandProfile: true, subscription: true } } },
   });
 
   if (!proposal) notFound();
+  if (!canUseProposalPayments(proposal.user.subscription)) notFound();
 
   const brand = proposal.user.brandProfile;
   const brandName = brand?.businessName || proposal.user.name;

@@ -71,12 +71,19 @@ export async function sendEmail(to: string, subject: string, html: string, optio
   const headers = options.listUnsubscribeUrl ? { "List-Unsubscribe": `<${options.listUnsubscribeUrl}>` } : undefined;
 
   if (smtpTransporter) {
-    await smtpTransporter.sendMail({ from: FROM, to, subject, html, replyTo: options.replyTo, headers }).catch(() => null);
+    await smtpTransporter
+      .sendMail({ from: FROM, to, subject, html, replyTo: options.replyTo, headers })
+      .catch((error) => console.error(`[email] Falha ao enviar via SMTP para ${to} ("${subject}"):`, error));
     return;
   }
 
-  if (!resend) return;
-  await resend.emails.send({ from: FROM, to, subject, html, replyTo: options.replyTo, headers }).catch(() => null);
+  if (!resend) {
+    console.warn(`[email] Nenhum provedor configurado (SMTP/Resend). E-mail não enviado para ${to}: "${subject}".`);
+    return;
+  }
+  await resend.emails
+    .send({ from: FROM, to, subject, html, replyTo: options.replyTo, headers })
+    .catch((error) => console.error(`[email] Falha ao enviar via Resend para ${to} ("${subject}"):`, error));
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {

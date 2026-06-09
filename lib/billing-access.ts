@@ -31,3 +31,15 @@ export function canUseProposalPresentation(subscription: SubscriptionAccessInput
   if (!subscription || !canUsePaidFeatures(subscription)) return false;
   return presentationPlans.has(subscription.plan);
 }
+
+export function isFreeProposalLinkPlan(subscription: SubscriptionAccessInput | null | undefined) {
+  return subscription?.plan === "free";
+}
+
+export function canUseProposalDocuments(subscription: SubscriptionAccessInput | null | undefined) {
+  return Boolean(subscription && canUsePaidFeatures(subscription) && !isFreeProposalLinkPlan(subscription));
+}
+
+export function canUseProposalPayments(subscription: SubscriptionAccessInput | null | undefined) {
+  return Boolean(subscription && canUsePaidFeatures(subscription) && !isFreeProposalLinkPlan(subscription));
+}

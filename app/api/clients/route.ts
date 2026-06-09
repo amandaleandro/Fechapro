@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
+import { FREE_CLIENT_LIMIT } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { cleanOptionalString, cleanString, isValidEmail, isValidPhone } from "@/lib/validation";
@@ -24,6 +25,12 @@ export async function POST(request: Request) {
   if (!name) return jsonError("Nome obrigatório.");
   if (email && !isValidEmail(email)) return jsonError("E-mail inválido.");
   if (phone && !isValidPhone(phone)) return jsonError("Telefone inválido.");
+
+  const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id }, select: { plan: true } });
+  if (subscription?.plan === "free") {
+    const total = await prisma.clientAsset.count({ where: { userId: session.id } });
+    if (total >= FREE_CLIENT_LIMIT) return jsonError(`Plano grátis permite cadastrar até ${FREE_CLIENT_LIMIT} clientes.`, 402);
+  }
 
   const item = await prisma.clientAsset.create({
     data: {

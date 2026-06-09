@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { canUseProposalPayments } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
 import { createProposalCheckout } from "@/lib/mercadopago";
 
@@ -7,11 +8,12 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
   let checkoutUrl = "";
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
-    include: { user: true },
+    include: { user: { include: { subscription: true } } },
   });
 
   if (!proposal) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Proposta não encontrada")}`);
   if (proposal.price <= 0) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Valor da proposta inválido")}`);
+  if (!canUseProposalPayments(proposal.user.subscription)) redirect(`/p/${slug}?paymentError=${encodeURIComponent("Pagamento desativado para este link")}`);
   if (proposal.checkoutMode === "pix") redirect(`/checkout/proposta/${slug}`);
   const formData = await request.formData().catch(() => null);
   const paymentMode = String(formData?.get("paymentMode") || "full");

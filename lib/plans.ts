@@ -1,4 +1,5 @@
 export type PlanCode =
+  | "free"
   | "start"
   | "essential"
   | "professional"
@@ -14,6 +15,9 @@ export type PlanCode =
   | "founder";
 export type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
 export const UNLIMITED_PROPOSAL_LIMIT = Number.MAX_SAFE_INTEGER;
+export const FREE_CLIENT_LIMIT = 10;
+export const FREE_SERVICE_LIMIT = 10;
+export const FREE_PORTFOLIO_LIMIT = 3;
 
 export const plans: Record<
   PlanCode,
@@ -38,6 +42,23 @@ export const plans: Record<
     excluded?: string[];
   }
 > = {
+  free: {
+    code: "free",
+    name: "Gratis",
+    price: "R$ 0",
+    priceCents: 0,
+    proposalLimit: 3,
+    artLimit: 0,
+    public: false,
+    features: [
+      "3 propostas gratuitas",
+      "10 clientes cadastrados",
+      "10 servicos cadastrados",
+      "3 fotos no portfolio da proposta",
+      "Link profissional para enviar ao cliente",
+      "Sem PDF, slides ou cobranca no link",
+    ],
+  },
   start: {
     code: "start",
     name: "Start",

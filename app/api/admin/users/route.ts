@@ -64,7 +64,7 @@ export async function GET() {
 
   return NextResponse.json(
     {
-      plans: publicPlans,
+      plans: [plans.free, ...publicPlans],
       users: users.map((user, index) => {
         const plan = user.subscription?.plan || "start";
         return {

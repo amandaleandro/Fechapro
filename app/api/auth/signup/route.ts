@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     email?: string;
     name?: string;
     niche?: string;
+    plan?: string;
     segment?: string;
     password?: string;
     turnstileToken?: string;
@@ -43,16 +44,19 @@ export async function POST(request: Request) {
   }
 
   const checkoutId = body.checkoutId?.trim();
-  if (!checkoutId) {
+  const requestedPlan = body.plan === "free" ? "free" : null;
+  if (!checkoutId && !requestedPlan) {
     return jsonError("Escolha e pague um plano antes de criar a conta.", 402);
   }
 
-  const signupPayment = await prisma.signupPayment.findUnique({ where: { id: checkoutId } });
-  if (!signupPayment || signupPayment.status !== "paid" || signupPayment.claimedAt) {
-    return jsonError("Pagamento do plano ainda não confirmado ou já utilizado.", 402);
-  }
-  if (signupPayment.email && signupPayment.email.toLowerCase() !== email) {
-    return jsonError("Use o mesmo e-mail informado no pagamento da assinatura.", 409);
+  const signupPayment = checkoutId ? await prisma.signupPayment.findUnique({ where: { id: checkoutId } }) : null;
+  if (checkoutId) {
+    if (!signupPayment || signupPayment.status !== "paid" || signupPayment.claimedAt) {
+      return jsonError("Pagamento do plano ainda não confirmado ou já utilizado.", 402);
+    }
+    if (signupPayment.email && signupPayment.email.toLowerCase() !== email) {
+      return jsonError("Use o mesmo e-mail informado no pagamento da assinatura.", 409);
+    }
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -69,22 +73,24 @@ export async function POST(request: Request) {
     await tx.planSubscription.create({
       data: {
         userId: created.id,
-        plan: signupPayment.plan,
-        provider: "mercadopago",
-        providerCheckoutId: signupPayment.providerCheckoutId,
+        plan: signupPayment?.plan || requestedPlan || "free",
+        provider: signupPayment ? "mercadopago" : "admin",
+        providerCheckoutId: signupPayment?.providerCheckoutId || null,
         status: "active",
         // Lote único de artes de boas-vindas dos planos vitalícios (não recorrente).
-        artCreditBalance: plans[signupPayment.plan as PlanCode]?.welcomeArtCredits ?? 0,
+        artCreditBalance: plans[(signupPayment?.plan || requestedPlan || "free") as PlanCode]?.welcomeArtCredits ?? 0,
       },
     });
-    await tx.signupPayment.update({
-      where: { id: signupPayment.id },
-      data: {
-        claimedAt: new Date(),
-        email,
-        userId: created.id,
-      },
-    });
+    if (signupPayment) {
+      await tx.signupPayment.update({
+        where: { id: signupPayment.id },
+        data: {
+          claimedAt: new Date(),
+          email,
+          userId: created.id,
+        },
+      });
+    }
     return created;
   });
 

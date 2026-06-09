@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
+import { FREE_CLIENT_LIMIT, FREE_SERVICE_LIMIT } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { cleanOptionalString, cleanString, cleanStringList, isValidEmail, isValidPhone, normalizePrice } from "@/lib/validation";
@@ -45,6 +46,8 @@ async function importClients(userId: string, rows: string[][]) {
     if (item.phone && !isValidPhone(item.phone)) return { error: `Linha ${line}: telefone inválido.` };
     return { item: { ...item, userId } };
   });
+  const limitError = await freePlanImportLimitError(userId, "clients", items.length);
+  if (limitError) return limitError;
   const created = await prisma.$transaction(items.map((data) => prisma.clientAsset.create({ data: data! })));
   return NextResponse.json({ created, errors });
 }
@@ -62,8 +65,25 @@ async function importServices(userId: string, rows: string[][]) {
     if (item.price === null || item.price < 0) return { error: `Linha ${line}: valor inválido.` };
     return { item: { ...item, price: item.price, userId } };
   });
+  const limitError = await freePlanImportLimitError(userId, "services", items.length);
+  if (limitError) return limitError;
   const created = await prisma.$transaction(items.map((data) => prisma.serviceAsset.create({ data: data! })));
   return NextResponse.json({ created, errors });
+}
+
+async function freePlanImportLimitError(userId: string, kind: "clients" | "services", newItems: number) {
+  const subscription = await prisma.planSubscription.findUnique({ where: { userId }, select: { plan: true } });
+  if (subscription?.plan !== "free") return null;
+
+  const current = kind === "clients"
+    ? await prisma.clientAsset.count({ where: { userId } })
+    : await prisma.serviceAsset.count({ where: { userId } });
+  const limit = kind === "clients" ? FREE_CLIENT_LIMIT : FREE_SERVICE_LIMIT;
+  const label = kind === "clients" ? "clientes" : "serviços";
+  if (current + newItems > limit) {
+    return jsonError(`Plano grátis permite cadastrar até ${limit} ${label}.`, 402);
+  }
+  return null;
 }
 
 async function importTestimonials(userId: string, rows: string[][]) {

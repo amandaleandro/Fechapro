@@ -45,7 +45,7 @@ import {
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
 import { AuthScreen } from "./landing";
-import { isUnlimitedProposalLimit, isUnlimitedArtLimit, plans, type PlanCode } from "@/lib/plans";
+import { FREE_CLIENT_LIMIT, FREE_PORTFOLIO_LIMIT, FREE_SERVICE_LIMIT, isUnlimitedProposalLimit, isUnlimitedArtLimit, plans, type PlanCode } from "@/lib/plans";
 import ProposalPreview from "./components/ProposalPreview";
 import Modal from "./components/Modal";
 
@@ -347,6 +347,7 @@ const navGroups: Array<{ id: string; label: string; icon: React.ElementType; ite
 ];
 
 const planAccessRank: Record<PlanCode, number> = {
+  free: 0,
   start: 1,
   essential: 2,
   professional: 3,
@@ -363,9 +364,9 @@ const planAccessRank: Record<PlanCode, number> = {
 };
 
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
-  services: "start",
-  brand: "start",
-  portfolio: "plus",
+  services: "free",
+  brand: "free",
+  portfolio: "free",
   testimonials: "plus",
   arts: "start",
   templates: "plus",
@@ -390,6 +391,10 @@ function canUseModule(view: ActiveView, plan: PlanCode) {
 
 function canUseProposalSlides(plan: PlanCode) {
   return planAccessRank[plan] >= planAccessRank.premium;
+}
+
+function canUseProposalPdf(plan: PlanCode | undefined) {
+  return Boolean(plan && plan !== "free");
 }
 
 function requiredPlanLabel(view: ActiveView) {
@@ -1324,7 +1329,7 @@ export default function Home() {
 
   async function saveProposalAndOpenPdf() {
     const result = await saveProposal("sent");
-    if (result?.publicSlug) {
+    if (result?.publicSlug && canUseProposalPdf(currentPlan)) {
       window.open(`/p/${result.publicSlug}/pdf`, "_blank", "noopener,noreferrer");
     }
   }
@@ -1688,9 +1693,9 @@ export default function Home() {
               />
             ) : null}
 
-            {activeView === "clients" ? <ClientsView clients={clients} onChange={setClients} /> : null}
-            {activeView === "services" ? <ServicesView services={services} onChange={setServices} /> : null}
-            {activeView === "portfolio" ? <PortfolioView portfolio={portfolio} onChange={setPortfolio} /> : null}
+            {activeView === "clients" ? <ClientsView clients={clients} currentPlan={currentPlan} onChange={setClients} /> : null}
+            {activeView === "services" ? <ServicesView currentPlan={currentPlan} services={services} onChange={setServices} /> : null}
+            {activeView === "portfolio" ? <PortfolioView currentPlan={currentPlan} portfolio={portfolio} onChange={setPortfolio} /> : null}
             {activeView === "testimonials" ? (
               <TestimonialsView testimonials={testimonials} onChange={setTestimonials} />
             ) : null}
@@ -2600,10 +2605,10 @@ function DashboardView({
               Enviar no WhatsApp
             </a>
             <div className="grid grid-cols-2 gap-2">
-              <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-700/20 bg-white px-3 text-sm font-black text-green-800" href={`/p/${lastSavedProposal.publicSlug}/pdf`} target="_blank" rel="noreferrer">
+              {canUseProposalPdf(billing?.subscription.plan) ? <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-700/20 bg-white px-3 text-sm font-black text-green-800" href={`/p/${lastSavedProposal.publicSlug}/pdf`} target="_blank" rel="noreferrer">
                 <FileDown size={15} />
                 PDF
-              </a>
+              </a> : null}
               <button className="min-h-10 rounded-lg border border-green-700/20 px-3 text-sm font-black text-green-800" type="button" onClick={onLastSavedProposalDismiss}>
                 Fechar
               </button>
@@ -3106,10 +3111,11 @@ function OnboardingView({
   );
 }
 
-function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (items: Client[]) => void }) {
+function ClientsView({ clients, currentPlan, onChange }: { clients: Client[]; currentPlan: PlanCode; onChange: (items: Client[]) => void }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", segment: "", interestService: "", status: "lead", notes: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const freeLimitReached = currentPlan === "free" && !editingId && clients.length >= FREE_CLIENT_LIMIT;
   const resetForm = () => setForm({ name: "", email: "", phone: "", segment: "", interestService: "", status: "lead", notes: "" });
 
   async function saveClient(event: React.FormEvent<HTMLFormElement>) {
@@ -3159,6 +3165,7 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
           onSubmit={saveClient}
         >
           {error ? <FormError message={error} /> : null}
+          {currentPlan === "free" ? <LimitNotice current={clients.length} limit={FREE_CLIENT_LIMIT} label="clientes" /> : null}
           <TextField label="Nome" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
           <TextField label="E-mail" autoComplete="email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
           <TextField label="Telefone" autoComplete="tel" maxLength={15} placeholder="(11) 99999-9999" value={form.phone} onChange={(value) => setForm({ ...form, phone: maskPhone(value) })} />
@@ -3179,12 +3186,12 @@ function ClientsView({ clients, onChange }: { clients: Client[]; onChange: (item
             </select>
           </label>
           <TextAreaField label="Observações" maxLength={500} rows={3} placeholder="Preferências, histórico e próximo passo." value={form.notes} onChange={(value) => setForm({ ...form, notes: value })} />
-          <SubmitButton label={editingId ? "Atualizar cliente" : "Salvar cliente"} />
-          <CsvImportBox<Client>
+          <SubmitButton disabled={freeLimitReached} label={editingId ? "Atualizar cliente" : "Salvar cliente"} />
+          {!freeLimitReached ? <CsvImportBox<Client>
             kind="clients"
             sampleHeaders={["nome", "email", "telefone", "segmento", "servico_interesse", "status", "observacoes"]}
             onImported={(created) => onChange([...created, ...clients])}
-          />
+          /> : null}
           {editingId ? (
             <button
               className="min-h-11 rounded-lg border border-black/10 px-4 font-black"
@@ -3244,10 +3251,11 @@ function maskPhone(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
-function ServicesView({ services, onChange }: { services: ServiceItem[]; onChange: (items: ServiceItem[]) => void }) {
+function ServicesView({ currentPlan, services, onChange }: { currentPlan: PlanCode; services: ServiceItem[]; onChange: (items: ServiceItem[]) => void }) {
   const [form, setForm] = useState({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const freeLimitReached = currentPlan === "free" && !editingId && services.length >= FREE_SERVICE_LIMIT;
 
   async function saveService(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -3258,6 +3266,10 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
     }
     if (!Number.isFinite(form.price) || form.price < 0) {
       setError("Informe um valor válido para o serviço.");
+      return;
+    }
+    if (freeLimitReached) {
+      setError(`Plano grátis permite cadastrar até ${FREE_SERVICE_LIMIT} serviços.`);
       return;
     }
     const payload = {
@@ -3304,16 +3316,17 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
         >
           {error ? <FormError message={error} /> : null}
           <TextField label="Serviço" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
+          {currentPlan === "free" ? <LimitNotice current={services.length} limit={FREE_SERVICE_LIMIT} label="serviços" /> : null}
           <TextField label="Valor base" min={0} required step="1" type="number" value={form.price || ""} onChange={(value) => setForm({ ...form, price: Number(value || 0) })} />
           <TextField label="Prazo padrão" maxLength={80} value={form.deadline} onChange={(value) => setForm({ ...form, deadline: value })} />
           <TextField label="URL da imagem" placeholder="Opcional: https://..." type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
           <TextAreaField label="Itens inclusos" maxLength={1200} value={form.includes} onChange={(value) => setForm({ ...form, includes: value })} />
-          <CsvImportBox<ServiceItem>
+          {!freeLimitReached ? <CsvImportBox<ServiceItem>
             kind="services"
             sampleHeaders={["servico", "valor_base", "prazo_padrao", "itens_inclusos", "imagem_url"]}
             onImported={(created) => onChange([...created, ...services])}
-          />
-          <SubmitButton label={editingId ? "Atualizar serviço" : "Salvar serviço"} />
+          /> : null}
+          <SubmitButton disabled={freeLimitReached} label={editingId ? "Atualizar serviço" : "Salvar serviço"} />
           {editingId ? (
             <button
               className="min-h-11 rounded-lg border border-black/10 px-4 font-black"
@@ -3352,13 +3365,14 @@ function ServicesView({ services, onChange }: { services: ServiceItem[]; onChang
   );
 }
 
-function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; onChange: (items: PortfolioItem[]) => void }) {
+function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: PlanCode; portfolio: PortfolioItem[]; onChange: (items: PortfolioItem[]) => void }) {
   const [form, setForm] = useState({ title: "", category: "", imageUrl: "" });
   const [file, setFile] = useState<File | null>(null);
   const [removeBackground, setRemoveBackground] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const freeLimitReached = currentPlan === "free" && !editingId && portfolio.length >= FREE_PORTFOLIO_LIMIT;
 
   async function savePortfolioItem(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -3374,6 +3388,10 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
 
     setSaving(true);
     try {
+      if (freeLimitReached) {
+        setError(`Plano grátis permite cadastrar até ${FREE_PORTFOLIO_LIMIT} fotos no portfólio da proposta.`);
+        return;
+      }
       let imageUrl = form.imageUrl.trim() || null;
 
       if (file) {
@@ -3446,6 +3464,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
         >
           {error ? <FormError message={error} /> : null}
           <TextField label="Título" maxLength={80} required value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+          {currentPlan === "free" ? <LimitNotice current={portfolio.length} limit={FREE_PORTFOLIO_LIMIT} label="fotos" /> : null}
           <TextField label="Categoria" maxLength={60} value={form.category} onChange={(value) => setForm({ ...form, category: value })} />
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Imagem
@@ -3466,7 +3485,7 @@ function PortfolioView({ portfolio, onChange }: { portfolio: PortfolioItem[]; on
             Remover fundo claro desta imagem
           </label>
           <TextField label="URL da imagem" placeholder="Opcional: https://..." type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
-          <SubmitButton label={saving ? "Salvando..." : editingId ? "Atualizar item" : "Salvar item"} />
+          <SubmitButton disabled={freeLimitReached || saving} label={saving ? "Salvando..." : editingId ? "Atualizar item" : "Salvar item"} />
           {editingId ? (
             <button
               className="min-h-11 rounded-lg border border-black/10 px-4 font-black"
@@ -5736,11 +5755,11 @@ function ProposalDetailPanel({
           <div className="grid gap-3 rounded-lg border border-black/10 bg-white p-4">
             <p className="text-xs font-black uppercase text-slate-500">Documentos da proposta</p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-4 font-black text-blue-700" href={`/p/${proposal.publicSlug}/pdf`} target="_blank">
+              {canUseProposalPdf(currentPlan) ? <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-4 font-black text-blue-700" href={`/p/${proposal.publicSlug}/pdf`} target="_blank">
                 <FileDown size={16} />
                 Proposta em PDF
-              </a>
-              {proposal.status === "accepted" ? (
+              </a> : null}
+              {canUseProposalPdf(currentPlan) && proposal.status === "accepted" ? (
                 <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-50 px-4 font-black text-green-700" href={`/p/${proposal.publicSlug}/contrato`} target="_blank">
                   <FileDown size={16} />
                   Contrato
@@ -6002,7 +6021,7 @@ function ProposalCard({
             <Copy className="shrink-0" size={15} />
             Copiar link
           </button>
-          <a
+          {canUseProposalPdf(currentPlan) ? <a
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700"
             href={`/p/${proposal.publicSlug}/pdf`}
             target="_blank"
@@ -6010,7 +6029,7 @@ function ProposalCard({
           >
             <FileDown className="shrink-0" size={15} />
             PDF
-          </a>
+          </a> : null}
         </div>
       ) : null}
       <button
@@ -6192,9 +6211,9 @@ function ListCard({
   );
 }
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ disabled = false, label }: { disabled?: boolean; label: string }) {
   return (
-    <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="submit">
+    <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={disabled} type="submit">
       <Plus size={18} />
       {label}
     </button>
@@ -6205,6 +6224,15 @@ function FormError({ message }: { message: string }) {
   return (
     <div className="rounded-lg border border-rose-700/20 bg-rose-50 p-3 text-sm font-bold text-rose-900">
       {message}
+    </div>
+  );
+}
+
+function LimitNotice({ current, label, limit }: { current: number; label: string; limit: number }) {
+  const reached = current >= limit;
+  return (
+    <div className={`rounded-lg border p-3 text-sm font-bold ${reached ? "border-amber-700/20 bg-amber-50 text-amber-900" : "border-green-700/20 bg-green-50 text-green-900"}`}>
+      Plano grátis: {Math.min(current, limit)}/{limit} {label}.
     </div>
   );
 }

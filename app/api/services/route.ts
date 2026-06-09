@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
+import { FREE_SERVICE_LIMIT } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { cleanOptionalString, cleanString, cleanStringList, isValidHttpUrl, normalizePrice } from "@/lib/validation";
@@ -21,6 +22,12 @@ export async function POST(request: Request) {
   if (price === null || price < 0) return jsonError("Informe um valor válido para o serviço.");
 
   if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem inválida.");
+
+  const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id }, select: { plan: true } });
+  if (subscription?.plan === "free") {
+    const total = await prisma.serviceAsset.count({ where: { userId: session.id } });
+    if (total >= FREE_SERVICE_LIMIT) return jsonError(`Plano grátis permite cadastrar até ${FREE_SERVICE_LIMIT} serviços.`, 402);
+  }
 
   const item = await prisma.serviceAsset.create({
     data: {

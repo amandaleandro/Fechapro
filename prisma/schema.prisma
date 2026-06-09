@@ -339,6 +339,7 @@ enum ProposalStatus {
 }
 
 enum PlanCode {
+  free
   start
   essential
   professional

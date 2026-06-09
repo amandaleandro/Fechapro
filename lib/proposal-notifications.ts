@@ -6,11 +6,7 @@ type ProposalNotificationInput = {
   slug: string;
 };
 
-const eventText: Record<ProposalNotificationEvent, { title: string; action: string }> = {
-  viewed: {
-    title: "Proposta visualizada",
-    action: "abriu",
-  },
+const eventText: Record<Exclude<ProposalNotificationEvent, "viewed">, { title: string; action: string }> = {
   accepted: {
     title: "Proposta aprovada",
     action: "aprovou",
@@ -26,6 +22,15 @@ const eventText: Record<ProposalNotificationEvent, { title: string; action: stri
 };
 
 export function proposalNotification(event: ProposalNotificationEvent, input: ProposalNotificationInput) {
+  if (event === "viewed") {
+    return {
+      title: `${input.clientName} abriu sua proposta`,
+      body: `Sua proposta de ${input.serviceName} foi visualizada agora. Este pode ser um bom momento para fazer um contato rapido.`,
+      slug: input.slug,
+      tag: `proposal-${input.slug}-${event}`,
+    };
+  }
+
   const text = eventText[event];
 
   return {

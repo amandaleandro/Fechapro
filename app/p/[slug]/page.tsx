@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
+import { canUseProposalDocuments, canUseProposalPayments } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
-import { sendProposalFollowUpEmail } from "@/lib/email";
+import { sendProposalViewedEmail } from "@/lib/email";
 import { sendProposalPushNotification } from "@/lib/push";
 import { proposalNotification } from "@/lib/proposal-notifications";
 import { getSession } from "@/lib/session";
@@ -27,7 +28,7 @@ export default async function PublicProposalPage({
   const session = await getSession();
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
-    include: { satisfactionSurvey: true, user: { include: { brandProfile: true } } },
+    include: { satisfactionSurvey: true, user: { include: { brandProfile: true, subscription: true } } },
   });
 
   if (!proposal) notFound();
@@ -66,10 +67,6 @@ export default async function PublicProposalPage({
     }
   }
 
-  if (isFirstView && proposal.user.email) {
-    // follow-up email will be sent after we compute proposal counts below
-  }
-
   if (isFirstView) {
     await sendProposalPushNotification(
       proposal.userId,
@@ -82,7 +79,7 @@ export default async function PublicProposalPage({
   }
 
   const demoCategories = demoPortfolioCategories(proposal.publicSlug);
-  const [portfolio, testimonials, services, proposalCount, acceptedProposalCount] = await Promise.all([
+  const [portfolio, testimonials, services, acceptedProposalCount] = await Promise.all([
     prisma.portfolioAsset.findMany({
       where: { userId: proposal.userId, ...(demoCategories.length ? { category: { in: demoCategories } } : {}) },
       orderBy: { createdAt: "desc" },
@@ -98,19 +95,12 @@ export default async function PublicProposalPage({
       orderBy: { createdAt: "desc" },
       take: 4,
     }),
-    prisma.proposalAsset.count({ where: { userId: proposal.userId } }),
     prisma.proposalAsset.count({ where: { userId: proposal.userId, status: "accepted" } }),
   ]);
   const brand = proposal.user.brandProfile;
   const brandName = brand?.businessName || proposal.user.name;
   if (isFirstView && proposal.user.email) {
-    await sendProposalFollowUpEmail(
-      proposal.user.email,
-      proposal.user.name,
-      brandName,
-      proposalCount,
-      acceptedProposalCount
-    );
+    await sendProposalViewedEmail(proposal.user.email, proposal.user.name, proposal.clientName, proposal.serviceName, proposal.publicSlug);
   }
   const brandColor = brand?.primaryColor || "#22C55E";
   const brandSecondaryColor = brand?.secondaryColor || "#0F172A";
@@ -128,6 +118,8 @@ export default async function PublicProposalPage({
     : null;
   const acceptHref = hasDecision ? "#status" : "#aceite";
   const wantsPix = proposal.checkoutMode === "pix";
+  const documentsEnabled = canUseProposalDocuments(proposal.user.subscription);
+  const paymentsEnabled = canUseProposalPayments(proposal.user.subscription);
   const proposalPdfHref = `/p/${proposal.publicSlug}/pdf`;
   const contractPdfHref = `/p/${proposal.publicSlug}/contrato`;
   const acceptedDocumentHref = currentStatus === "accepted" ? contractPdfHref : proposalPdfHref;
@@ -282,10 +274,12 @@ export default async function PublicProposalPage({
                     Aceitar proposta
                   </a>
                 ) : null}
-                <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 px-5 font-black text-white" href={acceptedDocumentHref}>
-                  {acceptedDocumentLabel}
-                </a>
-                {currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
+                {documentsEnabled ? (
+                  <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 px-5 font-black text-white" href={acceptedDocumentHref}>
+                    {acceptedDocumentLabel}
+                  </a>
+                ) : null}
+                {documentsEnabled && currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
                   <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 bg-white/10 px-5 font-black text-white" href={`/p/${proposal.publicSlug}/recibo`}>
                     Recibo
                   </a>
@@ -318,7 +312,7 @@ export default async function PublicProposalPage({
                 <div className="mt-5 grid gap-2 border-t border-black/10 pt-4 text-sm">
                   <HeroDetail label="Cliente" value={proposal.clientName} />
                   <HeroDetail label="Entrega" value={proposal.deadline} />
-                  <HeroDetail label="Canal" value="Link online + PDF" />
+                  <HeroDetail label="Canal" value={documentsEnabled ? "Link online + PDF" : "Link online"} />
                 </div>
               </div>
               <div className="grid gap-2">
@@ -327,10 +321,12 @@ export default async function PublicProposalPage({
                     Aceitar online
                   </a>
                 ) : null}
-                <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black" href={acceptedDocumentHref}>
-                  {acceptedDocumentLabel}
-                </a>
-                {currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
+                {documentsEnabled ? (
+                  <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black" href={acceptedDocumentHref}>
+                    {acceptedDocumentLabel}
+                  </a>
+                ) : null}
+                {documentsEnabled && currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
                   <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/20 bg-green-50 px-4 text-center font-black text-green-800" href={`/p/${proposal.publicSlug}/recibo`}>
                     Recibo de pagamento
                   </a>
@@ -386,7 +382,7 @@ export default async function PublicProposalPage({
           </div>
 
           <aside className="grid gap-4">
-            <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            {paymentsEnabled ? <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Pagamento</p>
               <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : wantsPix ? "Pague com PIX" : "Pague com PIX ou cartão"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
@@ -405,7 +401,7 @@ export default async function PublicProposalPage({
                   Pagar agora
                 </a>
               )}
-            </section>
+            </section> : null}
 
             <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Próximos passos</p>
@@ -570,12 +566,12 @@ export default async function PublicProposalPage({
                   </p>
                 </div>
                 <div className="grid gap-2">
-                  <a className="grid min-h-11 place-items-center rounded-lg px-4 text-center font-black text-white" href={contractPdfHref} style={{ background: brandColor }} target="_blank">
+                  {documentsEnabled ? <a className="grid min-h-11 place-items-center rounded-lg px-4 text-center font-black text-white" href={contractPdfHref} style={{ background: brandColor }} target="_blank">
                     Abrir contrato em PDF
-                  </a>
-                  <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/30 bg-white px-4 text-center font-black text-green-900" href={contractPdfHref} target="_blank">
+                  </a> : null}
+                  {documentsEnabled ? <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/30 bg-white px-4 text-center font-black text-green-900" href={contractPdfHref} target="_blank">
                     Imprimir ou salvar
-                  </a>
+                  </a> : null}
                   {whatsappUrl ? (
                     <a className="grid min-h-11 place-items-center rounded-lg border border-green-700/30 bg-white px-4 text-center font-black text-green-900" href={whatsappUrl} target="_blank">
                       Enviar duvida pelo WhatsApp
@@ -612,8 +608,8 @@ export default async function PublicProposalPage({
         <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5" id="status">
           <div className="grid gap-3 sm:grid-cols-3">
             <PreviewBox label="Status" value={expired ? "Vencida" : labelStatus(currentStatus)} />
-            <PreviewBox label="Pagamento" value={proposal.paymentStatus === "paid" ? "Confirmado" : "Pendente"} />
-            <PreviewBox label="Formato" value="Online + PDF" />
+            <PreviewBox label="Pagamento" value={paymentsEnabled ? (proposal.paymentStatus === "paid" ? "Confirmado" : "Pendente") : "Desativado"} />
+            <PreviewBox label="Formato" value={documentsEnabled ? "Online + PDF" : "Online"} />
           </div>
           {currentStatus === "accepted" ? (
             <div className="mt-4 rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-900">
@@ -622,9 +618,9 @@ export default async function PublicProposalPage({
                 Aceito por {proposal.acceptedBy || proposal.clientName}
                 {proposal.acceptedAt ? ` em ${proposal.acceptedAt.toLocaleString("pt-BR")}` : ""}.
               </p>
-              <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg px-4 font-black text-white" href={acceptedDocumentHref} style={{ background: brandColor }}>
+              {documentsEnabled ? <a className="mt-3 inline-flex min-h-10 items-center justify-center rounded-lg px-4 font-black text-white" href={acceptedDocumentHref} style={{ background: brandColor }}>
                 Baixar {acceptedDocumentLabel.toLowerCase()}
-              </a>
+              </a> : null}
             </div>
           ) : null}
         </section>
@@ -764,9 +760,9 @@ export default async function PublicProposalPage({
 
       <div className="fp-proposal-mobile-bar fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-2xl shadow-slate-950/15 backdrop-blur sm:hidden">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2">
-          <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-3 text-center text-sm font-black text-slate-800" href={acceptedDocumentHref}>
+          {documentsEnabled ? <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-3 text-center text-sm font-black text-slate-800" href={acceptedDocumentHref}>
             PDF
-          </a>
+          </a> : null}
           <a className="grid min-h-11 place-items-center rounded-lg px-3 text-center text-sm font-black text-white" href={acceptHref} style={{ background: brandColor }}>
             {hasDecision ? "Ver status" : "Aceitar"}
           </a>

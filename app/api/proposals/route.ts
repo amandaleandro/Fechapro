@@ -3,7 +3,7 @@ import { jsonError, slugify } from "@/lib/api";
 import { isAdminEmail } from "@/lib/admin";
 import { sendProposalSentToClientEmail } from "@/lib/email";
 import { blockedSubscriptionMessage, canUsePaidFeatures, planLimits } from "@/lib/billing-access";
-import { accumulatedProposalLimit, currentMonthRange, isUnlimitedProposalLimit, plans } from "@/lib/plans";
+import { accumulatedProposalLimit, currentMonthRange, FREE_SERVICE_LIMIT, isUnlimitedProposalLimit, plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { filterReadyProposalTemplates, findProposalTemplate } from "@/lib/proposal-templates";
@@ -103,7 +103,12 @@ export async function POST(request: Request) {
   const validUntil = cleanOptionalString(body.validUntil);
   const clientEmail = cleanOptionalString(body.clientEmail);
   const clientPhone = cleanOptionalString(body.clientPhone);
-  const checkoutMode = body.checkoutMode === "pix" ? "pix" : "mercadopago";
+  const subscription = await prisma.planSubscription.upsert({
+    where: { userId: session.id },
+    create: { userId: session.id, plan: "start", status: "pending" },
+    update: {},
+  });
+  const checkoutMode = subscription.plan === "free" ? "mercadopago" : body.checkoutMode === "pix" ? "pix" : "mercadopago";
   const serviceName = cleanString(body.serviceName || template?.serviceName || "");
   const price = Number(body.price ?? template?.price ?? 0);
   const deadline = cleanString(body.deadline || template?.deadline || "");
@@ -142,12 +147,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const subscription = await prisma.planSubscription.upsert({
-    where: { userId: session.id },
-    create: { userId: session.id, plan: "start", status: "pending" },
-    update: {},
-  });
-
   if (!isAdmin && !canUsePaidFeatures(subscription)) {
     return jsonError(blockedSubscriptionMessage(subscription.status), 402);
   }
@@ -176,7 +175,13 @@ export async function POST(request: Request) {
     select: { id: true },
   });
 
-  if (!existingService) {
+  let canCreateCatalogService = true;
+  if (!existingService && subscription.plan === "free") {
+    const serviceCount = await prisma.serviceAsset.count({ where: { userId: session.id } });
+    canCreateCatalogService = serviceCount < FREE_SERVICE_LIMIT;
+  }
+
+  if (!existingService && canCreateCatalogService) {
     await prisma.serviceAsset.create({
       data: {
         userId: session.id,

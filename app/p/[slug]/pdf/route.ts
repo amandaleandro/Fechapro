@@ -4,6 +4,7 @@ import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import { notFound } from "next/navigation";
 import sharp from "sharp";
 import { slugBase } from "@/lib/api";
+import { canUseProposalDocuments } from "@/lib/billing-access";
 import { readLocalUploadFile } from "@/lib/local-upload-file";
 import { prisma } from "@/lib/prisma";
 
@@ -31,10 +32,11 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
   const { slug } = await context.params;
   const proposal = await prisma.proposalAsset.findUnique({
     where: { publicSlug: slug },
-    include: { user: { include: { brandProfile: true } } },
+    include: { user: { include: { brandProfile: true, subscription: true } } },
   });
 
   if (!proposal) notFound();
+  if (!canUseProposalDocuments(proposal.user.subscription)) notFound();
 
   const [portfolio, serviceImages, testimonials] = await Promise.all([
     findProposalPortfolio(proposal.userId, proposal.publicSlug),
