@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
-import { artPacks, plans, type ArtPackCode, type PlanCode } from "@/lib/plans";
+import { artPacks, isPurchasablePlan, plans, type ArtPackCode, type PlanCode } from "@/lib/plans";
 import { requireSession } from "@/lib/session";
 import { createArtPackCheckout, createPlanCheckout } from "@/lib/mercadopago";
 import { prisma } from "@/lib/prisma";
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     }
   }
 
-  if (!body.plan || !plans[body.plan]?.public) {
+  if (!body.plan || !isPurchasablePlan(body.plan)) {
     return jsonError("Plano inválido.");
   }
 

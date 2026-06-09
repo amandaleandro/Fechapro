@@ -7,6 +7,7 @@ import { hashPassword, setSession } from "@/lib/session";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { isValidEmail } from "@/lib/validation";
 import { isBusinessSegment } from "@/lib/proposal-templates";
+import { plans, type PlanCode } from "@/lib/plans";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -72,6 +73,8 @@ export async function POST(request: Request) {
         provider: "mercadopago",
         providerCheckoutId: signupPayment.providerCheckoutId,
         status: "active",
+        // Lote único de artes de boas-vindas dos planos vitalícios (não recorrente).
+        artCreditBalance: plans[signupPayment.plan as PlanCode]?.welcomeArtCredits ?? 0,
       },
     });
     await tx.signupPayment.update({

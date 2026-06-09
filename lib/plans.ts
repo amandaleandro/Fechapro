@@ -29,6 +29,10 @@ export const plans: Record<
     proposalLimit: number;
     artLimit: number;
     public: boolean;
+    /** Vendável pelo checkout mesmo sem aparecer na grade de preços pública (ex.: ofertas Fundador). */
+    sellable?: boolean;
+    /** Lote único de créditos de arte concedido na ativação (planos vitalícios). Não recorrente. */
+    welcomeArtCredits?: number;
     features: string[];
     serviceEntitlements?: string[];
     excluded?: string[];
@@ -158,14 +162,16 @@ export const plans: Record<
   },
   founder_start: {
     code: "founder_start",
-    name: "Start Fundador",
+    name: "Start",
     price: "R$ 497",
     priceCents: 49700,
     billingMode: "one_time",
     annualPrice: "pagamento único · acesso vitalício",
     proposalLimit: 50,
-    artLimit: 5,
+    artLimit: 0,
+    welcomeArtCredits: 5,
     public: false,
+    sellable: true,
     features: [
       "50 propostas por mês",
       "Link profissional para a proposta",
@@ -173,7 +179,7 @@ export const plans: Record<
       "Aceite online",
       "PIX e Mercado Pago integrados",
       "Cadastro de marca e clientes",
-      "5 artes de divulgação por mês",
+      "5 artes de divulgação de boas-vindas",
       "Acesso vitalício — sem mensalidade",
     ],
     excluded: ["Não inclui portfólio avançado", "Não inclui mini site"],
@@ -194,54 +200,60 @@ export const plans: Record<
   },
   founder_professional: {
     code: "founder_professional",
-    name: "Profissional Fundador",
+    name: "Profissional",
     price: "R$ 997",
     priceCents: 99700,
     billingMode: "one_time",
     annualPrice: "pagamento único · acesso vitalício",
     proposalLimit: 200,
-    artLimit: 15,
+    artLimit: 0,
+    welcomeArtCredits: 15,
     public: false,
+    sellable: true,
     features: [
-      "Tudo do Start Fundador",
+      "Tudo do Start",
       "200 propostas por mês",
       "Portfólio dentro da proposta",
       "Depoimentos de clientes",
       "Rastreamento avançado de visualizações e cliques",
-      "15 artes de divulgação por mês",
+      "15 artes de divulgação de boas-vindas",
       "Acesso vitalício — sem mensalidade",
     ],
     excluded: ["Não inclui mini site"],
   },
   founder_complete_site: {
     code: "founder_complete_site",
-    name: "Pro Site Fundador",
+    name: "Pro Site",
     price: "R$ 1.497",
     priceCents: 149700,
     billingMode: "one_time",
     annualPrice: "pagamento único · acesso vitalício",
     proposalLimit: 200,
-    artLimit: 20,
+    artLimit: 0,
+    welcomeArtCredits: 20,
     public: false,
+    sellable: true,
     features: [
-      "Tudo do Profissional Fundador",
+      "Tudo do Profissional",
       "Mini site profissional",
       "Domínio próprio incluído",
       "200 propostas por mês",
-      "20 artes de divulgação por mês",
+      "20 artes de divulgação de boas-vindas",
       "Acesso vitalício — sem mensalidade",
     ],
   },
   founder: {
     code: "founder",
-    name: "Estrutura Completa Fundador",
+    name: "Estrutura Completa",
     price: "R$ 1.997",
     priceCents: 199700,
     billingMode: "one_time",
     annualPrice: "pagamento único · acesso vitalício",
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
-    artLimit: 50,
+    artLimit: 0,
+    welcomeArtCredits: 50,
     public: false,
+    sellable: true,
     features: [
       "Tudo ilimitado",
       "Mini site profissional",
@@ -261,6 +273,12 @@ export const plans: Record<
 };
 
 export const publicPlans = Object.values(plans).filter((plan) => plan.public);
+
+/** Plano pode ser comprado pelo checkout (listado na grade pública OU vendável por link direto, como as ofertas Fundador). */
+export function isPurchasablePlan(code: PlanCode) {
+  const plan = plans[code];
+  return Boolean(plan && (plan.public || plan.sellable));
+}
 
 export const artPacks: Record<
   ArtPackCode,

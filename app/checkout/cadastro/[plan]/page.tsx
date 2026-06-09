@@ -3,13 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard, ShieldCheck } from "lucide-react";
 import { SignupCheckoutClient } from "@/app/checkout/cadastro/[plan]/SignupCheckoutClient";
-import { formatProposalLimit, plans, type PlanCode } from "@/lib/plans";
+import { formatProposalLimit, isPurchasablePlan, plans, type PlanCode } from "@/lib/plans";
 
 export default async function SignupCheckoutPage({ params }: { params: Promise<{ plan: string }> }) {
   const { plan: rawPlan } = await params;
   if (!isPlanCode(rawPlan)) notFound();
   const plan = plans[rawPlan];
-  if (!plan.public) notFound();
+  if (!isPurchasablePlan(rawPlan)) notFound();
   const oneTime = plan.billingMode === "one_time";
   const recurringPrice = plan.maintenancePrice || plan.price;
   const hasSetup = Boolean(plan.maintenancePrice);

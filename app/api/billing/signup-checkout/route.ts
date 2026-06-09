@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { createSignupPlanCheckout } from "@/lib/mercadopago";
-import { plans, type PlanCode } from "@/lib/plans";
+import { isPurchasablePlan, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { isValidEmail } from "@/lib/validation";
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const email = body?.email?.trim().toLowerCase();
   const origin = new URL(request.url).origin;
 
-  if (!plan || !plans[plan]?.public) {
+  if (!plan || !isPurchasablePlan(plan)) {
     return jsonError("Plano inválido.");
   }
   if (!email || !isValidEmail(email)) {

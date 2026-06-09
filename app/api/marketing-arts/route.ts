@@ -106,15 +106,19 @@ export async function POST(request: Request) {
     },
   });
 
-  const totalArtLimit = plan.artLimit + subscription.artCreditBalance;
-  const shouldUseExtraCredit = usedThisMonth >= plan.artLimit;
+  // Primeiro consome o lote mensal do plano (renovável); só depois usa os créditos
+  // avulsos/de boas-vindas (artCreditBalance), que são acumulativos e não recorrentes.
+  const withinMonthlyAllowance = usedThisMonth < plan.artLimit;
+  const hasCredits = subscription.artCreditBalance > 0;
+  const shouldUseExtraCredit = !withinMonthlyAllowance;
 
-  if (!isAdmin && totalArtLimit <= 0) {
-    return jsonError("Artes de divulgacao estao disponiveis nos planos acima de R$ 100 ou em pacotes individuais.", 402);
-  }
-
-  if (!isAdmin && usedThisMonth >= totalArtLimit) {
-    return jsonError(`Limite de ${totalArtLimit} artes atingido. Compre um pacote individual para criar mais.`, 402);
+  if (!isAdmin && !withinMonthlyAllowance && !hasCredits) {
+    return jsonError(
+      plan.artLimit > 0
+        ? "Limite de artes atingido. Compre um pacote individual para criar mais."
+        : "Artes de divulgação estão disponíveis em pacotes individuais ou em planos com artes incluídas.",
+      402,
+    );
   }
 
   const item = await prisma.marketingArtAsset.create({
