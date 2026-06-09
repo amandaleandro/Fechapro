@@ -9,12 +9,10 @@ import {
   Eye,
   FileDown,
   FileText,
-  Layers3,
-  Megaphone,
   MessageSquareQuote,
-  Palette,
   Plus,
   QrCode,
+  XCircle,
 } from "lucide-react";
 
 export function LandingMetric({ label, value }: { label: string; value: string }) {
@@ -55,7 +53,7 @@ export function AuthScreen() {
   const founderPlans: FounderPlan[] = [
     {
       code: "founder_start",
-      name: "Start",
+      name: "Essencial",
       monthlyPrice: "R$ 97/mês",
       annualMonthly: "R$ 1.164/ano",
       price: "R$ 497",
@@ -91,7 +89,7 @@ export function AuthScreen() {
         "Portfólio e depoimentos direto na proposta. Você sabe exatamente quando o cliente abriu, clicou e está pronto para fechar.",
       items: [
         "200 propostas por mês",
-        "Tudo do Start",
+        "Tudo do Essencial",
         "Portfólio dentro da proposta",
         "Depoimentos de clientes",
         "Rastreamento avançado de visualizações",
@@ -103,7 +101,7 @@ export function AuthScreen() {
     },
     {
       code: "founder_complete_site",
-      name: "Pro Site",
+      name: "Completo com site",
       monthlyPrice: "R$ 297/mês",
       annualMonthly: "R$ 3.564/ano",
       price: "R$ 1.497",
@@ -126,7 +124,7 @@ export function AuthScreen() {
     },
     {
       code: "founder",
-      name: "Estrutura Completa",
+      name: "Estrutura",
       monthlyPrice: "R$ 497/mês",
       annualMonthly: "R$ 5.964/ano",
       price: "R$ 1.997",
@@ -152,85 +150,105 @@ export function AuthScreen() {
 
   const features = [
     {
-      label: "Proposta",
-      title: "O cliente abre o link e já entende tudo",
-      text: "Marca, portfólio, escopo, prazo e valor numa página só. Ele não precisa te perguntar nada antes de decidir.",
+      label: "Proposta profissional",
+      title: "Mostre valor antes de falar de preço",
+      text: "Serviços, escopo, prazo, portfólio e depoimentos em um link claro para enviar pelo WhatsApp.",
       icon: FileText,
     },
     {
-      label: "Rastreamento",
-      title: "Você sabe exatamente o que aconteceu",
-      text: "Abriu? Clicou? Aceitou? Cada passo fica registrado. Você para de mandar 'oi, viu minha proposta?' no escuro.",
+      label: "Visualização em tempo real",
+      title: "Saiba quando o cliente abriu",
+      text: "Acompanhe quem visualizou para priorizar os contatos com maior chance de fechar.",
       icon: Eye,
     },
     {
-      label: "Pagamento",
-      title: "PIX e Mercado Pago dentro da proposta",
-      text: "O cliente aceita e já paga no mesmo link. Sem você precisar mandar chave PIX depois, nem conferir comprovante.",
+      label: "Follow-up no momento certo",
+      title: "Fale com contexto, sem parecer cobrança",
+      text: "Use a visualização como sinal para retomar a conversa enquanto a proposta ainda está fresca.",
+      icon: Bell,
+    },
+    {
+      label: "Aceite e pagamento",
+      title: "Transforme interesse em confirmação",
+      text: "O cliente pode aceitar online e seguir para o pagamento no mesmo fluxo.",
       icon: CreditCard,
-    },
-    {
-      label: "Identidade visual",
-      title: "Sua logo em cada proposta enviada",
-      text: "Logo, cor, WhatsApp e bio comercial aparecem em tudo. O cliente percebe que é uma empresa — não uma mensagem solta.",
-      icon: Palette,
-    },
-    {
-      label: "Templates",
-      title: "22 modelos por nicho, prontos pra usar",
-      text: "Design, saúde, eventos, reformas, marketing, beleza. Você não começa do zero — só ajusta o que é seu.",
-      icon: Layers3,
-    },
-    {
-      label: "Artes de divulgação",
-      title: "Material pronto pra postar no Instagram",
-      text: "Créditos de arte inclusos no plano. Você divulga seus serviços, aparece mais, e volta pro FechaPro quando o cliente entra em contato.",
-      icon: Megaphone,
     },
   ];
 
+  const extras = [
+    "Portfólio e depoimentos",
+    "PDF automático",
+    "Pagamento integrado",
+    "Cadastro de marca e clientes",
+    "Templates por nicho",
+    "Histórico de follow-up",
+  ];
+
+  const comparison = [
+    {
+      title: "Orçamento comum",
+      tone: "danger",
+      items: [
+        "Mostra apenas o preço",
+        "Perde-se no WhatsApp",
+        "Facilita comparação com concorrentes",
+        "Não mostra portfólio ou depoimentos",
+        "Você não sabe se o cliente abriu",
+      ],
+    },
+    {
+      title: "Proposta com FechaPro",
+      tone: "success",
+      items: [
+        "Apresenta o valor do serviço",
+        "Reúne tudo em um link",
+        "Mostra portfólio e depoimentos",
+        "Permite aceite online",
+        "Avisa quando o cliente visualiza",
+      ],
+    },
+  ];
   const problems = [
     {
-      title: "Você manda o preço e o cliente some",
-      text: "Não sabe se leu, se comparou com outro, se vai voltar. Fica esperando sem saber o que fazer.",
+      title: "Não sabe se o cliente abriu",
+      text: "A proposta foi enviada, mas você não sabe se ela recebeu atenção.",
       icon: MessageSquareQuote,
     },
     {
-      title: "Planilha, print ou mensagem solta",
-      text: "Sem logo, sem escopo escrito, sem nada além do número. É difícil justificar valor assim.",
+      title: "Não sabe quando fazer follow-up",
+      text: "A mensagem sai cedo demais, tarde demais ou sem contexto.",
+      icon: Bell,
+    },
+    {
+      title: "Perde oportunidades por agir tarde",
+      text: "Clientes interessados esfriam antes de você perceber o melhor momento.",
       icon: FileDown,
     },
     {
-      title: "Aceite no WhatsApp, PIX separado",
-      text: "O cliente fala 'ok' numa mensagem e você ainda precisa mandar a chave PIX depois. Parece amador.",
+      title: "Fica cobrando resposta sem contexto",
+      text: "O contato vira cobrança em vez de continuação natural da proposta.",
       icon: QrCode,
-    },
-    {
-      title: "Follow-up sempre no timing errado",
-      text: "Você manda mensagem sem saber se ele nem abriu ainda. Ou fica esperando e perde para outro.",
-      icon: Bell,
     },
   ];
 
   const steps = [
     {
-      title: "Configura a marca uma vez",
-      text: "Logo, cor, WhatsApp e PIX. Em 30 minutos está pronto e não mexe mais.",
+      title: "Configure sua marca",
+      text: "Adicione sua logo, cores, WhatsApp e informações comerciais.",
     },
     {
-      title: "Cria a proposta",
-      text: "Escolhe o template, preenche o serviço, valor e prazo. Menos de 5 minutos.",
+      title: "Cadastre seus serviços",
+      text: "Inclua descrição, preço, fotos, condições e detalhes importantes.",
     },
     {
-      title: "Manda o link no WhatsApp",
-      text: "Um link. O cliente abre no celular — sem baixar nada, sem cadastrar nada.",
+      title: "Crie a proposta",
+      text: "Escolha o cliente, personalize a apresentação e organize o escopo.",
     },
     {
-      title: "Acompanha no painel",
-      text: "Você vê se abriu, quando clicou, se aceitou e quando pagou.",
+      title: "Envie o link e acompanhe",
+      text: "Veja quando o cliente abriu, faça follow-up e receba o aceite online.",
     },
   ];
-
   const testimonials = [
     {
       name: "Ana Clara R.",
@@ -259,7 +277,7 @@ export function AuthScreen() {
     ],
     [
       "Uma proposta fechada já paga o plano?",
-      "Para a maioria dos profissionais, sim. Se o seu ticket médio é R$ 500 e você fecha 1 proposta a mais por causa do FechaPro, o plano Start se pagou em 24 horas. No plano Profissional, 2 projetos a mais já cobrem o investimento inteiro.",
+      "Para a maioria dos profissionais, sim. Se o seu ticket médio é R$ 500 e você fecha 1 proposta a mais por causa do FechaPro, o plano Essencial se pagou em 24 horas. No plano Profissional, 2 projetos a mais já cobrem o investimento inteiro.",
     ],
     [
       "Funciona para o meu nicho?",
@@ -275,11 +293,11 @@ export function AuthScreen() {
     ],
     [
       "Posso cancelar o plano mensal?",
-      "Sim, sem multa. O teste gratis nao tem cobranca automatica. Se comprar um plano pago, voce escolhe o caminho de pagamento no checkout.",
+      "Sim, sem multa. O teste grátis não tem cobrança automática. Se comprar um plano pago, você escolhe o caminho de pagamento no checkout.",
     ],
     [
       "O que acontece depois que eu compro?",
-      "Você recebe acesso por e-mail. Start e Profissional em até 24h úteis. Pro Site e Estrutura Completa recebem formulário de briefing e nossa equipe agenda a configuração inicial em até 5 dias úteis.",
+      "Você recebe acesso por e-mail. Essencial e Profissional em até 24h úteis. Completo com site e Estrutura recebem formulário de briefing e nossa equipe agenda a configuração inicial em até 5 dias úteis.",
     ],
   ];
 
@@ -293,7 +311,7 @@ export function AuthScreen() {
         operatingSystem: "Web",
         url: process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br",
         description:
-          "Propostas profissionais com link, PDF, aceite online, pagamento integrado, rastreamento e artes de divulgação para prestadores de serviço.",
+          "Plataforma para criar propostas profissionais, acompanhar visualizações, fazer follow-up no momento certo e fechar com aceite online.",
         offers: founderPlans.map((plan) => ({
           "@type": "Offer",
           name: plan.name,
@@ -324,10 +342,10 @@ export function AuthScreen() {
         {/* Urgency bar */}
         <div className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black leading-snug text-[#5c3a00] sm:text-sm">
           <span>
-            Oferta vitalicia estendida ate {OFERTA.encerra} devido ao sucesso. Teste gratis ou garanta o acesso sem mensalidade.
+            Oferta vitalícia estendida até {OFERTA.encerra} devido ao sucesso. Teste grátis ou garanta o acesso sem mensalidade.
           </span>
           <a href="#planos-pagos" className="underline decoration-2 underline-offset-2 hover:text-[#3d2700]">
-            Ver planos vitalicios
+            Ver planos vitalícios
           </a>
         </div>
 
@@ -361,7 +379,7 @@ export function AuthScreen() {
                 className="rounded-lg bg-green-700 px-4 py-2 text-sm font-black text-white"
                 href="/cadastro?plan=free"
               >
-                Testar gratis
+                Testar grátis
               </a>
             </div>
           </div>
@@ -373,7 +391,7 @@ export function AuthScreen() {
           <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
               <div className="flex flex-wrap gap-2">
-                {["Sem app pra instalar", "Funciona no celular", "Cliente não precisa de conta"].map((tag) => (
+                {["Proposta profissional", "Aviso de visualização", "Aceite online"].map((tag) => (
                   <span
                     className="rounded-full border border-green-700/20 bg-green-50 px-3 py-1 text-xs font-black text-green-800"
                     key={tag}
@@ -383,32 +401,36 @@ export function AuthScreen() {
                 ))}
               </div>
               <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight tracking-normal sm:text-6xl">
-                Pare de mandar preço solto.{" "}
-                <span className="text-green-700">Comece a fechar com proposta.</span>
+                Pare de enviar propostas e ficar no escuro.{" "}
+                <span className="text-green-700">Saiba quando o cliente visualizou e faça o follow-up na hora certa.</span>
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
-                Proposta profissional com link, aceite online e PIX no mesmo lugar. Teste gratis criando ate
-                {` ${OFERTA.propostasGratis} propostas`} ou aproveite a oferta vitalicia estendida ate {OFERTA.encerra}.
+                Crie propostas profissionais que mostram por que vale contratar você, com serviços, portfólio, aceite online e acompanhamento de visualização em um único link.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-700 px-6 font-black text-white shadow-lg shadow-green-900/15"
                   href="/cadastro?plan=free"
                 >
-                  Testar gratis com 3 propostas
+                  Criar minha proposta grátis
                 </a>
                 <a
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-black/10 px-6 font-black text-slate-700"
-                  href="#planos"
+                  className="inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-green-700 px-6 font-black text-green-800 hover:bg-green-50"
+                  href="#planos-pagos"
                 >
-                  Garantir vitalicio
+                  Quero meu acesso vitalício
                 </a>
+              </div>
+              <p className="mt-3 text-sm font-bold text-slate-600">Sem cartão. Crie sua conta e envie até {OFERTA.propostasGratis} propostas para testar.</p>
+              <div className="mt-5 inline-flex flex-wrap items-center gap-2 rounded-lg border border-green-700/20 bg-green-50 px-4 py-2.5 text-sm font-black text-green-800">
+                <CheckCircle2 className="shrink-0" size={18} />
+                <span>Acesso vitalício • pagamento único • sem mensalidade</span>
               </div>
               <div className="mt-10 grid gap-3 sm:grid-cols-3">
                 {[
-                  ["Link + PDF", "Proposta com link para abrir no celular e PDF para guardar e comparar"],
-                  ["PIX + Mercado Pago", "Aceite e pagamento no mesmo link — sem precisar de outro sistema"],
-                  ["Rastreamento em tempo real", "Você vê quando abriu, clicou, aceitou e pagou"],
+                  ["Enviar", "Proposta com link profissional para abrir no celular"],
+                  ["Acompanhar", "Aviso de visualização e histórico de cada cliente"],
+                  ["Fechar", "Follow-up com contexto, aceite online e pagamento"],
                 ].map(([title, desc]) => (
                   <div className="rounded-lg border border-black/10 bg-white p-4 shadow-sm" key={title}>
                     <strong className="block text-base font-black text-green-800">{title}</strong>
@@ -431,41 +453,56 @@ export function AuthScreen() {
             <div className="w-full rounded-lg border border-black/10 bg-white p-4 shadow-2xl shadow-green-950/10 relative z-0">
               <div className="rounded-lg bg-slate-950 p-4 text-white">
                 <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
-                  <strong>Proposta Comercial</strong>
+                  <strong>Painel de acompanhamento</strong>
                   <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
-                    Visualizada agora
+                    Agora
                   </span>
                 </div>
                 <div className="mt-5 grid gap-4 rounded-lg bg-white p-5 text-slate-950">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-12 w-12 place-items-center rounded-lg bg-green-700 text-lg font-black text-white">
-                      LS
-                    </span>
-                    <div>
-                      <p className="text-xs font-black uppercase text-green-700">Lumina Studio</p>
-                      <h2 className="text-2xl font-black">Identidade visual completa</h2>
+                  <div className="rounded-lg border border-green-700/20 bg-green-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-green-700 text-white">
+                        <Eye size={22} />
+                      </span>
+                      <div>
+                        <p className="text-lg font-black text-green-950">Marcos visualizou sua proposta agora.</p>
+                        <p className="mt-1 text-sm font-bold text-green-800">Proposta: Serviço de fotografia</p>
+                        <p className="text-sm font-bold text-green-800">Visualizada hoje às 14h32</p>
+                      </div>
                     </div>
                   </div>
                   <div className="grid gap-3 rounded-lg bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black uppercase text-green-700">Próxima ação sugerida</p>
+                        <h2 className="text-2xl font-black">Fazer follow-up agora</h2>
+                      </div>
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">
+                        Cliente quente
+                      </span>
+                    </div>
                     <p className="text-sm font-black text-slate-900">
-                      Logo, paleta, tipografia, manual e 2 rodadas de ajuste.
+                      "Vi que você conseguiu acessar a proposta. Ficou alguma dúvida sobre o serviço ou sobre a condição apresentada?"
                     </p>
                     <div className="grid gap-2 sm:grid-cols-3">
-                      <span className="rounded-lg bg-green-50 p-3 text-sm font-black text-green-800">R$ 1.800</span>
-                      <span className="rounded-lg bg-blue-50 p-3 text-sm font-black text-blue-800">10 dias úteis</span>
-                      <span className="rounded-lg bg-amber-50 p-3 text-sm font-black text-amber-800">50% + 50%</span>
+                      <span className="rounded-lg bg-green-100 p-3 text-sm font-black text-green-800">Visualizada</span>
+                      <span className="rounded-lg bg-blue-50 p-3 text-sm font-black text-blue-800">WhatsApp pronto</span>
+                      <span className="rounded-lg bg-amber-50 p-3 text-sm font-black text-amber-800">Aceite pendente</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="h-20 rounded-lg bg-gradient-to-br from-emerald-600 to-slate-950" />
-                    <div className="h-20 rounded-lg bg-gradient-to-br from-blue-700 to-emerald-500" />
-                    <div className="h-20 rounded-lg bg-gradient-to-br from-slate-200 to-white ring-1 ring-black/10" />
+                  <div className="grid gap-2">
+                    {["Ana ainda não abriu", "Marcos visualizou agora", "Clara aceitou online"].map((item) => (
+                      <div className="flex items-center justify-between rounded-lg border border-black/10 p-3 text-sm font-bold" key={item}>
+                        <span>{item}</span>
+                        <span className="h-2.5 w-2.5 rounded-full bg-green-600" />
+                      </div>
+                    ))}
                   </div>
                   <button
                     className="min-h-12 rounded-lg bg-green-700 font-black text-white"
                     type="button"
                   >
-                    Aceitar proposta
+                    Abrir conversa no WhatsApp
                   </button>
                 </div>
               </div>
@@ -474,43 +511,78 @@ export function AuthScreen() {
           </div>
         </section>
 
-        {/* Before / After */}
+        {/* Comparison */}
         <section className="px-4 py-16">
-          <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-2">
-            <article className="rounded-lg border border-rose-200 bg-white p-6 shadow-sm">
-              <p className="text-xs font-black uppercase text-rose-700">Hoje — Preço solto no WhatsApp</p>
-              <div className="mt-5 rounded-lg bg-[#e9f7ef] p-4 text-slate-900">
-                <p className="max-w-sm rounded-lg bg-white px-4 py-3 text-sm font-bold shadow-sm">
-                  Fica R$ 850. Faço em 5 dias.
-                </p>
-              </div>
-              <h2 className="mt-6 text-2xl font-black">O cliente compara só preço.</h2>
-              <p className="mt-2 leading-7 text-slate-600">
-                Sem escopo, sem prova, sem condição de pagamento. Você vira mais um número e a conversa
-                termina em desconto ou silêncio.
-              </p>
-            </article>
-            <article className="rounded-lg border border-green-700 bg-slate-950 p-6 text-white shadow-xl shadow-green-950/20">
-              <p className="text-xs font-black uppercase text-green-300">Com FechaPro — Proposta profissional</p>
-              <div className="mt-5 rounded-lg bg-white p-4 text-slate-950">
-                <div className="flex items-center justify-between gap-3">
-                  <strong>Instalação elétrica residencial</strong>
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-800">
-                    Link aberto
-                  </span>
-                </div>
-                <div className="mt-4 grid gap-2 text-sm font-bold text-slate-700">
-                  <span>Escopo: revisão, instalação e teste de segurança</span>
-                  <span>Prazo: 5 dias úteis</span>
-                  <span>Pagamento: PIX ou Mercado Pago</span>
-                  <span>PDF + aceite online</span>
-                </div>
-              </div>
-              <h2 className="mt-6 text-2xl font-black">O cliente entende valor antes de perguntar desconto.</h2>
-              <p className="mt-2 leading-7 text-white/70">
-                Marca, fotos, itens inclusos, prazo e pagamento — tudo antes do follow-up. A proposta vende sozinha.
-              </p>
-            </article>
+          <div className="mx-auto max-w-7xl">
+            <p className="text-xs font-black uppercase text-green-700">Orçamento x proposta</p>
+            <h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">
+              O cliente decide melhor quando entende valor, não só preço.
+            </h2>
+            <div className="mt-10 grid gap-5 lg:grid-cols-2">
+              {comparison.map((group) => (
+                <article
+                  className={`rounded-lg border p-6 shadow-sm ${
+                    group.tone === "success"
+                      ? "border-green-700 bg-slate-950 text-white"
+                      : "border-rose-200 bg-white text-slate-950"
+                  }`}
+                  key={group.title}
+                >
+                  <h3 className="text-2xl font-black">{group.title}</h3>
+                  <ul className="mt-6 grid gap-3">
+                    {group.items.map((item) => (
+                      <li className="flex gap-3 text-sm font-bold" key={item}>
+                        {group.tone === "success" ? (
+                          <CheckCircle2 className="mt-0.5 shrink-0 text-green-400" size={18} />
+                        ) : (
+                          <XCircle className="mt-0.5 shrink-0 text-rose-500" size={18} />
+                        )}
+                        <span className={group.tone === "success" ? "text-white/85" : "text-slate-700"}>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-10 grid gap-5 lg:grid-cols-2">
+              <article className="rounded-lg border border-rose-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-black uppercase text-rose-600">O que custa ficar no improviso</p>
+                <h3 className="mt-2 text-2xl font-black text-slate-950">Cada proposta solta é dinheiro saindo sem você perceber.</h3>
+                <ul className="mt-6 grid gap-3">
+                  {[
+                    "Clientes que somem depois do orçamento",
+                    "Follow-up feito tarde demais ou no escuro",
+                    "Trabalho desvalorizado por falta de apresentação",
+                    "Tempo perdido montando tudo manualmente",
+                    "Mais uma mensalidade pesando no orçamento",
+                  ].map((item) => (
+                    <li className="flex gap-3 text-sm font-bold" key={item}>
+                      <XCircle className="mt-0.5 shrink-0 text-rose-500" size={18} />
+                      <span className="text-slate-700">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+              <article className="rounded-lg border border-green-700 bg-slate-950 p-6 text-white shadow-sm">
+                <p className="text-xs font-black uppercase text-green-300">O que você ganha com o vitalício</p>
+                <h3 className="mt-2 text-2xl font-black">Pague uma vez e o ganho continua seu.</h3>
+                <ul className="mt-6 grid gap-3">
+                  {[
+                    "Proposta profissional que mostra valor",
+                    "Aviso de quando o cliente visualizou",
+                    "Follow-up no momento certo, com contexto",
+                    "Aceite online e pagamento no mesmo link",
+                    "Acesso sem mensalidade — uma venda já paga",
+                  ].map((item) => (
+                    <li className="flex gap-3 text-sm font-bold" key={item}>
+                      <CheckCircle2 className="mt-0.5 shrink-0 text-green-400" size={18} />
+                      <span className="text-white/85">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            </div>
           </div>
         </section>
 
@@ -519,8 +591,11 @@ export function AuthScreen() {
           <div className="mx-auto max-w-7xl">
             <p className="text-xs font-black uppercase text-rose-400">O que acontece hoje</p>
             <h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">
-              Manda o preço no WhatsApp. O cliente não responde mais.
+              Você envia a proposta e depois fica no escuro?
             </h2>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-white/70">
+              O problema não é apenas enviar a proposta. É não saber o que aconteceu depois.
+            </p>
             <div className="mt-10 grid gap-3 md:grid-cols-4">
               {problems.map((item) => (
                 <article
@@ -539,11 +614,11 @@ export function AuthScreen() {
         {/* Features */}
         <section id="funcionalidades" className="px-4 py-20">
           <div className="mx-auto max-w-7xl">
-            <p className="text-xs font-black uppercase text-green-700">O que o FechaPro faz</p>
+            <p className="text-xs font-black uppercase text-green-700">Principais recursos</p>
             <h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">
-              Seis recursos que mudam como você envia orçamento.
+              Quatro pilares para enviar proposta, acompanhar interesse e fechar com menos atrito.
             </h2>
-            <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {features.map((feature) => (
                 <article
                   className="rounded-lg border border-black/10 bg-white p-6 shadow-sm"
@@ -556,6 +631,14 @@ export function AuthScreen() {
                 </article>
               ))}
             </div>
+            <div className="mt-8 rounded-lg border border-black/10 bg-white p-5">
+              <p className="text-xs font-black uppercase text-slate-500">E ainda tem mais</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {extras.map((item) => (
+                  <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700" key={item}>{item}</span>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -564,7 +647,7 @@ export function AuthScreen() {
           <div className="mx-auto max-w-7xl">
             <p className="text-xs font-black uppercase text-green-300">Como funciona</p>
             <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
-              Você configura uma vez e manda proposta em menos de 5 minutos.
+              Da marca configurada ao aceite do cliente, em quatro passos.
             </h2>
             <div className="mt-10 grid gap-4 md:grid-cols-4">
               {steps.map((step, index) => (
@@ -582,16 +665,16 @@ export function AuthScreen() {
             </div>
             <div className="mt-10 grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-2 lg:items-center">
               <div>
-                <h3 className="text-2xl font-black">Você para de adivinhar. Começa a acompanhar.</h3>
+                <h3 className="text-2xl font-black">Você para de trabalhar no escuro.</h3>
                 <p className="mt-3 leading-7 text-white/70">
-                  Cada movimentação entra no histórico da proposta. Follow-up com contexto, na hora certa.
+                  Cada movimentação entra no histórico da proposta. Você passa a tomar decisões com base no comportamento do cliente.
                 </p>
               </div>
               <div className="grid gap-3">
                 {[
-                  "Proposta visualizada — há 3 minutos",
+                  "Marcos visualizou — há 3 minutos",
                   "Cliente clicou no WhatsApp",
-                  "Proposta aceita ✓",
+                  "Follow-up feito no momento certo",
                   "Pagamento confirmado ✓",
                 ].map((item) => (
                   <div
@@ -611,7 +694,7 @@ export function AuthScreen() {
           <div className="mx-auto max-w-7xl">
             <p className="text-xs font-black uppercase text-green-700">Quem já usa</p>
             <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
-              O que mudou pra quem saiu do WhatsApp e foi pro link.
+              O que muda quando você sabe que a proposta foi aberta.
             </h2>
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               {testimonials.map(({ name, role, quote }) => (
@@ -642,46 +725,46 @@ export function AuthScreen() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               <article className="rounded-xl border-2 border-green-700 bg-white p-6 shadow-sm sm:p-8">
-                <p className="text-xs font-black uppercase text-green-700">Teste gratis</p>
+                <p className="text-xs font-black uppercase text-green-700">Teste grátis</p>
                 <h2 className="mt-2 text-2xl font-black sm:text-3xl">
                   Crie sua conta e envie {OFERTA.propostasGratis} propostas sem pagar.
                 </h2>
                 <p className="mt-3 leading-7 text-slate-700">
-                  Ideal para entender o sistema na pratica: cadastre sua marca, monte propostas e veja como o link chega para o cliente.
+                  Ideal para testar o ciclo completo: montar a proposta, enviar o link e acompanhar o que acontece depois.
                 </p>
                 <a
                   className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-green-700 px-6 font-black text-white shadow-md shadow-green-900/20 hover:bg-green-800"
                   href="/cadastro?plan=free"
                 >
-                  Comecar teste gratis
+                  Criar minha proposta grátis
                 </a>
               </article>
 
               <article className="rounded-xl border border-black/10 bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 sm:p-8">
-                <p className="text-xs font-black uppercase text-green-300">Vitalicio ate {OFERTA.encerra}</p>
+                <p className="text-xs font-black uppercase text-green-300">Vitalício até {OFERTA.encerra}</p>
                 <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-                  Escolha um plano, pague uma vez e libere o cadastro.
+                  Escolha seu plano vitalício.
                 </h2>
                 <p className="mt-3 leading-7 text-white/70">
-                  A oferta vitalicia foi estendida devido ao sucesso: sem mensalidade, com PDF, aceite online, pagamento integrado e mais propostas por mes.
+                  Pague uma única vez e use o FechaPro sem mensalidade, com proposta profissional, acompanhamento de visualização, aceite online e pagamento integrado.
                 </p>
                 <a
                   className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-6 font-black text-slate-950 hover:bg-green-50"
                   href="#planos-pagos"
                 >
-                  Ver planos vitalicios
+                  Ver planos vitalícios
                 </a>
               </article>
             </div>
 
             {/* Founder offer headline */}
             <div id="planos-pagos" className="mt-14 scroll-mt-24 text-center">
-              <p className="text-xs font-black uppercase text-green-700">Vitalicio estendido ate {OFERTA.encerra}</p>
+              <p className="text-xs font-black uppercase text-green-700">Vitalício estendido até {OFERTA.encerra}</p>
               <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
-                Pague uma vez. Use sem mensalidade.
+                Uma venda pode pagar seu acesso. Depois, você continua usando sem mensalidade.
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-                A campanha vitalicia foi prorrogada ate {OFERTA.encerra} devido ao sucesso. Escolha o plano abaixo e finalize sozinho pelo checkout.
+                Escolha seu plano vitalício e finalize sozinho pelo checkout.
               </p>
             </div>
 
@@ -708,7 +791,7 @@ export function AuthScreen() {
                         plan.featured ? "bg-rose-900/60 text-rose-300" : "bg-rose-100 text-rose-700"
                       }`}
                     >
-                      Vitalicio ate {OFERTA.encerra}
+                      Vitalício até {OFERTA.encerra}
                     </span>
                   </div>
 
@@ -786,7 +869,7 @@ export function AuthScreen() {
                     }`}
                     href={plan.href}
                   >
-                    Garantir {plan.name} vitalicio
+                    Garantir {plan.name} vitalício
                   </a>
                   <p
                     className={`mt-2 text-center text-[11px] font-bold ${
@@ -802,12 +885,10 @@ export function AuthScreen() {
             {/* ROI callout */}
             <div className="mt-8 rounded-xl bg-slate-950 p-6 text-center text-white sm:p-8">
               <p className="text-xl font-black">
-                "Uma proposta fechada já paga o plano inteiro."
+                "Uma proposta recuperada já pode pagar o plano inteiro."
               </p>
               <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-white/65">
-                Se você fechar um projeto de R$ 500 que antes perderia por falta de apresentação, o plano
-                Start se paga em 24 horas. No plano Profissional, 2 projetos a mais já cobrem o
-                investimento inteiro.
+                Se você fechar um projeto de R$ 500 porque percebeu a visualização e fez o follow-up na hora certa, o plano Essencial se paga em 24 horas. No Profissional, 2 projetos a mais já cobrem o investimento inteiro.
               </p>
               <a
                 className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-8 font-black text-white hover:bg-green-500"
@@ -836,11 +917,11 @@ export function AuthScreen() {
               {[
                 [
                   "Acesso imediato",
-                  "Start e Profissional recebem acesso por e-mail em até 24h úteis após confirmação do pagamento.",
+                  "Essencial e Profissional recebem acesso por e-mail em até 24h úteis após confirmação do pagamento.",
                 ],
                 [
                   "Implantação assistida",
-                  "Pro Site e Estrutura Completa: equipe entra em contato para agendar a configuração inicial em até 5 dias úteis.",
+                  "Completo com site e Estrutura: equipe entra em contato para agendar a configuração inicial em até 5 dias úteis.",
                 ],
                 [
                   "Acesso vitalício",
@@ -900,30 +981,29 @@ export function AuthScreen() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(74,222,128,0.22),transparent_60%)]" />
           <div className="relative mx-auto max-w-3xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-green-200 ring-1 ring-white/15">
-              Comece do seu jeito
+              Acompanhe suas propostas
             </span>
             <h2 className="mt-5 text-3xl font-black leading-tight sm:text-5xl">
-              Teste gratis com {OFERTA.propostasGratis} propostas.
-              <br className="hidden sm:block" /> Ou garanta o vitalicio ate {OFERTA.encerra}.
+              Pare de perguntar se o cliente viu.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">
-              Voce pode entender o FechaPro sem pagar ou ir direto para a oferta vitalicia estendida devido ao sucesso.
+              Crie propostas profissionais, acompanhe cada visualização e garanta seu acesso vitalício sem mensalidade.
             </p>
             <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <a
                 className="inline-flex min-h-14 items-center justify-center rounded-xl bg-white px-8 text-base font-black text-green-900 shadow-xl shadow-green-950/40 transition hover:-translate-y-0.5 hover:bg-green-50"
-                href="/cadastro?plan=free"
+                href="#planos-pagos"
               >
-                Criar teste gratis
+                Quero meu acesso vitalício
               </a>
               <a
                 className="inline-flex min-h-14 items-center justify-center rounded-xl border border-white/20 px-8 text-base font-black text-white transition hover:bg-white/10"
-                href="#planos-pagos"
+                href="/cadastro?plan=free"
               >
-                Garantir vitalicio
+                Testar grátis antes
               </a>
             </div>
-            <p className="mt-4 text-sm text-white/45">Pagamento seguro via Mercado Pago · PIX disponível</p>
+            <p className="mt-4 text-sm text-white/45">Pagamento único · sem mensalidade · Mercado Pago ou PIX</p>
           </div>
         </section>
 

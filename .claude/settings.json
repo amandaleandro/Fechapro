@@ -22,7 +22,9 @@
       "PowerShell($c = \\(Get-NetTCPConnection -State Listen -LocalPort 3000 -ErrorAction SilentlyContinue\\); if \\($c\\) { \"port 3000 in use\" } else { \"port 3000 free\" })",
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('baileys:', \\(p.dependencies||{}\\)['@whiskeysockets/baileys']\\); console.log\\('qrcode:', \\(p.dependencies||{}\\)['qrcode']\\);\")",
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{try{console.log\\('installed version:',JSON.parse\\(d\\).version\\)}catch\\(e\\){console.log\\('not installed'\\)}}\\)\")",
-      "Bash(node -e \"const b=require\\('@whiskeysockets/baileys'\\); console.log\\('keys:', Object.keys\\(b\\).filter\\(k=>/socket|makeWA|useMulti|fetchLatest|Disconnect|default/i.test\\(k\\)\\)\\); console.log\\('default type:', typeof b.default\\); console.log\\('makeWASocket type:', typeof b.makeWASocket\\); console.log\\('fetchLatestBaileysVersion:', typeof b.fetchLatestBaileysVersion\\);\")"
+      "Bash(node -e \"const b=require\\('@whiskeysockets/baileys'\\); console.log\\('keys:', Object.keys\\(b\\).filter\\(k=>/socket|makeWA|useMulti|fetchLatest|Disconnect|default/i.test\\(k\\)\\)\\); console.log\\('default type:', typeof b.default\\); console.log\\('makeWASocket type:', typeof b.makeWASocket\\); console.log\\('fetchLatestBaileysVersion:', typeof b.fetchLatestBaileysVersion\\);\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"c:\\\\Users\\\\amandalscarmo\\\\Documents\\\\FechaPro\\\\app\\\\landing.tsx\"\\); $text = [System.Text.Encoding]::UTF8.GetString\\($bytes\\); $idx = $text.IndexOf\\(\"useStat\"\\); $text.Substring\\($idx, 40\\))",
+      "PowerShell(npx tsc --noEmit --jsx preserve --skipLibCheck --moduleResolution bundler --module esnext --target esnext app/landing.tsx 2>&1)"
     ]
   }
 }
