@@ -44,9 +44,9 @@ type FounderPlan = {
 
 // Parâmetros da oferta de lançamento — ajuste aqui e reflete em toda a landing.
 const OFERTA = {
-  encerra: "08/06", // último dia da Cota Fundador
-  mensalidadeInicio: "09/06", // dia em que os preços mensais entram em vigor
-  vagasTotais: 50,
+  propostasGratis: 3,
+  planosDisponiveis: 4,
+  encerra: "30/06",
 };
 
 export function AuthScreen() {
@@ -275,7 +275,7 @@ export function AuthScreen() {
     ],
     [
       "Posso cancelar o plano mensal?",
-      "Sim, sem multa. A Cota Fundador é vitalícia — você paga uma vez e usa para sempre, sem preocupação com cancelamento.",
+      "Sim, sem multa. O teste gratis nao tem cobranca automatica. Se comprar um plano pago, voce escolhe o caminho de pagamento no checkout.",
     ],
     [
       "O que acontece depois que eu compro?",
@@ -324,10 +324,10 @@ export function AuthScreen() {
         {/* Urgency bar */}
         <div className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black leading-snug text-[#5c3a00] sm:text-sm">
           <span>
-            🔒 <strong>Cota Fundador</strong> — vitalício a partir de R$ 497 · {OFERTA.vagasTotais} vagas · encerra {OFERTA.encerra}
+            Oferta vitalicia estendida ate {OFERTA.encerra} devido ao sucesso. Teste gratis ou garanta o acesso sem mensalidade.
           </span>
-          <a href="#fundador" className="underline decoration-2 underline-offset-2 hover:text-[#3d2700]">
-            Garantir minha vaga →
+          <a href="#planos-pagos" className="underline decoration-2 underline-offset-2 hover:text-[#3d2700]">
+            Ver planos vitalicios
           </a>
         </div>
 
@@ -347,7 +347,7 @@ export function AuthScreen() {
             <nav className="hidden items-center gap-6 text-sm font-bold text-slate-700 md:flex">
               <a href="#funcionalidades">Funcionalidades</a>
               <a href="#como-funciona">Como funciona</a>
-              <a href="#fundador">Planos</a>
+              <a href="#planos">Planos</a>
               <a href="#faq">FAQ</a>
             </nav>
             <div className="flex items-center gap-2">
@@ -359,9 +359,9 @@ export function AuthScreen() {
               </a>
               <a
                 className="rounded-lg bg-green-700 px-4 py-2 text-sm font-black text-white"
-                href="#fundador"
+                href="/cadastro?plan=free"
               >
-                Começar
+                Testar gratis
               </a>
             </div>
           </div>
@@ -387,21 +387,21 @@ export function AuthScreen() {
                 <span className="text-green-700">Comece a fechar com proposta.</span>
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
-                Proposta profissional com link, aceite online e PIX no mesmo lugar. Você manda no WhatsApp
-                e vê a hora exata que o cliente abriu — pra cobrar no momento certo, não no escuro.
+                Proposta profissional com link, aceite online e PIX no mesmo lugar. Teste gratis criando ate
+                {` ${OFERTA.propostasGratis} propostas`} ou aproveite a oferta vitalicia estendida ate {OFERTA.encerra}.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-700 px-6 font-black text-white shadow-lg shadow-green-900/15"
-                  href="#fundador"
+                  href="/cadastro?plan=free"
                 >
-                  Ver planos e vagas →
+                  Testar gratis com 3 propostas
                 </a>
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg border border-black/10 px-6 font-black text-slate-700"
-                  href="#como-funciona"
+                  href="#planos"
                 >
-                  Como funciona
+                  Garantir vitalicio
                 </a>
               </div>
               <div className="mt-10 grid gap-3 sm:grid-cols-3">
@@ -637,45 +637,51 @@ export function AuthScreen() {
         </section>
 
         {/* Pricing — monthly anchor + founder offer */}
-        <section id="fundador" className="bg-[#f5f2ec] px-4 py-20">
+        <section id="planos" className="bg-[#f5f2ec] px-4 py-20">
           <div className="mx-auto max-w-7xl">
 
-            {/* Monthly price anchor */}
-            <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 sm:p-8">
-              <p className="text-xs font-black uppercase text-amber-700">
-                Atenção — Preços mensais a partir de {OFERTA.mensalidadeInicio}
-              </p>
-              <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-                A partir de junho, o FechaPro passa a ter mensalidade.
-              </h2>
-              <p className="mt-3 max-w-2xl leading-7 text-slate-700">
-                Quem entrar como <strong>Fundador até {OFERTA.encerra}</strong> paga uma vez e nunca mais paga nada.
-                Os valores abaixo são a referência de quanto você economiza.
-              </p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-4">
-                {founderPlans.map((plan) => (
-                  <div
-                    className="rounded-lg border border-amber-200 bg-white p-4 text-center"
-                    key={plan.code}
-                  >
-                    <p className="text-xs font-black uppercase text-slate-500">{plan.name}</p>
-                    <p className="mt-2 text-xl font-black text-slate-400 line-through">
-                      {plan.monthlyPrice}
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-amber-700">{plan.annualMonthly} no 1º ano</p>
-                  </div>
-                ))}
-              </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <article className="rounded-xl border-2 border-green-700 bg-white p-6 shadow-sm sm:p-8">
+                <p className="text-xs font-black uppercase text-green-700">Teste gratis</p>
+                <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+                  Crie sua conta e envie {OFERTA.propostasGratis} propostas sem pagar.
+                </h2>
+                <p className="mt-3 leading-7 text-slate-700">
+                  Ideal para entender o sistema na pratica: cadastre sua marca, monte propostas e veja como o link chega para o cliente.
+                </p>
+                <a
+                  className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-green-700 px-6 font-black text-white shadow-md shadow-green-900/20 hover:bg-green-800"
+                  href="/cadastro?plan=free"
+                >
+                  Comecar teste gratis
+                </a>
+              </article>
+
+              <article className="rounded-xl border border-black/10 bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 sm:p-8">
+                <p className="text-xs font-black uppercase text-green-300">Vitalicio ate {OFERTA.encerra}</p>
+                <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+                  Escolha um plano, pague uma vez e libere o cadastro.
+                </h2>
+                <p className="mt-3 leading-7 text-white/70">
+                  A oferta vitalicia foi estendida devido ao sucesso: sem mensalidade, com PDF, aceite online, pagamento integrado e mais propostas por mes.
+                </p>
+                <a
+                  className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-6 font-black text-slate-950 hover:bg-green-50"
+                  href="#planos-pagos"
+                >
+                  Ver planos vitalicios
+                </a>
+              </article>
             </div>
 
             {/* Founder offer headline */}
-            <div className="mt-14 text-center">
-              <p className="text-xs font-black uppercase text-green-700">Cota Fundador · Até {OFERTA.encerra}</p>
+            <div id="planos-pagos" className="mt-14 scroll-mt-24 text-center">
+              <p className="text-xs font-black uppercase text-green-700">Vitalicio estendido ate {OFERTA.encerra}</p>
               <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
-                Pague uma vez. Use para sempre.
+                Pague uma vez. Use sem mensalidade.
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-                Acesso vitalício ao FechaPro. Sem mensalidade, sem renovação, sem surpresa no cartão.
+                A campanha vitalicia foi prorrogada ate {OFERTA.encerra} devido ao sucesso. Escolha o plano abaixo e finalize sozinho pelo checkout.
               </p>
             </div>
 
@@ -702,7 +708,7 @@ export function AuthScreen() {
                         plan.featured ? "bg-rose-900/60 text-rose-300" : "bg-rose-100 text-rose-700"
                       }`}
                     >
-                      {plan.vagas} vagas · Encerra {OFERTA.encerra}
+                      Vitalicio ate {OFERTA.encerra}
                     </span>
                   </div>
 
@@ -719,7 +725,7 @@ export function AuthScreen() {
                       plan.featured ? "text-white/35" : "text-slate-400"
                     }`}
                   >
-                    {plan.monthlyPrice} a partir de {OFERTA.mensalidadeInicio}
+                    {plan.monthlyPrice} no plano mensal
                   </p>
 
                   <div className="mt-2 flex flex-wrap items-baseline gap-2">
@@ -780,7 +786,7 @@ export function AuthScreen() {
                     }`}
                     href={plan.href}
                   >
-                    Garantir {plan.name} →
+                    Garantir {plan.name} vitalicio
                   </a>
                   <p
                     className={`mt-2 text-center text-[11px] font-bold ${
@@ -805,7 +811,7 @@ export function AuthScreen() {
               </p>
               <a
                 className="mt-6 inline-flex min-h-12 items-center justify-center rounded-lg bg-green-600 px-8 font-black text-white hover:bg-green-500"
-                href="#fundador"
+                href="#planos-pagos"
               >
                 Escolher meu plano →
               </a>
@@ -894,21 +900,29 @@ export function AuthScreen() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(74,222,128,0.22),transparent_60%)]" />
           <div className="relative mx-auto max-w-3xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-green-200 ring-1 ring-white/15">
-              Última chamada
+              Comece do seu jeito
             </span>
             <h2 className="mt-5 text-3xl font-black leading-tight sm:text-5xl">
-              <span className="text-green-300">{OFERTA.vagasTotais} vagas.</span> Encerra {OFERTA.encerra}.
-              <br className="hidden sm:block" /> Depois é mensalidade.
+              Teste gratis com {OFERTA.propostasGratis} propostas.
+              <br className="hidden sm:block" /> Ou garanta o vitalicio ate {OFERTA.encerra}.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-white/75">
-              Pague uma vez e use o FechaPro para sempre. Envie sua primeira proposta profissional hoje.
+              Voce pode entender o FechaPro sem pagar ou ir direto para a oferta vitalicia estendida devido ao sucesso.
             </p>
-            <a
-              className="mt-9 inline-flex min-h-14 items-center justify-center rounded-xl bg-white px-8 text-base font-black text-green-900 shadow-xl shadow-green-950/40 transition hover:-translate-y-0.5 hover:bg-green-50"
-              href="#fundador"
-            >
-              Garantir minha vaga de Fundador →
-            </a>
+            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+              <a
+                className="inline-flex min-h-14 items-center justify-center rounded-xl bg-white px-8 text-base font-black text-green-900 shadow-xl shadow-green-950/40 transition hover:-translate-y-0.5 hover:bg-green-50"
+                href="/cadastro?plan=free"
+              >
+                Criar teste gratis
+              </a>
+              <a
+                className="inline-flex min-h-14 items-center justify-center rounded-xl border border-white/20 px-8 text-base font-black text-white transition hover:bg-white/10"
+                href="#planos-pagos"
+              >
+                Garantir vitalicio
+              </a>
+            </div>
             <p className="mt-4 text-sm text-white/45">Pagamento seguro via Mercado Pago · PIX disponível</p>
           </div>
         </section>
