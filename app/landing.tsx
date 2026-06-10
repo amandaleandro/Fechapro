@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import { trackPixel } from "@/lib/meta-pixel";
 import {
   Bell,
   CheckCircle2,
@@ -35,7 +36,10 @@ type FounderPlan = {
   paybackMonths: number;
   description: string;
   for: string;
+  recommendation: string;
+  cta: string;
   items: string[];
+  notIncluded: string[];
   href: string;
   featured: boolean;
 };
@@ -45,10 +49,33 @@ const OFERTA = {
   propostasGratis: 3,
   planosDisponiveis: 4,
   encerra: "30/06",
+  encerraCompleto: "30/06/2026 às 23h59",
 };
+
+const CAMPAIGN_END = new Date("2026-06-30T23:59:00-03:00").getTime();
+
+function getCampaignTimeLeft() {
+  const diff = Math.max(0, CAMPAIGN_END - Date.now());
+  const totalMinutes = Math.floor(diff / 60000);
+
+  return {
+    days: Math.floor(totalMinutes / 1440),
+    hours: Math.floor((totalMinutes % 1440) / 60),
+    minutes: totalMinutes % 60,
+  };
+}
 
 export function AuthScreen() {
   const [openFaq, setOpenFaq] = useState(0);
+  const [campaignTimeLeft, setCampaignTimeLeft] = useState(getCampaignTimeLeft);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCampaignTimeLeft(getCampaignTimeLeft());
+    }, 30000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const founderPlans: FounderPlan[] = [
     {
@@ -61,6 +88,8 @@ export function AuthScreen() {
       savings: "R$ 667",
       paybackMonths: 6,
       for: "Designer iniciante, social media, autônomo que quer parar de mandar preço solto.",
+      recommendation: "Para quem quer começar sozinho e profissionalizar as propostas sem complicação.",
+      cta: "Garantir plano de R$ 497",
       description:
         "Proposta com link, PDF, aceite online e pagamento integrado. Tudo que você precisa para profissionalizar o orçamento sem complicação.",
       items: [
@@ -72,6 +101,7 @@ export function AuthScreen() {
         "5 artes de divulgação de boas-vindas",
         "Acesso vitalício — sem mensalidade",
       ],
+      notIncluded: ["Implantação assistida", "Mini site profissional"],
       href: "/checkout/cadastro/founder_start",
       featured: false,
     },
@@ -85,6 +115,8 @@ export function AuthScreen() {
       savings: "R$ 1.367",
       paybackMonths: 6,
       for: "Designer estabelecido, nutricionista, coach, fotógrafo — profissional com ticket acima de R$ 500.",
+      recommendation: "Para quem quer ajuda para colocar uma estrutura comercial mais forte em funcionamento.",
+      cta: "Garantir plano de R$ 997",
       description:
         "Portfólio e depoimentos direto na proposta. Você sabe exatamente quando o cliente abriu, clicou e está pronto para fechar.",
       items: [
@@ -96,6 +128,7 @@ export function AuthScreen() {
         "15 artes de divulgação de boas-vindas",
         "Acesso vitalício — sem mensalidade",
       ],
+      notIncluded: ["Mini site profissional", "Implantação completa com diagnóstico"],
       href: "/checkout/cadastro/founder_professional",
       featured: true,
     },
@@ -109,6 +142,8 @@ export function AuthScreen() {
       savings: "R$ 2.067",
       paybackMonths: 6,
       for: "Agência pequena, consultor com ticket alto, profissional de saúde que quer presença online própria.",
+      recommendation: "Para quem quer proposta, acompanhamento e presença profissional com site.",
+      cta: "Garantir plano de R$ 1.497",
       description:
         "Mini site profissional com domínio próprio + proposta + pagamento no mesmo lugar. Um endereço seu, sem depender do Instagram.",
       items: [
@@ -119,6 +154,7 @@ export function AuthScreen() {
         "20 artes de divulgação de boas-vindas",
         "Acesso vitalício — sem mensalidade",
       ],
+      notIncluded: ["Diagnóstico do Instagram", "Primeira proposta criada com a equipe"],
       href: "/checkout/cadastro/founder_complete_site",
       featured: false,
     },
@@ -132,6 +168,8 @@ export function AuthScreen() {
       savings: "R$ 3.967",
       paybackMonths: 5,
       for: "Profissional com ticket alto, agência, consultor que quer sair com tudo estruturado sem perder tempo.",
+      recommendation: "Para quem quer implantação completa, site e acompanhamento para sair com tudo pronto.",
+      cta: "Garantir plano completo",
       description:
         "Você entra com tudo pronto. Implantação assistida, diagnóstico do Instagram e primeira proposta criada junto com nossa equipe.",
       items: [
@@ -143,6 +181,7 @@ export function AuthScreen() {
         "Treinamento completo de uso",
         "Acesso vitalício — sem mensalidade",
       ],
+      notIncluded: ["Mensalidade recorrente", "Renovação automática"],
       href: "/checkout/cadastro/founder",
       featured: false,
     },
@@ -233,20 +272,24 @@ export function AuthScreen() {
 
   const steps = [
     {
-      title: "Configure sua marca",
-      text: "Adicione sua logo, cores, WhatsApp e informações comerciais.",
+      title: "Crie sua proposta",
+      text: "Monte uma apresentação profissional com serviços, prazo, valor e diferenciais.",
     },
     {
-      title: "Cadastre seus serviços",
-      text: "Inclua descrição, preço, fotos, condições e detalhes importantes.",
+      title: "Envie o link pelo WhatsApp",
+      text: "O cliente abre a proposta no celular, sem instalar app e sem criar conta.",
     },
     {
-      title: "Crie a proposta",
-      text: "Escolha o cliente, personalize a apresentação e organize o escopo.",
+      title: "Saiba quando abriu",
+      text: "Você acompanha a visualização e identifica quais oportunidades estão quentes.",
     },
     {
-      title: "Envie o link e acompanhe",
-      text: "Veja quando o cliente abriu, faça follow-up e receba o aceite online.",
+      title: "Faça o follow-up",
+      text: "Retome a conversa no momento certo, com contexto e sem parecer cobrança.",
+    },
+    {
+      title: "Receba o aceite",
+      text: "O cliente aprova online e segue para o próximo passo dentro do fluxo.",
     },
   ];
   const testimonials = [
@@ -254,19 +297,19 @@ export function AuthScreen() {
       name: "Ana Clara R.",
       role: "Designer — São Paulo",
       quote:
-        "Antes eu ficava mandando áudio explicando o que estava incluso. Agora o cliente já viu o portfólio, escopo e prazo antes de falar qualquer coisa. Fechei 3 projetos em 2 semanas.",
+        "Eu sabia que o cliente tinha aberto e consegui chamar enquanto ele ainda estava analisando. A conversa já começou com contexto.",
     },
     {
       name: "Rafael M.",
       role: "Consultor de marketing — BH",
       quote:
-        "Vi no painel que ele tinha aberto e não respondido. Esperei 20 minutos e perguntei se tinha ficado alguma dúvida. Fechou na hora — R$ 4.800 que eu perderia esperando no escuro.",
+        "Parei de mandar mensagem perguntando se a pessoa tinha visto. Agora eu acompanho a proposta e faço follow-up quando existe sinal de interesse.",
     },
     {
       name: "Juliana F.",
       role: "Nutricionista — Curitiba",
       quote:
-        "Meu orçamento virou um plano de cuidado com etapas e objetivos. A pergunta do paciente deixou de ser 'quanto custa?' e virou 'quando a gente começa?'.",
+        "Agora sei quais propostas estão quentes e quais clientes preciso acompanhar. Isso tirou muita ansiedade da minha rotina comercial.",
     },
   ];
 
@@ -276,8 +319,16 @@ export function AuthScreen() {
       "Não. O FechaPro funciona pelo navegador, no celular ou computador. Seu cliente também acessa pelo link, sem cadastro obrigatório.",
     ],
     [
+      "Posso usar pelo celular?",
+      "Sim. Você pode acessar o FechaPro pelo navegador do celular ou computador. Seu cliente também abre a proposta pelo celular.",
+    ],
+    [
       "Uma proposta fechada já paga o plano?",
       "Para a maioria dos profissionais, sim. Se o seu ticket médio é R$ 500 e você fecha 1 proposta a mais por causa do FechaPro, o plano Essencial se pagou em 24 horas. No plano Profissional, 2 projetos a mais já cobrem o investimento inteiro.",
+    ],
+    [
+      "O acesso é realmente vitalício?",
+      "Sim. Até 30/06/2026, você realiza um pagamento único e pode continuar utilizando os recursos incluídos no plano adquirido, sem cobrança mensal. A partir de 01/07, novos clientes voltarão aos planos mensais. Taxas externas de gateway, domínio, hospedagem ou serviços extras, quando aplicáveis, seguem as regras do provedor ou da contratação adicional.",
     ],
     [
       "Funciona para o meu nicho?",
@@ -286,6 +337,38 @@ export function AuthScreen() {
     [
       "Quanto tempo leva para configurar?",
       "A maioria dos profissionais configura a marca e envia a primeira proposta em menos de 40 minutos. Planos com implantação têm configuração assistida pela nossa equipe.",
+    ],
+    [
+      "Quantas propostas posso criar?",
+      "Depende do plano escolhido. O Essencial inclui 50 propostas por mês, Profissional e Completo com site incluem 200 propostas por mês, e Estrutura inclui propostas ilimitadas.",
+    ],
+    [
+      "Como sei que o cliente visualizou?",
+      "Quando o cliente abre o link da proposta, o FechaPro registra a visualização no painel para você acompanhar quais oportunidades estão quentes.",
+    ],
+    [
+      "Posso enviar pelo WhatsApp?",
+      "Sim. Você cria a proposta no FechaPro e envia o link pelo WhatsApp, Instagram, e-mail ou qualquer canal de atendimento.",
+    ],
+    [
+      "Posso alterar minha proposta depois?",
+      "Sim. Você pode ajustar informações da proposta pelo painel. Se a proposta já foi enviada, recomendamos avisar o cliente quando houver mudança importante de escopo, prazo ou valor.",
+    ],
+    [
+      "Tem suporte?",
+      "Sim. O WhatsApp fica disponível como suporte para dúvidas, mas não é etapa obrigatória para comprar. Os botões dos planos levam direto ao checkout.",
+    ],
+    [
+      "Existe garantia?",
+      "Você pode testar o FechaPro por 7 dias. Caso perceba que a plataforma não atende ao que foi apresentado, solicite o cancelamento dentro do prazo previsto nos termos.",
+    ],
+    [
+      "O site está incluso em qual plano?",
+      "O mini site profissional está incluso nos planos Completo com site e Estrutura. Essencial e Profissional focam na criação e acompanhamento das propostas.",
+    ],
+    [
+      "Posso parcelar?",
+      "O checkout informa as formas disponíveis no momento da compra, incluindo Pix, cartão e opções de parcelamento quando oferecidas pelo provedor de pagamento.",
     ],
     [
       "O pagamento pelo link é seguro?",
@@ -297,7 +380,7 @@ export function AuthScreen() {
     ],
     [
       "O que acontece depois que eu compro?",
-      "Você recebe acesso por e-mail. Essencial e Profissional em até 24h úteis. Completo com site e Estrutura recebem formulário de briefing e nossa equipe agenda a configuração inicial em até 5 dias úteis.",
+      "Após a confirmação do pagamento, você recebe o acesso ao FechaPro e as instruções para configurar sua conta. Nos planos com implantação, nossa equipe entra em contato para organizar sua marca, serviços e primeira proposta.",
     ],
   ];
 
@@ -342,10 +425,10 @@ export function AuthScreen() {
         {/* Urgency bar */}
         <div className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 bg-[#f2c84b] px-4 py-2 text-center text-xs font-black leading-snug text-[#5c3a00] sm:text-sm">
           <span>
-            Oferta vitalícia estendida até {OFERTA.encerra} devido ao sucesso. Teste grátis ou garanta o acesso sem mensalidade.
+            Oferta vitalícia termina em {OFERTA.encerra}. Depois, os planos voltam a ser mensais.
           </span>
           <a href="#planos-pagos" className="underline decoration-2 underline-offset-2 hover:text-[#3d2700]">
-            Ver planos vitalícios
+            Garantir acesso vitalício
           </a>
         </div>
 
@@ -401,30 +484,45 @@ export function AuthScreen() {
                 ))}
               </div>
               <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight tracking-normal sm:text-6xl">
-                Pare de enviar propostas e ficar no escuro.{" "}
-                <span className="text-green-700">Saiba quando o cliente visualizou e faça o follow-up na hora certa.</span>
+                Saiba quando seu cliente visualizou a proposta.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
-                Crie propostas profissionais que mostram por que vale contratar você, com serviços, portfólio, aceite online e acompanhamento de visualização em um único link.
+                Crie propostas profissionais, acompanhe cada visualização e faça o follow-up no momento certo.
+              </p>
+              <p className="mt-4 text-base font-black text-green-800">
+                Até {OFERTA.encerra}, pague uma vez e use sem mensalidade. Depois, o FechaPro volta aos planos mensais.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-700 px-6 font-black text-white shadow-lg shadow-green-900/15"
-                  href="/cadastro?plan=free"
+                  href="#planos-pagos"
                 >
-                  Criar minha proposta grátis
+                  Ver planos vitalícios
                 </a>
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-green-700 px-6 font-black text-green-800 hover:bg-green-50"
-                  href="#planos-pagos"
+                  href="/cadastro?plan=free"
                 >
-                  Quero meu acesso vitalício
+                  Testar grátis antes
                 </a>
               </div>
               <p className="mt-3 text-sm font-bold text-slate-600">Sem cartão. Crie sua conta e envie até {OFERTA.propostasGratis} propostas para testar.</p>
-              <div className="mt-5 inline-flex flex-wrap items-center gap-2 rounded-lg border border-green-700/20 bg-green-50 px-4 py-2.5 text-sm font-black text-green-800">
-                <CheckCircle2 className="shrink-0" size={18} />
-                <span>Acesso vitalício • pagamento único • sem mensalidade</span>
+              <div className="mt-5 rounded-lg border border-green-700/20 bg-white p-4 shadow-sm">
+                <p className="text-xs font-black uppercase text-green-700">Oferta vitalícia termina em</p>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                  {[
+                    ["dias", campaignTimeLeft.days],
+                    ["horas", campaignTimeLeft.hours],
+                    ["minutos", campaignTimeLeft.minutes],
+                  ].map(([label, value]) => (
+                    <div className="rounded-lg bg-green-50 px-3 py-2" key={label}>
+                      <strong className="block text-2xl font-black text-green-900">
+                        {String(value).padStart(2, "0")}
+                      </strong>
+                      <span className="text-[11px] font-black uppercase text-green-700">{label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="mt-10 grid gap-3 sm:grid-cols-3">
                 {[
@@ -459,14 +557,14 @@ export function AuthScreen() {
                   </span>
                 </div>
                 <div className="mt-5 grid gap-4 rounded-lg bg-white p-5 text-slate-950">
-                  <div className="rounded-lg border border-green-700/20 bg-green-50 p-4">
+                  <div className="rounded-lg border-2 border-green-700/40 bg-green-100 p-5 shadow-lg shadow-green-900/10">
                     <div className="flex items-start gap-3">
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-green-700 text-white">
-                        <Eye size={22} />
+                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-green-700 text-white">
+                        <Eye size={24} />
                       </span>
                       <div>
-                        <p className="text-lg font-black text-green-950">Marcos visualizou sua proposta agora.</p>
-                        <p className="mt-1 text-sm font-bold text-green-800">Proposta: Serviço de fotografia</p>
+                        <p className="text-2xl font-black leading-tight text-green-950">Marcos visualizou sua proposta agora.</p>
+                        <p className="mt-2 text-sm font-bold text-green-900">Proposta: Serviço de fotografia</p>
                         <p className="text-sm font-bold text-green-800">Visualizada hoje às 14h32</p>
                       </div>
                     </div>
@@ -507,6 +605,58 @@ export function AuthScreen() {
                 </div>
               </div>
             </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Product demo */}
+        <section className="px-4 py-16">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <p className="text-xs font-black uppercase text-green-700">Demonstração do produto</p>
+              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
+                Veja o fluxo antes de escolher o plano.
+              </h2>
+              <p className="mt-4 text-lg leading-8 text-slate-700">
+                A compra direta funciona melhor quando você entende exatamente como o FechaPro entra na rotina:
+                criar, enviar, acompanhar, fazer follow-up e receber o aceite.
+              </p>
+              <div className="mt-6 grid gap-2">
+                {[
+                  "Criação da proposta",
+                  "Envio do link pelo WhatsApp",
+                  "Proposta aberta pelo cliente",
+                  "Registro da visualização",
+                  "Aceite e painel de acompanhamento",
+                ].map((item) => (
+                  <div className="flex items-center gap-3 rounded-lg bg-white p-3 text-sm font-black shadow-sm" key={item}>
+                    <CheckCircle2 className="shrink-0 text-green-700" size={18} />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg border border-black/10 bg-slate-950 p-4 shadow-2xl shadow-slate-950/10">
+              <div className="overflow-hidden rounded-lg bg-white">
+                <Image
+                  alt="Exemplo de proposta profissional criada no FechaPro"
+                  src="/landing/hero-proposta.png"
+                  width={900}
+                  height={620}
+                  className="h-auto w-full"
+                />
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <span className="rounded-lg bg-green-500/15 p-3 text-center text-xs font-black text-green-200">
+                  Link enviado
+                </span>
+                <span className="rounded-lg bg-green-500/15 p-3 text-center text-xs font-black text-green-200">
+                  Visualização registrada
+                </span>
+                <span className="rounded-lg bg-green-500/15 p-3 text-center text-xs font-black text-green-200">
+                  Follow-up no momento certo
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -647,9 +797,9 @@ export function AuthScreen() {
           <div className="mx-auto max-w-7xl">
             <p className="text-xs font-black uppercase text-green-300">Como funciona</p>
             <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
-              Da marca configurada ao aceite do cliente, em quatro passos.
+              Entenda em poucos segundos como o FechaPro funciona.
             </h2>
-            <div className="mt-10 grid gap-4 md:grid-cols-4">
+            <div className="mt-10 grid gap-4 md:grid-cols-5">
               {steps.map((step, index) => (
                 <article
                   className="rounded-lg border border-white/10 bg-white/5 p-5"
@@ -663,6 +813,9 @@ export function AuthScreen() {
                 </article>
               ))}
             </div>
+            <p className="mt-6 rounded-lg border border-white/10 bg-white/5 p-4 text-sm font-bold leading-6 text-white/75">
+              Você não precisa instalar nada. O FechaPro funciona online pelo celular ou computador.
+            </p>
             <div className="mt-10 grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-2 lg:items-center">
               <div>
                 <h3 className="text-2xl font-black">Você para de trabalhar no escuro.</h3>
@@ -722,8 +875,58 @@ export function AuthScreen() {
         {/* Pricing — monthly anchor + founder offer */}
         <section id="planos" className="bg-[#f5f2ec] px-4 py-20">
           <div className="mx-auto max-w-7xl">
+            <div className="rounded-xl border-2 border-green-700 bg-white p-6 shadow-xl shadow-green-950/10 sm:p-8">
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+                <div>
+                  <p className="text-xs font-black uppercase text-green-700">Campanha de junho</p>
+                  <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
+                    O vitalício termina em {OFERTA.encerra}.
+                  </h2>
+                  <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-700">
+                    Esta é a última oportunidade de garantir o FechaPro com pagamento único.
+                    A partir de 01/07, novos clientes entrarão nos planos mensais.
+                  </p>
+                  <p className="mt-4 font-black text-green-800">
+                    Até {OFERTA.encerra}, pague uma vez e use o FechaPro sem mensalidade. Depois, os planos voltam a ser mensais.
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-950 p-5 text-white">
+                  <p className="text-xs font-black uppercase text-green-300">Oferta vitalícia termina em</p>
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                    {[
+                      ["dias", campaignTimeLeft.days],
+                      ["horas", campaignTimeLeft.hours],
+                      ["minutos", campaignTimeLeft.minutes],
+                    ].map(([label, value]) => (
+                      <div className="rounded-lg bg-white/10 px-3 py-3" key={label}>
+                        <strong className="block text-2xl font-black text-white">
+                          {String(value).padStart(2, "0")}
+                        </strong>
+                        <span className="text-[11px] font-black uppercase text-white/60">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <ul className="mt-5 grid gap-2 text-sm font-bold text-white/80">
+                    {[
+                      "Pague uma vez",
+                      "Use sem mensalidade",
+                      "Mantenha seu acesso",
+                      `Escolha o plano ideal até ${OFERTA.encerra}`,
+                    ].map((item) => (
+                      <li className="flex gap-2" key={item}>
+                        <CheckCircle2 className="mt-0.5 shrink-0 text-green-300" size={16} />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-4 text-xs font-bold text-white/45">
+                    Encerra em {OFERTA.encerraCompleto}, horário de Brasília.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="mt-8 grid gap-4 lg:grid-cols-2">
               <article className="rounded-xl border-2 border-green-700 bg-white p-6 shadow-sm sm:p-8">
                 <p className="text-xs font-black uppercase text-green-700">Teste grátis</p>
                 <h2 className="mt-2 text-2xl font-black sm:text-3xl">
@@ -743,10 +946,10 @@ export function AuthScreen() {
               <article className="rounded-xl border border-black/10 bg-slate-950 p-6 text-white shadow-xl shadow-slate-950/10 sm:p-8">
                 <p className="text-xs font-black uppercase text-green-300">Vitalício até {OFERTA.encerra}</p>
                 <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-                  Escolha seu plano vitalício.
+                  Até {OFERTA.encerra}: pague uma vez e use sem mensalidade.
                 </h2>
                 <p className="mt-3 leading-7 text-white/70">
-                  Pague uma única vez e use o FechaPro sem mensalidade, com proposta profissional, acompanhamento de visualização, aceite online e pagamento integrado.
+                  A partir de 01/07, o FechaPro volta aos planos mensais para novos clientes.
                 </p>
                 <a
                   className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-6 font-black text-slate-950 hover:bg-green-50"
@@ -759,12 +962,12 @@ export function AuthScreen() {
 
             {/* Founder offer headline */}
             <div id="planos-pagos" className="mt-14 scroll-mt-24 text-center">
-              <p className="text-xs font-black uppercase text-green-700">Vitalício estendido até {OFERTA.encerra}</p>
+              <p className="text-xs font-black uppercase text-green-700">Últimos dias de vitalício</p>
               <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
                 Uma venda pode pagar seu acesso. Depois, você continua usando sem mensalidade.
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-                Escolha seu plano vitalício e finalize sozinho pelo checkout.
+                Até {OFERTA.encerra}, pague uma vez e use o FechaPro sem mensalidade. Depois, os planos voltam a ser mensais.
               </p>
             </div>
 
@@ -804,14 +1007,14 @@ export function AuthScreen() {
                   </p>
 
                   <p
-                    className={`mt-1 text-sm font-bold line-through ${
-                      plan.featured ? "text-white/35" : "text-slate-400"
+                    className={`mt-3 text-xs font-bold leading-5 ${
+                      plan.featured ? "text-white/60" : "text-slate-500"
                     }`}
                   >
-                    {plan.monthlyPrice} no plano mensal
+                    Para quem: {plan.recommendation}
                   </p>
 
-                  <div className="mt-2 flex flex-wrap items-baseline gap-2">
+                  <div className="mt-4 flex flex-wrap items-baseline gap-2">
                     <strong className="text-4xl font-black">{plan.price}</strong>
                     <span
                       className={`text-sm font-bold ${
@@ -822,6 +1025,13 @@ export function AuthScreen() {
                     </span>
                   </div>
                   <p
+                    className={`mt-1 text-sm font-bold line-through ${
+                      plan.featured ? "text-white/35" : "text-slate-400"
+                    }`}
+                  >
+                    {plan.monthlyPrice} no plano mensal
+                  </p>
+                  <p
                     className={`mt-1 text-xs font-black ${
                       plan.featured ? "text-green-300" : "text-green-700"
                     }`}
@@ -829,24 +1039,8 @@ export function AuthScreen() {
                     Economize {plan.savings} no 1º ano · se paga em {plan.paybackMonths} meses
                   </p>
 
-                  <p
-                    className={`mt-3 text-xs font-bold leading-5 ${
-                      plan.featured ? "text-white/55" : "text-slate-500"
-                    }`}
-                  >
-                    Para quem: {plan.for}
-                  </p>
-
-                  <p
-                    className={`mt-3 text-sm leading-6 ${
-                      plan.featured ? "text-white/75" : "text-slate-600"
-                    }`}
-                  >
-                    {plan.description}
-                  </p>
-
                   <ul className="mt-5 flex-1 grid gap-2">
-                    {plan.items.map((item) => (
+                    {plan.items.slice(0, 3).map((item) => (
                       <li className="flex gap-2 text-sm font-bold" key={item}>
                         <CheckCircle2
                           className={`mt-0.5 shrink-0 ${
@@ -861,6 +1055,46 @@ export function AuthScreen() {
                     ))}
                   </ul>
 
+                  <details
+                    className={`mt-4 rounded-lg border p-3 text-sm ${
+                      plan.featured
+                        ? "border-white/10 bg-white/5 text-white/75"
+                        : "border-black/10 bg-slate-50 text-slate-600"
+                    }`}
+                  >
+                    <summary className="cursor-pointer font-black">
+                      Ver tudo que está incluso
+                    </summary>
+                    <p className="mt-3 leading-6">{plan.description}</p>
+                    <ul className="mt-3 grid gap-2">
+                      {plan.items.slice(3).map((item) => (
+                        <li className="flex gap-2 font-bold" key={item}>
+                          <CheckCircle2
+                            className={`mt-0.5 shrink-0 ${
+                              plan.featured ? "text-green-400" : "text-green-700"
+                            }`}
+                            size={14}
+                          />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-4 text-xs font-black uppercase">Não está incluso</p>
+                    <ul className="mt-2 grid gap-2">
+                      {plan.notIncluded.map((item) => (
+                        <li className="flex gap-2 font-bold" key={item}>
+                          <XCircle
+                            className={`mt-0.5 shrink-0 ${
+                              plan.featured ? "text-white/35" : "text-slate-400"
+                            }`}
+                            size={14}
+                          />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+
                   <a
                     className={`mt-6 grid min-h-12 place-items-center rounded-xl px-4 text-center font-black shadow-md ${
                       plan.featured
@@ -868,17 +1102,49 @@ export function AuthScreen() {
                         : "bg-green-700 text-white shadow-green-900/20 hover:bg-green-800"
                     }`}
                     href={plan.href}
+                    onClick={() =>
+                      trackPixel("AddToCart", {
+                        value: Number(plan.price.replace(/[^\d]/g, "")) || undefined,
+                        currency: "BRL",
+                        content_ids: [plan.code],
+                        content_name: plan.name,
+                        content_type: "product",
+                      })
+                    }
                   >
-                    Garantir {plan.name} vitalício
+                    {plan.cta}
                   </a>
                   <p
                     className={`mt-2 text-center text-[11px] font-bold ${
-                      plan.featured ? "text-white/35" : "text-slate-400"
+                      plan.featured ? "text-white/55" : "text-slate-500"
                     }`}
                   >
-                    Pagamento seguro · Mercado Pago
+                    Pagamento seguro · Acesso vitalício · Sem mensalidade · Garantia de 7 dias
                   </p>
+                  <a
+                    className={`mt-3 text-center text-xs font-black underline underline-offset-4 ${
+                      plan.featured ? "text-white/55 hover:text-white" : "text-slate-500 hover:text-slate-800"
+                    }`}
+                    href="/interesse"
+                  >
+                    Ainda está em dúvida? Fale com nossa equipe
+                  </a>
                 </article>
+              ))}
+            </div>
+
+            <div className="mt-8 grid gap-3 rounded-xl border border-black/10 bg-white p-5 shadow-sm md:grid-cols-4">
+              {[
+                ["Checkout seguro", "Pagamento por Pix ou cartão, conforme opções exibidas no checkout."],
+                ["Compra direta", "Escolha o plano e siga para o pagamento sem depender do WhatsApp."],
+                ["Suporte disponível", "Use o atendimento apenas se tiver dúvida antes ou depois da compra."],
+                ["Termos claros", "Termos de uso e política de privacidade disponíveis no rodapé."],
+              ].map(([title, text]) => (
+                <div className="rounded-lg bg-slate-50 p-4" key={title}>
+                  <CheckCircle2 className="text-green-700" size={20} />
+                  <strong className="mt-3 block text-sm">{title}</strong>
+                  <p className="mt-2 text-xs font-bold leading-5 text-slate-600">{text}</p>
+                </div>
               ))}
             </div>
 
@@ -906,30 +1172,38 @@ export function AuthScreen() {
             <div>
               <p className="text-xs font-black uppercase text-green-300">Depois da compra</p>
               <h2 className="mt-3 text-3xl font-black leading-tight">
-                O que acontece depois que você garante sua vaga?
+                O que acontece depois da compra?
               </h2>
               <p className="mt-3 leading-7 text-white/70">
-                Você recebe acesso por e-mail. Planos com implantação recebem um formulário de briefing e
-                nossa equipe agenda a configuração inicial.
+                Após a confirmação do pagamento, você recebe o acesso ao FechaPro e as instruções para configurar sua conta.
+                Nos planos com implantação, nossa equipe entra em contato para organizar sua marca, serviços e primeira proposta.
               </p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {[
                 [
-                  "Acesso imediato",
-                  "Essencial e Profissional recebem acesso por e-mail em até 24h úteis após confirmação do pagamento.",
+                  "1. Você recebe o acesso",
+                  "Após a confirmação do pagamento, enviamos o acesso e as instruções para o e-mail informado no checkout.",
                 ],
                 [
-                  "Implantação assistida",
-                  "Completo com site e Estrutura: equipe entra em contato para agendar a configuração inicial em até 5 dias úteis.",
+                  "2. Cria sua senha",
+                  "Você define sua senha e entra no painel do FechaPro pelo navegador.",
                 ],
                 [
-                  "Acesso vitalício",
-                  "Você paga uma vez. Sem mensalidade, sem renovação automática, sem surpresa futura.",
+                  "3. Configura sua marca",
+                  "Adicione logo, cores, WhatsApp e informações comerciais para deixar a proposta com a sua identidade.",
                 ],
                 [
-                  "Sem aprendizado longo",
-                  "A maioria dos clientes cria a primeira proposta em menos de 40 minutos após o primeiro acesso.",
+                  "4. Cadastra o primeiro serviço",
+                  "Inclua descrição, valor, prazo, condições e tudo que o cliente precisa ver antes de decidir.",
+                ],
+                [
+                  "5. Envia a primeira proposta",
+                  "Crie a proposta, envie o link e acompanhe quando o cliente visualizar.",
+                ],
+                [
+                  "Planos com implantação",
+                  "Nossa equipe entra em contato para iniciar a configuração incluída no plano adquirido.",
                 ],
               ].map(([title, text]) => (
                 <div className="rounded-lg border border-white/10 bg-white/5 p-4" key={title}>
@@ -994,7 +1268,7 @@ export function AuthScreen() {
                 className="inline-flex min-h-14 items-center justify-center rounded-xl bg-white px-8 text-base font-black text-green-900 shadow-xl shadow-green-950/40 transition hover:-translate-y-0.5 hover:bg-green-50"
                 href="#planos-pagos"
               >
-                Quero meu acesso vitalício
+                Quero garantir meu acesso vitalício
               </a>
               <a
                 className="inline-flex min-h-14 items-center justify-center rounded-xl border border-white/20 px-8 text-base font-black text-white transition hover:bg-white/10"

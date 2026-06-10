@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AccessTracker } from "@/components/access-tracker";
+import { MetaPixel } from "@/components/meta-pixel";
 import { WhatsAppSupportButton } from "@/components/whatsapp-support-button";
 
 export const metadata: Metadata = {
@@ -83,6 +84,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <MetaPixel />
         {children}
         <AccessTracker />
         <WhatsAppSupportButton />

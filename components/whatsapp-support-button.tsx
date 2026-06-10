@@ -1,5 +1,7 @@
 "use client";
 
+import { trackPixel } from "@/lib/meta-pixel";
+
 const SUPPORT_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "").replace(/\D/g, "");
 const SUPPORT_MESSAGE =
   process.env.NEXT_PUBLIC_WHATSAPP_SUPPORT_MESSAGE || "Olá! Preciso de ajuda com o FechaPro.";
@@ -17,6 +19,7 @@ export function WhatsAppSupportButton() {
       rel="noopener noreferrer"
       aria-label="Suporte via WhatsApp"
       title="Suporte via WhatsApp"
+      onClick={() => trackPixel("Contact", { content_name: "WhatsApp Suporte" })}
       className="fixed bottom-20 right-4 z-50 flex min-h-12 items-center gap-2 rounded-full bg-[#25D366] px-3 py-3 shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:ring-offset-2 sm:bottom-6 sm:right-6 sm:px-4"
     >
       <WhatsAppIcon />

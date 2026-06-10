@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CheckCircle2, LockKeyhole, RotateCcw } from "lucide-react";
-import { type PlanCode } from "@/lib/plans";
+import { plans, type PlanCode } from "@/lib/plans";
+import { trackPixel } from "@/lib/meta-pixel";
 
 export function PlanCheckoutClient({ plan }: { plan: PlanCode }) {
   const [error, setError] = useState("");
@@ -11,6 +12,13 @@ export function PlanCheckoutClient({ plan }: { plan: PlanCode }) {
   async function continuePayment() {
     setError("");
     setLoading(true);
+    trackPixel("InitiateCheckout", {
+      value: (plans[plan]?.priceCents ?? 0) / 100 || undefined,
+      currency: "BRL",
+      content_ids: [plan],
+      content_name: plans[plan]?.name,
+      content_type: "product",
+    });
     try {
       const response = await fetch("/api/billing/checkout", {
         method: "POST",

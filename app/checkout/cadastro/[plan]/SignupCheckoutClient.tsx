@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CreditCard, Mail, RotateCcw } from "lucide-react";
-import { type PlanCode } from "@/lib/plans";
+import { plans, type PlanCode } from "@/lib/plans";
+import { trackPixel } from "@/lib/meta-pixel";
 
 export function SignupCheckoutClient({ plan }: { plan: PlanCode }) {
   const [email, setEmail] = useState("");
@@ -17,6 +18,17 @@ export function SignupCheckoutClient({ plan }: { plan: PlanCode }) {
       return;
     }
     setLoading(true);
+    trackPixel(
+      "InitiateCheckout",
+      {
+        value: (plans[plan]?.priceCents ?? 0) / 100 || undefined,
+        currency: "BRL",
+        content_ids: [plan],
+        content_name: plans[plan]?.name,
+        content_type: "product",
+      },
+      { email: cleanEmail },
+    );
     try {
       const response = await fetch("/api/billing/signup-checkout", {
         method: "POST",

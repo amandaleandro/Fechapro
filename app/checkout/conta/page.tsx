@@ -11,12 +11,18 @@ export default async function ContaSetupPage({
   const checkoutId = params.checkout ?? "";
   const planCode = params.plan ?? "";
 
-  const planName =
-    planCode && planCode in plans ? plans[planCode as PlanCode].name : "Fundador";
+  const planMeta = planCode && planCode in plans ? plans[planCode as PlanCode] : null;
+  const planName = planMeta?.name ?? "Fundador";
+  const planPriceCents = planMeta?.priceCents ?? 0;
 
   return (
     <Suspense fallback={null}>
-      <ContaSetupClient checkoutId={checkoutId} planName={planName} />
+      <ContaSetupClient
+        checkoutId={checkoutId}
+        planName={planName}
+        planCode={planCode}
+        planPriceCents={planPriceCents}
+      />
     </Suspense>
   );
 }

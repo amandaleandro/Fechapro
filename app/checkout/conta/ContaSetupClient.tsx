@@ -17,15 +17,20 @@ import {
 } from "lucide-react";
 import { businessSegments, proposalTemplateNiches } from "@/lib/proposal-templates";
 import { isValidEmail } from "@/lib/validation";
+import { trackPixel } from "@/lib/meta-pixel";
 
 type PaymentStatus = "checking" | "paid" | "pending" | "timeout";
 
 export function ContaSetupClient({
   checkoutId,
   planName,
+  planCode,
+  planPriceCents,
 }: {
   checkoutId: string;
   planName: string;
+  planCode: string;
+  planPriceCents: number;
 }) {
   const router = useRouter();
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("checking");
@@ -39,7 +44,26 @@ export function ContaSetupClient({
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const pollCount = useRef(0);
+  const purchaseTracked = useRef(false);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  // Dispara Purchase (Pixel + CAPI) uma única vez na confirmação do pagamento.
+  // eventId fixo por checkout evita duplicar se a página recarregar.
+  useEffect(() => {
+    if (paymentStatus !== "paid" || purchaseTracked.current) return;
+    purchaseTracked.current = true;
+    trackPixel(
+      "Purchase",
+      {
+        value: planPriceCents / 100 || undefined,
+        currency: "BRL",
+        content_ids: planCode ? [planCode] : undefined,
+        content_name: planName,
+        content_type: "product",
+      },
+      { email: email || undefined, eventId: `purchase-${checkoutId}` },
+    );
+  }, [paymentStatus, planPriceCents, planCode, planName, email, checkoutId]);
 
   useEffect(() => {
     window.onFechaProTurnstile = setTurnstileToken;
