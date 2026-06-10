@@ -106,7 +106,7 @@ function preferenceUrl(preference: MercadoPagoPreference) {
 
 function notificationUrl(origin: string) {
   const url = new URL("/api/webhooks/mercadopago", publicOrigin(origin));
-  const secret = productionEnv("MERCADO_PAGO_WEBHOOK_SECRET");
+  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
   if (secret) url.searchParams.set("secret", secret);
   return url.toString();
 }

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "timovi": {
+      "source": "theminimalcreator/timovi",
+      "sourceType": "github",
+      "skillPath": "skills/timovi/SKILL.md",
+      "computedHash": "605b2baad5c80f42fbb0f7cc709c70f0ccb2edc5d0371fcd06d2ecfac3de22f0"
+    }
+  }
+}
