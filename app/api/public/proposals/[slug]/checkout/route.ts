@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { canUseProposalPayments } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
 import { createProposalCheckout } from "@/lib/mercadopago";
+import { cleanConversionText, trackConversionEvent } from "@/lib/conversion";
 
 export async function POST(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
@@ -17,6 +18,9 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
   if (proposal.checkoutMode === "pix") redirect(`/checkout/proposta/${slug}`);
   const formData = await request.formData().catch(() => null);
   const paymentMode = String(formData?.get("paymentMode") || "full");
+  const campaign = cleanConversionText(formData?.get("campaign"));
+  const source = cleanConversionText(formData?.get("source")) || "public_proposal_checkout";
+  const variant = cleanConversionText(formData?.get("variant"));
   const amountCents = paymentMode === "signal_30"
     ? Math.max(100, Math.round(proposal.price * 0.3))
     : paymentMode === "signal_50"
@@ -49,6 +53,24 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
         paymentMethod: paymentMode,
         paymentStatus: "open",
         paymentUpdatedAt: new Date(),
+      },
+    });
+
+    await trackConversionEvent({
+      event: "checkout_started",
+      userId: proposal.userId,
+      proposalId: proposal.id,
+      plan: proposal.user.subscription?.plan || null,
+      campaign,
+      source,
+      variant,
+      path: `/p/${proposal.publicSlug}`,
+      context: "proposal_checkout",
+      metadata: {
+        amountCents,
+        checkoutId: checkout.id,
+        paymentMode,
+        publicSlug: proposal.publicSlug,
       },
     });
 

@@ -1,6 +1,33 @@
 {
-  "phase": "uninitialized",
+  "version": "1.0.0",
+  "phase": "ready",
   "user_name": "Amanda",
   "chat_language": "pt-br",
-  "project": "FechaPro"
+  "doc_language": "pt-br",
+  "project": "FechaPro",
+  "description": "O FechaPro ajuda prestadores de serviços e pequenos negócios a transformarem orçamentos simples em propostas profissionais que geram mais confiança e aumentam as chances de fechamento.",
+  "bootstrap_completed": true,
+  "bootstrap_completed_at": "2026-06-10T13:07:56.4368524-03:00",
+  "active_roles": [
+    "product-manager",
+    "ux-designer",
+    "software-architect",
+    "tech-lead",
+    "frontend-engineer",
+    "backend-engineer",
+    "quality-engineer",
+    "dba",
+    "head-marketing",
+    "devops"
+  ],
+  "current_feature": "sistema-venda-automatica",
+  "pipeline_phase": "execute",
+  "features": [],
+  "knowledge_files": {
+    "context": ".product-team/knowledge/CONTEXT.md",
+    "architecture": ".product-team/knowledge/ARCHITECTURE.md",
+    "stack": ".product-team/knowledge/STACK.md",
+    "conventions": ".product-team/knowledge/CONVENTIONS.md"
+  },
+  "git_mode": "confirm"
 }

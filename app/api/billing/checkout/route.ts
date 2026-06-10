@@ -4,10 +4,17 @@ import { artPacks, isPurchasablePlan, plans, type ArtPackCode, type PlanCode } f
 import { requireSession } from "@/lib/session";
 import { createArtPackCheckout, createPlanCheckout } from "@/lib/mercadopago";
 import { prisma } from "@/lib/prisma";
+import { cleanConversionText, trackConversionEvent } from "@/lib/conversion";
 
 export async function POST(request: Request) {
   const session = await requireSession();
-  const body = (await request.json()) as { artPack?: ArtPackCode; plan?: PlanCode };
+  const body = (await request.json()) as {
+    artPack?: ArtPackCode;
+    campaign?: string;
+    plan?: PlanCode;
+    source?: string;
+    variant?: string;
+  };
   const origin = new URL(request.url).origin;
 
   if (body.artPack) {
@@ -72,14 +79,31 @@ export async function POST(request: Request) {
         plan: body.plan,
         provider: "mercadopago",
         providerCheckoutId: checkout.id,
+        conversionCampaign: cleanConversionText(body.campaign),
+        conversionSource: cleanConversionText(body.source) || "authenticated_checkout",
+        conversionVariant: cleanConversionText(body.variant),
         status: "pending",
       },
       update: {
         plan: body.plan,
         provider: "mercadopago",
         providerCheckoutId: checkout.id,
+        conversionCampaign: cleanConversionText(body.campaign),
+        conversionSource: cleanConversionText(body.source) || "authenticated_checkout",
+        conversionVariant: cleanConversionText(body.variant),
         status: "pending",
       },
+    });
+
+    await trackConversionEvent({
+      event: "checkout_started",
+      userId: session.id,
+      plan: body.plan,
+      campaign: body.campaign,
+      source: body.source || "authenticated_checkout",
+      variant: body.variant,
+      context: "plan_checkout",
+      metadata: { checkoutId: checkout.id },
     });
 
     return NextResponse.json({ url: checkout.url });

@@ -3,6 +3,7 @@ import { getMercadoPagoPayment, getMercadoPagoSubscription, verifyMercadoPagoWeb
 import { prisma } from "@/lib/prisma";
 import { proposalNotification } from "@/lib/proposal-notifications";
 import { sendProposalPushNotification } from "@/lib/push";
+import { trackConversionEvent } from "@/lib/conversion";
 
 type MercadoPagoWebhookPayload = {
   action?: string;
@@ -45,6 +46,16 @@ export async function POST(request: Request) {
           where: { id: current.id },
           data: { provider: "mercadopago", providerSubscriptionId: subscription.id, status: "active" },
         });
+        await trackConversionEvent({
+          event: "payment_approved",
+          userId,
+          plan: current.plan,
+          campaign: current.conversionCampaign,
+          source: current.conversionSource || "mercadopago_preapproval",
+          variant: current.conversionVariant,
+          context: "subscription_preapproval",
+          metadata: { providerSubscriptionId: subscription.id, reference },
+        });
       } else if (pending) {
         await prisma.planSubscription.update({
           where: { id: current.id },
@@ -68,6 +79,16 @@ export async function POST(request: Request) {
         await prisma.signupPayment.update({
           where: { id: signupPayment.id },
           data: { paidAt: new Date(), providerCheckoutId: subscription.id, status: "paid" },
+        });
+        await trackConversionEvent({
+          event: "payment_approved",
+          userId: signupPayment.userId,
+          plan: signupPayment.plan,
+          campaign: signupPayment.conversionCampaign,
+          source: signupPayment.conversionSource || "mercadopago_signup_preapproval",
+          variant: signupPayment.conversionVariant,
+          context: "signup_preapproval",
+          metadata: { checkoutId: signupPayment.id, providerCheckoutId: subscription.id, email: signupPayment.email },
         });
       } else if (pending) {
         await prisma.signupPayment.update({
@@ -98,7 +119,10 @@ export async function POST(request: Request) {
 
   if (reference.startsWith("proposal:")) {
     const publicSlug = reference.replace("proposal:", "");
-    const proposal = await prisma.proposalAsset.findUnique({ where: { publicSlug } });
+    const proposal = await prisma.proposalAsset.findUnique({
+      where: { publicSlug },
+      include: { user: { include: { subscription: true } } },
+    });
     if (!proposal) return NextResponse.json({ received: true });
 
     if (paid && proposal.paymentStatus !== "paid") {
@@ -111,6 +135,22 @@ export async function POST(request: Request) {
           paymentPaidAt: new Date(),
           paymentUpdatedAt: new Date(),
           providerReceiptUrl: payment.transaction_details?.external_resource_url || proposal.providerReceiptUrl,
+        },
+      });
+      await trackConversionEvent({
+        event: "payment_approved",
+        userId: proposal.userId,
+        proposalId: proposal.id,
+        plan: proposal.user.subscription?.plan || null,
+        source: "mercadopago_proposal_payment",
+        path: `/p/${proposal.publicSlug}`,
+        context: "proposal_payment",
+        metadata: {
+          amountCents: proposal.price,
+          paymentMethod: payment.payment_type_id || payment.payment_method_id || proposal.paymentMethod,
+          providerPaymentId: eventId,
+          publicSlug: proposal.publicSlug,
+          reference,
         },
       });
       await sendProposalPushNotification(
@@ -145,6 +185,17 @@ export async function POST(request: Request) {
         where: { id: subscription.id },
         data: { status: "active", provider: "mercadopago" },
       });
+      const plan = reference.split(":")[2];
+      await trackConversionEvent({
+        event: "payment_approved",
+        userId,
+        plan: subscription.plan,
+        campaign: subscription.conversionCampaign,
+        source: subscription.conversionSource || "mercadopago_payment",
+        variant: subscription.conversionVariant,
+        context: "subscription_payment",
+        metadata: { providerPaymentId: eventId, reference, referencePlan: plan },
+      });
     } else if (failed) {
       await prisma.planSubscription.update({
         where: { id: subscription.id },
@@ -163,6 +214,16 @@ export async function POST(request: Request) {
       await prisma.signupPayment.update({
         where: { id: signupPayment.id },
         data: { paidAt: new Date(), status: "paid" },
+      });
+      await trackConversionEvent({
+        event: "payment_approved",
+        userId: signupPayment.userId,
+        plan: signupPayment.plan,
+        campaign: signupPayment.conversionCampaign,
+        source: signupPayment.conversionSource || "mercadopago_signup_payment",
+        variant: signupPayment.conversionVariant,
+        context: "signup_payment",
+        metadata: { checkoutId: signupPayment.id, providerPaymentId: eventId, email: signupPayment.email },
       });
     } else if (pending) {
       await prisma.signupPayment.update({

@@ -28,6 +28,7 @@ model User {
   artCreditPurchases  ArtCreditPurchase[]
   pushSubscriptions   PushSubscription[]
   accessEvents        AccessEvent[]
+  conversionEvents    ConversionEvent[]
   supportThreads      SupportThread[]
   supportMessages     SupportMessage[]
 }
@@ -41,6 +42,9 @@ model PlanSubscription {
   providerCustomerId     String?
   providerSubscriptionId String?
   providerCheckoutId     String?
+  conversionCampaign     String?
+  conversionSource       String?
+  conversionVariant      String?
   artCreditBalance       Int      @default(0)
   startedAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
@@ -54,6 +58,9 @@ model SignupPayment {
   status             String   @default("pending")
   provider           String   @default("mercadopago")
   providerCheckoutId String?  @unique
+  conversionCampaign String?
+  conversionSource   String?
+  conversionVariant  String?
   paidAt             DateTime?
   claimedAt          DateTime?
   userId             String?
@@ -185,6 +192,7 @@ model ProposalAsset {
   updatedAt             DateTime       @updatedAt
   user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   satisfactionSurvey    SatisfactionSurvey?
+  conversionEvents      ConversionEvent[]
 }
 
 model SatisfactionSurvey {
@@ -299,6 +307,30 @@ model AccessEvent {
 
   @@index([createdAt])
   @@index([userId, createdAt])
+}
+
+model ConversionEvent {
+  id         String   @id @default(cuid())
+  event      String
+  userId     String?
+  proposalId String?
+  plan       PlanCode?
+  campaign   String?
+  source     String?
+  variant    String?
+  path       String?
+  context    String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  proposal   ProposalAsset? @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([event, createdAt])
+  @@index([userId, createdAt])
+  @@index([proposalId, createdAt])
+  @@index([plan, createdAt])
+  @@index([variant, createdAt])
 }
 
 model SupportThread {

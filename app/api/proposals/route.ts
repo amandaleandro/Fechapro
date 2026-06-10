@@ -10,6 +10,7 @@ import { filterReadyProposalTemplates, findProposalTemplate } from "@/lib/propos
 import { requireSession } from "@/lib/session";
 import { cleanOptionalString, cleanString, isValidDateOnly, isValidEmail, isValidPhone } from "@/lib/validation";
 import { buildProposalClientWhatsAppUrl, sendProposalToClientViaWhatsApp } from "@/lib/whatsapp";
+import { trackConversionEvent } from "@/lib/conversion";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -167,13 +168,16 @@ export async function POST(request: Request) {
     return jsonError(`Limite acumulado do plano ${plan.name} atingido. Todo mês o saldo é renovado e o não utilizado fica acumulado.`, 402);
   }
 
-  const existingService = await prisma.serviceAsset.findFirst({
+  const [existingService, proposalCountBeforeCreate] = await Promise.all([
+    prisma.serviceAsset.findFirst({
     where: {
       userId: session.id,
       name: { equals: serviceName, mode: "insensitive" },
     },
     select: { id: true },
-  });
+    }),
+    prisma.proposalAsset.count({ where: { userId: session.id } }),
+  ]);
 
   let canCreateCatalogService = true;
   if (!existingService && subscription.plan === "free") {
@@ -235,6 +239,18 @@ export async function POST(request: Request) {
       whatsappUrl = buildProposalClientWhatsAppUrl(clientPhone, item.user.name, item.serviceName, item.publicSlug);
       whatsappSent = await sendProposalToClientViaWhatsApp(clientPhone, item.user.name, item.serviceName, item.publicSlug);
     }
+  }
+
+  if (proposalCountBeforeCreate === 0) {
+    await trackConversionEvent({
+      event: "first_proposal_created",
+      userId: session.id,
+      proposalId: item.id,
+      plan: subscription.plan,
+      source: "dashboard",
+      context: "proposal_create",
+      metadata: { publicSlug: item.publicSlug, status: item.status },
+    });
   }
 
   return NextResponse.json({ ...item, clientEmailSent, whatsappSent, whatsappUrl }, { status: 201 });

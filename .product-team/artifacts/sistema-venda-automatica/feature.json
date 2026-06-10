@@ -1,0 +1,112 @@
+{
+  "name": "Sistema de Venda Automatica",
+  "slug": "sistema-venda-automatica",
+  "status": "in_progress",
+  "pipeline_phase": "execute",
+  "created_at": "2026-06-10T13:53:26.3763902-03:00",
+  "updated_at": "2026-06-10T14:03:20.6500452-03:00",
+  "prd": {
+    "source": "generated",
+    "imported_from": null,
+    "path": ".product-team/artifacts/sistema-venda-automatica/PRD.md",
+    "created_at": "2026-06-10T13:55:03.1144453-03:00"
+  },
+  "issues": [
+    {
+      "id": "ISSUE-1",
+      "title": "Schema e tipos: eventos de conversao e variantes de oferta",
+      "status": "done",
+      "assigned_roles": ["backend-engineer", "dba"],
+      "blocked_by": [],
+      "pr_url": null,
+      "started_at": "2026-06-10T14:10:00.0000000-03:00",
+      "completed_at": "2026-06-10T14:14:00.0000000-03:00",
+      "agent_id": "codex",
+      "notes": "Concluido. Criado modelo ConversionEvent com relacoes opcionais para User e ProposalAsset, PlanCode opcional, campanha, origem, variante, path, contexto, metadata JSON e indices por data/evento/usuario/proposta/plano/variante. Criado lib/conversion.ts com eventos permitidos, variantes, types e limpeza de texto/metadata."
+    },
+    {
+      "id": "ISSUE-2",
+      "title": "Backend: helper resiliente e API publica de tracking",
+      "status": "done",
+      "assigned_roles": ["backend-engineer"],
+      "blocked_by": ["ISSUE-1"],
+      "pr_url": null,
+      "started_at": "2026-06-10T14:18:00.0000000-03:00",
+      "completed_at": "2026-06-10T14:24:00.0000000-03:00",
+      "agent_id": "codex",
+      "notes": "Concluido. trackConversionEvent grava eventos de forma resiliente e retorna false em falhas. API app/api/metrics/conversion/route.ts aceita eventos publicos/autenticados, aplica rate limit por IP, valida nomes de eventos e Plano, limpa payload e inclui userAgent/ip em metadata."
+    },
+    {
+      "id": "ISSUE-3",
+      "title": "Backend: instrumentar cadastro, primeira Proposta, checkout e pagamento aprovado",
+      "status": "done",
+      "assigned_roles": ["backend-engineer"],
+      "blocked_by": ["ISSUE-2"],
+      "pr_url": null,
+      "started_at": "2026-06-10T14:30:00.0000000-03:00",
+      "completed_at": "2026-06-10T14:38:00.0000000-03:00",
+      "agent_id": "codex",
+      "notes": "Concluido. signup_created registrado apos cadastro. first_proposal_created registrado somente quando o Usuario cria a primeira Proposta. checkout_started registrado em checkout autenticado, checkout de cadastro e checkout de Proposta publica, preservando campaign/source/variant quando enviados. payment_approved registrado no webhook do Mercado Pago para planos autenticados, signup payments e Proposta paga. PlanSubscription e SignupPayment receberam campos conversionCampaign/source/variant."
+    },
+    {
+      "id": "ISSUE-4",
+      "title": "Frontend: tracker client-side e eventos de landing/onboarding/proposta publica",
+      "status": "in_progress",
+      "assigned_roles": ["frontend-engineer"],
+      "blocked_by": ["ISSUE-2"],
+      "pr_url": null,
+      "started_at": "2026-06-10T14:41:00.0000000-03:00",
+      "completed_at": null,
+      "agent_id": "codex",
+      "notes": "Criar util client-side para enviar eventos e instrumentar landing_viewed, primary_cta_clicked, onboarding_started, onboarding_completed e public_proposal_viewed."
+    },
+    {
+      "id": "ISSUE-5",
+      "title": "Frontend: CTAs contextuais para Planos vitalicios altos",
+      "status": "pending",
+      "assigned_roles": ["frontend-engineer"],
+      "blocked_by": ["ISSUE-4"],
+      "pr_url": null,
+      "started_at": null,
+      "completed_at": null,
+      "agent_id": null,
+      "notes": "Adicionar chamadas de oferta vitalicia na landing, dashboard, primeira Proposta, limite de Plano e Proposta publica. Evitar bloqueios agressivos e registrar lifetime_offer_clicked com variante."
+    },
+    {
+      "id": "ISSUE-6",
+      "title": "Admin: funil de conversao por evento, variante e Plano",
+      "status": "pending",
+      "assigned_roles": ["backend-engineer", "frontend-engineer"],
+      "blocked_by": ["ISSUE-3", "ISSUE-4"],
+      "pr_url": null,
+      "started_at": null,
+      "completed_at": null,
+      "agent_id": null,
+      "notes": "Criar agregacoes admin e exibir contagens por evento, conversao por variante e Planos com mais checkout_started/payment_approved."
+    },
+    {
+      "id": "ISSUE-7",
+      "title": "QA: testes de validacao, helper e regras de tracking",
+      "status": "pending",
+      "assigned_roles": ["quality-engineer", "backend-engineer"],
+      "blocked_by": ["ISSUE-1", "ISSUE-2"],
+      "pr_url": null,
+      "started_at": null,
+      "completed_at": null,
+      "agent_id": null,
+      "notes": "Adicionar testes Vitest para tipos permitidos, sanitizacao de payload, helper resiliente e comportamento tolerante a falha."
+    },
+    {
+      "id": "ISSUE-8",
+      "title": "DevOps/Docs: checklist de deploy e verificacao de producao",
+      "status": "pending",
+      "assigned_roles": ["devops", "quality-engineer"],
+      "blocked_by": ["ISSUE-3", "ISSUE-6", "ISSUE-7"],
+      "pr_url": null,
+      "started_at": null,
+      "completed_at": null,
+      "agent_id": null,
+      "notes": "Documentar passos de db:push/migracao, validar envs, Mercado Pago webhook, health check e verificacao manual do funil apos deploy."
+    }
+  ]
+}

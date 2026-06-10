@@ -8,6 +8,7 @@ import { verifyTurnstile } from "@/lib/turnstile";
 import { isValidEmail } from "@/lib/validation";
 import { isBusinessSegment } from "@/lib/proposal-templates";
 import { plans, type PlanCode } from "@/lib/plans";
+import { trackConversionEvent } from "@/lib/conversion";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -96,6 +97,16 @@ export async function POST(request: Request) {
 
   const session = { id: user.id, name: user.name, email: user.email };
   await setSession(session);
+  await trackConversionEvent({
+    event: "signup_created",
+    userId: user.id,
+    plan: signupPayment?.plan || requestedPlan || "free",
+    campaign: signupPayment?.conversionCampaign || null,
+    source: signupPayment?.conversionSource || "signup",
+    variant: signupPayment?.conversionVariant || null,
+    context: checkoutId ? "paid_signup" : "free_signup",
+    metadata: { checkoutId: checkoutId || null, segment, niche },
+  });
   await sendWelcomeEmail(user.email, user.name);
   return NextResponse.json(session, { status: 201 });
 }
