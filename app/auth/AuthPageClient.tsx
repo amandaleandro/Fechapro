@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
-import { ArrowRight, Check, CreditCard, FileText, Link2, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
+import { ArrowRight, Check, Chrome, CreditCard, FileText, Link2, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
 import { isValidEmail } from "@/lib/validation";
 import { businessSegments, proposalTemplateNiches } from "@/lib/proposal-templates";
 
@@ -32,8 +32,10 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
   const isSignup = mode === "signup";
   const checkoutId = isSignup ? searchParams.get("checkout") || "" : "";
   const plan = isSignup ? searchParams.get("plan") || "" : "";
+  const oauthError = !isSignup ? searchParams.get("oauth") || "" : "";
   const isFreeSignup = isSignup && plan === "free";
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const googleLoginEnabled = !isSignup && Boolean(process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED);
 
   useEffect(() => {
     window.onFechaProTurnstile = setTurnstileToken;
@@ -49,6 +51,12 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
       router.replace("/#planos");
     }
   }, [isSignup, checkoutId, isFreeSignup, router]);
+
+  useEffect(() => {
+    if (oauthError) {
+      setAuthError(getOAuthErrorMessage(oauthError));
+    }
+  }, [oauthError]);
 
   async function submitAuth(event: { preventDefault(): void }) {
     event.preventDefault();
@@ -193,6 +201,24 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
             {authError ? (
               <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
                 {authError}
+              </div>
+            ) : null}
+
+            {googleLoginEnabled ? (
+              <a
+                className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white px-5 font-bold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-3 focus-visible:outline-slate-400/25"
+                href="/api/auth/google"
+              >
+                <Chrome size={17} />
+                Entrar com Google
+              </a>
+            ) : null}
+
+            {googleLoginEnabled ? (
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-300">
+                <span className="h-px bg-slate-100" />
+                ou
+                <span className="h-px bg-slate-100" />
               </div>
             ) : null}
 
@@ -375,4 +401,16 @@ async function readApiError(response: Response, fallback: string) {
   } catch {
     return fallback;
   }
+}
+
+function getOAuthErrorMessage(error: string) {
+  const messages: Record<string, string> = {
+    account_not_found: "Nao encontramos uma conta FechaPro com esse e-mail do Google.",
+    email_not_verified: "O e-mail da sua conta Google precisa estar verificado.",
+    google_failed: "Nao foi possivel concluir o login com Google agora.",
+    google_not_configured: "Login com Google ainda nao configurado neste ambiente.",
+    invalid_state: "Sessao de login expirada. Tente entrar com Google novamente.",
+  };
+
+  return messages[error] || "Nao foi possivel concluir o login com Google agora.";
 }

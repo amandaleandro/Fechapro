@@ -4355,7 +4355,7 @@ function PlansView({
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
         {billing.plans.map((plan) => {
           const active = billing.subscription.plan === plan.code && ["active", "trial"].includes(billing.subscription.status) && ["mercadopago", "admin"].includes(billing.subscription.provider || "");
-          const recommended = plan.code === "premium_site";
+          const recommended = plan.code === "founder";
           return (
             <article
               className={`relative grid gap-4 rounded-lg border p-4 shadow-xl shadow-slate-900/10 ${
@@ -4371,11 +4371,11 @@ function PlansView({
               <div>
                 <span className="text-xs font-black uppercase text-blue-700">{active ? "Plano atual" : "Plano"}</span>
                 <h3 className="mt-1 text-2xl font-black">{plan.name}</h3>
-                {plan.code === "premium_site" ? (
+                {plan.code === "founder" ? (
                   <p className="mt-2 text-xs font-black uppercase text-green-700">Pacote completo anual</p>
                 ) : null}
-                {plan.code === "premium_site" ? (
-                  <p className="mt-1 text-sm font-black text-slate-400 line-through">R$ 2.997/ano</p>
+                {plan.code === "founder" ? (
+                  <p className="mt-1 text-sm font-black text-slate-400 line-through">R$ 1.997</p>
                 ) : null}
                 <p className="mt-1 text-lg font-black text-green-700">{plan.price}</p>
                 {plan.annualPrice ? (
@@ -4384,7 +4384,7 @@ function PlansView({
                 {plan.maintenancePrice ? (
                   <p className="mt-1 text-sm font-black text-slate-500">{plan.maintenancePrice}</p>
                 ) : null}
-                {plan.code === "premium_site" ? (
+                {plan.code === "founder" ? (
                   <p className="mt-2 rounded-lg bg-green-50 p-3 text-xs font-black leading-5 text-green-900">
                     Sistema, mini site, implantação assistida, materiais comerciais e treinamento.
                   </p>
