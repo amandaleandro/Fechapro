@@ -16,7 +16,7 @@ services:
       retries: 5
 
   app:
-    image: fechapro-app
+    image: ${APP_IMAGE:-fechapro-app}
     container_name: fechapro-app
     restart: unless-stopped
     depends_on:
