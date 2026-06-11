@@ -192,9 +192,11 @@ export function AuthPageClient({ mode }: { mode: AuthMode }) {
                 {isSignup ? "Finalize sua conta" : "Bem-vindo de volta"}
               </h2>
               <p className="text-sm leading-6 text-slate-500">
-                {isSignup
-                  ? `Pagamento${plan ? ` do plano ${plan}` : ""} confirmado. Complete os dados abaixo.`
-                  : "Entre para continuar acompanhando suas propostas."}
+                {isFreeSignup
+                  ? "Crie sua conta grátis e teste com até 3 orçamentos, sem pagamento."
+                  : isSignup
+                    ? `Pagamento${plan ? ` do plano ${plan}` : ""} confirmado. Complete os dados abaixo.`
+                    : "Entre para continuar acompanhando suas propostas."}
               </p>
             </div>
 

@@ -58,7 +58,7 @@
       "started_at": "2026-06-10T14:41:00.0000000-03:00",
       "completed_at": "2026-06-10T14:50:00.0000000-03:00",
       "agent_id": "codex",
-      "notes": "Concluido. Criado tracker client-side em lib/conversion-client.ts com sendBeacon/fetch keepalive. Landing registra landing_viewed e primary_cta_clicked. Dashboard registra onboarding_started/onboarding_completed. Proposta publica registra public_proposal_viewed para visualizacao de Cliente via componente client discreto."
+      "notes": "Concluido. Criado tracker client-side em lib/conversion-client.ts com sendBeacon/fetch keepalive. Dashboard registra onboarding_started/onboarding_completed. Proposta publica registra public_proposal_viewed para visualizacao de Cliente via componente client discreto. Decisao posterior de marketing: nao alterar a landing nesta rodada; qualquer mudanca de landing foi removida do diff."
     },
     {
       "id": "ISSUE-5",
@@ -70,7 +70,7 @@
       "started_at": null,
       "completed_at": null,
       "agent_id": null,
-      "notes": "Adicionar chamadas de oferta vitalicia na landing, dashboard, primeira Proposta, limite de Plano e Proposta publica. Evitar bloqueios agressivos e registrar lifetime_offer_clicked com variante."
+      "notes": "Adicionar chamadas de oferta vitalicia no dashboard, primeira Proposta, limite de Plano, Proposta publica e checkout/oferta. Nao mexer na landing. Novo posicionamento aprovado: vender controle para fechar mais, nao proposta bonita. Usar variante principal close_more_proposals, apoiada por complete_structure nos detalhes. Mensagens devem destacar visualizacao da Proposta, calculo de custos, follow-up no momento certo e menos chute. Evitar prometer venda garantida e registrar lifetime_offer_clicked com variante."
     },
     {
       "id": "ISSUE-6",

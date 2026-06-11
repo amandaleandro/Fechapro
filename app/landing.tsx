@@ -4,8 +4,10 @@ import { useEffect } from "react";
 import Image from "next/image";
 import {
   BadgeCheck,
-  Building2,
+  Calculator,
   CheckCircle2,
+  Clock3,
+  Eye,
   FileCheck2,
   Images,
   Send,
@@ -33,14 +35,16 @@ type LandingPlan = {
 const plans: LandingPlan[] = [
   {
     code: "founder_start",
-    name: "Plano Inicial",
+    name: "Plano Começar",
     price: "R$ 397",
     installment: "ou 12x de R$ 39,90",
-    description: "Para quem quer começar a mandar propostas profissionais.",
-    cta: "Começar agora",
+    description: "Para parar de perder cliente depois de enviar orçamento pelo WhatsApp.",
+    cta: "Quero vender com controle",
     href: "/checkout/cadastro/founder_start",
     items: [
       "Propostas com link",
+      "Rastreamento de visualização",
+      "Calculadora de custo",
       "PDF automático",
       "Aceite online",
       "Cadastro de serviços",
@@ -52,8 +56,8 @@ const plans: LandingPlan[] = [
     name: "Plano Profissional",
     price: "R$ 997",
     installment: "ou 12x de R$ 99,70",
-    description: "Para quem quer começar vendendo melhor com uma estrutura mais completa.",
-    cta: "Quero minha estrutura pronta",
+    description: "Para quem quer recuperar vendas perdidas com rastreio, prova visual e follow-up.",
+    cta: "Quero vender com mais controle",
     href: "/checkout/cadastro/founder_professional",
     featured: true,
     items: [
@@ -61,17 +65,18 @@ const plans: LandingPlan[] = [
       "Portfólio/fotos",
       "Depoimentos",
       "Modelos prontos",
+      "Mensagens de follow-up",
       "Ajuda para configurar primeiras propostas",
       "Página comercial simples",
     ],
   },
   {
     code: "founder",
-    name: "Plano Completo",
+    name: "Plano Estrutura Pronta",
     price: "R$ 1.997",
     installment: "ou 12x de R$ 199,70",
-    description: "Para quem quer sair com tudo pronto.",
-    cta: "Quero vender melhor",
+    description: "Para quem quer uma estrutura pronta para perder menos orçamento e vender mais.",
+    cta: "Quero minha estrutura pronta",
     href: "/checkout/cadastro/founder",
     items: [
       "Tudo do Profissional",
@@ -85,12 +90,30 @@ const plans: LandingPlan[] = [
 ];
 
 const proposalItems = [
-  { title: "Dados da empresa", icon: Building2 },
-  { title: "Dados do cliente", icon: UserRound },
-  { title: "Serviço e valor", icon: Wrench },
-  { title: "Fotos do serviço", icon: Images },
-  { title: "Garantia e condições", icon: ShieldCheck },
-  { title: "Aceite online e PDF", icon: FileCheck2 },
+  { title: "Cliente e serviço organizados", icon: UserRound },
+  { title: "Custo, margem e preço sugerido", icon: Calculator },
+  { title: "Visualizações e cliques rastreados", icon: Eye },
+  { title: "Fotos, portfólio e depoimentos", icon: Images },
+  { title: "Garantia, prazo e condições", icon: ShieldCheck },
+  { title: "Aceite online, pagamento e PDF", icon: FileCheck2 },
+];
+
+const salesPillars = [
+  {
+    title: "Parar de perder venda por silêncio do cliente",
+    text: "Você sabe quando a proposta foi aberta, quantas visualizações teve e quando vale chamar antes que o cliente esfrie.",
+    icon: Eye,
+  },
+  {
+    title: "Parar de perder dinheiro cobrando errado",
+    text: "Some material, mão de obra e margem antes de enviar para não fechar serviço que dá prejuízo.",
+    icon: Calculator,
+  },
+  {
+    title: "Parar de virar só mais um preço",
+    text: "Mostre escopo, fotos, prazo, aceite, pagamento e PDF para o cliente entender valor antes de comparar preço.",
+    icon: FileCheck2,
+  },
 ];
 
 const niches = [
@@ -111,16 +134,20 @@ const niches = [
 const commonQuestions = [
   [
     "Preciso saber mexer com tecnologia?",
-    "Não. A ideia é deixar simples para você montar e enviar suas propostas pelo WhatsApp.",
+    "Não. A ideia é justamente você montar e enviar propostas pelo WhatsApp sem depender de designer, site ou ferramenta complicada.",
   ],
-  ["É mensalidade?", "Não. Você paga uma vez e usa sem mensalidade."],
+  ["É mensalidade?", "Não. A condição atual é pagamento único e uso sem mensalidade para compras até 30/06."],
   [
     "Serve para meu tipo de serviço?",
-    "Se você vende pelo WhatsApp e precisa passar orçamento, serve.",
+    "Se você vende serviço pelo WhatsApp, precisa explicar valor e costuma enviar orçamento antes de fechar, o FechaPro foi feito para esse cenário.",
+  ],
+  [
+    "E se eu não vender?",
+    "O FechaPro não promete milagre. Ele melhora a forma como você apresenta, acompanha e faz follow-up das propostas — três pontos onde muita venda é perdida.",
   ],
   [
     "Eu recebo pronto?",
-    "No plano Completo, sim. No Profissional, você recebe ajuda para configurar.",
+    "No plano Estrutura Pronta, sim. No Profissional, você recebe ajuda para configurar.",
   ],
 ];
 
@@ -147,7 +174,7 @@ function ProposalMockup() {
     <article className="mx-auto w-full max-w-md rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-950/10 sm:p-5">
       <div className="flex items-center justify-between gap-3 border-b border-black/10 pb-4">
         <div>
-          <p className="text-xs font-black uppercase text-green-700">Proposta profissional</p>
+          <p className="text-xs font-black uppercase text-green-700">Proposta rastreável</p>
           <h2 className="mt-1 text-xl font-black leading-tight text-slate-950">
             Proposta de instalação de ar-condicionado
           </h2>
@@ -161,7 +188,8 @@ function ProposalMockup() {
         {[
           ["Cliente", "João Pereira"],
           ["Serviço", "Instalação split 12.000 BTUs"],
-          ["Inclui", "instalação, suporte, garantia e materiais básicos"],
+          ["Custo calculado", "material + mão de obra + margem"],
+          ["Status", "visualizada há 8 min"],
         ].map(([label, value]) => (
           <div className="rounded-lg bg-slate-50 p-3" key={label}>
             <dt className="text-xs font-black uppercase text-slate-500">{label}</dt>
@@ -178,10 +206,25 @@ function ProposalMockup() {
         ))}
       </div>
 
+      <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-black">
+        <div className="rounded-lg bg-blue-50 p-3 text-blue-800">
+          <Eye className="mx-auto mb-1" size={18} />
+          3 views
+        </div>
+        <div className="rounded-lg bg-green-50 p-3 text-green-800">
+          <Calculator className="mx-auto mb-1" size={18} />
+          30% margem
+        </div>
+        <div className="rounded-lg bg-slate-100 p-3 text-slate-700">
+          <Clock3 className="mx-auto mb-1" size={18} />
+          Follow-up
+        </div>
+      </div>
+
       <div className="mt-4 rounded-lg bg-slate-950 p-4 text-white">
-        <p className="text-xs font-black uppercase text-white/55">Valor</p>
-        <strong className="mt-1 block text-3xl">R$ 850</strong>
-        <p className="mt-1 text-xs font-bold text-white/55">Garantia e condições explicadas no link</p>
+        <p className="text-xs font-black uppercase text-white/55">Preço sugerido</p>
+        <strong className="mt-1 block text-3xl">R$ 559</strong>
+        <p className="mt-1 text-xs font-bold text-white/55">Material, mão de obra, taxas e margem considerados</p>
       </div>
 
       <button className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button">
@@ -219,7 +262,7 @@ export function AuthScreen() {
     operatingSystem: "Web",
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br",
     description:
-      "Plataforma para prestadores de serviço criarem propostas profissionais com link, PDF, aceite online e envio pelo WhatsApp.",
+      "Plataforma para prestadores de serviço perderem menos vendas no WhatsApp com proposta rastreável, calculadora de custos, aceite online e follow-up.",
     offers: plans.map((plan) => ({
       "@type": "Offer",
       name: plan.name,
@@ -250,6 +293,7 @@ export function AuthScreen() {
             </a>
             <nav className="hidden items-center gap-6 text-sm font-bold text-slate-700 md:flex">
               <a href="#dor">Problema</a>
+              <a href="#controle">Controle</a>
               <a href="#como-funciona">Como funciona</a>
               <a href="#planos">Planos</a>
             </nav>
@@ -257,8 +301,8 @@ export function AuthScreen() {
               <a className="inline-flex rounded-lg px-3 py-2 text-sm font-black text-slate-700 sm:px-4" href="/login">
                 Entrar
               </a>
-              <a className="rounded-lg bg-green-700 px-4 py-2 text-sm font-black text-white" href="#planos">
-                Criar proposta
+              <a className="rounded-lg bg-green-700 px-4 py-2 text-sm font-black text-white" href="/cadastro?plan=free">
+                Criar 3 orçamentos grátis
               </a>
             </div>
           </div>
@@ -268,21 +312,21 @@ export function AuthScreen() {
           <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <div>
               <h1 className="max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
-                Pare de mandar só preço no WhatsApp.
+                Pare de perder cliente depois de mandar orçamento no WhatsApp
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700 sm:text-xl">
-                Transforme seu orçamento em uma proposta profissional com fotos, garantia, pagamento e aceite online, para parar de perder cliente que só compara preço.
+                O FechaPro resolve o ponto cego que faz muita venda escapar: você envia uma proposta por link, sabe quando o cliente visualizou, calcula se o preço dá lucro e faz o follow-up na hora certa.
               </p>
               <p className="mt-4 max-w-2xl text-lg font-bold leading-8 text-slate-800">
-                Mostre valor antes do preço e aumente suas chances de fechar pelo WhatsApp.
+                Menos cliente perdido. Menos preço no chute. Mais controle para fechar pelo WhatsApp.
               </p>
               <div className="mt-5 inline-flex rounded-lg border border-green-700/20 bg-green-50 px-4 py-3 text-sm font-black leading-6 text-green-900">
-                Feito para quem vende serviço de R$300 a R$10.000 pelo WhatsApp.
+                Feito para prestadores que vendem serviço de R$300 a R$10.000 pelo WhatsApp.
               </div>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg bg-green-700 px-6 text-base font-black text-white hover:bg-green-800"
-                  href="#planos"
+                  href="/cadastro?plan=free"
                   onClick={() =>
                     trackConversion({
                       event: "primary_cta_clicked",
@@ -292,16 +336,19 @@ export function AuthScreen() {
                     })
                   }
                 >
-                  Quero criar minha proposta
+                  Criar 3 orçamentos grátis
                 </a>
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg border border-black/10 bg-white px-6 text-base font-black text-slate-800 hover:bg-slate-50"
                   href="#exemplo"
                 >
-                  Ver exemplo
+                  Ver exemplo de proposta
                 </a>
               </div>
-              <p className="mt-5 text-sm font-black text-green-800">Pague uma vez. Use sem mensalidade.</p>
+              <div className="mt-5 grid gap-2 text-sm font-black text-green-800">
+                <p>Crie 3 orçamentos grátis para testar.</p>
+                <p>Pague uma vez. Use sem mensalidade até 30/06.</p>
+              </div>
             </div>
             <div id="exemplo">
               <ProposalMockup />
@@ -312,36 +359,53 @@ export function AuthScreen() {
         <section id="dor" className="bg-white px-4 py-16">
           <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <h2 className="text-3xl font-black leading-tight sm:text-5xl">
-              O cliente pede orçamento, você manda o valor e ele some?
+              Você manda o orçamento. O cliente some. E você fica no escuro.
             </h2>
             <div className="grid gap-4 text-lg leading-8 text-slate-700">
               <p className="rounded-lg bg-green-50 p-4 text-xl font-black leading-8 text-green-900">
-                Seu cliente não está sumindo porque achou caro. Ele está sumindo porque não entendeu o valor.
+                Cada orçamento sem resposta pode ser uma venda escapando. E, sem controle, você nem sabe se perdeu por preço, por demora no follow-up ou porque o cliente nem entendeu a proposta.
               </p>
               <p>
-                Isso acontece porque, quando você envia só o preço, o cliente não entende tudo que está incluso no seu serviço.
+                Sem rastreio, você não sabe se deve chamar, esperar ou desistir. Sem cálculo, você também não sabe se aquele valor cobre material, tempo, deslocamento, taxas e margem.
               </p>
-              <p>Ele compara você com qualquer outro orçamento mais barato.</p>
+              <p>Aí o follow-up vira adivinhação e o preço vira aposta.</p>
               <p className="font-bold text-slate-900">
-                Com o FechaPro, você mostra o serviço completo, passa mais confiança e ajuda o cliente a decidir com mais segurança.
+                O FechaPro resolve isso transformando seu orçamento em uma proposta rastreável, com custo calculado e sinais claros para você agir antes de perder o cliente.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="px-4 py-16">
+        <section id="controle" className="px-4 py-16">
+          <div className="mx-auto max-w-7xl">
+            <h2 className="max-w-4xl text-3xl font-black leading-tight sm:text-5xl">
+              O FechaPro resolve os três pontos onde muita venda é perdida.
+            </h2>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {salesPillars.map(({ title, text, icon: Icon }) => (
+                <article className="rounded-lg border border-black/10 bg-white p-6" key={title}>
+                  <Icon className="text-green-700" size={28} />
+                  <h3 className="mt-4 text-xl font-black leading-7">{title}</h3>
+                  <p className="mt-3 text-sm font-bold leading-6 text-slate-600">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white px-4 py-16">
           <div className="mx-auto max-w-7xl">
             <h2 className="max-w-3xl text-3xl font-black leading-tight sm:text-5xl">
-              Seu orçamento precisa vender o serviço, não só mostrar o preço.
+              Antes você perdia cliente sem saber por quê. Agora você acompanha sinais reais.
             </h2>
             <div className="mt-10 grid gap-4 md:grid-cols-2">
               <article className="rounded-lg border border-rose-700/15 bg-white p-6">
                 <div className="flex items-center gap-3">
                   <XCircle className="text-rose-700" size={26} />
-                  <h3 className="text-2xl font-black">Antes: orçamento comum no WhatsApp</h3>
+                  <h3 className="text-2xl font-black">Antes: orçamento solto no WhatsApp</h3>
                 </div>
                 <ul className="mt-6 grid gap-3">
-                  {["Mensagem solta", "Cliente vê só o preço", "Parece informal", "Difícil explicar garantia", "Cliente some"].map((item) => (
+                  {["Mensagem solta", "Você não sabe se o cliente abriu", "Preço calculado no chute", "Follow-up tarde demais", "Cliente some e a venda esfria"].map((item) => (
                     <li className="flex gap-2 font-bold text-slate-700" key={item}>
                       <XCircle className="mt-0.5 shrink-0 text-rose-700" size={17} />
                       {item}
@@ -352,10 +416,10 @@ export function AuthScreen() {
               <article className="rounded-lg border border-green-700/20 bg-green-50 p-6">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="text-green-700" size={26} />
-                  <h3 className="text-2xl font-black">Depois: proposta com FechaPro</h3>
+                  <h3 className="text-2xl font-black">Depois: controle com FechaPro</h3>
                 </div>
                 <ul className="mt-6 grid gap-3">
-                  {["Link profissional", "Serviço bem explicado", "Fotos e portfólio", "Garantia e condições", "Aceite online"].map((item) => (
+                  {["Link profissional rastreável", "Visualizações e cliques registrados", "Custo e margem antes do preço", "Follow-up antes do cliente esfriar", "Aceite e pagamento online"].map((item) => (
                     <li className="flex gap-2 font-bold text-slate-800" key={item}>
                       <CheckCircle2 className="mt-0.5 shrink-0 text-green-700" size={17} />
                       {item}
@@ -372,10 +436,10 @@ export function AuthScreen() {
             <h2 className="text-3xl font-black leading-tight sm:text-5xl">Como funciona</h2>
             <div className="mt-10 grid gap-4 md:grid-cols-4">
               {[
-                ["Cadastre sua marca", "Coloque logo, nome e dados da empresa."],
-                ["Monte seus serviços", "Adicione descrição, valores, fotos e condições."],
-                ["Envie o link da proposta", "O cliente recebe tudo organizado pelo WhatsApp."],
-                ["Receba o aceite", "O cliente pode aceitar a proposta direto pelo link."],
+                ["Calcule antes de cobrar", "Some materiais, mão de obra, taxas e margem."],
+                ["Monte a proposta", "Adicione escopo, fotos, prazo, condições e pagamento."],
+                ["Envie o link pelo WhatsApp", "O cliente recebe tudo organizado no celular."],
+                ["Acompanhe e faça follow-up", "Veja visualizações, cliques, aceite e pagamento para não perder venda por falta de ação."],
               ].map(([title, text], index) => (
                 <article className="rounded-lg border border-white/10 bg-white/5 p-5" key={title}>
                   <span className="grid h-9 w-9 place-items-center rounded-lg bg-green-500 text-sm font-black text-slate-950">
@@ -389,10 +453,34 @@ export function AuthScreen() {
           </div>
         </section>
 
+        <section className="px-4 py-16">
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-3xl">
+              <p className="text-xs font-black uppercase text-green-700">Prova de controle</p>
+              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
+                Veja o que muda quando o orçamento vira proposta rastreável.
+              </h2>
+            </div>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {[
+                ["O cliente recebe um link", "Em vez de uma mensagem solta, ele abre uma proposta com escopo, prazo, valor, fotos e aceite."],
+                ["Você vê a visualização", "O painel registra abertura, visualizações e cliques no WhatsApp para tirar o follow-up do chute."],
+                ["Você sabe o que cobrar", "A calculadora ajuda a considerar material, mão de obra, taxas e margem antes de enviar."],
+              ].map(([title, text]) => (
+                <article className="rounded-lg border border-black/10 bg-white p-6" key={title}>
+                  <CheckCircle2 className="text-green-700" size={26} />
+                  <h3 className="mt-4 text-xl font-black">{title}</h3>
+                  <p className="mt-3 text-sm font-bold leading-6 text-slate-600">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="bg-white px-4 py-16">
           <div className="mx-auto max-w-7xl">
             <h2 className="max-w-3xl text-3xl font-black leading-tight sm:text-5xl">
-              Tudo que o cliente precisa para confiar antes de fechar.
+              O que o FechaPro entrega para você perder menos orçamento.
             </h2>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {proposalItems.map(({ title, icon: Icon }) => (
@@ -410,6 +498,9 @@ export function AuthScreen() {
             <h2 className="text-3xl font-black leading-tight sm:text-5xl">
               Feito para quem vende serviço pelo WhatsApp
             </h2>
+            <p className="mt-4 max-w-3xl text-lg font-bold leading-8 text-slate-700">
+              Ideal para quem vende serviços acima de R$300 e precisa explicar valor antes de cobrar preço.
+            </p>
             <div className="mt-8 flex flex-wrap gap-2">
               {niches.map((niche) => (
                 <span className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-black text-slate-700" key={niche}>
@@ -428,10 +519,13 @@ export function AuthScreen() {
                 Escolha como quer começar.
               </h2>
               <p className="mt-4 rounded-lg bg-green-50 p-4 text-xl font-black leading-8 text-green-900">
-                Se uma proposta melhor te ajudar a fechar apenas 1 serviço a mais, o FechaPro já se paga.
+                Uma venda recuperada já pode pagar o investimento inteiro.
+              </p>
+              <p className="mt-4 rounded-lg border border-black/10 bg-white p-4 text-base font-black leading-7 text-slate-800">
+                Se você perde 1 cliente por mês porque mandou orçamento simples no WhatsApp e não acompanhou na hora certa, continuar no escuro também tem custo.
               </p>
               <p className="mt-4 text-lg font-bold leading-8 text-slate-700">
-                Pagamento único, sem mensalidade. Você compra o acesso e começa a enviar propostas profissionais.
+                Você pode criar 3 orçamentos grátis para testar. Depois, a condição atual é pagamento único e sem mensalidade para compras até 30/06.
               </p>
             </div>
             <div className="mt-10 grid gap-4 lg:grid-cols-3">
@@ -446,10 +540,15 @@ export function AuthScreen() {
                 >
                   {plan.featured ? (
                     <span className="absolute right-5 top-5 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-slate-950">
-                      Melhor custo-benefício
+                      Mais escolhido
                     </span>
                   ) : null}
                   <h3 className="pr-28 text-2xl font-black">{plan.name}</h3>
+                  {plan.featured ? (
+                    <p className="mt-3 rounded-lg bg-white/10 p-3 text-sm font-black leading-6 text-green-100">
+                      Para quem quer parar de mandar orçamento simples e começar a vender com proposta profissional.
+                    </p>
+                  ) : null}
                   <p className={`mt-3 text-sm font-bold leading-6 ${plan.featured ? "text-white/65" : "text-slate-600"}`}>
                     {plan.description}
                   </p>
@@ -458,13 +557,22 @@ export function AuthScreen() {
                     <span className={`mt-1 block text-sm font-bold ${plan.featured ? "text-white/55" : "text-slate-500"}`}>
                       {plan.installment}
                     </span>
-                    <span
-                      className={`mt-4 inline-flex rounded-lg px-3 py-2 text-sm font-black ${
-                        plan.featured ? "bg-white/10 text-green-200" : "bg-green-50 text-green-800"
-                      }`}
-                    >
-                      Pagamento único, sem mensalidade
-                    </span>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span
+                        className={`inline-flex rounded-lg px-3 py-2 text-sm font-black ${
+                          plan.featured ? "bg-white/10 text-green-200" : "bg-green-50 text-green-800"
+                        }`}
+                      >
+                        3 orçamentos grátis
+                      </span>
+                      <span
+                        className={`inline-flex rounded-lg px-3 py-2 text-sm font-black ${
+                          plan.featured ? "bg-white/10 text-green-200" : "bg-green-50 text-green-800"
+                        }`}
+                      >
+                        Sem mensalidade até 30/06
+                      </span>
+                    </div>
                   </div>
                   <ul className="mt-6 grid flex-1 gap-3">
                     {plan.items.map((item) => (
@@ -514,13 +622,13 @@ export function AuthScreen() {
           <div className="mx-auto max-w-3xl">
             <BadgeCheck className="mx-auto text-green-200" size={34} />
             <h2 className="mt-4 text-3xl font-black leading-tight sm:text-5xl">
-              Pare de ser comparado só pelo preço.
+              Pare de perder venda no escuro.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-white/75">
-              Envie uma proposta que mostra serviço, valor, fotos, garantia e aceite online em um único link.
+              O FechaPro resolve o acompanhamento depois do orçamento: rastreio, custo calculado, aceite, pagamento e sinais para fazer follow-up antes do cliente esfriar.
             </p>
-            <a className="mt-8 inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-8 font-black text-green-900" href="#planos">
-              Quero criar minha proposta
+            <a className="mt-8 inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-8 font-black text-green-900" href="/cadastro?plan=free">
+              Criar 3 orçamentos grátis
             </a>
           </div>
         </section>

@@ -15,6 +15,38 @@ O FechaPro precisa transformar mais visitantes e Usuarios em Clientes pagos. Hoj
 
 Criar uma camada de conversao dentro do FechaPro para promover Planos vitalicios, priorizando os Planos mais altos, em varios pontos da jornada do Usuario e da Proposta publica.
 
+## Posicionamento de Marketing
+
+Decisao aprovada em 2026-06-11: o FechaPro nao deve ser vendido como "sistema para criar proposta bonita". O posicionamento principal deve ser:
+
+> FechaPro e a ferramenta que mostra quando o Cliente abriu sua Proposta, calcula seus custos e ajuda o Usuario a fazer follow-up na hora certa para vender mais.
+
+Promessa central:
+
+> Pare de mandar orcamento no escuro. Com o FechaPro, voce sabe quando o Cliente visualizou sua Proposta, calcula seus custos e faz o follow-up no momento certo para fechar mais.
+
+Pilares de venda:
+
+1. **Nao perder Cliente por falta de acompanhamento**
+   - Dor: o Usuario manda orcamento e nao sabe se o Cliente viu, ignorou ou esqueceu.
+   - Promessa: "Voce sabe quando o Cliente abriu sua Proposta e pode chamar na hora certa."
+2. **Nao vender no prejuizo**
+   - Dor: o Usuario erra preco porque nao calcula material, tempo, deslocamento, margem e taxas.
+   - Promessa: "Calcule seus custos antes de mandar a Proposta e pare de cobrar no chute."
+3. **Apresentar uma Proposta que induz decisao**
+   - Dor: orcamento solto no WhatsApp parece improvisado e vira comparacao de preco.
+   - Promessa: "Envie uma Proposta com detalhes, valor, prazo, Aceite e botao de pagamento."
+
+Termos que devem guiar a copy:
+
+- "Pare de vender no escuro."
+- "Saiba quando o Cliente viu."
+- "Calcule antes de cobrar."
+- "Faca follow-up no momento certo."
+- "Aumente suas chances de fechar."
+
+Evitar prometer "venda garantida".
+
 ## Publico impactado
 
 - **Visitante:** pessoa que chega na landing e ainda nao criou conta.
@@ -38,13 +70,14 @@ Implementar um **Motor de Conversao** e uma **Medição de Funil**.
 
 O sistema deve exibir chamadas contextuais para Planos vitalicios altos em momentos-chave:
 
-- Landing antes de criar conta.
 - Cadastro e onboarding.
 - Dashboard apos cadastro.
 - Criacao da primeira Proposta.
 - Proposta publica aberta pelo Cliente.
 - Bloqueios ou avisos de limite do Plano.
 - Checkout e pos-checkout.
+
+Decisao aprovada em 2026-06-11: nao alterar a landing nesta rodada. Os eventos de landing podem continuar existindo como capacidade futura, mas os CTAs e copies desta entrega devem focar nos pontos internos e na Proposta publica.
 
 As chamadas devem priorizar a oferta vitalicia e variar os argumentos:
 
@@ -121,11 +154,18 @@ Criar estrutura simples de variantes de oferta para testar argumentos diferentes
 
 Adicionar chamadas para oferta vitalicia em:
 
-- Landing.
 - Dashboard.
 - Fluxo de primeira Proposta.
 - Avisos de limite do Plano.
 - Proposta publica.
+
+Copy aprovada:
+
+- **Dashboard:** "Pare de vender no escuro" / "Veja quais Propostas foram visualizadas, acompanhe cliques no WhatsApp e use o follow-up no momento certo para aumentar suas chances de fechar." / CTA "Ver oferta vitalicia".
+- **Primeira Proposta:** "Agora voce nao precisa mandar orcamento no escuro" / "Sua Proposta pode mostrar valor, prazo, Aceite, pagamento e ainda registrar quando o Cliente visualizou. Use isso para chamar na hora certa." / CTA "Quero vender com mais controle".
+- **Limite do Plano:** "Seu uso mostra que voce precisa de mais controle" / "Libere mais Propostas, acompanhe visualizacoes e organize follow-ups sem depender de chute." / CTA "Liberar Plano vitalicio".
+- **Proposta publica:** "Essa Proposta profissional foi criada com FechaPro." / CTA "Criar minha Proposta" / variacao "Quer enviar propostas assim para seus clientes?"
+- **Checkout / Oferta:** "Venda servico com mais controle, sem mensalidade" / "Proposta rastreavel, calculo de custos, Aceite, pagamento e follow-up no momento certo em uma estrutura vitalicia para o seu negocio." / CTA "Garantir acesso vitalicio".
 
 ### RF5 - Checkout com contexto
 
@@ -153,6 +193,8 @@ Adicionar uma visao inicial no admin para mostrar contagem por evento, conversao
 - A oferta principal e vitalicia, priorizando Planos mais altos.
 - A primeira versao mede todos os eventos do funil.
 - Variantes de mensagem podem ser fixas inicialmente para reduzir complexidade.
+- A variante principal aprovada para CTAs e checkout passa a ser `close_more_proposals`, com apoio de `complete_structure` nos detalhes da oferta.
+- A landing nao deve ser alterada nesta rodada.
 - A Proposta publica pode vender o FechaPro para o Cliente, mas sem competir com o objetivo principal da Proposta do Usuario.
 
 ## Decisoes Tecnicas
@@ -177,7 +219,7 @@ Adicionar uma visao inicial no admin para mostrar contagem por evento, conversao
 
 - O banco possui estrutura para registrar eventos de conversao.
 - Existe endpoint seguro para registrar eventos publicos e autenticados.
-- Landing, dashboard, primeira Proposta, Proposta publica, limite de Plano, checkout e pagamento aprovado registram eventos.
+- Dashboard, primeira Proposta, Proposta publica, limite de Plano, checkout e pagamento aprovado registram eventos.
 - Ofertas vitalicias aparecem em pontos contextuais sem bloquear tarefas principais.
 - Checkout recebe contexto de Plano, origem e variante quando iniciado por uma oferta.
 - Admin consegue visualizar pelo menos contagens por evento e por variante.
