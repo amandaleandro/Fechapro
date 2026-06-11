@@ -50,7 +50,6 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
 
   const brand = proposal.user.brandProfile;
   const logoUrl = brand?.logoUrl || demoLogoUrl(proposal.publicSlug);
-  console.log("[PDF] logoUrl:", logoUrl || "(vazio)", "| brand.logoUrl:", brand?.logoUrl || "(null)");
   const pdf = await createProposalPdf({
     clientName: proposal.clientName,
     serviceName: proposal.serviceName,
@@ -190,6 +189,10 @@ async function createProposalPdf(data: ProposalPdfData) {
       size: "A4",
     });
     const chunks: Buffer[] = [];
+    doc.info.Title = `Proposta - ${data.serviceName}`;
+    doc.info.Author = data.brandName;
+    doc.info.Subject = `Proposta para ${data.clientName}`;
+    doc.info.Keywords = "proposta, orcamento, aceite, FechaPro";
 
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
@@ -1627,18 +1630,24 @@ async function readPortfolioImage(item: { category: string | null; imageUrl: str
 }
 
 function drawDecision(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
-  ensureSpace(doc, 150);
+  ensureSpace(doc, 178);
   const y = doc.y + 8;
-  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 128, 8).fill(data.brandSecondaryColor);
-  doc.rect(MARGIN + 22, y + 22, 42, 3).fill(design.accent);
-  doc.fillColor(design.accent).font("Helvetica-Bold").fontSize(8).text("DECISAO DA PROPOSTA", MARGIN + 22, y + 42);
-  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(19).text(labelStatus(data.status), MARGIN + 22, y + 58, {
-    width: 184,
+  doc.roundedRect(MARGIN + 3, y + 4, CONTENT_WIDTH, 154, 10).fill("#CBD5E1");
+  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 154, 10).fill(data.brandSecondaryColor);
+  doc.rect(MARGIN, y, 7, 154).fill(design.accent);
+  doc.circle(PAGE.width - MARGIN - 28, y + 30, 46).fill(data.brandColor);
+  doc.circle(PAGE.width - MARGIN - 54, y + 16, 24).fill(design.accent);
+  doc.rect(MARGIN + 24, y + 24, 42, 3).fill(design.accent);
+  doc.fillColor(design.accent).font("Helvetica-Bold").fontSize(8).text("FECHAMENTO", MARGIN + 24, y + 42, {
+    characterSpacing: 0.6,
+  });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(20).text(labelStatus(data.status), MARGIN + 24, y + 58, {
+    width: 178,
     height: 24,
     ellipsis: true,
   });
 
-  let detail = "Para aceitar, acesse o link da proposta e confirme pelo botão de aceite.";
+  let detail = "Para aprovar, abra o link da proposta e registre o aceite online. O profissional recebe a confirmação automaticamente.";
   if (data.status === "accepted") {
     detail = `Aceita por ${data.acceptedBy || data.clientName}${data.acceptedAt ? ` em ${data.acceptedAt}` : ""}.`;
   }
@@ -1649,18 +1658,42 @@ function drawDecision(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: Pd
     detail += ` Pagamento confirmado${data.paymentPaidAt ? ` em ${data.paymentPaidAt}` : ""}.`;
   }
 
-  doc.rect(MARGIN + 224, y + 28, 1, 72).fill("#475569");
-  doc.fillColor("#E2E8F0").font("Helvetica").fontSize(10).text(detail, MARGIN + 248, y + 42, {
-    width: CONTENT_WIDTH - 270,
+  doc.fillColor("#CBD5E1").font("Helvetica").fontSize(9.5).text(detail, MARGIN + 24, y + 88, {
+    width: 184,
+    height: 44,
     lineGap: 3,
   });
-  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8).text("LINK PARA ACEITE", MARGIN + 248, y + 86);
-  doc.fillColor("#CBD5E1").font("Helvetica").fontSize(7.8).text(data.publicUrl, MARGIN + 248, y + 101, {
-    width: CONTENT_WIDTH - 270,
+
+  const linkX = MARGIN + 238;
+  const linkY = y + 34;
+  const linkW = CONTENT_WIDTH - 266;
+  doc.roundedRect(linkX, linkY, linkW, 88, 8).fill("#FFFFFF");
+  doc.rect(linkX, linkY, 5, 88).fill(design.accent);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text("LINK PARA ACEITE ONLINE", linkX + 18, linkY + 18, {
+    characterSpacing: 0.5,
+  });
+  doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text(data.publicUrl, linkX + 18, linkY + 36, {
+    width: linkW - 36,
+    height: 14,
+    ellipsis: true,
+  });
+  doc.fillColor(MUTED).font("Helvetica").fontSize(8.2).text("Abra no navegador para revisar, aceitar, pagar ou baixar os documentos da proposta.", linkX + 18, linkY + 58, {
+    width: linkW - 36,
+    height: 20,
+    lineGap: 2,
+  });
+
+  doc.fillColor("#E2E8F0").font("Helvetica-Bold").fontSize(7.5).text("CLIENTE", linkX, y + 134, {
+    width: 50,
     height: 10,
     ellipsis: true,
   });
-  doc.y = y + 148;
+  doc.fillColor("#FFFFFF").font("Helvetica").fontSize(8.2).text(data.clientName, linkX + 58, y + 134, {
+    width: linkW - 58,
+    height: 10,
+    ellipsis: true,
+  });
+  doc.y = y + 174;
 }
 
 function drawFooter(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {

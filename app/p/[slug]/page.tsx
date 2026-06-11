@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
-import { canUseProposalDocuments, canUseProposalPayments } from "@/lib/billing-access";
+import { canUseProposalDocuments, canUseProposalPayments, canUseProposalPresentation } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
 import { sendProposalViewedEmail } from "@/lib/email";
 import { sendProposalPushNotification } from "@/lib/push";
 import { proposalNotification } from "@/lib/proposal-notifications";
 import { getSession } from "@/lib/session";
+import ConversionTracker from "@/app/components/ConversionTracker";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -119,8 +120,10 @@ export default async function PublicProposalPage({
   const acceptHref = hasDecision ? "#status" : "#aceite";
   const wantsPix = proposal.checkoutMode === "pix";
   const documentsEnabled = canUseProposalDocuments(proposal.user.subscription);
+  const presentationEnabled = canUseProposalPresentation(proposal.user.subscription);
   const paymentsEnabled = canUseProposalPayments(proposal.user.subscription);
   const proposalPdfHref = `/p/${proposal.publicSlug}/pdf`;
+  const proposalSlidesHref = `/p/${proposal.publicSlug}/slides`;
   const contractPdfHref = `/p/${proposal.publicSlug}/contrato`;
   const acceptedDocumentHref = currentStatus === "accepted" ? contractPdfHref : proposalPdfHref;
   const acceptedDocumentLabel = currentStatus === "accepted" ? "Contrato" : "Contrato / proposta";
@@ -146,6 +149,17 @@ export default async function PublicProposalPage({
         "--proposal-secondary": brandSecondaryColor,
       } as CSSProperties}
     >
+      {shouldTrackView ? (
+        <ConversionTracker
+          event="public_proposal_viewed"
+          proposalId={proposal.id}
+          plan={proposal.user.subscription?.plan || null}
+          source="public_proposal"
+          path={`/p/${proposal.publicSlug}`}
+          context="proposal_public_page"
+          metadata={{ publicSlug: proposal.publicSlug, status: currentStatus }}
+        />
+      ) : null}
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
@@ -209,6 +223,12 @@ export default async function PublicProposalPage({
           </div>
         ) : null}
 
+        <section className="fp-proposal-client-note">
+          <span>Link seguro da proposta</span>
+          <strong>{brandName}</strong>
+          <span>PDF, aceite e pagamento em um só lugar</span>
+        </section>
+
         <header className={`fp-proposal-hero overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${segmentStyle.primary}, ${segmentStyle.accent})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
@@ -253,12 +273,13 @@ export default async function PublicProposalPage({
                 ) : null}
               </div>
 
-              <h1 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-6xl">
-                Proposta para {proposal.clientName}
+              <p className="mt-6 text-sm font-black uppercase tracking-wide text-white/60">Proposta preparada para {proposal.clientName}</p>
+              <h1 className="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-6xl">
+                {proposal.serviceName}
               </h1>
               <div className="fp-proposal-service-brief mt-5 max-w-2xl rounded-lg border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-                <p className="text-xs font-black uppercase text-white/60">Serviço proposto</p>
-                <strong className="mt-1 block text-xl font-black text-white sm:text-2xl">{proposal.serviceName}</strong>
+                <p className="text-xs font-black uppercase text-white/60">Resumo comercial</p>
+                <strong className="mt-1 block text-xl font-black text-white sm:text-2xl">Escopo, prazo e investimento para aprovação</strong>
                 <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold text-white/80">
                   <span>Prazo: {proposal.deadline}</span>
                   <span aria-hidden="true">|</span>
@@ -276,7 +297,12 @@ export default async function PublicProposalPage({
                 ) : null}
                 {documentsEnabled ? (
                   <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 px-5 font-black text-white" href={acceptedDocumentHref}>
-                    {acceptedDocumentLabel}
+                    Ver PDF
+                  </a>
+                ) : null}
+                {presentationEnabled ? (
+                  <a className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 bg-white/10 px-5 font-black text-white" href={proposalSlidesHref}>
+                    Ver slides
                   </a>
                 ) : null}
                 {documentsEnabled && currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
@@ -312,7 +338,7 @@ export default async function PublicProposalPage({
                 <div className="mt-5 grid gap-2 border-t border-black/10 pt-4 text-sm">
                   <HeroDetail label="Cliente" value={proposal.clientName} />
                   <HeroDetail label="Entrega" value={proposal.deadline} />
-                  <HeroDetail label="Canal" value={documentsEnabled ? "Link online + PDF" : "Link online"} />
+                  <HeroDetail label="Documento" value={presentationEnabled ? "Online + PDF + slides" : documentsEnabled ? "Online + PDF" : "Online"} />
                 </div>
               </div>
               <div className="grid gap-2">
@@ -324,6 +350,11 @@ export default async function PublicProposalPage({
                 {documentsEnabled ? (
                   <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-4 text-center font-black" href={acceptedDocumentHref}>
                     {acceptedDocumentLabel}
+                  </a>
+                ) : null}
+                {presentationEnabled ? (
+                  <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 bg-slate-950 px-4 text-center font-black text-white" href={proposalSlidesHref}>
+                    Apresentação em slides
                   </a>
                 ) : null}
                 {documentsEnabled && currentStatus === "accepted" && proposal.paymentStatus === "paid" ? (
@@ -609,7 +640,7 @@ export default async function PublicProposalPage({
           <div className="grid gap-3 sm:grid-cols-3">
             <PreviewBox label="Status" value={expired ? "Vencida" : labelStatus(currentStatus)} />
             <PreviewBox label="Pagamento" value={paymentsEnabled ? (proposal.paymentStatus === "paid" ? "Confirmado" : "Pendente") : "Desativado"} />
-            <PreviewBox label="Formato" value={documentsEnabled ? "Online + PDF" : "Online"} />
+            <PreviewBox label="Formato" value={presentationEnabled ? "Online + PDF + slides" : documentsEnabled ? "Online + PDF" : "Online"} />
           </div>
           {currentStatus === "accepted" ? (
             <div className="mt-4 rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-900">
@@ -759,9 +790,12 @@ export default async function PublicProposalPage({
       </article>
 
       <div className="fp-proposal-mobile-bar fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 p-3 shadow-2xl shadow-slate-950/15 backdrop-blur sm:hidden">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2">
+        <div className={`mx-auto grid max-w-5xl gap-2 ${documentsEnabled && presentationEnabled ? "grid-cols-3" : "grid-cols-2"}`}>
           {documentsEnabled ? <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-3 text-center text-sm font-black text-slate-800" href={acceptedDocumentHref}>
             PDF
+          </a> : null}
+          {presentationEnabled ? <a className="grid min-h-11 place-items-center rounded-lg border border-black/10 px-3 text-center text-sm font-black text-slate-800" href={proposalSlidesHref}>
+            Slides
           </a> : null}
           <a className="grid min-h-11 place-items-center rounded-lg px-3 text-center text-sm font-black text-white" href={acceptHref} style={{ background: brandColor }}>
             {hasDecision ? "Ver status" : "Aceitar"}

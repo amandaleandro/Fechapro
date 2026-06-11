@@ -81,6 +81,7 @@ Regras importantes ao escrever rotas:
 - `storage.ts` — abstração de upload: usa S3/R2 se configurado, senão filesystem local (`UPLOAD_DIR`). Sempre via `saveFile`/`readUploadedFile`.
 - `proposal-templates.ts` — templates estáticos por nicho/segmento. `marketing-art-html.ts` — geração de artes.
 - `rate-limit.ts`, `turnstile.ts`, `security-env.ts` — segurança e anti-bot.
+- `conversion.ts` / `conversion-client.ts` — funil de conversão (ver abaixo). `meta-capi.ts` — Meta Pixel + Conversions API.
 
 ### Banco de dados (Prisma)
 
@@ -92,6 +93,15 @@ Notas de domínio:
 - `ProposalAsset.publicSlug` é o identificador do link público `/p/[slug]`. `status` segue o enum `ProposalStatus` (draft → sent → viewed → accepted/declined/expired).
 - `checkoutMode` = `mercadopago` | `pix`; PIX tem confirmação manual pelo profissional (`/api/proposals/[id]/confirm-pix`).
 - Planos `founder_*` são variantes vitalícias (pagamento único) da oferta de lançamento.
+
+### Rastreamento de conversão e analytics de funil
+
+Subsistema próprio (não usa Google Analytics) para medir o funil de venda — base do tema "sistema-venda-automatica".
+
+- **Catálogo de eventos**: a lista canônica está em `lib/conversion.ts` (`conversionEvents`: `landing_viewed` → `primary_cta_clicked` → `signup_created` → `onboarding_*` → `first_proposal_created` → `public_proposal_viewed` → `lifetime_offer_clicked` → `checkout_started` → `payment_approved`). Variantes de oferta vitalícia em `lifetimeOfferVariants`. **Adicione novos eventos/variantes a esses arrays** — o que não estiver lá é silenciosamente descartado.
+- **Client → server**: o componente `app/components/ConversionTracker.tsx` (monta `null`, dispara no `useEffect`) chama `trackConversion` (`lib/conversion-client.ts`), que envia via `navigator.sendBeacon` (com fallback `fetch keepalive`) para `POST /api/metrics/conversion`. A rota é pública, rate-limited por IP, resolve o `userId` da sessão se houver, e persiste em `prisma.conversionEvent` via `trackConversionEvent`.
+- **Persistência**: modelo `ConversionEvent` no schema (FKs `onDelete: SetNull`, vários índices por `createdAt`). `trackConversionEvent` **nunca lança** — falhas viram `false` e não quebram o fluxo do usuário. Todo texto é sanitizado/truncado (`cleanConversionText`, `cleanConversionMetadata`).
+- **Meta Pixel + CAPI**: o browser espelha cada evento do Pixel para `POST /api/meta/capi` com o mesmo `eventId`; o servidor (`lib/meta-capi.ts`) enriquece com IP/user-agent/e-mail-hash e a Meta deduplica por `eventId`. Degrada graciosamente sem `NEXT_PUBLIC_META_PIXEL_ID` + `META_CAPI_ACCESS_TOKEN`.
 
 ### Fluxo de proposta (núcleo do produto)
 
@@ -110,4 +120,4 @@ Acionado externamente (não há scheduler embutido). Em produção roda via cron
 
 ## Variáveis de ambiente
 
-Base em `.env.example`. Obrigatórias: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`, `NEXT_PUBLIC_SITE_URL`. Integrações opcionais (degradam graciosamente se ausentes): email (SMTP/Resend), `MERCADO_PAGO_*`, VAPID push, S3/R2, Turnstile, WhatsApp/Baileys, `OPENAI_API_KEY`, Sentry, `CRON_SECRET`. Detalhes completos no [README.md](README.md).
+Base em `.env.example`. Obrigatórias: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`, `NEXT_PUBLIC_SITE_URL`. Integrações opcionais (degradam graciosamente se ausentes): email (SMTP/Resend), `MERCADO_PAGO_*`, VAPID push, S3/R2, Turnstile, WhatsApp/Baileys, `OPENAI_API_KEY`, Meta Pixel/CAPI (`NEXT_PUBLIC_META_PIXEL_ID`, `META_CAPI_ACCESS_TOKEN`, `META_CAPI_TEST_EVENT_CODE`), Sentry, `CRON_SECRET`. Detalhes completos no [README.md](README.md).

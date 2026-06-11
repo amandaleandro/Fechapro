@@ -51,14 +51,14 @@
     {
       "id": "ISSUE-4",
       "title": "Frontend: tracker client-side e eventos de landing/onboarding/proposta publica",
-      "status": "in_progress",
+      "status": "done",
       "assigned_roles": ["frontend-engineer"],
       "blocked_by": ["ISSUE-2"],
       "pr_url": null,
       "started_at": "2026-06-10T14:41:00.0000000-03:00",
-      "completed_at": null,
+      "completed_at": "2026-06-10T14:50:00.0000000-03:00",
       "agent_id": "codex",
-      "notes": "Criar util client-side para enviar eventos e instrumentar landing_viewed, primary_cta_clicked, onboarding_started, onboarding_completed e public_proposal_viewed."
+      "notes": "Concluido. Criado tracker client-side em lib/conversion-client.ts com sendBeacon/fetch keepalive. Landing registra landing_viewed e primary_cta_clicked. Dashboard registra onboarding_started/onboarding_completed. Proposta publica registra public_proposal_viewed para visualizacao de Cliente via componente client discreto."
     },
     {
       "id": "ISSUE-5",
@@ -87,14 +87,14 @@
     {
       "id": "ISSUE-7",
       "title": "QA: testes de validacao, helper e regras de tracking",
-      "status": "pending",
+      "status": "done",
       "assigned_roles": ["quality-engineer", "backend-engineer"],
       "blocked_by": ["ISSUE-1", "ISSUE-2"],
       "pr_url": null,
-      "started_at": null,
-      "completed_at": null,
-      "agent_id": null,
-      "notes": "Adicionar testes Vitest para tipos permitidos, sanitizacao de payload, helper resiliente e comportamento tolerante a falha."
+      "started_at": "2026-06-10T14:51:00.0000000-03:00",
+      "completed_at": "2026-06-10T14:54:00.0000000-03:00",
+      "agent_id": "codex",
+      "notes": "Concluido. Adicionado lib/__tests__/conversion.test.ts cobrindo eventos permitidos, variantes, Planos, sanitizacao de texto/metadados, payload enviado ao Prisma, evento invalido sem gravação e tolerancia a falha do banco."
     },
     {
       "id": "ISSUE-8",

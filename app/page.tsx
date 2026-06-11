@@ -43,6 +43,7 @@ import {
   X,
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
+import { trackConversion } from "@/lib/conversion-client";
 import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
 import { AuthScreen } from "./landing";
 import { FREE_CLIENT_LIMIT, FREE_PORTFOLIO_LIMIT, FREE_SERVICE_LIMIT, isUnlimitedProposalLimit, isUnlimitedArtLimit, plans, type PlanCode } from "@/lib/plans";
@@ -1092,6 +1093,8 @@ export default function Home() {
       (!brand.businessName || brand.businessName === session.name || !brand.whatsapp) &&
       services.length === 0,
   );
+  const onboardingStartedTracked = useRef(false);
+  const onboardingCompletedTracked = useRef(false);
   const currentTourStep = tourStepIndex === null ? null : availableTourSteps[tourStepIndex] || null;
   const allProposalTemplates = useMemo(
     () => [...customProposalTemplates, ...filterReadyProposalTemplates(session?.niche, session?.segment)],
@@ -1113,6 +1116,32 @@ export default function Home() {
       setActiveView(currentTourStep.view);
     }
   }, [activeView, currentTourStep, onboardingIncomplete]);
+
+  useEffect(() => {
+    if (!session || !brand) return;
+
+    if (onboardingIncomplete && !onboardingStartedTracked.current) {
+      onboardingStartedTracked.current = true;
+      trackConversion({
+        event: "onboarding_started",
+        plan: currentPlan,
+        source: "dashboard",
+        context: "onboarding_gate",
+        metadata: { hasBrandWhatsapp: Boolean(brand.whatsapp), servicesCount: services.length },
+      });
+    }
+
+    if (!onboardingIncomplete && onboardingStartedTracked.current && !onboardingCompletedTracked.current) {
+      onboardingCompletedTracked.current = true;
+      trackConversion({
+        event: "onboarding_completed",
+        plan: currentPlan,
+        source: "dashboard",
+        context: "onboarding_gate",
+        metadata: { servicesCount: services.length },
+      });
+    }
+  }, [brand, currentPlan, onboardingIncomplete, services.length, session]);
 
   useEffect(() => {
     if (canUseModule(activeView, currentPlan)) return;

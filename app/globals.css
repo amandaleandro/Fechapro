@@ -639,6 +639,32 @@ select:focus {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1), 0 24px 56px rgba(15, 23, 42, 0.18) !important;
 }
 
+.fp-proposal-client-note {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+  color: #475569;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  justify-content: space-between;
+  padding: 0.72rem 0.9rem;
+}
+
+.fp-proposal-client-note span {
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.fp-proposal-client-note strong {
+  color: #0f172a;
+  font-size: 0.94rem;
+  font-weight: 950;
+}
+
 .fp-proposal-hero::after,
 .fp-checkout-hero::after {
   position: absolute;
@@ -736,6 +762,7 @@ select:focus {
 .fp-proposal-service-brief {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.07)) !important;
+  border-left: 4px solid var(--proposal-accent, #2563eb) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 16px 36px rgba(2, 6, 23, 0.12);
 }
 
@@ -1226,6 +1253,40 @@ select:focus {
   margin-top: 1.25rem;
 }
 
+.fp-slide-cover-strip {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: clamp(1.3rem, 2vw, 2.1rem);
+  max-width: 34rem;
+}
+
+.fp-slide-cover-strip div {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: grid;
+  padding: 0.85rem 1rem;
+}
+
+.fp-slide-cover-strip dt {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fp-slide-cover-strip dd {
+  color: #ffffff;
+  font-size: clamp(1rem, 1.5vw, 1.45rem);
+  font-weight: 950;
+  line-height: 1.1;
+  margin-top: 0.35rem;
+  overflow-wrap: anywhere;
+}
+
 .fp-slide-cover-media {
   align-self: center;
   background: rgba(255, 255, 255, 0.07);
@@ -1289,7 +1350,7 @@ select:focus {
 
 .fp-slide-statement {
   align-items: center;
-  background: #f8fafc;
+  background: linear-gradient(145deg, #f8fafc, #ffffff);
   border-left: 0.3rem solid var(--slides-primary);
   border-radius: 10px;
   display: flex;
@@ -1317,7 +1378,7 @@ select:focus {
 }
 
 .fp-slide-facts div {
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
   border: 1px solid #e8edf4;
   border-radius: 10px;
   border-top: 3px solid var(--slides-primary);
@@ -1357,7 +1418,7 @@ select:focus {
 
 .fp-slide-scope li {
   align-items: center;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
   border: 1px solid #e8edf4;
   border-radius: 10px;
   display: grid;
@@ -1385,6 +1446,63 @@ select:focus {
   letter-spacing: -0.01em;
   line-height: 1.16;
   overflow-wrap: anywhere;
+}
+
+.fp-slide-timeline {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 0;
+}
+
+.fp-slide-timeline article {
+  background:
+    linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid #e8edf4;
+  border-radius: 12px;
+  box-shadow: 0 2px 18px rgba(15, 23, 42, 0.07);
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-width: 0;
+  padding: clamp(1.1rem, 2.4vw, 2rem);
+  position: relative;
+}
+
+.fp-slide-timeline article::after {
+  background: linear-gradient(180deg, var(--slides-primary), var(--slides-accent));
+  border-radius: 999px;
+  bottom: 1.4rem;
+  content: "";
+  left: clamp(1.1rem, 2.4vw, 2rem);
+  position: absolute;
+  top: 5.3rem;
+  width: 0.28rem;
+}
+
+.fp-slide-timeline span {
+  color: var(--slides-primary);
+  font-size: clamp(1.4rem, 2.6vw, 2.5rem);
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.fp-slide-timeline h3 {
+  color: #0a0f1e;
+  font-size: clamp(1.15rem, 1.8vw, 1.8rem);
+  font-weight: 950;
+  line-height: 1.08;
+  margin-top: 1rem;
+}
+
+.fp-slide-timeline p {
+  color: #475569;
+  font-size: clamp(0.95rem, 1.18vw, 1.22rem);
+  font-weight: 750;
+  line-height: 1.32;
+  margin-top: 0.85rem;
+  overflow-wrap: anywhere;
+  padding-left: 1rem;
 }
 
 .fp-slide-gallery {
@@ -1561,6 +1679,7 @@ select:focus {
   }
 
   .fp-slide-scope,
+  .fp-slide-timeline,
   .fp-slide-facts {
     grid-template-columns: 1fr;
   }
