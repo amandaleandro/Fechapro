@@ -20,15 +20,34 @@ export function createGoogleOAuthState() {
   return randomBytes(24).toString("base64url");
 }
 
+function cleanOrigin(value?: string) {
+  return value?.trim().replace(/\/$/, "");
+}
+
+function isLocalOrigin(origin: string) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/i.test(origin);
+}
+
+export function getPublicAppOrigin(origin: string) {
+  const requestOrigin = origin.replace(/\/$/, "");
+
+  if (process.env.NODE_ENV !== "production" && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  return (
+    cleanOrigin(process.env.APP_URL) ||
+    cleanOrigin(process.env.NEXT_PUBLIC_SITE_URL) ||
+    cleanOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    (isLocalOrigin(requestOrigin) ? "https://fechapro.com.br" : requestOrigin)
+  );
+}
+
 export function getGoogleRedirectUri(origin: string) {
-  const explicitRedirectUri = process.env.GOOGLE_REDIRECT_URI?.trim();
+  const explicitRedirectUri = cleanOrigin(process.env.GOOGLE_REDIRECT_URI);
   if (explicitRedirectUri) return explicitRedirectUri;
 
-  const requestOrigin = origin.replace(/\/$/, "");
-  const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin);
-  const configuredAppUrl = process.env.APP_URL?.trim().replace(/\/$/, "");
-  const appUrl = isLocalOrigin ? requestOrigin : configuredAppUrl || requestOrigin;
-  return `${appUrl}/api/auth/google/callback`;
+  return `${getPublicAppOrigin(origin)}/api/auth/google/callback`;
 }
 
 export function getGoogleAuthorizationUrl(input: { origin: string; state: string }) {
