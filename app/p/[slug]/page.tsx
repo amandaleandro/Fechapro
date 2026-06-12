@@ -229,6 +229,17 @@ export default async function PublicProposalPage({
           <span>PDF, aceite e pagamento em um só lugar</span>
         </section>
 
+        <nav className="fp-proposal-action-rail" aria-label="Navegacao da proposta">
+          <a href="#escopo">Escopo</a>
+          <a href="#status">Status</a>
+          {documentsEnabled ? <a href={acceptedDocumentHref}>PDF</a> : null}
+          {presentationEnabled ? <a href={proposalSlidesHref}>Slides</a> : null}
+          {currentStatus === "accepted" && documentsEnabled ? <a href={contractPdfHref}>Contrato</a> : null}
+          <a className="fp-proposal-action-rail-primary" href={acceptHref}>
+            {hasDecision ? "Ver decisao" : "Aceitar"}
+          </a>
+        </nav>
+
         <header className={`fp-proposal-hero overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${segmentStyle.primary}, ${segmentStyle.accent})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
@@ -387,7 +398,7 @@ export default async function PublicProposalPage({
           </section>
         ) : null}
 
-        <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start">
+        <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-start" id="escopo">
           <div className="fp-proposal-panel grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <section>
               <p className="text-xs font-black uppercase text-blue-700">Escopo</p>

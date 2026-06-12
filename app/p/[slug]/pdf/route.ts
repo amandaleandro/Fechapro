@@ -205,7 +205,7 @@ async function createProposalPdf(data: ProposalPdfData) {
 async function renderPdf(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   const design = getSegmentDesign(data);
   doc.addPage();
-  await drawPremiumCover(doc, data, design);
+  await drawProposalSalesCover(doc, data, design);
   doc.addPage();
   doc.y = MARGIN;
   drawDocumentHeader(doc, data, design);
@@ -422,6 +422,114 @@ async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, d
   doc.y = thanksY + 64;
 }
 
+async function drawProposalSalesCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
+  const style = getPdfProposalStyle(data.proposalStyle);
+  const headerHeight = 410;
+  const imageX = PAGE.width - MARGIN - 194;
+  const imageY = 142;
+  const imageW = 194;
+  const imageH = 214;
+
+  doc.rect(0, 0, PAGE.width, PAGE.height).fill("#FFFFFF");
+  doc.rect(0, 0, PAGE.width, headerHeight).fill(style.coverColor(data));
+  doc.rect(0, 0, PAGE.width, 10).fill(data.brandColor);
+  doc.rect(0, 10, PAGE.width, 4).fill(data.brandAccentColor);
+  doc.rect(PAGE.width - 120, 0, 120, headerHeight).fill(data.brandColor);
+  doc.rect(PAGE.width - 54, 0, 54, headerHeight).fill(data.brandAccentColor);
+  doc.rect(0, headerHeight, PAGE.width, 1).fill(LINE);
+
+  const logoBox = { x: MARGIN, y: 38, w: 136, h: 66 };
+  doc.roundedRect(logoBox.x, logoBox.y, logoBox.w, logoBox.h, 9).fill("#FFFFFF");
+  doc.rect(logoBox.x, logoBox.y + logoBox.h - 3, logoBox.w, 3).fill(data.brandColor);
+  const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
+  if (logo) {
+    const didDrawLogo = drawLogoImageInFrame(doc, logo, logoBox.x, logoBox.y, logoBox.w, logoBox.h, 12, 9);
+    if (!didDrawLogo) drawLogoInitials(doc, data.brandName, logoBox.x + 45, logoBox.y + 10, 46, data.brandColor);
+  } else {
+    drawLogoInitials(doc, data.brandName, logoBox.x + 45, logoBox.y + 10, 46, data.brandColor);
+  }
+
+  const brandX = MARGIN + logoBox.w + 18;
+  doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text(style.eyebrow, brandX, 51, {
+    characterSpacing: 1.1,
+    width: 180,
+    ellipsis: true,
+  });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12.5).text(data.brandName, brandX, 67, {
+    width: 188,
+    height: 30,
+    lineGap: 1,
+    ellipsis: true,
+  });
+  drawStatusPill(doc, data.status, PAGE.width - MARGIN - 132, 48, 132, data.brandColor);
+
+  doc.fillColor("#BFDBFE").font("Helvetica-Bold").fontSize(8).text(`${design.segmentName.toUpperCase()} / ${documentTitleFor(data.documentType, design.documentTitle)}`, MARGIN, 136, {
+    characterSpacing: 1,
+    width: 286,
+    height: 10,
+    ellipsis: true,
+  });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(style.titleSize + 3).text(data.serviceName, MARGIN, 158, {
+    width: 286,
+    height: 112,
+    lineGap: 2,
+    ellipsis: true,
+  });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(11).text(`Preparada para ${data.clientName}`, MARGIN, 282, {
+    width: 286,
+    height: 16,
+    ellipsis: true,
+  });
+  doc.fillColor("#D8E3EE").font("Helvetica").fontSize(10.2).text(
+    data.proposalIntro || data.brandBio || `Escopo, investimento e prazo organizados para ${data.clientName} decidir com seguranca.`,
+    MARGIN,
+    306,
+    { width: 286, height: 48, lineGap: 3, ellipsis: true },
+  );
+
+  doc.roundedRect(imageX + 6, imageY + 8, imageW, imageH, 14).fill("#020617");
+  doc.roundedRect(imageX, imageY, imageW, imageH, 14).fill("#FFFFFF");
+  const coverImage = await readImageFromUrl(data.serviceImages[0]?.imageUrl || data.portfolio[0]?.imageUrl || "", data.assetOrigin);
+  if (coverImage) {
+    const didDraw = drawPdfImage(doc, coverImage, imageX + 9, imageY + 9, {
+      fit: [imageW - 18, imageH - 18],
+      align: "center",
+      valign: "center",
+      width: imageW - 18,
+      height: imageH - 18,
+    });
+    if (!didDraw) drawCoverSummaryCard(doc, data, design, imageX + 9, imageY + 9, imageW - 18, imageH - 18);
+  } else {
+    drawCoverSummaryCard(doc, data, design, imageX + 9, imageY + 9, imageW - 18, imageH - 18);
+  }
+
+  doc.roundedRect(MARGIN + 3, 444, CONTENT_WIDTH, 152, 12).fill("#CBD5E1");
+  doc.roundedRect(MARGIN, 440, CONTENT_WIDTH, 152, 12).fillAndStroke("#FFFFFF", LINE);
+  doc.rect(MARGIN, 440, CONTENT_WIDTH, 5).fill(data.brandColor);
+  drawCoverMetric(doc, "Investimento", data.price, MARGIN + 22, 466, 152, data.brandColor);
+  drawCoverMetric(doc, "Prazo", data.deadline || "A combinar", MARGIN + 190, 466, 146, data.brandColor);
+  drawCoverMetric(doc, "Validade", data.validUntil, MARGIN + 352, 466, 134, data.brandColor);
+
+  doc.roundedRect(MARGIN, 626, CONTENT_WIDTH, 92, 10).fillAndStroke(design.soft, LINE);
+  doc.rect(MARGIN + 20, 650, 4, 42).fill(data.brandAccentColor);
+  doc.fillColor(design.primary).font("Helvetica-Bold").fontSize(8).text("PROXIMO PASSO", MARGIN + 40, 648);
+  doc.fillColor(INK).font("Helvetica-Bold").fontSize(10).text("Revise a proposta e registre o aceite online", MARGIN + 40, 666, {
+    width: CONTENT_WIDTH - 70,
+    height: 14,
+    ellipsis: true,
+  });
+  doc.fillColor(MUTED).font("Helvetica").fontSize(8.5).text(data.publicUrl, MARGIN + 40, 686, {
+    width: CONTENT_WIDTH - 70,
+    height: 11,
+    ellipsis: true,
+  });
+
+  const metaY = 750;
+  drawCoverMeta(doc, "CLIENTE", data.clientName, MARGIN, metaY, 164, design);
+  drawCoverMeta(doc, "EMISSAO", data.createdAt, MARGIN + 184, metaY, 132, design);
+  drawCoverMeta(doc, "DOCUMENTO", documentTitleFor(data.documentType, design.documentTitle), MARGIN + 336, metaY, 172, design);
+}
+
 async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
   const style = getPdfProposalStyle(data.proposalStyle);
   const logoX = MARGIN;
@@ -437,8 +545,10 @@ async function drawPremiumCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, 
   doc.rect(0, 0, PAGE.width, 402).fill(style.coverColor(data));
   doc.rect(0, 0, PAGE.width, 9).fill(data.brandColor);
   doc.rect(0, 9, PAGE.width, 4).fill(data.brandAccentColor);
-  doc.circle(PAGE.width - 34, 356, 92).fill(data.brandAccentColor);
-  doc.circle(PAGE.width - 88, 326, 74).fill(data.brandColor);
+  doc.rect(PAGE.width - 120, 0, 120, 402).fill(data.brandColor);
+  doc.rect(PAGE.width - 52, 0, 52, 402).fill(data.brandAccentColor);
+  doc.rect(PAGE.width - 164, 118, 18, 220).fill("#FFFFFF");
+  doc.rect(PAGE.width - 158, 124, 6, 208).fill(data.brandAccentColor);
   doc.rect(MARGIN, 118, 46, 3).fill(data.brandAccentColor);
   doc.rect(0, 402, PAGE.width, 1).fill(LINE);
 

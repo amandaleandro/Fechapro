@@ -71,21 +71,106 @@ function createContractPdf(data: ContractPdfData) {
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
 
-    drawCover(doc, data);
+    drawPremiumContractCover(doc, data);
     drawContractBody(doc, data);
     drawContractFooter(doc, data);
     doc.end();
   });
 }
 
+function drawPremiumContractCover(doc: PDFKit.PDFDocument, data: ContractPdfData) {
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const ink = "#0F172A";
+  const muted = "#64748B";
+  const line = "#DDE7E2";
+
+  doc.rect(0, 0, pageWidth, pageHeight).fill("#EEF3F0");
+  doc.roundedRect(30, 28, 535, 786, 14).fill("#FFFFFF");
+  doc.rect(30, 28, 535, 10).fill(data.primaryColor);
+  doc.rect(58, 74, 54, 4).fill(data.primaryColor);
+
+  doc.fillColor(muted).font("Helvetica-Bold").fontSize(8.5).text("CONTRATO DE PRESTACAO DE SERVICOS", 58, 92, {
+    characterSpacing: 1.4,
+    width: 330,
+    ellipsis: true,
+  });
+  doc.fillColor(ink).font("Helvetica-Bold").fontSize(28).text(data.serviceName, 58, 118, {
+    width: 330,
+    height: 82,
+    lineGap: 2,
+    ellipsis: true,
+  });
+  doc.fillColor("#475569").font("Helvetica").fontSize(10.5).text(`Contrato gerado a partir da proposta aceita por ${data.acceptedBy}.`, 58, 214, {
+    width: 330,
+    height: 34,
+    lineGap: 3,
+    ellipsis: true,
+  });
+
+  doc.roundedRect(408, 74, 116, 122, 10).fill("#F8FAFC").stroke(line);
+  doc.rect(408, 74, 116, 5).fill(data.primaryColor);
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(7.5).text("ACEITE DIGITAL", 420, 98, {
+    characterSpacing: 1,
+    width: 92,
+    align: "center",
+  });
+  doc.fillColor(ink).font("Helvetica-Bold").fontSize(10.5).text(data.acceptedAtShort, 420, 121, {
+    width: 92,
+    height: 30,
+    align: "center",
+    ellipsis: true,
+  });
+  doc.fillColor(muted).font("Helvetica").fontSize(7.8).text(`Cod. ${data.proposalCode}`, 420, 164, {
+    width: 92,
+    align: "center",
+    ellipsis: true,
+  });
+
+  drawCoverSectionTitle(doc, "Partes", 58, 278, data.primaryColor);
+  infoCard(doc, 58, 312, "Contratada", data.businessName, contactLine(data.businessEmail, data.businessWhatsapp), data.primaryColor);
+  infoCard(doc, 296, 312, "Contratante", data.acceptedBy, partyDetail(data.acceptedEmail, data.acceptedDocument), data.primaryColor);
+
+  drawCoverSectionTitle(doc, "Condicoes comerciais", 58, 444, data.primaryColor);
+  infoCard(doc, 58, 478, "Investimento", data.total, `Pagamento: ${data.payment}`, data.primaryColor);
+  infoCard(doc, 296, 478, "Prazo", data.deadline, `Validade da proposta: ${data.validUntil}`, data.primaryColor);
+
+  doc.roundedRect(58, 636, 468, 92, 12).fill("#ECFDF5");
+  doc.roundedRect(58, 636, 4, 92, 3).fill("#166534");
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8.5).text("REGISTRO DO ACEITE DIGITAL", 78, 654, {
+    characterSpacing: 0.8,
+  });
+  doc.fillColor(ink).font("Helvetica-Bold").fontSize(12).text(`${data.acceptedBy} confirmou o aceite digital desta contratacao em ${data.acceptedAtFull}.`, 78, 674, {
+    width: 434,
+    lineGap: 4,
+  });
+  doc.fillColor(muted).font("Helvetica").fontSize(8.5).text(`Codigo da proposta: ${data.proposalCode} | Versao: ${data.acceptedContractVersion}`, 78, 710, {
+    width: 434,
+    ellipsis: true,
+  });
+
+  doc.roundedRect(58, 760, 468, 1, 1).fill("#E2E8F0");
+  doc.fillColor("#94A3B8").font("Helvetica").fontSize(8.5).text(
+    "Documento gerado automaticamente a partir da proposta aceita no FechaPro.",
+    58,
+    776,
+    { width: 468, align: "center" },
+  );
+}
+
+function drawCoverSectionTitle(doc: PDFKit.PDFDocument, title: string, x: number, y: number, color: string) {
+  doc.roundedRect(x, y, 3, 20, 1.5).fill(color);
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(13).text(title, x + 10, y + 2);
+}
+
 function drawCover(doc: PDFKit.PDFDocument, data: ContractPdfData) {
-  doc.rect(0, 0, 595.28, 841.89).fill("#F1F5F9");
-  doc.roundedRect(32, 30, 531, 782, 16).fill("#FFFFFF");
+  doc.rect(0, 0, 595.28, 841.89).fill("#EEF2F1");
+  doc.roundedRect(30, 28, 535, 786, 14).fill("#FFFFFF");
 
   // Header com cor primária
-  doc.rect(32, 30, 531, 152).fill(data.primaryColor);
+  doc.rect(30, 28, 535, 10).fill(data.primaryColor);
   // Faixa de destaque na base do header
-  doc.rect(32, 178, 531, 4).fill("#020617");
+  doc.rect(30, 38, 535, 1).fill("#D7E2DD");
   // Elemento decorativo: círculos sutis no canto superior direito
   doc.save();
   doc.opacity(0.14);
@@ -95,6 +180,11 @@ function drawCover(doc: PDFKit.PDFDocument, data: ContractPdfData) {
 
   doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9).text("CONTRATO DE PRESTAÇÃO DE SERVIÇOS", 58, 58, { characterSpacing: 1.8, width: 338, ellipsis: true });
   doc.fontSize(26).text(data.serviceName, 58, 84, { width: 338, height: 72, lineGap: 2, ellipsis: true });
+  doc.rect(50, 56, 348, 148).fill("#FFFFFF");
+  doc.rect(58, 74, 54, 4).fill(data.primaryColor);
+  doc.fillColor("#64748B").font("Helvetica-Bold").fontSize(9).text("CONTRATO DE PRESTACAO DE SERVICOS", 58, 92, { characterSpacing: 1.4, width: 338, ellipsis: true });
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(28).text(data.serviceName, 58, 116, { width: 338, height: 78, lineGap: 2, ellipsis: true });
+  doc.fillColor("#475569").font("Helvetica").fontSize(10.5).text(`Contrato gerado a partir da proposta aceita por ${data.acceptedBy}.`, 58, 208, { width: 338, height: 32, lineGap: 3, ellipsis: true });
 
   // Badge de aceite digital
   doc.roundedRect(406, 58, 120, 72, 10).fill("#FFFFFF");
@@ -103,22 +193,27 @@ function drawCover(doc: PDFKit.PDFDocument, data: ContractPdfData) {
   doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(9.5).text(data.acceptedAtShort, 418, 92, { width: 96, height: 28, align: "center", ellipsis: true });
 
   // Seção: Partes
-  doc.roundedRect(58, 202, 3, 20, 1.5).fill(data.primaryColor);
-  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(13).text("Partes", 68, 204);
-  infoCard(doc, 58, 232, "Contratada", data.businessName, contactLine(data.businessEmail, data.businessWhatsapp), data.primaryColor);
-  infoCard(doc, 296, 232, "Contratante", data.acceptedBy, partyDetail(data.acceptedEmail, data.acceptedDocument), data.primaryColor);
+  doc.roundedRect(58, 252, 3, 20, 1.5).fill(data.primaryColor);
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(13).text("Partes", 68, 254);
+  infoCard(doc, 58, 282, "Contratada", data.businessName, contactLine(data.businessEmail, data.businessWhatsapp), data.primaryColor);
+  infoCard(doc, 296, 282, "Contratante", data.acceptedBy, partyDetail(data.acceptedEmail, data.acceptedDocument), data.primaryColor);
 
   // Seção: Condições comerciais
-  doc.roundedRect(58, 360, 3, 20, 1.5).fill(data.primaryColor);
+  doc.roundedRect(58, 420, 3, 20, 1.5).fill(data.primaryColor);
   doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(13).text("Condições comerciais", 68, 362);
-  infoCard(doc, 58, 390, "Investimento", data.total, `Pagamento: ${data.payment}`, data.primaryColor);
-  infoCard(doc, 296, 390, "Prazo", data.deadline, `Validade da proposta: ${data.validUntil}`, data.primaryColor);
+  infoCard(doc, 58, 450, "Investimento", data.total, `Pagamento: ${data.payment}`, data.primaryColor);
+  infoCard(doc, 296, 450, "Prazo", data.deadline, `Validade da proposta: ${data.validUntil}`, data.primaryColor);
 
   // Registro do aceite
-  doc.roundedRect(58, 522, 468, 96, 12).fill("#ECFDF5");
-  doc.roundedRect(58, 522, 4, 96, 3).fill("#166534");
-  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8.5).text("REGISTRO DO ACEITE DIGITAL", 78, 540, { characterSpacing: 0.8 });
+  doc.roundedRect(58, 612, 468, 96, 12).fill("#ECFDF5");
+  doc.roundedRect(58, 612, 4, 96, 3).fill("#166534");
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8.5).text("REGISTRO DO ACEITE DIGITAL", 78, 630, { characterSpacing: 0.8 });
   doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(12).text(`${data.acceptedBy} confirmou o aceite digital desta contratação em ${data.acceptedAtFull}.`, 78, 560, {
+    width: 434,
+    lineGap: 4,
+  });
+  doc.rect(72, 548, 448, 54).fill("#FFFFFF");
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(12).text(`${data.acceptedBy} confirmou o aceite digital desta contratacao em ${data.acceptedAtFull}.`, 78, 650, {
     width: 434,
     lineGap: 4,
   });
@@ -129,6 +224,19 @@ function drawCover(doc: PDFKit.PDFDocument, data: ContractPdfData) {
   doc.fillColor("#94A3B8").font("Helvetica").fontSize(8.5).text(
     "Documento gerado automaticamente a partir da proposta aceita no FechaPro.",
     58, 664, { width: 468, align: "center" },
+  );
+  doc.roundedRect(58, 612, 468, 108, 12).fill("#ECFDF5");
+  doc.roundedRect(58, 612, 4, 108, 3).fill("#166534");
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8.5).text("REGISTRO DO ACEITE DIGITAL", 78, 632, { characterSpacing: 0.8 });
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(12).text(`${data.acceptedBy} confirmou o aceite digital desta contratacao em ${data.acceptedAtFull}.`, 78, 652, {
+    width: 434,
+    lineGap: 4,
+  });
+  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(`Codigo da proposta: ${data.proposalCode} | Versao: ${data.acceptedContractVersion}`, 78, 694, { width: 434, ellipsis: true });
+  doc.roundedRect(58, 744, 468, 1, 1).fill("#E2E8F0");
+  doc.fillColor("#94A3B8").font("Helvetica").fontSize(8.5).text(
+    "Documento gerado automaticamente a partir da proposta aceita no FechaPro.",
+    58, 760, { width: 468, align: "center" },
   );
 }
 

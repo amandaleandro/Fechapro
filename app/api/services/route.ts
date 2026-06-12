@@ -23,6 +23,13 @@ export async function POST(request: Request) {
 
   if (imageUrl && !isValidHttpUrl(imageUrl) && !imageUrl.startsWith("/")) return jsonError("URL da imagem inválida.");
 
+  // Evita serviços duplicados no catálogo (mesmo nome, ignorando maiúsculas/minúsculas).
+  // Acontecia ao salvar uma proposta com um serviço já existente: retorna o serviço atual em vez de criar outro.
+  const existing = await prisma.serviceAsset.findFirst({
+    where: { userId: session.id, name: { equals: name, mode: "insensitive" } },
+  });
+  if (existing) return NextResponse.json(existing, { status: 200 });
+
   const subscription = await prisma.planSubscription.findUnique({ where: { userId: session.id }, select: { plan: true } });
   if (subscription?.plan === "free") {
     const total = await prisma.serviceAsset.count({ where: { userId: session.id } });

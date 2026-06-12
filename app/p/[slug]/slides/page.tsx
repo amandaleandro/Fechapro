@@ -74,6 +74,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
             <dl className="fp-slide-cover-strip">
               <Fact label="Investimento" value={money.format(proposal.price)} />
               <Fact label="Prazo" value={proposal.deadline || "A combinar"} />
+              <Fact label="Validade" value={proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar"} />
             </dl>
           </div>
           <div className="fp-slide-cover-media">

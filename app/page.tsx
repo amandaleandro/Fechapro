@@ -50,6 +50,49 @@ import { FREE_CLIENT_LIMIT, FREE_PORTFOLIO_LIMIT, FREE_SERVICE_LIMIT, isUnlimite
 import ProposalPreview from "./components/ProposalPreview";
 import Modal from "./components/Modal";
 
+// Botão de copiar com feedback visual: troca para "Copiado!" por 2s ao clicar,
+// para o usuário ter certeza de que o link foi para a área de transferência.
+function CopyButton({
+  text,
+  className,
+  iconSize = 16,
+  idleLabel = "Copiar link",
+  copiedLabel = "Copiado!",
+  onCopied,
+}: {
+  text: string | (() => string);
+  className?: string;
+  iconSize?: number;
+  idleLabel?: string;
+  copiedLabel?: string;
+  onCopied?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  return (
+    <button
+      className={className}
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(typeof text === "function" ? text() : text);
+        } catch {
+          return;
+        }
+        setCopied(true);
+        onCopied?.();
+      }}
+    >
+      {copied ? <CheckCircle2 size={iconSize} /> : <Copy size={iconSize} />}
+      {copied ? copiedLabel : idleLabel}
+    </button>
+  );
+}
+
 type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "support" | "account";
 type SessionProfile = { id?: string; name: string; email: string; niche?: string | null; segment?: string | null; isAdmin?: boolean };
 type ProposalStatus = "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
@@ -1567,18 +1610,47 @@ export default function Home() {
     }
   }
 
+  const headerStats = [
+    {
+      label: "Propostas",
+      value: proposalsSummary ? String(proposalsSummary.total) : String(proposals.length),
+    },
+    {
+      label: "Este mes",
+      value: billing
+        ? isUnlimitedProposalLimit(billing.usage.proposalLimit)
+          ? `${billing.usage.proposalsThisMonth}/ilimitado`
+          : `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit}`
+        : "Plano pendente",
+    },
+    {
+      label: "Plano",
+      value: plans[currentPlan]?.name || currentPlan,
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]" data-theme={dark ? "dark" : "light"}>
-      <header className="fp-shell-header sticky top-0 z-20 border-b border-black/10 px-4 py-3 backdrop-blur sm:py-4">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <Image alt="FechaPro" className="mb-3 h-9 w-36 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
-            <h1 className="max-w-xs text-xl font-black leading-tight tracking-normal sm:max-w-none sm:text-3xl">
-              Sua central comercial para criar propostas que vendem.
+      <header className="fp-shell-header sticky top-0 z-20 border-b border-black/10 px-4 py-2.5 backdrop-blur sm:py-3">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+            <Image alt="FechaPro" className="h-8 w-32 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
+            <div className="min-w-0">
+            <h1 className="truncate text-lg font-black leading-tight tracking-normal sm:text-xl">
+              Ola, {brand?.businessName || session.name}
             </h1>
-            <p className="mt-1 text-sm font-bold text-slate-500">
+            <p className="hidden">
               Olá, {brand?.businessName || session.name}
             </p>
+            <div className="flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {headerStats.map((item) => (
+                <span className="shrink-0 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-black text-slate-600 shadow-sm" key={item.label}>
+                  <span className="mr-1 text-slate-400">{item.label}:</span>
+                  {item.value}
+                </span>
+              ))}
+            </div>
+            </div>
           </div>
           <div className="flex w-full shrink-0 flex-wrap gap-2 self-start sm:w-auto sm:self-auto">
             {session.isAdmin ? (
@@ -2618,17 +2690,12 @@ function DashboardView({
             </p>
           </div>
           <div className="grid gap-2 sm:min-w-72">
-            <button
+            <CopyButton
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white"
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(lastSavedUrl);
-                onNotice("Link da proposta copiado.");
-              }}
-            >
-              <Copy size={17} />
-              Copiar link
-            </button>
+              text={lastSavedUrl}
+              iconSize={17}
+              onCopied={() => onNotice("Link da proposta copiado.")}
+            />
             <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-green-700/20 bg-white px-4 font-black text-green-800" href={lastSavedWhatsappUrl} target="_blank" rel="noreferrer">
               <Send size={17} />
               Enviar no WhatsApp
@@ -2738,6 +2805,7 @@ function DashboardView({
                 text: `Oi, ${proposal.clientName}! Lembrando que a proposta de ${proposal.serviceName}${proposal.validUntil ? ` vale até ${formatDateOnly(proposal.validUntil)}` : " está disponível para aceite"}. Segue o link: ${proposalUrl}`,
               },
             ];
+            const [softMessage, primaryMessage, urgencyMessage] = followUpMessages;
             return (
               <div className="grid gap-3 rounded-lg border border-amber-700/20 bg-white p-3 lg:grid-cols-[1fr_auto] lg:items-center" key={proposal.id}>
                 <div>
@@ -2746,21 +2814,28 @@ function DashboardView({
                     Enviada ha {daysSince(proposal.updatedAt || proposal.createdAt)} dias - {proposalStatusLabel(proposal.status)}. {proposalStatusHelp(proposal)}
                   </p>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {followUpMessages.map((message) => (
-                    <button
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
-                      type="button"
-                      key={message.label}
-                      onClick={() => {
-                        navigator.clipboard.writeText(message.text);
-                        onNotice(`${message.label} copiado.`);
-                      }}
-                    >
-                      <Copy size={15} />
-                      {message.label}
-                    </button>
-                  ))}
+                <div className="grid gap-2 sm:min-w-72">
+                  <CopyButton
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
+                    text={primaryMessage.text}
+                    idleLabel={primaryMessage.label}
+                    copiedLabel="Mensagem copiada!"
+                    iconSize={15}
+                    onCopied={() => onNotice(`${primaryMessage.label} copiado.`)}
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {[softMessage, urgencyMessage].map((message) => (
+                      <CopyButton
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-amber-700/20 bg-white px-3 text-sm font-black text-amber-900"
+                        text={message.text}
+                        idleLabel={message.label}
+                        copiedLabel="Copiado!"
+                        iconSize={15}
+                        key={message.label}
+                        onCopied={() => onNotice(`${message.label} copiado.`)}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             );
@@ -2833,6 +2908,7 @@ function ProposalsView({
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [visibleProposals, setVisibleProposals] = useState<Proposal[]>([]);
+  const [statusFilter, setStatusFilter] = useState<ProposalStatus | "all">("all");
   const firstVisible = total ? (page - 1) * pageSize + 1 : 0;
   const lastVisible = Math.min(page * pageSize, total);
   const selectedProposal = proposals.find((proposal) => proposal.id === selectedProposalId) || null;
@@ -2847,6 +2923,8 @@ function ProposalsView({
   const totalViews = proposals.reduce((sum, proposal) => sum + (proposal.viewCount || 0), 0);
   const whatsappClicks = proposals.reduce((sum, proposal) => sum + (proposal.whatsappClickCount || 0), 0);
   const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
+  const filteredVisibleProposals = statusFilter === "all" ? visibleProposals : visibleProposals.filter((proposal) => proposal.status === statusFilter);
+  const statusFilterLabel = statusFilter === "all" ? "todas" : statusConfig[statusFilter]?.label.toLowerCase() || statusFilter;
 
   useEffect(() => {
     setPage((current) => Math.min(current, totalPages));
@@ -2910,11 +2988,11 @@ function ProposalsView({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-6">
-        <Metric label="Total" value={String(proposalsSummary ? proposalsSummary.total : proposals.length)} />
-        <Metric label="Enviadas" value={String(proposalsSummary ? proposalsSummary.sent : sent)} />
-        <Metric label="Visualizadas" value={String(proposalsSummary ? proposalsSummary.viewed : viewed)} />
-        <Metric label="Aguardando resposta" value={String(proposalsSummary ? proposalsSummary.awaitingResponse : awaitingResponse)} />
-        <Metric label="Aceitas" value={String(proposalsSummary ? proposalsSummary.accepted : accepted)} />
+        <Metric active={statusFilter === "all"} label="Total" value={String(proposalsSummary ? proposalsSummary.total : proposals.length)} onClick={() => setStatusFilter("all")} />
+        <Metric active={statusFilter === "sent"} label="Enviadas" value={String(proposalsSummary ? proposalsSummary.sent : sent)} onClick={() => setStatusFilter("sent")} />
+        <Metric active={statusFilter === "viewed"} label="Visualizadas" value={String(proposalsSummary ? proposalsSummary.viewed : viewed)} onClick={() => setStatusFilter("viewed")} />
+        <Metric active={statusFilter === "awaiting_response"} label="Aguardando resposta" value={String(proposalsSummary ? proposalsSummary.awaitingResponse : awaitingResponse)} onClick={() => setStatusFilter("awaiting_response")} />
+        <Metric active={statusFilter === "accepted"} label="Aceitas" value={String(proposalsSummary ? proposalsSummary.accepted : accepted)} onClick={() => setStatusFilter("accepted")} />
         <Metric label="Valor aceito" value={money.format(proposalsSummary ? proposalsSummary.acceptedValue : acceptedValue)} />
       </div>
 
@@ -2969,6 +3047,7 @@ function ProposalsView({
       <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-slate-600">
           Mostrando {firstVisible}-{lastVisible} de {total} propostas
+          {statusFilter !== "all" ? ` - filtro: ${statusFilterLabel}` : ""}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -2994,8 +3073,8 @@ function ProposalsView({
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        {visibleProposals.length ? (
-          visibleProposals.map((proposal) => (
+        {filteredVisibleProposals.length ? (
+          filteredVisibleProposals.map((proposal) => (
             <ProposalCard
               currentPlan={currentPlan}
               key={proposal.id}
@@ -5462,12 +5541,19 @@ function GuidedTour({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ active = false, label, onClick, value }: { active?: boolean; label: string; onClick?: () => void; value: string }) {
+  const Component = onClick ? "button" : "article";
   return (
-    <article className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+    <Component
+      className={`rounded-lg border p-4 text-left shadow-xl shadow-slate-900/10 transition ${
+        active ? "border-green-700/30 bg-green-50 text-green-950" : "border-black/10 bg-white"
+      } ${onClick ? "cursor-pointer hover:-translate-y-0.5 hover:border-green-700/30" : ""}`}
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+    >
       <span className="text-sm font-black text-slate-500">{label}</span>
       <strong className="mt-1 block text-2xl font-black">{value}</strong>
-    </article>
+    </Component>
   );
 }
 
@@ -5877,10 +5963,11 @@ function ProposalDetailPanel({
                   Slides Premium
                 </span>
               )}
-              <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black" type="button" onClick={onCopyLink}>
-                <Copy size={16} />
-                Copiar link
-              </button>
+              <CopyButton
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-4 font-black"
+                text={() => (proposal.publicSlug ? `${getPublicAppUrl()}/p/${proposal.publicSlug}` : "")}
+                onCopied={onCopyLink}
+              />
             </>
           ) : null}
         </div>
@@ -6042,14 +6129,12 @@ function ProposalCard({
             <Eye className="shrink-0" size={15} />
             Ver proposta
           </a>
-          <button
+          <CopyButton
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black text-slate-700"
-            type="button"
-            onClick={onCopyLink}
-          >
-            <Copy className="shrink-0" size={15} />
-            Copiar link
-          </button>
+            text={publicUrl}
+            iconSize={15}
+            onCopied={onCopyLink}
+          />
           {canUseProposalPdf(currentPlan) ? <a
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700"
             href={`/p/${proposal.publicSlug}/pdf`}
@@ -6278,12 +6363,15 @@ function IconButton({
   return (
     <button
       aria-label={label}
-      className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-black/10 bg-white text-slate-800"
+      className="group relative grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-black/10 bg-white text-slate-800"
       title={label}
       type="button"
       onClick={onClick}
     >
       <Icon size={18} />
+      <span className="pointer-events-none absolute right-0 top-[calc(100%+0.35rem)] z-50 hidden whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-xs font-black text-white shadow-lg group-hover:block group-focus-visible:block">
+        {label}
+      </span>
     </button>
   );
 }
