@@ -108,6 +108,49 @@ export function isWhatsAppNotificationConfigured() {
   return Boolean(provider === "baileys" || webhookUrl || (cloudPhoneNumberId && cloudAccessToken));
 }
 
+export function buildSatisfactionSurveyClientWhatsAppUrl(clientPhone: string, ownerName: string, serviceName: string, slug: string) {
+  const digits = clientPhone.replace(/\D/g, "");
+  const phone = digits.startsWith("55") ? digits : `55${digits}`;
+  const surveyUrl = `${APP_URL}/p/${slug}#satisfacao`;
+  const message = `Ola! ${ownerName} marcou o servico ${serviceName} como concluido e enviou uma pesquisa rapida de satisfacao. Pode responder por aqui: ${surveyUrl}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
+export async function sendSatisfactionSurveyToClientViaWhatsApp(clientPhone: string, ownerName: string, serviceName: string, slug: string) {
+  if (!isWhatsAppNotificationConfigured()) return false;
+
+  const digits = clientPhone.replace(/\D/g, "");
+  const phone = digits.startsWith("55") ? digits : `55${digits}`;
+  const surveyUrl = `${APP_URL}/p/${slug}#satisfacao`;
+  const message = `Ola! ${ownerName} marcou o servico ${serviceName} como concluido e enviou uma pesquisa rapida de satisfacao.\n\nResponda por aqui: ${surveyUrl}`;
+
+  try {
+    if (provider === "baileys") {
+      await sendViaBaileys(phone, message);
+      return true;
+    }
+
+    if (webhookUrl) {
+      await sendViaWebhook({
+        phone,
+        message,
+        title: "Pesquisa de satisfacao",
+        body: message,
+        url: surveyUrl,
+        tag: "satisfaction_survey",
+        businessName: null,
+      });
+      return true;
+    }
+
+    await sendViaCloudApi(phone, message);
+    return true;
+  } catch (error) {
+    console.error("Nao foi possivel enviar pesquisa de satisfacao por WhatsApp.", error);
+    return false;
+  }
+}
+
 export async function connectBaileysWhatsApp(options: { resetSession?: boolean } = {}) {
   if (provider !== "baileys") {
     throw new Error('Configure WHATSAPP_PROVIDER="baileys" para conectar pelo painel admin.');

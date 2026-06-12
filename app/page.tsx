@@ -161,6 +161,7 @@ type Proposal = {
   id: string;
   clientName: string;
   clientEmail?: string | null;
+  clientPhone?: string | null;
   serviceName: string;
   price: number;
   deadline: string;
@@ -182,6 +183,7 @@ type Proposal = {
   providerReceiptUrl?: string | null;
   acceptedBy?: string | null;
   acceptedEmail?: string | null;
+  acceptedPhone?: string | null;
   acceptedAt?: string | null;
   declinedReason?: string | null;
   declinedAt?: string | null;
@@ -1482,9 +1484,10 @@ export default function Home() {
   }
 
   async function sendSatisfactionSurvey(id: string) {
-    const result = await apiPost<NonNullable<Proposal["satisfactionSurvey"]> & { emailSent?: boolean }>(`/api/proposals/${id}/satisfaction/send`, {});
+    const result = await apiPost<NonNullable<Proposal["satisfactionSurvey"]> & { emailSent?: boolean; whatsappSent?: boolean; whatsappUrl?: string | null }>(`/api/proposals/${id}/satisfaction/send`, {});
     setProposals((current) => current.map((item) => (item.id === id ? { ...item, satisfactionSurvey: result } : item)));
-    setNotice(result.emailSent ? "Serviço finalizado e pesquisa de satisfação enviada ao cliente." : "Serviço finalizado e pesquisa liberada.");
+    const channels = [result.emailSent ? "e-mail" : "", result.whatsappSent ? "WhatsApp" : ""].filter(Boolean).join(" e ");
+    setNotice(channels ? `Serviço finalizado e pesquisa enviada ao cliente por ${channels}.` : "Serviço finalizado e pesquisa liberada. Copie o link para enviar ao cliente.");
   }
 
   function copySatisfactionSurveyLink(proposal?: Proposal | null) {

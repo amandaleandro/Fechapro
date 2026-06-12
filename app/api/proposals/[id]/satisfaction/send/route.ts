@@ -3,6 +3,7 @@ import { jsonError } from "@/lib/api";
 import { sendSatisfactionSurveyEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { buildSatisfactionSurveyClientWhatsAppUrl, sendSatisfactionSurveyToClientViaWhatsApp } from "@/lib/whatsapp";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
@@ -18,9 +19,12 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
 
   if (!proposal) return jsonError("Proposta nao encontrada.", 404);
   if (proposal.status !== "accepted") return jsonError("Envie a pesquisa apenas depois da proposta aceita.", 400);
-  if (!proposal.clientEmail && !proposal.acceptedEmail) return jsonError("Cadastre um e-mail do cliente para enviar a pesquisa.", 400);
+  if (!proposal.clientEmail && !proposal.acceptedEmail && !proposal.clientPhone && !proposal.acceptedPhone) {
+    return jsonError("Cadastre um e-mail ou WhatsApp do cliente para enviar a pesquisa.", 400);
+  }
 
-  const clientEmail = proposal.acceptedEmail || proposal.clientEmail!;
+  const clientEmail = proposal.acceptedEmail || proposal.clientEmail || null;
+  const clientPhone = proposal.acceptedPhone || proposal.clientPhone || null;
   const clientName = proposal.acceptedBy || proposal.clientName;
   const now = new Date();
 
@@ -42,7 +46,19 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     },
   });
 
-  await sendSatisfactionSurveyEmail(clientEmail, clientName, proposal.user.name, proposal.serviceName, proposal.publicSlug);
+  let emailSent = false;
+  let whatsappSent = false;
+  let whatsappUrl: string | null = null;
 
-  return NextResponse.json({ ...survey, emailSent: true });
+  if (clientEmail) {
+    await sendSatisfactionSurveyEmail(clientEmail, clientName, proposal.user.name, proposal.serviceName, proposal.publicSlug);
+    emailSent = true;
+  }
+
+  if (clientPhone) {
+    whatsappUrl = buildSatisfactionSurveyClientWhatsAppUrl(clientPhone, proposal.user.name, proposal.serviceName, proposal.publicSlug);
+    whatsappSent = await sendSatisfactionSurveyToClientViaWhatsApp(clientPhone, proposal.user.name, proposal.serviceName, proposal.publicSlug);
+  }
+
+  return NextResponse.json({ ...survey, emailSent, whatsappSent, whatsappUrl });
 }

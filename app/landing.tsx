@@ -21,7 +21,6 @@ import {
   UserRound,
   Wrench,
   XCircle,
-  Zap,
 } from "lucide-react";
 import { trackConversion } from "@/lib/conversion-client";
 import { trackPixel } from "@/lib/meta-pixel";
@@ -400,23 +399,65 @@ export function AuthScreen() {
     return () => observer.disconnect();
   }, []);
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "FechaPro",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br",
-    description:
-      "Plataforma para prestadores de serviço perderem menos vendas no WhatsApp com proposta rastreável, calculadora de custos, aceite online e follow-up.",
-    offers: plans.map((plan) => ({
-      "@type": "Offer",
-      name: plan.name,
-      price: plan.price.replace("R$ ", "").replace(".", ""),
-      priceCurrency: "BRL",
-      availability: "https://schema.org/InStock",
-    })),
-  };
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fechapro.com.br";
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "FechaPro",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: siteUrl,
+      image: `${siteUrl}/landing/hero-proposta.png`,
+      description:
+        "Sistema de orcamentos e propostas comerciais online para prestadores de servico venderem pelo WhatsApp com link rastreavel, PDF, calculadora de custos, aceite online, pagamento e follow-up.",
+      featureList: [
+        "orcamento online",
+        "proposta comercial com link",
+        "proposta em PDF",
+        "aceite online",
+        "pagamento na proposta",
+        "acompanhamento de visualizacoes",
+        "portfolio e depoimentos",
+        "calculadora de custos e margem",
+      ],
+      offers: plans.map((plan) => ({
+        "@type": "Offer",
+        name: plan.name,
+        price: plan.price.replace("R$ ", "").replace(".", ""),
+        priceCurrency: "BRL",
+        availability: "https://schema.org/InStock",
+        url: `${siteUrl}${plan.href}`,
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "FechaPro",
+      url: siteUrl,
+      logo: `${siteUrl}/brand/logofechapro.png`,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "FechaPro",
+      url: siteUrl,
+      inLanguage: "pt-BR",
+      description: "Sistema de orcamentos, propostas comerciais e acompanhamento de vendas para prestadores de servico.",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: commonQuestions.map(([question, answer]) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: answer,
+        },
+      })),
+    },
+  ];
 
   return (
     <>
@@ -465,10 +506,7 @@ export function AuthScreen() {
           <div className="fp-hero-aura" aria-hidden />
           <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <div>
-              <span className="fp-intro inline-flex items-center gap-2 rounded-full border border-green-700/20 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-wide text-green-800 shadow-sm" style={delay(0)}>
-                <Zap size={13} /> Para quem vende serviço pelo WhatsApp
-              </span>
-              <h1 className="fp-intro fp-balance mt-5 max-w-3xl text-[2.6rem] font-black leading-[1.04] tracking-tight sm:text-6xl" style={delay(80)}>
+              <h1 className="fp-intro fp-balance max-w-3xl text-[2.6rem] font-black leading-[1.04] tracking-tight sm:text-6xl" style={delay(0)}>
                 Pare de mandar orçamento que o cliente <span className="fp-grad-text">lê e ignora</span>.
               </h1>
               <p className="fp-intro mt-6 max-w-2xl text-lg leading-8 text-slate-700 sm:text-xl" style={delay(160)}>

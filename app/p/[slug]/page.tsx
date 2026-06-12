@@ -390,6 +390,24 @@ export default async function PublicProposalPage({
           ) : null}
         </section>
 
+        <section className="fp-proposal-decision-path">
+          <div>
+            <span>01</span>
+            <strong>Entenda a entrega</strong>
+            <p>Veja escopo, prazo, condicoes e o que esta incluso antes de comparar apenas preco.</p>
+          </div>
+          <div>
+            <span>02</span>
+            <strong>Confira a seguranca</strong>
+            <p>Tenha PDF, slides, status, portfolio e contato direto reunidos no mesmo link.</p>
+          </div>
+          <div>
+            <span>03</span>
+            <strong>Decida com clareza</strong>
+            <p>Registre o aceite online ou chame no WhatsApp para ajustar detalhes antes de seguir.</p>
+          </div>
+        </section>
+
         {brand?.proposalClosing ? (
           <section className="fp-proposal-message rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
             <p className="text-xs font-black uppercase text-blue-700">Mensagem</p>

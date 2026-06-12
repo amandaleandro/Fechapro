@@ -2201,6 +2201,45 @@ select:focus {
     grid-auto-rows: minmax(6rem, auto);
   }
 
+  .fp-proposal-decision-path {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .fp-proposal-decision-path div {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 18px 44px rgba(15, 23, 42, 0.08) !important;
+    min-height: 10rem;
+    padding: 1.15rem;
+  }
+
+  .fp-proposal-decision-path span {
+    color: var(--proposal-primary, #147a4c);
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.85rem;
+  }
+
+  .fp-proposal-decision-path strong {
+    color: #0f172a;
+    display: block;
+    font-size: 1.08rem;
+    line-height: 1.18;
+  }
+
+  .fp-proposal-decision-path p {
+    color: #64748b;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.55;
+    margin-top: 0.65rem;
+  }
+
   .fp-proposal-metric {
     display: grid;
     gap: 0.35rem;
@@ -2300,6 +2339,10 @@ select:focus {
 
     .fp-proposal-action-rail-primary {
       margin-left: 0;
+    }
+
+    .fp-proposal-decision-path {
+      grid-template-columns: 1fr;
     }
 
     .fp-slide {

@@ -3,6 +3,11 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { verifyTurnstile } from "@/lib/turnstile";
 
+export async function GET(_request: Request, context: { params: Promise<{ slug: string }> }) {
+  const { slug } = await context.params;
+  redirect(`/p/${slug}#satisfacao`);
+}
+
 export async function POST(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
   const proposal = await prisma.proposalAsset.findUnique({
