@@ -302,7 +302,7 @@ export function AuthScreen() {
                 Entrar
               </a>
               <a className="rounded-lg bg-green-700 px-4 py-2 text-sm font-black text-white" href="/cadastro?plan=free">
-                Criar 3 orçamentos grátis
+                Criar 3 propostas grátis
               </a>
             </div>
           </div>
@@ -312,13 +312,13 @@ export function AuthScreen() {
           <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <div>
               <h1 className="max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
-                Pare de perder cliente depois de mandar orçamento no WhatsApp
+                Pare de mandar orçamento que o cliente ignora
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700 sm:text-xl">
-                O FechaPro resolve o ponto cego que faz muita venda escapar: você envia uma proposta por link, sabe quando o cliente visualizou, calcula se o preço dá lucro e faz o follow-up na hora certa.
+                Envie uma proposta profissional em link, mostre seu valor antes do preço e saiba quando o cliente abriu para fazer o follow-up na hora certa.
               </p>
               <p className="mt-4 max-w-2xl text-lg font-bold leading-8 text-slate-800">
-                Menos cliente perdido. Menos preço no chute. Mais controle para fechar pelo WhatsApp.
+                O cliente entende melhor o que está comprando antes de comparar você só pelo preço.
               </p>
               <div className="mt-5 inline-flex rounded-lg border border-green-700/20 bg-green-50 px-4 py-3 text-sm font-black leading-6 text-green-900">
                 Feito para prestadores que vendem serviço de R$300 a R$10.000 pelo WhatsApp.
@@ -333,10 +333,11 @@ export function AuthScreen() {
                       campaign: "landing_servicos_whatsapp",
                       source: "landing",
                       context: "hero_primary",
+                      variant: "close_more_proposals",
                     })
                   }
                 >
-                  Criar 3 orçamentos grátis
+                  Quero vender com mais controle
                 </a>
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-lg border border-black/10 bg-white px-6 text-base font-black text-slate-800 hover:bg-slate-50"
@@ -359,18 +360,18 @@ export function AuthScreen() {
         <section id="dor" className="bg-white px-4 py-16">
           <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <h2 className="text-3xl font-black leading-tight sm:text-5xl">
-              Você manda o orçamento. O cliente some. E você fica no escuro.
+              Você manda o orçamento. O cliente visualiza. Some. E você fica no escuro.
             </h2>
             <div className="grid gap-4 text-lg leading-8 text-slate-700">
               <p className="rounded-lg bg-green-50 p-4 text-xl font-black leading-8 text-green-900">
-                Cada orçamento sem resposta pode ser uma venda escapando. E, sem controle, você nem sabe se perdeu por preço, por demora no follow-up ou porque o cliente nem entendeu a proposta.
+                O problema nem sempre é o preço. Muitas vezes, é que sua proposta chegou parecendo só mais uma mensagem com valores.
               </p>
               <p>
-                Sem rastreio, você não sabe se deve chamar, esperar ou desistir. Sem cálculo, você também não sabe se aquele valor cobre material, tempo, deslocamento, taxas e margem.
+                Quando o cliente recebe apenas preço, ele compara você com qualquer outro orçamento. Quando recebe uma proposta profissional, ele entende melhor o escopo, os diferenciais, o prazo e o próximo passo.
               </p>
-              <p>Aí o follow-up vira adivinhação e o preço vira aposta.</p>
+              <p>Sem rastreio, você não sabe se deve chamar, esperar ou desistir. Sem cálculo, também não sabe se aquele valor cobre material, tempo, deslocamento, taxas e margem.</p>
               <p className="font-bold text-slate-900">
-                O FechaPro resolve isso transformando seu orçamento em uma proposta rastreável, com custo calculado e sinais claros para você agir antes de perder o cliente.
+                O FechaPro transforma seu orçamento comum em uma proposta rastreável, com custo calculado e sinais claros para você agir antes de perder o cliente.
               </p>
             </div>
           </div>
@@ -501,6 +502,9 @@ export function AuthScreen() {
             <p className="mt-4 max-w-3xl text-lg font-bold leading-8 text-slate-700">
               Ideal para quem vende serviços acima de R$300 e precisa explicar valor antes de cobrar preço.
             </p>
+            <p className="mt-4 max-w-3xl rounded-lg bg-green-50 p-4 text-xl font-black leading-8 text-green-900">
+              O FechaPro transforma orçamento comum em proposta profissional que ajuda o cliente a confiar, entender e decidir.
+            </p>
             <div className="mt-8 flex flex-wrap gap-2">
               {niches.map((niche) => (
                 <span className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-black text-slate-700" key={niche}>
@@ -522,10 +526,10 @@ export function AuthScreen() {
                 Uma venda recuperada já pode pagar o investimento inteiro.
               </p>
               <p className="mt-4 rounded-lg border border-black/10 bg-white p-4 text-base font-black leading-7 text-slate-800">
-                Se você perde 1 cliente por mês porque mandou orçamento simples no WhatsApp e não acompanhou na hora certa, continuar no escuro também tem custo.
+                Se você perde 1 cliente por mês porque mandou orçamento simples no WhatsApp, não mostrou valor antes do preço ou não acompanhou na hora certa, continuar do mesmo jeito também tem custo.
               </p>
               <p className="mt-4 text-lg font-bold leading-8 text-slate-700">
-                Você pode criar 3 orçamentos grátis para testar. Depois, a condição atual é pagamento único e sem mensalidade para compras até 30/06.
+                Você pode criar 3 propostas grátis para testar. Depois, a condição atual é pagamento único e sem mensalidade para compras até 30/06.
               </p>
             </div>
             <div className="mt-10 grid gap-4 lg:grid-cols-3">
@@ -622,13 +626,13 @@ export function AuthScreen() {
           <div className="mx-auto max-w-3xl">
             <BadgeCheck className="mx-auto text-green-200" size={34} />
             <h2 className="mt-4 text-3xl font-black leading-tight sm:text-5xl">
-              Pare de perder venda no escuro.
+              Pare de mandar orçamento que o cliente ignora.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-white/75">
-              O FechaPro resolve o acompanhamento depois do orçamento: rastreio, custo calculado, aceite, pagamento e sinais para fazer follow-up antes do cliente esfriar.
+              Envie uma proposta rastreável, calcule seus custos e faça o follow-up antes do cliente esfriar.
             </p>
             <a className="mt-8 inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-8 font-black text-green-900" href="/cadastro?plan=free">
-              Criar 3 orçamentos grátis
+              Criar 3 propostas grátis
             </a>
           </div>
         </section>

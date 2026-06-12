@@ -29,6 +29,12 @@ services:
     volumes:
       - fechapro_uploads:/app/uploads
       - fechapro_baileys_session:/app/baileys-session
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header=\"Authorization: Bearer $$HEALTHCHECK_TOKEN\" http://127.0.0.1:3000/api/health/ready >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
 
 volumes:
   fechapro_postgres_data:
