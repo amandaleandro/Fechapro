@@ -2818,25 +2818,27 @@ function DashboardView({
                   </p>
                 </div>
                 <div className="grid gap-2 sm:min-w-72">
-                  <CopyButton
+                  <a
                     className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white"
-                    text={primaryMessage.text}
-                    idleLabel={primaryMessage.label}
-                    copiedLabel="Mensagem copiada!"
-                    iconSize={15}
-                    onCopied={() => onNotice(`${primaryMessage.label} copiado.`)}
-                  />
+                    href={`https://wa.me/?text=${encodeURIComponent(primaryMessage.text)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Send size={15} />
+                    {primaryMessage.label}
+                  </a>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {[softMessage, urgencyMessage].map((message) => (
-                      <CopyButton
+                      <a
                         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-amber-700/20 bg-white px-3 text-sm font-black text-amber-900"
-                        text={message.text}
-                        idleLabel={message.label}
-                        copiedLabel="Copiado!"
-                        iconSize={15}
+                        href={`https://wa.me/?text=${encodeURIComponent(message.text)}`}
+                        target="_blank"
+                        rel="noreferrer"
                         key={message.label}
-                        onCopied={() => onNotice(`${message.label} copiado.`)}
-                      />
+                      >
+                        <Send size={15} />
+                        {message.label}
+                      </a>
                     ))}
                   </div>
                 </div>

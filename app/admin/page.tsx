@@ -63,6 +63,15 @@ type AdminMetrics = {
   >;
 };
 
+type AdminWhatsAppSend = {
+  at: string;
+  tag: string;
+  phone: string;
+  channel: string;
+  ok: boolean;
+  reason?: string;
+};
+
 type AdminWhatsAppStatus = {
   authDir: string;
   configured: boolean;
@@ -71,6 +80,7 @@ type AdminWhatsAppStatus = {
   qr: string | null;
   qrImage: string | null;
   error: string | null;
+  recentSends?: AdminWhatsAppSend[];
 };
 
 type AdminMarketingArt = {
@@ -476,6 +486,26 @@ export default function AdminPage() {
               {whatsappError && !whatsappStatus?.connected ? (
                 <div className="rounded-lg border border-red-700/20 bg-red-50 p-3 text-sm font-bold text-red-900">{whatsappError}</div>
               ) : null}
+              <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
+                <p className="text-xs font-black uppercase text-slate-500">Últimos envios de notificação</p>
+                {whatsappStatus?.recentSends?.length ? (
+                  <ul className="mt-3 grid gap-2">
+                    {whatsappStatus.recentSends.map((send, index) => (
+                      <li key={`${send.at}-${index}`} className="flex items-center justify-between gap-3 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                        <span className="grid">
+                          <span className="font-bold text-slate-900">{whatsappEventLabel(send.tag)}</span>
+                          <span className="text-xs font-medium text-slate-500">{formatWhatsAppSendTime(send.at)} · {send.phone}</span>
+                        </span>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${send.ok ? "bg-green-100 text-green-800" : "bg-rose-100 text-rose-800"}`}>
+                          {send.ok ? "Enviado" : whatsappSendReasonLabel(send.reason)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm font-medium text-slate-500">Nenhum envio registrado desde que o servidor iniciou. O histórico aparece aqui assim que uma proposta for visualizada, aceita, recusada ou paga.</p>
+                )}
+              </div>
             </div>
             {whatsappStatus?.qrImage ? (
               <button className="grid justify-items-center gap-2 rounded-lg border border-green-700/20 bg-green-50 p-3 text-left" type="button" onClick={() => setWhatsappModalOpen(true)}>
@@ -1087,6 +1117,30 @@ function statusBadgeClass(status: string) {
   if (status === "blocked" || status === "canceled") return "bg-rose-100 text-rose-800";
   if (status === "paused") return "bg-amber-100 text-amber-800";
   return "bg-slate-200 text-slate-700";
+}
+
+// Tags de notificação seguem o padrão "proposal-<slug>-<evento>".
+function whatsappEventLabel(tag: string) {
+  const event = tag.split("-").pop() || "";
+  const labels: Record<string, string> = {
+    viewed: "Proposta visualizada",
+    accepted: "Proposta aceita",
+    declined: "Proposta recusada",
+    paid: "Proposta paga",
+  };
+  return labels[event] || tag;
+}
+
+function whatsappSendReasonLabel(reason?: string) {
+  if (reason === "no_phone") return "Sem WhatsApp no perfil";
+  if (reason === "not_configured") return "Não configurado";
+  return "Falhou";
+}
+
+function formatWhatsAppSendTime(at: string) {
+  const date = new Date(at);
+  if (Number.isNaN(date.getTime())) return at;
+  return date.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
 function AdminStat({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {

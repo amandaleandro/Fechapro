@@ -20,6 +20,19 @@ type ProposalWhatsAppNotification = {
   tag: string;
 };
 
+// Histórico curto (em memória) dos últimos envios, para dar visibilidade no
+// painel admin sem depender do log do terminal. Reinicia junto com o processo.
+export type WhatsAppSendLogEntry = {
+  at: string; // ISO
+  tag: string;
+  phone: string; // já mascarado
+  channel: string;
+  ok: boolean;
+  reason?: string;
+};
+
+const MAX_SEND_LOG = 15;
+
 type BaileysSocket = Awaited<ReturnType<typeof createBaileysSocket>>;
 
 // Turbopack compiles whatsapp.ts into multiple chunks (one per route), so
@@ -41,6 +54,8 @@ declare global {
   var __baileysReconnects: number;
   // eslint-disable-next-line no-var
   var __baileysClosing: boolean;
+  // eslint-disable-next-line no-var
+  var __whatsappSendLog: WhatsAppSendLogEntry[];
 }
 
 if (globalThis.__baileysConnected === undefined) globalThis.__baileysConnected = false;
@@ -51,6 +66,17 @@ if (globalThis.__baileysSocketInstance === undefined) globalThis.__baileysSocket
 if (globalThis.__baileysError === undefined) globalThis.__baileysError = null;
 if (globalThis.__baileysReconnects === undefined) globalThis.__baileysReconnects = 0;
 if (globalThis.__baileysClosing === undefined) globalThis.__baileysClosing = false;
+if (globalThis.__whatsappSendLog === undefined) globalThis.__whatsappSendLog = [];
+
+function recordWhatsAppSend(entry: WhatsAppSendLogEntry) {
+  const log = globalThis.__whatsappSendLog;
+  log.unshift(entry); // mais recente primeiro
+  if (log.length > MAX_SEND_LOG) log.length = MAX_SEND_LOG;
+}
+
+export function getWhatsAppSendLog(): WhatsAppSendLogEntry[] {
+  return globalThis.__whatsappSendLog ?? [];
+}
 
 function getState() {
   return {
@@ -199,18 +225,33 @@ export function getBaileysWhatsAppStatus() {
     phone: state.phone,
     qr: state.qr,
     error: state.error,
+    recentSends: getWhatsAppSendLog(),
   };
 }
 
-export async function sendProposalWhatsAppNotification(userId: string, input: ProposalWhatsAppNotification) {
-  if (!isWhatsAppNotificationConfigured()) return;
+export type WhatsAppNotificationResult = { sent: boolean; reason?: string };
+
+export async function sendProposalWhatsAppNotification(
+  userId: string,
+  input: ProposalWhatsAppNotification
+): Promise<WhatsAppNotificationResult> {
+  if (!isWhatsAppNotificationConfigured()) {
+    console.warn(`[WhatsApp] "${input.tag}" não enviada: integração não configurada (defina WHATSAPP_PROVIDER/Cloud API ou conecte o Baileys no painel admin).`);
+    return { sent: false, reason: "not_configured" };
+  }
+
+  const channel = provider === "baileys" ? "baileys" : webhookUrl ? "webhook" : "cloud";
 
   const brand = await prisma.brandProfile.findUnique({
     where: { userId },
     select: { whatsapp: true, businessName: true },
   });
   const phone = formatWhatsAppPhone(brand?.whatsapp);
-  if (!phone) return;
+  if (!phone) {
+    console.warn(`[WhatsApp] "${input.tag}" não enviada: perfil de marca do usuário ${userId} está sem WhatsApp válido.`);
+    recordWhatsAppSend({ at: new Date().toISOString(), tag: input.tag, phone: "—", channel, ok: false, reason: "no_phone" });
+    return { sent: false, reason: "no_phone" };
+  }
 
   const proposalUrl = `${APP_URL}/p/${input.slug}`;
   const message = `*${input.title}*\n\n${input.body}\n\nAcompanhe aqui: ${proposalUrl}\n\nMensagem automatica do FechaPro.`;
@@ -218,10 +259,7 @@ export async function sendProposalWhatsAppNotification(userId: string, input: Pr
   try {
     if (provider === "baileys") {
       await sendViaBaileys(phone, message);
-      return;
-    }
-
-    if (webhookUrl) {
+    } else if (webhookUrl) {
       await sendViaWebhook({
         phone,
         message,
@@ -231,12 +269,18 @@ export async function sendProposalWhatsAppNotification(userId: string, input: Pr
         tag: input.tag,
         businessName: brand?.businessName || null,
       });
-      return;
+    } else {
+      await sendViaCloudApi(phone, message);
     }
 
-    await sendViaCloudApi(phone, message);
+    console.log(`[WhatsApp] "${input.tag}" enviada para ${maskPhone(phone)} via ${channel}.`);
+    recordWhatsAppSend({ at: new Date().toISOString(), tag: input.tag, phone: maskPhone(phone), channel, ok: true });
+    return { sent: true };
   } catch (error) {
-    console.error("Não foi possível enviar notificação por WhatsApp.", error);
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(`[WhatsApp] Falha ao enviar "${input.tag}" para ${maskPhone(phone)} via ${channel}: ${reason}`);
+    recordWhatsAppSend({ at: new Date().toISOString(), tag: input.tag, phone: maskPhone(phone), channel, ok: false, reason });
+    return { sent: false, reason };
   }
 }
 
@@ -247,10 +291,20 @@ function formatWhatsAppPhone(value?: string | null) {
   return `55${digits}`;
 }
 
+// Mascara o número nos logs (privacidade): mantém DDI/DDD e os 2 últimos dígitos.
+function maskPhone(phone: string) {
+  if (phone.length <= 6) return phone;
+  return `${phone.slice(0, 4)}****${phone.slice(-2)}`;
+}
+
 async function sendViaBaileys(phone: string, message: string) {
   const socket = await getBaileysSocket();
   if (!getState().connected) {
-    await waitForBaileysConnection(30_000);
+    // Espera curta: cobre uma reconexão em andamento (ex.: processo recém-reiniciado
+    // religando com as credenciais persistidas), mas NÃO segura o chamador por 30s
+    // quando não há sessão. Sem conexão, falha rápido — o erro fica logado e o fluxo
+    // do usuário (render da proposta, redirect de aceite/recusa) não trava.
+    await waitForBaileysConnection(8_000);
   }
   if (!getState().connected) {
     throw new Error("WhatsApp não está conectado. Reconecte o número no painel admin.");

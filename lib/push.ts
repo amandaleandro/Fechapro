@@ -28,39 +28,44 @@ export async function sendProposalPushNotification(
     tag: string;
   }
 ) {
-  await sendProposalWhatsAppNotification(userId, input);
+  // WhatsApp e push são canais independentes: dispara o WhatsApp em paralelo para
+  // que a espera dele (reconexão do Baileys) não atrase o push. A função trata os
+  // próprios erros e nunca lança — o resultado é apenas aguardado no fim.
+  const whatsappResult = sendProposalWhatsAppNotification(userId, input);
 
-  if (!isPushConfigured()) return;
+  if (isPushConfigured()) {
+    const subscriptions = await prisma.pushSubscription.findMany({ where: { userId } });
+    if (subscriptions.length) {
+      const payload = JSON.stringify({
+        title: input.title,
+        body: input.body,
+        url: `${APP_URL}/p/${input.slug}`,
+        tag: input.tag,
+      });
 
-  const subscriptions = await prisma.pushSubscription.findMany({ where: { userId } });
-  if (!subscriptions.length) return;
+      await Promise.all(
+        subscriptions.map(async (subscription) => {
+          try {
+            await webpush.sendNotification(
+              {
+                endpoint: subscription.endpoint,
+                keys: {
+                  p256dh: subscription.p256dh,
+                  auth: subscription.auth,
+                },
+              },
+              payload
+            );
+          } catch (error) {
+            const statusCode = error instanceof WebPushError ? error.statusCode : 0;
+            if (statusCode === 404 || statusCode === 410) {
+              await prisma.pushSubscription.delete({ where: { id: subscription.id } }).catch(() => null);
+            }
+          }
+        })
+      );
+    }
+  }
 
-  const payload = JSON.stringify({
-    title: input.title,
-    body: input.body,
-    url: `${APP_URL}/p/${input.slug}`,
-    tag: input.tag,
-  });
-
-  await Promise.all(
-    subscriptions.map(async (subscription) => {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: subscription.endpoint,
-            keys: {
-              p256dh: subscription.p256dh,
-              auth: subscription.auth,
-            },
-          },
-          payload
-        );
-      } catch (error) {
-        const statusCode = error instanceof WebPushError ? error.statusCode : 0;
-        if (statusCode === 404 || statusCode === 410) {
-          await prisma.pushSubscription.delete({ where: { id: subscription.id } }).catch(() => null);
-        }
-      }
-    })
-  );
+  await whatsappResult;
 }

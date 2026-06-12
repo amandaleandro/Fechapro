@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import type { CSSProperties } from "react";
 import { canUseProposalDocuments, canUseProposalPayments, canUseProposalPresentation } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
@@ -69,14 +70,30 @@ export default async function PublicProposalPage({
   }
 
   if (isFirstView) {
-    await sendProposalPushNotification(
-      proposal.userId,
-      proposalNotification("viewed", {
-        clientName: proposal.clientName,
-        serviceName: proposal.serviceName,
-        slug: proposal.publicSlug,
-      })
-    );
+    // Notifica o profissional FORA do caminho crítico do render: o cliente não
+    // espera o envio de WhatsApp/push/email para a proposta carregar. after()
+    // executa após a resposta com garantia de execução (não é fire-and-forget
+    // descartável), então nenhuma notificação se perde.
+    after(async () => {
+      await sendProposalPushNotification(
+        proposal.userId,
+        proposalNotification("viewed", {
+          clientName: proposal.clientName,
+          serviceName: proposal.serviceName,
+          slug: proposal.publicSlug,
+        })
+      );
+
+      if (proposal.user.email) {
+        await sendProposalViewedEmail(
+          proposal.user.email,
+          proposal.user.name,
+          proposal.clientName,
+          proposal.serviceName,
+          proposal.publicSlug
+        );
+      }
+    });
   }
 
   const demoCategories = demoPortfolioCategories(proposal.publicSlug);
@@ -100,9 +117,6 @@ export default async function PublicProposalPage({
   ]);
   const brand = proposal.user.brandProfile;
   const brandName = brand?.businessName || proposal.user.name;
-  if (isFirstView && proposal.user.email) {
-    await sendProposalViewedEmail(proposal.user.email, proposal.user.name, proposal.clientName, proposal.serviceName, proposal.publicSlug);
-  }
   const brandColor = brand?.primaryColor || "#22C55E";
   const brandSecondaryColor = brand?.secondaryColor || "#0F172A";
   const brandAccentColor = brand?.accentColor || "#2563EB";
