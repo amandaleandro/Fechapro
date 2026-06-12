@@ -35,10 +35,28 @@ await sendMarketingEmail(user.email, "activationDay1", {
 });
 ```
 
+## Onboarding automatico (implementado)
+
+A regua de ativacao D+0/D+1/D+3 ja roda sozinha:
+
+- **D+0** — `sendWelcomeEmail` disparado no cadastro (`app/api/auth/signup`).
+- **D+1** — `activationDay1`, enviado pelo cron para contas com pelo menos 1 dia e **nenhuma proposta criada**.
+- **D+3** — `activationDay3`, enviado pelo cron para contas com pelo menos 3 dias e **marca incompleta** (sem perfil, sem logo ou sem WhatsApp).
+
+O job fica em `app/api/cron/onboarding` (aceita `GET` e `POST`), protegido por `Authorization: Bearer ${CRON_SECRET}` — **falha fechado** (sem secret, responde 401), igual ao cron de follow-ups. Acione uma vez por dia via cron do sistema:
+
+```bash
+0 10 * * * curl -fsS https://SEU_DOMINIO/api/cron/onboarding \
+  -H "Authorization: Bearer $CRON_SECRET" >> /var/log/fechapro-cron.log 2>&1
+```
+
+### Garantias
+
+- **Sem duplicidade**: cada envio grava `onboardingDay1SentAt` / `onboardingDay3SentAt` no `User`; o cron so seleciona quem ainda esta `null`.
+- **Opt-out respeitado**: contas com `marketingUnsubscribedAt` preenchido nunca recebem onboarding. O link de descadastro (`List-Unsubscribe`) aponta para `/api/marketing/unsubscribe?token=...`, que usa o `marketingUnsubscribeToken` estavel do usuario.
+- **Janela de seguranca**: contas com mais de 14 dias nao entram na regua (evita avalanche ao ligar o cron na base existente).
+
 ## Proximos passos recomendados
 
-1. Criar campos de preferencia de email no banco, como `marketingOptIn`, `marketingUnsubscribedAt` e `marketingUnsubscribeToken`.
-2. Criar uma rota real `/api/marketing/unsubscribe` para registrar descadastro.
-3. Criar um job diario para avaliar usuarios elegiveis e disparar os templates.
-4. Registrar eventos de envio em uma tabela propria para evitar duplicidade e medir abertura/clique pelo provedor.
-5. Segmentar campanhas por comportamento: sem proposta, proposta enviada, proposta aceita, uso frequente e conta inativa.
+1. Registrar eventos de envio em uma tabela propria para medir abertura/clique pelo provedor.
+2. Segmentar campanhas por comportamento: proposta enviada sem aceite (`proposalFollowUp`), uso frequente (`upgradeNudge`), conta inativa (`winBack`) e fim de acesso (`trialEnding`) — templates ja existem, falta o disparo automatico.

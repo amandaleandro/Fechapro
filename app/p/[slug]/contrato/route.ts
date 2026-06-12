@@ -42,6 +42,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
     businessWhatsapp: brand?.whatsapp || "",
     clientName: proposal.clientName,
     createdAtFull: formatContractDateTime(new Date()),
+    emittedAtFull: formatContractDateTime(proposal.createdAt),
     deadline: proposal.deadline,
     included: proposal.included.length ? proposal.included : ["Servico conforme combinado entre as partes."],
     notes: proposal.notes || "",
@@ -170,7 +171,7 @@ function drawContractBody(doc: PDFKit.PDFDocument, data: ContractPdfData) {
     doc,
     y,
     `${acceptanceClauseNumber}. Aceite digital`,
-    `O aceite digital registrado por ${data.acceptedBy} em ${data.acceptedAtFull} evidencia a concordância expressa com o escopo, valor, prazo e condições comerciais apresentados na proposta identificada pelo código ${data.proposalCode}. As partes reconhecem a validade do aceite eletrônico e dos registros digitais relacionados, nos termos admitidos pela legislação brasileira, inclusive quanto ao uso de meios eletrônicos de comprovação de autoria e integridade aceitos pelas partes. Dados do registro: ${acceptanceEvidenceLine(data)}.`,
+    `A Contratada ${data.businessName} firmou digitalmente este instrumento na emissão da proposta, em ${data.emittedAtFull}, manifestando os termos, o escopo, o valor e as condições aqui descritos. O aceite digital registrado por ${data.acceptedBy} em ${data.acceptedAtFull} evidencia a concordância expressa do Contratante com o escopo, valor, prazo e condições comerciais apresentados na proposta identificada pelo código ${data.proposalCode}. As partes reconhecem a validade das assinaturas eletrônicas e dos registros digitais relacionados, nos termos admitidos pela legislação brasileira, inclusive quanto ao uso de meios eletrônicos de comprovação de autoria e integridade aceitos pelas partes. Dados do registro: ${acceptanceEvidenceLine(data)}.`,
     data.primaryColor,
   );
   y = drawClause(
@@ -211,30 +212,42 @@ function drawListClause(doc: PDFKit.PDFDocument, y: number, title: string, items
 }
 
 function drawSignatures(doc: PDFKit.PDFDocument, data: ContractPdfData, y: number) {
-  const signatureY = ensureSpace(doc, Math.max(y, 630), 120);
+  const signatureY = ensureSpace(doc, Math.max(y, 630), 96);
 
-  doc.strokeColor("#CBD5E1").moveTo(70, signatureY).lineTo(260, signatureY).stroke();
-  const nameFontSize = data.businessName.length > 28 ? 8 : 10;
-  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(nameFontSize).text(data.businessName, 70, signatureY + 10, {
-    width: 190,
+  // Assinatura digital da Contratada (prestador) — já vem assinada na emissão da proposta
+  const businessNameSize = data.businessName.length > 26 ? 8.5 : 10;
+  doc.roundedRect(48, signatureY - 18, 230, 72, 10).fill("#ECFDF5").stroke("#BBF7D0");
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8).text("ASSINATURA DIGITAL DA CONTRATADA", 60, signatureY - 2, {
+    width: 206,
+    align: "center",
+    characterSpacing: 0.5,
+  });
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(businessNameSize).text(data.businessName, 60, signatureY + 17, {
+    width: 206,
     align: "center",
     lineBreak: false,
     ellipsis: true,
   });
-  doc.fillColor("#64748B").font("Helvetica").fontSize(9).text("Contratada", 70, signatureY + 10 + nameFontSize + 4, { width: 190, align: "center" });
+  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(`Assinado em ${data.emittedAtFull}`, 60, signatureY + 34, {
+    width: 206,
+    align: "center",
+    lineBreak: false,
+    ellipsis: true,
+  });
 
+  // Assinatura digital do Contratante (cliente) — registrada no aceite
   const isFallbackDate = data.acceptedAtFull === "Aceite digital registrado";
   const dateLabel = isFallbackDate ? data.acceptedAtFull : `Aceito em ${data.acceptedAtFull}`;
 
-  doc.roundedRect(326, signatureY - 18, 208, 72, 10).fill("#ECFDF5").stroke("#BBF7D0");
-  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8).text("ASSINATURA DIGITAL DO CONTRATANTE", 342, signatureY - 2, {
-    width: 176,
+  doc.roundedRect(317, signatureY - 18, 230, 72, 10).fill("#ECFDF5").stroke("#BBF7D0");
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(8).text("ASSINATURA DIGITAL DO CONTRATANTE", 329, signatureY - 2, {
+    width: 206,
     align: "center",
     characterSpacing: 0.5,
   });
-  doc.fillColor("#0F172A").fontSize(10).text(data.acceptedBy, 342, signatureY + 17, { width: 176, align: "center" });
-  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(dateLabel, 342, signatureY + 34, {
-    width: 176,
+  doc.fillColor("#0F172A").font("Helvetica-Bold").fontSize(10).text(data.acceptedBy, 329, signatureY + 17, { width: 206, align: "center" });
+  doc.fillColor("#64748B").font("Helvetica").fontSize(8.5).text(dateLabel, 329, signatureY + 34, {
+    width: 206,
     align: "center",
     lineBreak: false,
     ellipsis: true,
@@ -347,6 +360,7 @@ type ContractPdfData = {
   businessWhatsapp: string;
   clientName: string;
   createdAtFull: string;
+  emittedAtFull: string;
   deadline: string;
   included: string[];
   notes: string;

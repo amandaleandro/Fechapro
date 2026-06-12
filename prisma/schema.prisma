@@ -15,6 +15,10 @@ model User {
   segment            String?
   passwordHash       String?
   createdAt          DateTime            @default(now())
+  onboardingDay1SentAt    DateTime?
+  onboardingDay3SentAt    DateTime?
+  marketingUnsubscribedAt DateTime?
+  marketingUnsubscribeToken String?       @unique
   brandProfile       BrandProfile?
   subscription       PlanSubscription?
   clientAssets       ClientAsset[]
