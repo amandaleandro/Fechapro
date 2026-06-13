@@ -78,8 +78,6 @@ export async function POST(request: Request) {
         provider: signupPayment ? "mercadopago" : "admin",
         providerCheckoutId: signupPayment?.providerCheckoutId || null,
         status: "active",
-        // Lote único de artes de boas-vindas dos planos vitalícios (não recorrente).
-        artCreditBalance: plans[(signupPayment?.plan || requestedPlan || "free") as PlanCode]?.welcomeArtCredits ?? 0,
       },
     });
     if (signupPayment) {

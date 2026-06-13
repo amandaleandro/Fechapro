@@ -14,8 +14,6 @@ export type PlanCode =
   | "founder_complete_site"
   | "founder";
 
-export type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
-
 export const UNLIMITED_PROPOSAL_LIMIT = Number.MAX_SAFE_INTEGER;
 export const FREE_CLIENT_LIMIT = 10;
 export const FREE_SERVICE_LIMIT = 10;
@@ -33,10 +31,8 @@ export type PlanDefinition = {
   maintenancePriceCents?: number;
   billingMode?: BillingMode;
   proposalLimit: number;
-  artLimit: number;
   public: boolean;
   sellable?: boolean;
-  welcomeArtCredits?: number;
   features: string[];
   serviceEntitlements?: string[];
   excluded?: string[];
@@ -49,7 +45,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     price: "R$ 0",
     priceCents: 0,
     proposalLimit: 3,
-    artLimit: 0,
     public: false,
     features: [
       "3 propostas gratuitas",
@@ -67,7 +62,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     priceCents: 9700,
     billingMode: "subscription",
     proposalLimit: 50,
-    artLimit: 0,
     public: false,
     features: ["Plano legado", "50 propostas por mes", "Link profissional", "PDF da proposta", "Aceite online"],
   },
@@ -79,7 +73,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "subscription",
     annualPrice: "3 dias gratis para testar",
     proposalLimit: 5,
-    artLimit: 0,
     public: true,
     features: [
       "Ate 5 propostas por mes",
@@ -99,7 +92,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "subscription",
     annualPrice: "3 dias gratis para testar",
     proposalLimit: 30,
-    artLimit: 0,
     public: true,
     features: [
       "Ate 30 propostas por mes",
@@ -119,7 +111,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "one_time",
     annualPrice: "pagamento unico legado",
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
-    artLimit: 10,
     public: false,
     features: ["Plano legado", "Propostas ilimitadas", "Contrato apos aceite", "Implantacao assistida"],
   },
@@ -130,7 +121,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     priceCents: 19700,
     billingMode: "subscription",
     proposalLimit: 200,
-    artLimit: 15,
     public: false,
     features: ["Plano legado", "Ate 200 propostas por mes", "Portfolio", "Depoimentos", "Rastreamento avancado"],
   },
@@ -141,7 +131,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     priceCents: 14700,
     billingMode: "subscription",
     proposalLimit: 200,
-    artLimit: 10,
     public: false,
     features: ["Plano legado", "Ate 200 propostas por mes", "Contrato apos aceite", "Templates", "Suporte inicial"],
   },
@@ -153,7 +142,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "subscription",
     annualPrice: "3 dias gratis para testar",
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
-    artLimit: 0,
     public: true,
     features: [
       "Tudo do Profissional",
@@ -174,7 +162,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     priceCents: 49700,
     billingMode: "subscription",
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
-    artLimit: 50,
     public: false,
     features: ["Plano legado", "Tudo ilimitado", "Mini site profissional", "Implantacao assistida", "Treinamento completo"],
   },
@@ -186,8 +173,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "one_time",
     annualPrice: "pagamento unico legado",
     proposalLimit: 50,
-    artLimit: 0,
-    welcomeArtCredits: 5,
     public: false,
     sellable: false,
     features: ["Oferta vitalicia legado", "50 propostas por mes", "Link profissional", "PDF", "Aceite online"],
@@ -200,7 +185,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "one_time",
     annualPrice: "pagamento unico legado",
     proposalLimit: 60,
-    artLimit: 0,
     public: false,
     sellable: false,
     features: ["Oferta vitalicia legado", "60 propostas por mes", "Modelos prontos", "Visualizacoes"],
@@ -213,8 +197,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "one_time",
     annualPrice: "pagamento unico legado",
     proposalLimit: 200,
-    artLimit: 0,
-    welcomeArtCredits: 15,
     public: false,
     sellable: false,
     features: ["Oferta vitalicia legado", "200 propostas por mes", "Portfolio", "Depoimentos", "Rastreamento avancado"],
@@ -227,8 +209,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "one_time",
     annualPrice: "pagamento unico legado",
     proposalLimit: 200,
-    artLimit: 0,
-    welcomeArtCredits: 20,
     public: false,
     sellable: false,
     features: ["Oferta vitalicia legado", "Mini site profissional", "Dominio proprio", "200 propostas por mes"],
@@ -241,8 +221,6 @@ export const plans: Record<PlanCode, PlanDefinition> = {
     billingMode: "one_time",
     annualPrice: "pagamento unico legado",
     proposalLimit: UNLIMITED_PROPOSAL_LIMIT,
-    artLimit: 0,
-    welcomeArtCredits: 50,
     public: false,
     sellable: false,
     features: ["Oferta vitalicia legado", "Tudo ilimitado", "Mini site profissional", "Implantacao assistida", "Treinamento completo"],
@@ -256,43 +234,6 @@ export function isPurchasablePlan(code: PlanCode) {
   return Boolean(plan && (plan.public || plan.sellable));
 }
 
-export const artPacks: Record<
-  ArtPackCode,
-  {
-    code: ArtPackCode;
-    name: string;
-    price: string;
-    priceCents: number;
-    credits: number;
-    features: string[];
-  }
-> = {
-  arts_5: {
-    code: "arts_5",
-    name: "Pacote 5 artes",
-    price: "R$ 39",
-    priceCents: 3900,
-    credits: 5,
-    features: ["5 criacoes individuais", "Creditos extras para usar quando quiser", "Mantem seu plano principal ativo"],
-  },
-  arts_15: {
-    code: "arts_15",
-    name: "Pacote 15 artes",
-    price: "R$ 97",
-    priceCents: 9700,
-    credits: 15,
-    features: ["15 criacoes individuais", "Ideal para campanhas e lancamentos", "Creditos extras acumulaveis"],
-  },
-  arts_30: {
-    code: "arts_30",
-    name: "Pacote 30 artes",
-    price: "R$ 179",
-    priceCents: 17900,
-    credits: 30,
-    features: ["30 criacoes individuais", "Melhor custo por arte", "Perfeito para divulgacao recorrente"],
-  },
-};
-
 export function currentMonthRange() {
   const now = new Date();
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -301,10 +242,6 @@ export function currentMonthRange() {
 }
 
 export function isUnlimitedProposalLimit(limit: number) {
-  return limit >= UNLIMITED_PROPOSAL_LIMIT;
-}
-
-export function isUnlimitedArtLimit(limit: number) {
   return limit >= UNLIMITED_PROPOSAL_LIMIT;
 }
 

@@ -145,6 +145,10 @@ export default async function PublicProposalPage({
   const acceptedAtLabel = proposal.acceptedAt
     ? proposal.acceptedAt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
     : "";
+  const matchedService = services.find((service) => service.name.toLowerCase() === proposal.serviceName.toLowerCase())
+    || services.find((service) => proposal.serviceName.toLowerCase().includes(service.name.toLowerCase()));
+  const serviceHeroImage = matchedService?.imageUrl || portfolio[0]?.imageUrl || null;
+  const executionTimeline = buildExecutionTimeline(proposal.deadline, proposal.included);
   const contractConditions = [
     ["Contratante", proposal.clientName],
     ["Contratada", brandName],
@@ -259,6 +263,10 @@ export default async function PublicProposalPage({
         </nav>
 
         <header id="visao-geral" className={`fp-proposal-hero overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
+          {serviceHeroImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img alt="" className="fp-proposal-hero-service-photo" src={serviceHeroImage} />
+          ) : null}
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${segmentStyle.primary}, ${segmentStyle.accent})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
             <div>
@@ -345,9 +353,9 @@ export default async function PublicProposalPage({
             <aside className={`fp-proposal-price-card grid content-between gap-4 bg-white p-4 text-slate-950 ${proposalStyle.radiusClass}`}>
               <div>
                 <div className="fp-proposal-price-media mb-4 overflow-hidden rounded-lg">
-                  {portfolio[0]?.imageUrl ? (
+                  {serviceHeroImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img alt="" className="h-full w-full object-cover" src={portfolio[0].imageUrl} />
+                    <img alt="" className="h-full w-full object-cover" src={serviceHeroImage} />
                   ) : (
                     <div className="grid h-full content-between p-4 text-white">
                       <span className="text-xs font-black uppercase text-white/70">{segmentStyle.segmentName}</span>
@@ -408,21 +416,20 @@ export default async function PublicProposalPage({
           ) : null}
         </section>
 
-        <section className="fp-proposal-decision-path">
-          <div>
-            <span>01</span>
-            <strong>Entenda a entrega</strong>
-            <p>Veja escopo, prazo, condicoes e o que esta incluso antes de comparar apenas preco.</p>
+        <section className="fp-proposal-execution-timeline">
+          <div className="fp-proposal-section-heading">
+            <p>Etapas do projeto</p>
+            <h2>Timeline de execucao</h2>
           </div>
-          <div>
-            <span>02</span>
-            <strong>Confira a seguranca</strong>
-            <p>Tenha PDF, slides, status, portfolio e contato direto reunidos no mesmo link.</p>
-          </div>
-          <div>
-            <span>03</span>
-            <strong>Decida com clareza</strong>
-            <p>Registre o aceite online ou chame no WhatsApp para ajustar detalhes antes de seguir.</p>
+          <div className="fp-proposal-timeline-track">
+            {executionTimeline.map((step, index) => (
+              <article key={step.title}>
+                <span>{index + 1}</span>
+                <strong>{step.title}</strong>
+                <p>{step.description}</p>
+                <em>{step.duration}</em>
+              </article>
+            ))}
           </div>
         </section>
 
@@ -906,6 +913,35 @@ function getDaysLeft(date: string) {
   today.setHours(0, 0, 0, 0);
   const target = new Date(`${date}T00:00:00`);
   return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+}
+
+function buildExecutionTimeline(deadline: string, included: string[]) {
+  const totalDays = parseDeadlineDays(deadline);
+  const durations = totalDays
+    ? [
+        `${Math.max(1, Math.round(totalDays * 0.18))} dias`,
+        `${Math.max(1, Math.round(totalDays * 0.55))} dias`,
+        `${Math.max(1, Math.round(totalDays * 0.18))} dias`,
+        `${Math.max(1, totalDays - Math.round(totalDays * 0.18) - Math.round(totalDays * 0.55) - Math.round(totalDays * 0.18))} dias`,
+      ]
+    : ["Inicio", "Maior etapa", "Revisao", "Entrega"];
+  const firstIncluded = included[0] || "Briefing e levantamento";
+  const secondIncluded = included[1] || "Execucao do servico";
+  const thirdIncluded = included[2] || "Detalhes e revisao";
+
+  return [
+    { title: "Planejamento", description: firstIncluded, duration: durations[0] },
+    { title: "Execucao", description: secondIncluded, duration: durations[1] },
+    { title: "Acabamentos", description: thirdIncluded, duration: durations[2] },
+    { title: "Entrega", description: "Vistoria e entrega final", duration: durations[3] },
+  ];
+}
+
+function parseDeadlineDays(deadline: string) {
+  const match = deadline.match(/(\d+)/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 function getProposalStyle(style: string) {

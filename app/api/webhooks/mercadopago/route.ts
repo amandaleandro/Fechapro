@@ -279,42 +279,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   }
 
-  if (reference.startsWith("art_pack:")) {
-    const [, userId, pack] = reference.split(":");
-    const artCreditPurchase = await prisma.artCreditPurchase.findFirst({
-      where: { providerCheckoutId: reference, userId, pack, provider: "mercadopago", status: { not: "paid" } },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (!artCreditPurchase) return NextResponse.json({ received: true });
-
-    if (paid && artCreditPurchase.status !== "paid") {
-      await prisma.$transaction([
-        prisma.artCreditPurchase.update({
-          where: { id: artCreditPurchase.id },
-          data: { status: "paid", paidAt: new Date(), provider: "mercadopago" },
-        }),
-        prisma.planSubscription.upsert({
-          where: { userId: artCreditPurchase.userId },
-          create: {
-            userId: artCreditPurchase.userId,
-            plan: "start",
-            status: "pending",
-            artCreditBalance: artCreditPurchase.credits,
-          },
-          update: {
-            artCreditBalance: { increment: artCreditPurchase.credits },
-          },
-        }),
-      ]);
-    } else if (failed) {
-      await prisma.artCreditPurchase.update({
-        where: { id: artCreditPurchase.id },
-        data: { status: "canceled" },
-      });
-    }
-    return NextResponse.json({ received: true });
-  }
-
   return NextResponse.json({ received: true });
 }

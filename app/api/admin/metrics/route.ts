@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { artPacks, plans } from "@/lib/plans";
+import { plans } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function GET() {
   const periods = periodRanges();
   const earliest = Object.values(periods).reduce((min, range) => (range.start < min ? range.start : min), new Date());
 
-  const [accessEvents, proposalPayments, signupPayments, artPayments] = await Promise.all([
+  const [accessEvents, proposalPayments, signupPayments] = await Promise.all([
     prisma.accessEvent.findMany({
       where: { createdAt: { gte: earliest } },
       select: { createdAt: true },
@@ -31,10 +31,6 @@ export async function GET() {
     prisma.signupPayment.findMany({
       where: { status: "paid", paidAt: { gte: earliest } },
       select: { paidAt: true, plan: true },
-    }),
-    prisma.artCreditPurchase.findMany({
-      where: { status: "paid", paidAt: { gte: earliest } },
-      select: { paidAt: true, pack: true },
     }),
   ]);
 
@@ -59,12 +55,6 @@ export async function GET() {
   for (const payment of signupPayments) {
     if (!payment.paidAt) continue;
     addRevenue(metrics, periods, payment.paidAt, plans[payment.plan].priceCents);
-  }
-
-  for (const payment of artPayments) {
-    if (!payment.paidAt) continue;
-    const pack = artPacks[payment.pack as keyof typeof artPacks];
-    addRevenue(metrics, periods, payment.paidAt, pack?.priceCents || 0);
   }
 
   return NextResponse.json(

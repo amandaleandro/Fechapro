@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { isAdminEmail } from "@/lib/admin";
-import { artPacks, currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
+import { currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -25,15 +25,6 @@ export async function GET() {
       },
     },
   });
-  const artsThisMonth = await prisma.marketingArtAsset.count({
-    where: {
-      userId: session.id,
-      createdAt: {
-        gte: start,
-        lt: end,
-      },
-    },
-  });
   const usedSinceSubscriptionStart = await prisma.proposalAsset.count({
     where: {
       userId: session.id,
@@ -44,16 +35,12 @@ export async function GET() {
 
   return NextResponse.json({
     subscription,
-    artPacks: Object.values(artPacks),
     plans: publicPlans,
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
       proposalsUsedSinceSubscriptionStart: usedSinceSubscriptionStart,
       accumulatedProposalLimit: accumulatedLimit,
-      artsThisMonth,
-      artLimit: plans[subscription.plan].artLimit,
-      artCreditBalance: subscription.artCreditBalance,
     },
   });
 }
@@ -92,15 +79,6 @@ export async function PUT(request: Request) {
       },
     },
   });
-  const artsThisMonth = await prisma.marketingArtAsset.count({
-    where: {
-      userId: session.id,
-      createdAt: {
-        gte: start,
-        lt: end,
-      },
-    },
-  });
   const usedSinceSubscriptionStart = await prisma.proposalAsset.count({
     where: {
       userId: session.id,
@@ -111,16 +89,12 @@ export async function PUT(request: Request) {
 
   return NextResponse.json({
     subscription,
-    artPacks: Object.values(artPacks),
     plans: publicPlans,
     usage: {
       proposalsThisMonth: usedThisMonth,
       proposalLimit: plans[subscription.plan].proposalLimit,
       proposalsUsedSinceSubscriptionStart: usedSinceSubscriptionStart,
       accumulatedProposalLimit: accumulatedLimit,
-      artsThisMonth,
-      artLimit: plans[subscription.plan].artLimit,
-      artCreditBalance: subscription.artCreditBalance,
     },
   });
 }

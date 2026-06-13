@@ -19,9 +19,7 @@ export default async function SignupCheckoutPage({ params }: { params: Promise<{
       <section className="mx-auto grid w-full max-w-6xl gap-5">
         <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10">
           <Link className="inline-flex min-h-11 items-center gap-3 rounded-lg px-2 font-black text-slate-900" href="/#planos">
-            <span className="grid h-10 w-36 place-items-center rounded-lg bg-slate-950 px-3">
-              <Image alt="FechaPro" className="h-7 w-full object-contain" src="/brand/logofechapro.png" width={144} height={36} />
-            </span>
+            <Image alt="FechaPro" className="h-8 w-32 object-contain" src="/brand/logofechapro.png" width={144} height={36} />
           </Link>
           <div className="flex flex-wrap items-center gap-2 text-xs font-black uppercase text-slate-500">
             <span className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-2 text-green-800">

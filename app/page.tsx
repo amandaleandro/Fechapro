@@ -46,7 +46,7 @@ import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/l
 import { trackConversion } from "@/lib/conversion-client";
 import { businessSegments, filterReadyProposalTemplates, proposalTemplateNiches, type ProposalTemplate } from "@/lib/proposal-templates";
 import { AuthScreen } from "./landing";
-import { FREE_CLIENT_LIMIT, FREE_PORTFOLIO_LIMIT, FREE_SERVICE_LIMIT, isUnlimitedProposalLimit, isUnlimitedArtLimit, plans, type PlanCode } from "@/lib/plans";
+import { FREE_CLIENT_LIMIT, FREE_PORTFOLIO_LIMIT, FREE_SERVICE_LIMIT, isUnlimitedProposalLimit, plans, type PlanCode } from "@/lib/plans";
 import ProposalPreview from "./components/ProposalPreview";
 import Modal from "./components/Modal";
 
@@ -93,7 +93,7 @@ function CopyButton({
   );
 }
 
-type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "arts" | "templates" | "plans" | "support" | "account";
+type ActiveView = "dashboard" | "proposals" | "clients" | "services" | "portfolio" | "testimonials" | "brand" | "templates" | "plans" | "support" | "account";
 type SessionProfile = { id?: string; name: string; email: string; niche?: string | null; segment?: string | null; isAdmin?: boolean };
 type ProposalStatus = "draft" | "sent" | "viewed" | "awaiting_response" | "accepted" | "declined" | "expired";
 
@@ -136,25 +136,6 @@ type ImportKind = "clients" | "services" | "testimonials";
 type ImportResult<T> = {
   created: T[];
   errors: string[];
-};
-
-type MarketingArt = {
-  id: string;
-  title: string;
-  format: string;
-  objective: string;
-  serviceName: string | null;
-  audience: string | null;
-  callToAction: string | null;
-  caption: string | null;
-  whatsappMessage: string | null;
-  category: string | null;
-  prompt: string;
-  imageUrl: string;
-  referenceImageUrl: string | null;
-  referenceImageUrls?: string[] | null;
-  source: string;
-  createdAt: string;
 };
 
 type Proposal = {
@@ -231,8 +212,6 @@ type BrandProfile = {
   showFaq: boolean;
 };
 
-type ArtPackCode = "arts_5" | "arts_15" | "arts_30";
-
 type BillingPlan = {
   code: PlanCode;
   name: string;
@@ -242,18 +221,8 @@ type BillingPlan = {
   maintenancePrice?: string;
   maintenancePriceCents?: number;
   proposalLimit: number;
-  artLimit: number;
   features: string[];
   serviceEntitlements?: string[];
-};
-
-type BillingArtPack = {
-  code: ArtPackCode;
-  name: string;
-  price: string;
-  priceCents: number;
-  credits: number;
-  features: string[];
 };
 
 type BillingState = {
@@ -262,16 +231,12 @@ type BillingState = {
     provider?: string | null;
     status: string;
   };
-  artPacks: BillingArtPack[];
   plans: BillingPlan[];
   usage: {
     proposalsThisMonth: number;
     proposalLimit: number;
     proposalsUsedSinceSubscriptionStart?: number;
     accumulatedProposalLimit?: number;
-    artsThisMonth: number;
-    artLimit: number;
-    artCreditBalance: number;
   };
 };
 
@@ -379,14 +344,13 @@ const navItems: Array<{ id: ActiveView; label: string; icon: React.ElementType }
   { id: "portfolio", label: "Portfólio", icon: ImageIcon },
   { id: "testimonials", label: "Depoimentos", icon: MessageSquareQuote },
   { id: "brand", label: "Marca", icon: Settings },
-  { id: "arts", label: "Artes de divulgação", icon: Palette },
   { id: "templates", label: "Templates", icon: Layers3 },
   { id: "plans", label: "Planos", icon: CreditCard },
   { id: "support", label: "Suporte", icon: HelpCircle },
   { id: "account", label: "Conta", icon: UserCircle },
 ];
 
-const directNavIds: ActiveView[] = ["dashboard", "proposals", "arts"];
+const directNavIds: ActiveView[] = ["dashboard", "proposals"];
 const navGroups: Array<{ id: string; label: string; icon: React.ElementType; items: ActiveView[] }> = [
   { id: "catalogo", label: "Catálogo", icon: FolderKanban, items: ["clients", "services", "portfolio", "testimonials", "templates"] },
   { id: "conta", label: "Conta", icon: UserCircle, items: ["brand", "plans", "account", "support"] },
@@ -415,7 +379,6 @@ const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
   brand: "essential",
   portfolio: "professional",
   testimonials: "professional",
-  arts: "premium",
   templates: "professional",
 };
 
@@ -425,7 +388,6 @@ const commercialModuleIds: ActiveView[] = [
   "clients",
   "services",
   "brand",
-  "arts",
   "portfolio",
   "testimonials",
   "templates",
@@ -508,13 +470,6 @@ const tourSteps: TourStep[] = [
     checklist: ["Adicione logo e contatos comerciais", "Cadastre a chave PIX para recebimento direto", "Ajuste textos e blocos exibidos na proposta"],
   },
   {
-    view: "arts",
-    eyebrow: "Divulgação",
-    title: "Peça artes para vender seus serviços",
-    description: "As artes de divulgação usam briefing e referências para transformar serviços, promoções e agenda aberta em materiais aprováveis.",
-    checklist: ["Escolha formato e objetivo", "Acompanhe legenda e aprovação", "Baixe o material final quando estiver liberado"],
-  },
-  {
     view: "templates",
     eyebrow: "Modelos prontos",
     title: "Reaproveite templates de proposta",
@@ -524,9 +479,9 @@ const tourSteps: TourStep[] = [
   {
     view: "plans",
     eyebrow: "Uso e limites",
-    title: "Revise plano, créditos e assinatura",
-    description: "Planos mostram o acesso atual, limites de propostas, créditos de artes e os caminhos de assinatura conectados ao painel.",
-    checklist: ["Confira os limites do plano atual", "Veja os créditos de artes disponíveis", "Escolha um plano quando precisar ampliar o uso"],
+    title: "Revise plano e assinatura",
+    description: "Planos mostram o acesso atual, limites de propostas e os caminhos de assinatura conectados ao painel.",
+    checklist: ["Confira os limites do plano atual", "Escolha um plano quando precisar ampliar o uso"],
   },
 ];
 
@@ -673,51 +628,6 @@ const proposalTemplates: ProposalTemplate[] = [
     payment: "Diagnóstico na entrada e saldo na retirada",
     included: ["Diagnóstico", "Orçamento de peças", "Mão de obra", "Testes finais", "Garantia do reparo"],
     notes: "Peças são cobradas separadamente e dependem de disponibilidade.",
-  },
-];
-
-const marketingArtBriefs = [
-  {
-    id: "sell_service",
-    label: "Serviço",
-    objective: "Divulgar um serviço profissional destacando benefício, confiança, atendimento rápido e pedido de orçamento pelo WhatsApp.",
-    callToAction: "Peça seu orçamento",
-  },
-  {
-    id: "promotion",
-    label: "Promocao",
-    objective: "Divulgar uma promocao com oferta clara, senso de oportunidade, beneficio principal e chamada direta para comprar ou chamar no WhatsApp.",
-    callToAction: "Quero aproveitar",
-  },
-  {
-    id: "product",
-    label: "Produto",
-    objective: "Divulgar um produto com destaque para desejo, benefício, preço ou condição especial e chamada para comprar.",
-    callToAction: "Quero comprar",
-  },
-  {
-    id: "menu",
-    label: "Cardapio",
-    objective: "Divulgar comida, combo, marmita, lanche, açaí ou cardápio com apelo de sabor, praticidade e pedido rápido.",
-    callToAction: "Fazer pedido",
-  },
-  {
-    id: "notice",
-    label: "Aviso",
-    objective: "Comunicar um aviso importante de forma clara, bonita e fácil de entender.",
-    callToAction: "Saiba mais",
-  },
-  {
-    id: "open_slots",
-    label: "Agenda aberta",
-    objective: "Avisar que a agenda está aberta, mostrar o principal resultado do serviço e incentivar a pessoa a reservar um horário.",
-    callToAction: "Reservar horário",
-  },
-  {
-    id: "online_presence",
-    label: "Presença online",
-    objective: "Divulgar criação de site ou presença online mostrando que o negócio fica mais profissional, fácil de encontrar e pronto para receber orçamentos.",
-    callToAction: "Quero meu site",
   },
 ];
 
@@ -1116,7 +1026,6 @@ export default function Home() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [marketingArts, setMarketingArts] = useState<MarketingArt[]>([]);
   const [customProposalTemplates, setCustomProposalTemplates] = useState<ProposalTemplate[]>([]);
   const [brand, setBrand] = useState<BrandProfile | null>(null);
   const [billing, setBilling] = useState<BillingState | null>(null);
@@ -1207,7 +1116,7 @@ export default function Home() {
   }, [onboardingIncomplete, session]);
 
   async function loadDashboardData() {
-    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, marketingArtsData, proposalTemplatesData] = await Promise.allSettled([
+    const [brandData, billingData, clientsData, servicesData, portfolioData, testimonialsData, proposalTemplatesData] = await Promise.allSettled([
       apiGet<BrandProfile>("/api/brand"),
       apiGet<BillingState>("/api/billing/plan"),
       apiGet<Client[]>("/api/clients"),
@@ -1215,7 +1124,6 @@ export default function Home() {
       apiGet<PortfolioItem[]>("/api/portfolio"),
       apiGet<Testimonial[]>("/api/testimonials"),
       // proposals list will be loaded paginated below to avoid fetching the full array
-      apiGet<MarketingArt[]>("/api/marketing-arts"),
       apiGet<ProposalTemplate[]>("/api/proposal-templates"),
     ]);
 
@@ -1255,7 +1163,6 @@ export default function Home() {
     } catch {
       setProposalsSummary(null);
     }
-    applyResult(marketingArtsData, setMarketingArts, "artes");
     applyResult(proposalTemplatesData, setCustomProposalTemplates, "templates");
 
     if (billingData.status === "fulfilled" && !(["active", "trial"].includes(billingData.value.subscription.status) && ["mercadopago", "admin"].includes(billingData.value.subscription.provider || ""))) {
@@ -1555,46 +1462,6 @@ export default function Home() {
     setNotice("Link da proposta copiado.");
   }
 
-  async function createMarketingArt(payload: {
-    title: string;
-    format: string;
-    objective: string;
-    serviceName: string;
-    audience: string;
-    callToAction: string;
-    referenceImageUrl: string | null;
-    referenceImageUrls?: string[] | null;
-    useImageAsBackground: boolean;
-  }) {
-    const item = await apiPost<MarketingArt>("/api/marketing-arts", payload);
-    setMarketingArts((current) => [item, ...current]);
-    setBilling((current) =>
-      current
-        ? {
-            ...current,
-            usage: {
-              ...current.usage,
-              artsThisMonth: current.usage.artsThisMonth + 1,
-            },
-          }
-        : current,
-    );
-      setNotice("Solicitação enviada. A equipe vai preparar a arte e anexar para sua aprovação.");
-    return item;
-  }
-
-  async function approveMarketingArt(id: string) {
-    const item = await apiPatch<MarketingArt>(`/api/marketing-arts/${id}`, { action: "approve" });
-    setMarketingArts((current) => current.map((art) => (art.id === id ? item : art)));
-    setNotice("Arte aprovada. Download liberado.");
-  }
-
-  async function removeMarketingArt(id: string) {
-    await apiDelete(`/api/marketing-arts/${id}`);
-    setMarketingArts((current) => current.filter((item) => item.id !== id));
-    setNotice("Arte removida.");
-  }
-
   function startTour() {
     if (onboardingIncomplete) {
       setNotice("Conclua a configuração inicial para liberar o acesso guiado.");
@@ -1815,42 +1682,6 @@ export default function Home() {
             {activeView === "brand" ? (
               <BrandView brand={brand} session={session} onChange={setBrand} />
             ) : null}
-            {activeView === "arts" ? (
-              <MarketingArtsView
-                arts={marketingArts}
-                billing={billing}
-                brand={
-                  brand || {
-                    businessName: session.name,
-                    logoUrl: null,
-                    primaryColor: "#22C55E",
-                    secondaryColor: "#0F172A",
-                    accentColor: "#2563EB",
-                    whatsapp: null,
-                    pixKey: null,
-                    instagram: null,
-                    email: session.email,
-                    website: null,
-                    bio: null,
-                    proposalStyle: "executive",
-                    proposalIntro: null,
-                    proposalClosing: null,
-                    proposalTerms: null,
-                    proposalFaq: null,
-                    showPortfolio: true,
-                    showTestimonials: true,
-                    showServices: true,
-                    showFaq: true,
-                  }
-                }
-                notice={notice}
-                onCreate={createMarketingArt}
-                onNotice={setNotice}
-                onApprove={approveMarketingArt}
-                onRemove={removeMarketingArt}
-                services={services}
-              />
-            ) : null}
             {activeView === "templates" ? (
               <TemplatesView
                 customTemplates={customProposalTemplates}
@@ -1905,10 +1736,6 @@ export default function Home() {
       {showUpdatesModal ? (
         <ProductUpdatesModal
           onClose={closeUpdatesModal}
-          onOpenArts={() => {
-            closeUpdatesModal();
-            setActiveView("arts");
-          }}
           onOpenBrand={() => {
             closeUpdatesModal();
             setActiveView("brand");
@@ -2778,11 +2605,6 @@ function DashboardView({
                   ? "Propostas ilimitadas"
                   : `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês`
                 : "Pague pelo Mercado Pago ou aguarde liberação do admin"}
-            </span>
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
-              {isUnlimitedArtLimit(billing.usage.artLimit)
-                ? "Artes de divulgação ilimitadas"
-                : `${billing.usage.artsThisMonth}/${billing.usage.artLimit} artes de divulgação`}
             </span>
           </div>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">

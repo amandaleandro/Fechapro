@@ -13,7 +13,7 @@ export async function GET() {
   await requireAdmin();
 
   const { start, end } = currentMonthRange();
-  const [users, proposalUsage, artUsage] = await Promise.all([
+  const [users, proposalUsage] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -31,7 +31,6 @@ export async function GET() {
         _count: {
           select: {
             proposalAssets: true,
-            marketingArtAssets: true,
             clientAssets: true,
           },
         },
@@ -42,15 +41,9 @@ export async function GET() {
       where: { createdAt: { gte: start, lt: end } },
       _count: { userId: true },
     }),
-    prisma.marketingArtAsset.groupBy({
-      by: ["userId"],
-      where: { createdAt: { gte: start, lt: end } },
-      _count: { userId: true },
-    }),
   ]);
 
   const proposalUsageByUser = new Map(proposalUsage.map((row) => [row.userId, row._count.userId]));
-  const artUsageByUser = new Map(artUsage.map((row) => [row.userId, row._count.userId]));
   const accumulatedProposalUsage = await Promise.all(
     users.map((user) =>
       prisma.proposalAsset.count({
@@ -82,8 +75,6 @@ export async function GET() {
             proposalLimit: plans[plan].proposalLimit,
             proposalsUsedSinceSubscriptionStart: accumulatedProposalUsage[index] || 0,
             accumulatedProposalLimit: accumulatedProposalLimit(plans[plan].proposalLimit, user.subscription?.startedAt),
-            artsThisMonth: artUsageByUser.get(user.id) || 0,
-            artLimit: plans[plan].artLimit,
           },
         };
       }),

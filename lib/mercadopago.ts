@@ -1,4 +1,4 @@
-import { artPacks, type ArtPackCode, type PlanCode, plans } from "@/lib/plans";
+import { type PlanCode, plans } from "@/lib/plans";
 import { productionEnv } from "@/lib/security-env";
 
 const MERCADO_PAGO_BASE = "https://api.mercadopago.com";
@@ -263,25 +263,6 @@ async function createSubscriptionCheckout(input: {
 function recurringAmountCents(planCode: PlanCode) {
   const plan = plans[planCode];
   return plan.maintenancePriceCents || plan.priceCents;
-}
-
-export async function createArtPackCheckout(input: {
-  origin: string;
-  pack: ArtPackCode;
-  userEmail: string;
-  userId: string;
-}) {
-  const pack = artPacks[input.pack];
-  const referenceId = crypto.randomUUID();
-  return createPreference({
-    amountCents: pack.priceCents,
-    description: `${pack.name}: ${pack.credits} créditos extras para criação de artes de divulgação no FechaPro.`,
-    externalReference: `art_pack:${input.userId}:${pack.code}:${referenceId}`,
-    origin: input.origin,
-    payerEmail: input.userEmail,
-    successPath: `/?payment=success&artPack=${pack.code}`,
-    title: `FechaPro ${pack.name}`,
-  });
 }
 
 export async function getMercadoPagoPayment(paymentId: string | number) {

@@ -36,16 +36,19 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
   const brandName = brand?.businessName || proposal.user.name;
   const notes = proposal.notes?.trim();
   const included = proposal.included.length ? proposal.included : ["Escopo alinhado com o cliente."];
-  const heroPhoto = serviceImage || portfolio.find((item) => item.imageUrl)?.imageUrl;
-  const nextSteps = [
-    ["01", "Aceite online", "O cliente revisa a proposta e registra o aceite no link."],
-    ["02", "Alinhamento final", "Profissional e cliente confirmam detalhes, pagamento e agenda."],
-    ["03", "Execução", "O trabalho segue com escopo, prazo e condições documentadas."],
-  ];
+  const slideImages = uniqueSlideImages(serviceImage, portfolio).slice(0, 4);
+  const heroPhoto = slideImages[0]?.imageUrl;
+  const timeline = buildSlideTimeline(proposal.deadline);
+  const paymentSplit = buildPaymentSplit(proposal.payment);
+  const titleParts = splitTitle(proposal.serviceName);
+  const contactLine = brand?.whatsapp || brand?.email || proposal.user.email;
   const cssVars = {
-    "--slides-primary": brand?.primaryColor || "#16A34A",
-    "--slides-secondary": brand?.secondaryColor || "#0F172A",
-    "--slides-accent": brand?.accentColor || "#2563EB",
+    "--slides-primary": brand?.primaryColor || "#33D14F",
+    "--slides-secondary": brand?.secondaryColor || "#020918",
+    "--slides-accent": brand?.accentColor || "#1462FF",
+    "--slides-green": brand?.primaryColor || "#33D14F",
+    "--slides-blue": brand?.accentColor || "#1462FF",
+    "--slides-dark": brand?.secondaryColor || "#020918",
   } as CSSProperties;
 
   return (
@@ -57,125 +60,188 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
       </div>
 
       <article className="fp-slides-deck">
-        <Slide className="fp-slide-cover" footer={<><span>{brandName}</span><span>1 / 6</span></>}>
-          <div className="fp-slide-brand">
-            {brand?.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img alt="" src={brand.logoUrl} />
-            ) : (
-              <span>{initials(brandName)}</span>
-            )}
-            <strong>{brandName}</strong>
-          </div>
-          <div className="fp-slide-cover-copy">
-            <p>Apresentação comercial</p>
-            <h1>{proposal.serviceName}</h1>
-            <h2>Preparada para {proposal.clientName}</h2>
-            <dl className="fp-slide-cover-strip">
-              <Fact label="Investimento" value={money.format(proposal.price)} />
-              <Fact label="Prazo" value={proposal.deadline || "A combinar"} />
-              <Fact label="Validade" value={proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar"} />
-            </dl>
-          </div>
-          <div className="fp-slide-cover-media">
-            {heroPhoto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img alt="" src={heroPhoto} />
-            ) : (
-              <div>
-                <strong>{money.format(proposal.price)}</strong>
-                <span>{proposal.deadline || "Prazo a combinar"}</span>
-              </div>
-            )}
-          </div>
-        </Slide>
-
-        <Slide footer={<><span>{brandName}</span><span>2 / 6</span></>}>
-          <Header eyebrow="Contexto" title={`O que ${proposal.clientName} recebe`} />
-          <div className="fp-slide-grid">
-            <div className="fp-slide-statement">
+        <Slide footer={<SlideFooter page="Slide 1 de 5" />}>
+          <TemplateHeader brandName={brandName} logoUrl={brand?.logoUrl} />
+          <section className="fp-slide-hero-card">
+            <div className="fp-slide-hero-copy">
+              <p className="fp-slide-eyebrow">Proposta comercial</p>
+              <h1>
+                {titleParts.first}
+                {titleParts.last ? <strong>{titleParts.last}</strong> : null}
+              </h1>
+              <span>Proposta preparada para</span>
+              <h2>{proposal.clientName}</h2>
               <p>{notes || brand?.proposalIntro || defaultIntro(proposal.serviceName, proposal.clientName)}</p>
+              <div className="fp-slide-date">
+                <IconBox>▣</IconBox>
+                <div>
+                  <small>Data da proposta</small>
+                  <strong>{proposal.createdAt ? formatDate(proposal.createdAt.toISOString().slice(0, 10)) : "A combinar"}</strong>
+                </div>
+              </div>
             </div>
-            <dl className="fp-slide-facts">
-              <Fact label="Investimento" value={money.format(proposal.price)} />
-              <Fact label="Prazo" value={proposal.deadline || "A combinar"} />
-              <Fact label="Pagamento" value={proposal.payment || "A combinar"} />
-              <Fact label="Validade" value={proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar"} />
+            <div className="fp-slide-hero-visual">
+              {heroPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="" src={heroPhoto} />
+              ) : (
+                <div className="fp-slide-hero-fallback">{proposal.serviceName}</div>
+              )}
+            </div>
+            <dl className="fp-slide-investment-strip">
+              <Fact label="Investimento total" value={money.format(proposal.price)} />
+              <Fact label="Garantia" value={brand?.proposalTerms ? "Conforme contrato" : "Escopo protegido"} />
+              <Fact label="Validade da proposta" value={proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar"} />
             </dl>
-          </div>
+          </section>
         </Slide>
 
-        <Slide footer={<><span>{brandName}</span><span>3 / 6</span></>}>
-          <Header eyebrow="Escopo" title="Entrega organizada em etapas claras" />
-          <ol className="fp-slide-scope">
-            {included.slice(0, 7).map((item, index) => (
-              <li key={`${item}-${index}`}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <p>{item}</p>
-              </li>
-            ))}
-          </ol>
-        </Slide>
-
-        <Slide footer={<><span>{brandName}</span><span>4 / 6</span></>}>
-          <Header eyebrow="Próximos passos" title="Como seguimos depois da aprovação" />
-          <div className="fp-slide-timeline">
-            {nextSteps.map(([number, title, text]) => (
-              <article key={number}>
-                <span>{number}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
-          </div>
-        </Slide>
-
-        <Slide footer={<><span>{brandName}</span><span>5 / 6</span></>}>
-          <Header eyebrow="Prova visual" title={portfolio.length ? "Referências que sustentam a proposta" : "Uma entrega pensada para apresentar bem"} />
-          {portfolio.length ? (
-            <div className="fp-slide-gallery">
-              {portfolio.map((item) => (
-                <figure key={item.id}>
-                  <div className="fp-slide-gallery-media">
-                    <span>{item.category || "Portfólio"}</span>
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+        <Slide footer={<SlideFooter page="Slide 2 de 5" />}>
+          <TemplateHeader brandName={brandName} logoUrl={brand?.logoUrl} compact />
+          <Header title="Escopo e Etapas do Projeto" highlight="Etapas" />
+          <div className="fp-slide-scope-layout">
+            <section className="fp-slide-glass-panel">
+              <h3>Escopo do projeto</h3>
+              <ul className="fp-slide-check-list">
+                {included.slice(0, 6).map((item, index) => (
+                  <li key={`${item}-${index}`}>{item}</li>
+                ))}
+              </ul>
+            </section>
+            <section className="fp-slide-timeline-panel">
+              <h3>Etapas do projeto</h3>
+              <ol className="fp-slide-template-timeline">
+                {timeline.map((step, index) => (
+                  <li key={step.title}>
+                    <span>{index + 1}</span>
+                    <strong>{step.title}</strong>
+                    <small>{step.description}</small>
+                    <em>{step.duration}</em>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <section className="fp-slide-reference-panel">
+              <h3>Referencias de projetos</h3>
+              <div className="fp-slide-image-row">
+                {slideImages.length ? (
+                  slideImages.map((item) => (
+                    <figure key={item.id}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img alt="" src={item.imageUrl} />
-                    ) : null}
-                  </div>
-                  <figcaption>{item.title}</figcaption>
-                </figure>
-              ))}
-            </div>
-          ) : (
-            <div className="fp-slide-statement fp-slide-empty">
-              <p>{brand?.bio || `${brandName} conduz o trabalho com escopo, prazo e investimento definidos para a decisão do cliente.`}</p>
-            </div>
-          )}
+                    </figure>
+                  ))
+                ) : (
+                  demoFrames(proposal.serviceName).map((item) => <figure key={item}>{item}</figure>)
+                )}
+              </div>
+            </section>
+          </div>
         </Slide>
 
-        <Slide footer={<><span>{brandName}</span><span>6 / 6</span></>}>
-          <Header eyebrow="Fechamento" title="Pronto para seguir" />
-          <div className="fp-slide-close">
-            <div>
-              <p>{brand?.proposalClosing || `A proposta para ${proposal.clientName} está pronta para aceite e alinhamento dos próximos passos.`}</p>
-              <a href={`/p/${proposal.publicSlug}`}>Abrir proposta para aceite</a>
-            </div>
-            {testimonials.length ? (
-              <div className="fp-slide-quotes">
-                {testimonials.map((item) => (
+        <Slide footer={<SlideFooter page="Slide 3 de 5" />}>
+          <TemplateHeader brandName={brandName} logoUrl={brand?.logoUrl} compact />
+          <Header title="Investimento e Condições Comerciais" highlight="Condições" />
+          <div className="fp-slide-commercial-grid">
+            <section className="fp-slide-glass-panel fp-slide-payment-card">
+              <h3>Condições de pagamento</h3>
+              <div className="fp-slide-payment-split">
+                {paymentSplit.map((item) => (
+                  <div key={item.label}>
+                    <small>{item.label}</small>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
+              <p>{proposal.payment || "Pagamento combinado entre as partes."}</p>
+            </section>
+            <section className="fp-slide-glass-panel">
+              <h3>Próximos passos</h3>
+              <ol className="fp-slide-number-list">
+                <li>Aprovação da proposta</li>
+                <li>Assinatura do contrato</li>
+                <li>Confirmação do pagamento</li>
+                <li>Início da execução</li>
+              </ol>
+            </section>
+            <section className="fp-slide-glass-panel">
+              <h3>Contato</h3>
+              <div className="fp-slide-contact-list">
+                <p>{brand?.whatsapp || "WhatsApp informado na proposta"}</p>
+                <p>{brand?.email || proposal.user.email}</p>
+                <p>{brand?.website || brand?.instagram || "Atendimento combinado"}</p>
+              </div>
+            </section>
+            <section className="fp-slide-glass-panel fp-slide-acceptance-card">
+              <h3>Aceite da proposta</h3>
+              <p>Estou de acordo com as condições apresentadas nesta proposta e autorizo o início do projeto.</p>
+              <div className="fp-slide-signatures">
+                <span>Assinatura do cliente</span>
+                <span>Assinatura do contratado</span>
+              </div>
+            </section>
+          </div>
+        </Slide>
+
+        <Slide footer={<SlideFooter page="Slide 4 de 5" />}>
+          <TemplateHeader brandName={brandName} logoUrl={brand?.logoUrl} compact />
+          <Header title="Clareza para decidir com segurança" highlight="decidir" />
+          <div className="fp-slide-proof-grid">
+            <section className="fp-slide-glass-panel fp-slide-large-copy">
+              <h3>O que torna esta proposta diferente</h3>
+              <p>{brand?.bio || `${brandName} organiza escopo, prazo, investimento e próximos passos para que ${proposal.clientName} entenda exatamente o que está contratando.`}</p>
+              <div className="fp-slide-benefit-row">
+                <Benefit title="Mais confiança" text="Processo seguro e transparente." />
+                <Benefit title="Mais clareza" text="Tudo organizado para decidir." />
+                <Benefit title="Mais chance de fechar" text="Proposta completa, sem improviso." />
+              </div>
+            </section>
+            <section className="fp-slide-glass-panel">
+              <h3>Resumo comercial</h3>
+              <dl className="fp-slide-fact-stack">
+                <Fact label="Cliente" value={proposal.clientName} />
+                <Fact label="Servico" value={proposal.serviceName} />
+                <Fact label="Investimento" value={money.format(proposal.price)} />
+                <Fact label="Prazo" value={proposal.deadline || "A combinar"} />
+              </dl>
+            </section>
+            <section className="fp-slide-glass-panel fp-slide-testimonial-panel">
+              <h3>Prova social</h3>
+              {testimonials.length ? (
+                testimonials.map((item) => (
                   <blockquote key={item.id}>
                     <p>{item.quote}</p>
                     <cite>{item.authorName}{item.company ? `, ${item.company}` : ""}</cite>
                   </blockquote>
-                ))}
-              </div>
-            ) : (
-              <dl className="fp-slide-facts">
-                <Fact label="Contato" value={brand?.whatsapp || brand?.email || proposal.user.email} />
-                <Fact label="Serviço" value={proposal.serviceName} />
+                ))
+              ) : (
+                <p>Use este material para apresentar sua entrega com mais valor antes da comparação por preço.</p>
+              )}
+            </section>
+          </div>
+        </Slide>
+
+        <Slide footer={<SlideFooter page="Slide 5 de 5" />}>
+          <TemplateHeader brandName={brandName} logoUrl={brand?.logoUrl} compact />
+          <div className="fp-slide-final-layout">
+            <section>
+              <p className="fp-slide-eyebrow">Proposta pronta para aprovação</p>
+              <h2>
+                Vamos transformar esta proposta em projeto aprovado?
+              </h2>
+              <p>{brand?.proposalClosing || `A proposta para ${proposal.clientName} está pronta para aceite, contrato e início dos próximos passos.`}</p>
+              <a className="fp-slide-cta" href={`/p/${proposal.publicSlug}`}>
+                Aceitar proposta
+              </a>
+            </section>
+            <aside className="fp-slide-final-card">
+              <h3>Resumo da decisão</h3>
+              <dl>
+                <Fact label="Investimento" value={money.format(proposal.price)} />
+                <Fact label="Validade" value={proposal.validUntil ? formatDate(proposal.validUntil) : "A combinar"} />
+                <Fact label="Contato direto" value={contactLine} />
               </dl>
-            )}
+            </aside>
           </div>
         </Slide>
       </article>
@@ -183,21 +249,54 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
   );
 }
 
-function Slide({ children, className = "", footer }: { children: ReactNode; className?: string; footer?: ReactNode }) {
+function Slide({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   return (
-    <div className={`fp-slide ${className}`}>
+    <div className="fp-slide fp-template-slide">
       {children}
       {footer !== undefined ? <footer className="fp-slide-footer">{footer}</footer> : null}
     </div>
   );
 }
 
-function Header({ eyebrow, title }: { eyebrow: string; title: string }) {
+function TemplateHeader({ brandName, logoUrl, compact = false }: { brandName: string; logoUrl?: string | null; compact?: boolean }) {
   return (
-    <header className="fp-slide-header">
-      <p>{eyebrow}</p>
-      <h2>{title}</h2>
+    <header className={`fp-template-header${compact ? " compact" : ""}`}>
+      <div className="fp-template-brand">
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img alt="" src={logoUrl} />
+        ) : (
+          <span>{initials(brandName)}</span>
+        )}
+        <strong>{brandName}</strong>
+      </div>
+      <div className="fp-template-pill">
+        <i />
+        Proposta comercial
+      </div>
     </header>
+  );
+}
+
+function Header({ title, highlight }: { title: string; highlight: string }) {
+  const parts = title.split(highlight);
+  return (
+    <header className="fp-slide-section-title">
+      <h2>
+        {parts[0]}
+        <strong>{highlight}</strong>
+        {parts[1]}
+      </h2>
+    </header>
+  );
+}
+
+function SlideFooter({ page }: { page: string }) {
+  return (
+    <>
+      <span>Transformamos propostas. <strong>Fechamos negócios.</strong></span>
+      <span>{page}</span>
+    </>
   );
 }
 
@@ -208,6 +307,19 @@ function Fact({ label, value }: { label: string; value: string }) {
       <dd>{value}</dd>
     </div>
   );
+}
+
+function Benefit({ title, text }: { title: string; text: string }) {
+  return (
+    <article>
+      <strong>{title}</strong>
+      <span>{text}</span>
+    </article>
+  );
+}
+
+function IconBox({ children }: { children: ReactNode }) {
+  return <span className="fp-slide-icon-box">{children}</span>;
 }
 
 function initials(value: string) {
@@ -221,6 +333,64 @@ function defaultIntro(serviceName: string, clientName: string) {
 function formatDate(value: string) {
   const [year, month, day] = value.split("-");
   return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function splitTitle(value: string) {
+  const words = value.trim().split(/\s+/);
+  if (words.length <= 1) return { first: value, last: "" };
+  const last = words.slice(-1).join(" ");
+  return { first: `${words.slice(0, -1).join(" ")} `, last };
+}
+
+function buildSlideTimeline(deadline?: string | null) {
+  const days = parseDeadlineDays(deadline);
+  const execution = days ? Math.max(1, Math.ceil(days * 0.55)) : 15;
+  const planning = days ? Math.max(1, Math.ceil(days * 0.2)) : 3;
+  const finishing = days ? Math.max(1, Math.ceil(days * 0.18)) : 7;
+  const delivery = days ? Math.max(1, days - execution - planning - finishing) : 2;
+
+  return [
+    { title: "Planejamento", description: "Briefing e alinhamento", duration: `${planning} dias` },
+    { title: "Execução", description: "Produção do escopo", duration: `${execution} dias` },
+    { title: "Acabamentos", description: "Detalhes e revisão", duration: `${finishing} dias` },
+    { title: "Entrega", description: "Validação final", duration: `${delivery} dias` },
+  ];
+}
+
+function parseDeadlineDays(deadline?: string | null) {
+  if (!deadline) return null;
+  const match = deadline.match(/(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+function buildPaymentSplit(payment?: string | null) {
+  const normalized = payment || "";
+  const percentages = Array.from(normalized.matchAll(/(\d{1,3})\s*%/g)).map((match) => `${match[1]}%`).slice(0, 3);
+  if (percentages.length >= 2) {
+    return [
+      { label: "Entrada", value: percentages[0] },
+      { label: "Durante o projeto", value: percentages[1] },
+      { label: "Na entrega", value: percentages[2] || "A combinar" },
+    ];
+  }
+
+  return [
+    { label: "Entrada", value: "30%" },
+    { label: "Durante o projeto", value: "50%" },
+    { label: "Na entrega", value: "20%" },
+  ];
+}
+
+function demoFrames(serviceName: string) {
+  return [serviceName, "Escopo", "Entrega", "Resultado"];
+}
+
+function uniqueSlideImages(serviceImage: string | null, portfolio: Awaited<ReturnType<typeof findSlidePortfolio>>) {
+  const images = [
+    ...(serviceImage ? [{ id: "service-image", imageUrl: serviceImage }] : []),
+    ...portfolio.filter((item) => item.imageUrl).map((item) => ({ id: item.id, imageUrl: item.imageUrl as string })),
+  ];
+  return images.filter((item, index, all) => all.findIndex((candidate) => candidate.imageUrl === item.imageUrl) === index);
 }
 
 function demoPortfolioCategories(slug: string) {

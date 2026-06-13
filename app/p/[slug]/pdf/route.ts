@@ -206,8 +206,12 @@ async function createProposalPdf(data: ProposalPdfData) {
 async function renderPdf(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   const design = getSegmentDesign(data);
   doc.addPage();
-  await drawProposalSalesCover(doc, data, design);
+  await drawPremiumProposalPageOne(doc, data);
   doc.addPage();
+  await drawPremiumProposalPageTwo(doc, data);
+  doc.addPage();
+  drawPremiumProposalPageThree(doc, data, design);
+  return;
   doc.y = MARGIN;
   drawDocumentHeader(doc, data, design);
   drawSummary(doc, data, design);
@@ -222,6 +226,262 @@ async function renderPdf(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
   drawDecision(doc, data, design);
   drawFooter(doc, data, design);
   drawPageNumbers(doc);
+}
+
+async function drawPremiumProposalPageOne(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+  drawDarkPdfBackground(doc);
+  await drawDarkPdfBrand(doc, data, 66, 58, 1);
+  drawCommercialPill(doc, "PROPOSTA COMERCIAL", 410, 64, 138);
+  drawDotPattern(doc, 482, 44);
+
+  const coverImage = await readImageFromUrl(data.serviceImages[0]?.imageUrl || data.portfolio[0]?.imageUrl || "", data.assetOrigin);
+  if (coverImage) {
+    drawPdfImage(doc, coverImage, 230, 140, { fit: [326, 330], align: "center", valign: "center", width: 326, height: 330 });
+    doc.rect(210, 132, 360, 350).fillOpacity(0.52).fill("#020817").fillOpacity(1);
+  }
+
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(10).text("PROPOSTA COMERCIAL", 62, 140, { characterSpacing: 1.1 });
+  drawSplitTitle(doc, data.serviceName, 62, 178, 286, 38);
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(11).text("Proposta preparada para", 62, 315);
+  drawMiniIcon(doc, 70, 352, "user", "#006DFF");
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(15).text(data.clientName, 92, 343, { width: 220, height: 22, ellipsis: true });
+  drawMiniIcon(doc, 70, 406, "calendar", "#FFFFFF");
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(10).text("Data da proposta", 92, 392);
+  doc.fillColor("#FFFFFF").font("Helvetica").fontSize(11).text(data.createdAt, 92, 408);
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(10.2).text(
+    data.proposalIntro || data.brandBio || `Apresentamos esta proposta para ${data.clientName} com escopo, investimento e proximos passos organizados para aprovacao.`,
+    62,
+    515,
+    { width: 238, height: 76, lineGap: 4, ellipsis: true },
+  );
+
+  drawInvestmentStrip(doc, data, 246, 522, 306, 82);
+  drawDarkPdfFooter(doc, 1, 3);
+}
+
+async function drawPremiumProposalPageTwo(doc: PDFKit.PDFDocument, data: ProposalPdfData) {
+  drawDarkPdfBackground(doc);
+  await drawDarkPdfBrand(doc, data, 40, 36, 0.58);
+  drawCommercialPill(doc, "PROPOSTA COMERCIAL", 414, 44, 128);
+  drawDotPattern(doc, 486, 36);
+  drawSectionTitle(doc, "Escopo e", "Etapas do Projeto", 40, 95);
+
+  drawDarkPanel(doc, 40, 160, 515, 124);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(11).text("Escopo do projeto", 58, 178);
+  const items = (data.included.length ? data.included : ["Servico conforme combinado."]).slice(0, 5);
+  items.forEach((item, index) => drawCheckItem(doc, item, 60, 204 + index * 16));
+  drawBlueprint(doc, 342, 174);
+
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12).text("Etapas do projeto", 40, 324);
+  drawExecutionTimeline(doc, buildPdfTimeline(data.deadline, data.included), 58, 362, 460);
+
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12).text("Referencias de projetos", 40, 560);
+  await drawReferenceImages(doc, data, 40, 590);
+  drawDarkPdfFooter(doc, 2, 3);
+}
+
+function drawPremiumProposalPageThree(doc: PDFKit.PDFDocument, data: ProposalPdfData, _design: PdfSegmentDesign) {
+  drawDarkPdfBackground(doc);
+  drawDarkPdfBrandFallback(doc, data, 40, 36, 0.58);
+  drawCommercialPill(doc, "PROPOSTA COMERCIAL", 414, 44, 128);
+  drawDotPattern(doc, 486, 36);
+  drawSectionTitle(doc, "Investimento e", "Condicoes Comerciais", 40, 95);
+
+  drawDarkPanel(doc, 40, 160, 515, 130);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(11).text("Condicoes de pagamento", 60, 180);
+  doc.rect(60, 204, 475, 1).fill("#124D9F");
+  drawPaymentColumn(doc, "Entrada", "30%", 112, 230, "#006DFF");
+  drawPaymentColumn(doc, "Durante a obra", "50%", 274, 230, "#22C55E");
+  drawPaymentColumn(doc, "Na entrega", "20%", 436, 230, "#006DFF");
+  doc.rect(192, 224, 1, 42).fill("#1E4E89");
+  doc.rect(354, 224, 1, 42).fill("#1E4E89");
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(9).text(data.payment || "Aceitamos PIX, cartao e boleto", 170, 274, { width: 255, align: "center" });
+
+  drawDarkPanel(doc, 40, 325, 240, 140);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12).text("Proximos passos", 60, 346);
+  ["Aprovacao da proposta", "Assinatura do contrato", "Inicio do planejamento", "Agendamento da entrega"].forEach((item, index) => drawNumberedLine(doc, item, index + 1, 64, 378 + index * 20));
+
+  drawDarkPanel(doc, 304, 325, 251, 140);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12).text("Contato", 324, 346);
+  drawContactLineDark(doc, data.brandWhatsapp || "WhatsApp a combinar", 326, 378);
+  drawContactLineDark(doc, data.brandEmail || data.brandInstagram || "E-mail a combinar", 326, 404);
+  drawContactLineDark(doc, data.brandWebsite || data.publicUrl, 326, 430);
+
+  drawDarkPanel(doc, 40, 502, 515, 172);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(12).text("Aceite da proposta", 60, 524);
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(9.5).text("Estou de acordo com as condicoes apresentadas nesta proposta e autorizo o inicio do projeto.", 60, 548, { width: 450, lineGap: 3 });
+  drawSignature(doc, "Assinatura do cliente", 88, 602);
+  drawSignature(doc, "Assinatura do contratante", 310, 602);
+  drawDarkPdfFooter(doc, 3, 3);
+}
+
+function drawDarkPdfBackground(doc: PDFKit.PDFDocument) {
+  doc.rect(0, 0, PAGE.width, PAGE.height).fill("#22262B");
+  doc.rect(28, 22, PAGE.width - 56, PAGE.height - 44).fill("#020817");
+  doc.rect(28, 22, PAGE.width - 56, PAGE.height - 44).strokeColor("#9CA3AF").lineWidth(0.7).stroke();
+  doc.circle(40, 804, 220).fillOpacity(0.16).fill("#064E3B").fillOpacity(1);
+  doc.circle(520, 80, 180).fillOpacity(0.1).fill("#006DFF").fillOpacity(1);
+}
+
+async function drawDarkPdfBrand(doc: PDFKit.PDFDocument, data: ProposalPdfData, x: number, y: number, scale = 1) {
+  const logo = await readImageFromUrl(data.logoUrl, data.assetOrigin);
+  if (logo) {
+    drawPdfImage(doc, logo, x, y, { fit: [44 * scale, 32 * scale], align: "center", valign: "center", width: 44 * scale, height: 32 * scale });
+  } else {
+    drawDarkPdfBrandFallback(doc, data, x, y, scale);
+    return;
+  }
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(22 * scale).text("Fecha", x + 48 * scale, y + 7 * scale);
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(22 * scale).text("Pro", x + 112 * scale, y + 7 * scale);
+}
+
+function drawDarkPdfBrandFallback(doc: PDFKit.PDFDocument, _data: ProposalPdfData, x: number, y: number, scale = 1) {
+  doc.roundedRect(x, y + 2 * scale, 28 * scale, 28 * scale, 5 * scale).strokeColor("#FFFFFF").lineWidth(1.2).stroke();
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(22 * scale).text("Fecha", x + 38 * scale, y + 7 * scale);
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(22 * scale).text("Pro", x + 102 * scale, y + 7 * scale);
+}
+
+function drawCommercialPill(doc: PDFKit.PDFDocument, text: string, x: number, y: number, w: number, scale = 1) {
+  doc.roundedRect(x, y, w, 24 * scale, 12 * scale).strokeColor("#22C55E").lineWidth(0.8).stroke();
+  doc.circle(x + 16 * scale, y + 12 * scale, 3 * scale).fill("#22C55E");
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8.5 * scale).text(text, x + 28 * scale, y + 8 * scale, { width: w - 36 * scale, height: 9 * scale, ellipsis: true });
+}
+
+function drawDotPattern(doc: PDFKit.PDFDocument, x: number, y: number) {
+  for (let row = 0; row < 7; row++) {
+    for (let col = 0; col < 7; col++) {
+      doc.circle(x + col * 11, y + row * 11, 1).fill((row + col) % 3 === 0 ? "#22C55E" : "#006DFF");
+    }
+  }
+}
+
+function drawSplitTitle(doc: PDFKit.PDFDocument, title: string, x: number, y: number, w: number, size: number) {
+  const parts = title.split(/\s+/);
+  const last = parts.length > 1 ? parts.pop() || title : "";
+  const first = parts.length ? parts.join(" ") : title;
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(size).text(first, x, y, { width: w, height: 48, ellipsis: true });
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(size).text(last, x, y + 46, { width: w, height: 48, ellipsis: true });
+}
+
+function drawMiniIcon(doc: PDFKit.PDFDocument, x: number, y: number, label: string, color: string) {
+  doc.circle(x, y, 9).strokeColor(color).lineWidth(1.4).stroke();
+  doc.fillColor(color).font("Helvetica-Bold").fontSize(6).text(label.slice(0, 1).toUpperCase(), x - 2.2, y - 3, { width: 5, align: "center" });
+}
+
+function drawInvestmentStrip(doc: PDFKit.PDFDocument, data: ProposalPdfData, x: number, y: number, w: number, h: number) {
+  doc.roundedRect(x, y, w, h, 10).fillOpacity(0.76).fill("#03142D").fillOpacity(1);
+  doc.roundedRect(x, y, w, h, 10).strokeColor("#006DFF").lineWidth(0.8).stroke();
+  drawMetricDark(doc, "Investimento total", data.price, x + 16, y + 22, 116, "#22C55E");
+  doc.rect(x + 130, y + 18, 1, 48).fill("#1E4E89");
+  drawMetricDark(doc, "Garantia", "12 meses", x + 150, y + 22, 78, "#22C55E");
+  doc.rect(x + 230, y + 18, 1, 48).fill("#1E4E89");
+  drawMetricDark(doc, "Validade", data.validUntil, x + 248, y + 22, 72, "#FFFFFF");
+}
+
+function drawMetricDark(doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, w: number, color: string) {
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8).text(label, x, y, { width: w, height: 10, ellipsis: true });
+  doc.fillColor(color).font("Helvetica-Bold").fontSize(15).text(value, x, y + 18, { width: w, height: 20, ellipsis: true });
+}
+
+function drawDarkPanel(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number) {
+  doc.roundedRect(x, y, w, h, 8).fillOpacity(0.62).fill("#03142D").fillOpacity(1);
+  doc.roundedRect(x, y, w, h, 8).strokeColor("#0B5ED7").lineWidth(0.75).stroke();
+}
+
+function drawSectionTitle(doc: PDFKit.PDFDocument, first: string, second: string, x: number, y: number) {
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(22).text(first, x, y, { width: 250, height: 26 });
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(22).text(second, x + doc.widthOfString(first) + 6, y, { width: 310, height: 26, ellipsis: true });
+}
+
+function drawCheckItem(doc: PDFKit.PDFDocument, text: string, x: number, y: number) {
+  doc.circle(x, y + 4, 4).strokeColor("#22C55E").lineWidth(1).stroke();
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(5).text("✓", x - 2, y + 1, { width: 4, align: "center" });
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8.5).text(text, x + 12, y, { width: 210, height: 11, ellipsis: true });
+}
+
+function drawBlueprint(doc: PDFKit.PDFDocument, x: number, y: number) {
+  doc.strokeColor("#123A72").lineWidth(0.6);
+  doc.rect(x, y + 45, 98, 48).stroke();
+  doc.moveTo(x + 5, y + 45).lineTo(x + 49, y + 12).lineTo(x + 93, y + 45).stroke();
+  doc.rect(x + 38, y + 60, 24, 33).stroke();
+  doc.rect(x + 12, y + 55, 20, 16).stroke();
+  doc.rect(x + 68, y + 55, 20, 16).stroke();
+}
+
+function drawExecutionTimeline(doc: PDFKit.PDFDocument, steps: Array<{ title: string; description: string; duration: string }>, x: number, y: number, w: number) {
+  const gap = w / 3;
+  doc.strokeColor("#006DFF").dash(3, { space: 3 }).moveTo(x, y + 20).lineTo(x + w, y + 20).stroke().undash();
+  steps.forEach((step, index) => {
+    const cx = x + index * gap;
+    const color = index % 2 ? "#22C55E" : "#006DFF";
+    doc.circle(cx, y + 20, 12).fill(color);
+    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8).text(String(index + 1), cx - 3, y + 15, { width: 6, align: "center" });
+    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(10).text(step.title, cx - 48, y + 58, { width: 96, align: "center", height: 12, ellipsis: true });
+    doc.fillColor("#B8C5D8").font("Helvetica").fontSize(7.5).text(step.description, cx - 48, y + 74, { width: 96, align: "center", height: 20, ellipsis: true });
+    doc.fillColor(color).font("Helvetica-Bold").fontSize(9).text(step.duration, cx - 35, y + 100, { width: 70, align: "center", height: 11, ellipsis: true });
+  });
+}
+
+async function drawReferenceImages(doc: PDFKit.PDFDocument, data: ProposalPdfData, x: number, y: number) {
+  const images = [...data.serviceImages, ...data.portfolio].slice(0, 4);
+  for (let index = 0; index < 4; index++) {
+    const ix = x + index * 126;
+    doc.roundedRect(ix, y, 112, 82, 7).fill("#0B1730");
+    const image = await readImageFromUrl(images[index]?.imageUrl || "", data.assetOrigin);
+    if (image) {
+      drawPdfImage(doc, image, ix, y, { fit: [112, 82], align: "center", valign: "center", width: 112, height: 82 });
+    } else {
+      doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(9).text(images[index]?.title || data.serviceName, ix + 8, y + 32, { width: 96, align: "center", height: 18, ellipsis: true });
+    }
+    doc.roundedRect(ix, y, 112, 82, 7).strokeColor("#DCE7F5").lineWidth(0.6).stroke();
+  }
+}
+
+function buildPdfTimeline(deadline: string, included: string[]) {
+  const days = Number(deadline.match(/(\d+)/)?.[1] || 0);
+  const durations = days ? [
+    `${Math.max(1, Math.round(days * 0.18))} dias`,
+    `${Math.max(1, Math.round(days * 0.55))} dias`,
+    `${Math.max(1, Math.round(days * 0.18))} dias`,
+    `${Math.max(1, days - Math.round(days * 0.18) - Math.round(days * 0.55) - Math.round(days * 0.18))} dias`,
+  ] : ["Inicio", "Execucao", "Revisao", "Entrega"];
+  return [
+    { title: "Planejamento", description: included[0] || "Briefing e levantamento", duration: durations[0] },
+    { title: "Execucao", description: included[1] || "Obras e instalacoes", duration: durations[1] },
+    { title: "Acabamentos", description: included[2] || "Detalhes e revisao", duration: durations[2] },
+    { title: "Entrega", description: "Vistoria e entrega final", duration: durations[3] },
+  ];
+}
+
+function drawPaymentColumn(doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, color: string) {
+  doc.fillColor("#B8C5D8").font("Helvetica").fontSize(8).text(label, x - 40, y, { width: 80, align: "center" });
+  doc.fillColor(color).font("Helvetica-Bold").fontSize(20).text(value, x - 40, y + 18, { width: 80, align: "center" });
+}
+
+function drawNumberedLine(doc: PDFKit.PDFDocument, text: string, index: number, x: number, y: number) {
+  doc.circle(x, y + 4, 7).fill(index % 2 ? "#006DFF" : "#22C55E");
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(6).text(String(index), x - 2, y + 0.5, { width: 4, align: "center" });
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8.5).text(text, x + 18, y, { width: 150, height: 12, ellipsis: true });
+}
+
+function drawContactLineDark(doc: PDFKit.PDFDocument, text: string, x: number, y: number) {
+  doc.circle(x + 5, y + 4, 4).strokeColor("#22C55E").lineWidth(1).stroke();
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8.5).text(text, x + 20, y, { width: 190, height: 12, ellipsis: true });
+}
+
+function drawSignature(doc: PDFKit.PDFDocument, label: string, x: number, y: number) {
+  doc.roundedRect(x, y, 170, 72, 7).strokeColor("#22C55E").lineWidth(0.7).stroke();
+  doc.rect(x + 28, y + 28, 114, 1).fill("#DCE7F5");
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8).text(label, x, y + 36, { width: 170, align: "center" });
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8).text("Data: ____ /____ /____", x + 25, y + 54);
+}
+
+function drawDarkPdfFooter(doc: PDFKit.PDFDocument, page: number, total: number) {
+  doc.rect(56, 764, 483, 1).fill("#124D9F");
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8).text("Transformamos propostas. ", 62, 792);
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(8).text("Realizamos negocios.", 152, 792);
+  doc.fillColor("#DCE7F5").font("Helvetica").fontSize(8).text(`Pagina ${page} de `, 468, 792, { width: 60, align: "right" });
+  doc.fillColor("#22C55E").font("Helvetica-Bold").fontSize(8).text(String(total), 528, 792);
 }
 
 async function drawBudgetCover(doc: PDFKit.PDFDocument, data: ProposalPdfData, design: PdfSegmentDesign) {
