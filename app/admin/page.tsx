@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, LayoutTemplate, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Trash2, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
 import { isUnlimitedProposalLimit, isUnlimitedArtLimit } from "@/lib/plans";
 
 type PlanCode = "free" | "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site" | "founder";
@@ -157,7 +157,6 @@ export default function AdminPage() {
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
-  const [seedingDemo, setSeedingDemo] = useState(false);
   const [newUser, setNewUser] = useState({
     email: "",
     name: "",
@@ -364,38 +363,6 @@ export default function AdminPage() {
       setError(caught instanceof Error ? caught.message : "Não foi possível criar o usuário.");
     } finally {
       setCreatingUser(false);
-    }
-  }
-
-  async function seedDemoProposals(replace: boolean) {
-    setSeedingDemo(true);
-    setNotice(null);
-    setError(null);
-    try {
-      const response = await fetch(`/api/admin/seed-demo-proposals${replace ? "?replace=1" : ""}`, { method: "POST" });
-      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível criar as propostas demo."));
-      const result = (await response.json()) as { created: number; photos?: number; services?: number };
-      setNotice(`${result.created} propostas demo, ${result.services || 0} serviços e ${result.photos || 0} fotos de nicho criadas no perfil do admin.`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível criar as propostas demo.");
-    } finally {
-      setSeedingDemo(false);
-    }
-  }
-
-  async function clearDemoProposals() {
-    setSeedingDemo(true);
-    setNotice(null);
-    setError(null);
-    try {
-      const response = await fetch("/api/admin/seed-demo-proposals", { method: "DELETE" });
-      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível remover as propostas demo."));
-      const result = (await response.json()) as { deleted: number; photosDeleted?: number; servicesDeleted?: number };
-      setNotice(`${result.deleted} propostas demo, ${result.servicesDeleted || 0} serviços e ${result.photosDeleted || 0} fotos de nicho removidas.`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível remover as propostas demo.");
-    } finally {
-      setSeedingDemo(false);
     }
   }
 
@@ -693,44 +660,6 @@ export default function AdminPage() {
               {query ? "Nenhum usuário encontrado para essa busca." : "Nenhum usuário cadastrado ainda."}
             </div>
           )}
-        </section>
-        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-black uppercase text-purple-700">Propostas demonstração</p>
-            <h2 className="text-xl font-black sm:text-2xl">Demo por nicho</h2>
-            <p className="mt-1 text-sm font-bold text-slate-600">
-              Cria propostas reais de demonstração no perfil do admin, com clientes fictícios, fotos de portfólio por nicho, PDF e link público para copiar e enviar como exemplo.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-purple-700 px-4 text-sm font-black text-white disabled:opacity-60"
-              disabled={seedingDemo}
-              type="button"
-              onClick={() => seedDemoProposals(false)}
-            >
-              <LayoutTemplate size={16} />
-              {seedingDemo ? "Criando..." : "Criar propostas demo"}
-            </button>
-            <button
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-purple-700 px-4 text-sm font-black text-white disabled:opacity-60"
-              disabled={seedingDemo}
-              type="button"
-              onClick={() => seedDemoProposals(true)}
-            >
-              <RefreshCcw size={16} />
-              {seedingDemo ? "Recriando..." : "Recriar (apaga e recria)"}
-            </button>
-            <button
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-rose-700/30 bg-rose-50 px-4 text-sm font-black text-rose-700 disabled:opacity-60"
-              disabled={seedingDemo}
-              type="button"
-              onClick={clearDemoProposals}
-            >
-              <Trash2 size={16} />
-              {seedingDemo ? "Removendo..." : "Remover todas as demos"}
-            </button>
-          </div>
         </section>
       </div>
       {whatsappModalOpen ? (

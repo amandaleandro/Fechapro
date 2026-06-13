@@ -284,6 +284,65 @@ export async function sendProposalWhatsAppNotification(
   }
 }
 
+// Nudge de upgrade para usuários do plano gratuito. Enviado a partir do número
+// conectado (Baileys = número do admin) para o WhatsApp do próprio usuário
+// (BrandProfile.whatsapp). Best-effort: retorna o motivo em vez de lançar.
+export async function sendUpgradeNudgeWhatsApp(userId: string, ownerName: string): Promise<WhatsAppNotificationResult> {
+  if (!isWhatsAppNotificationConfigured()) {
+    console.warn('[WhatsApp] "upgrade_nudge" não enviada: integração não configurada.');
+    return { sent: false, reason: "not_configured" };
+  }
+
+  const channel = provider === "baileys" ? "baileys" : webhookUrl ? "webhook" : "cloud";
+  const tag = "upgrade_nudge";
+
+  const brand = await prisma.brandProfile.findUnique({
+    where: { userId },
+    select: { whatsapp: true, businessName: true },
+  });
+  const phone = formatWhatsAppPhone(brand?.whatsapp);
+  if (!phone) {
+    recordWhatsAppSend({ at: new Date().toISOString(), tag, phone: "—", channel, ok: false, reason: "no_phone" });
+    return { sent: false, reason: "no_phone" };
+  }
+
+  const firstName = (ownerName || "").trim().split(/\s+/)[0] || "tudo bem";
+  const plansUrl = `${APP_URL}/?view=plans`;
+  const message =
+    `Oi, ${firstName}! Aqui é do FechaPro. 👋\n\n` +
+    `Vi que você está usando a conta no plano gratuito. Assinando um plano você libera mais propostas, ` +
+    `artes e recursos para fechar mais negócios com cara de marca.\n\n` +
+    `Confira os planos: ${plansUrl}\n\n` +
+    `Qualquer dúvida, é só responder por aqui. 🙂`;
+
+  try {
+    if (provider === "baileys") {
+      await sendViaBaileys(phone, message);
+    } else if (webhookUrl) {
+      await sendViaWebhook({
+        phone,
+        message,
+        title: "Hora de fazer upgrade no FechaPro",
+        body: message,
+        url: plansUrl,
+        tag,
+        businessName: brand?.businessName || null,
+      });
+    } else {
+      await sendViaCloudApi(phone, message);
+    }
+
+    console.log(`[WhatsApp] "${tag}" enviada para ${maskPhone(phone)} via ${channel}.`);
+    recordWhatsAppSend({ at: new Date().toISOString(), tag, phone: maskPhone(phone), channel, ok: true });
+    return { sent: true };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(`[WhatsApp] Falha ao enviar "${tag}" para ${maskPhone(phone)} via ${channel}: ${reason}`);
+    recordWhatsAppSend({ at: new Date().toISOString(), tag, phone: maskPhone(phone), channel, ok: false, reason });
+    return { sent: false, reason };
+  }
+}
+
 function formatWhatsAppPhone(value?: string | null) {
   const digits = (value || "").replace(/\D/g, "");
   if (digits.length < 10) return "";

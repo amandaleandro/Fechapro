@@ -4,6 +4,7 @@ import { Resend } from "resend";
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = process.env.EMAIL_FROM || "FechaPro <noreply@fechapro.app>";
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
+const SIGNUP_NOTIFICATION_EMAIL = process.env.SIGNUP_NOTIFICATION_EMAIL || "contato@fechapro.com.br";
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = Number(process.env.SMTP_PORT || "465");
 const smtpUser = process.env.SMTP_USER;
@@ -108,6 +109,44 @@ export async function sendWelcomeEmail(to: string, name: string) {
       secondaryButtonUrl: manualUrl,
       footer: "Este email confirma a criação da sua conta FechaPro.",
     })
+  );
+}
+
+export async function sendNewSignupNotificationEmail(details: {
+  name: string;
+  email: string;
+  planName: string;
+  paid: boolean;
+  niche?: string | null;
+  segment?: string | null;
+}) {
+  const safeName = escapeHtml(details.name);
+  const safeEmail = escapeHtml(details.email);
+  const safePlan = escapeHtml(details.planName);
+  const tipo = details.paid ? "Assinatura de plano (pago)" : "Cadastro gratuito";
+  const safeNiche = details.niche ? escapeHtml(details.niche) : "—";
+  const safeSegment = details.segment ? escapeHtml(details.segment) : "—";
+
+  await sendEmail(
+    SIGNUP_NOTIFICATION_EMAIL,
+    `Novo cadastro no FechaPro: ${details.name} (${details.planName})`,
+    emailTemplate({
+      title: "Novo cadastro no FechaPro",
+      preheader: `${details.name} criou uma conta — ${tipo}.`,
+      intro: "Um novo usuário acabou de se cadastrar.",
+      body: `
+        <p><strong>Tipo:</strong> ${escapeHtml(tipo)}</p>
+        <p><strong>Nome:</strong> ${safeName}</p>
+        <p><strong>E-mail:</strong> ${safeEmail}</p>
+        <p><strong>Plano:</strong> ${safePlan}</p>
+        <p><strong>Nicho:</strong> ${safeNiche}</p>
+        <p><strong>Segmento:</strong> ${safeSegment}</p>
+      `,
+      buttonLabel: "Abrir painel admin",
+      buttonUrl: `${APP_URL}/admin`,
+      footer: "Notificação interna do FechaPro sobre novos cadastros.",
+    }),
+    { replyTo: details.email }
   );
 }
 

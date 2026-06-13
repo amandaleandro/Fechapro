@@ -7,6 +7,7 @@ import { slugBase } from "@/lib/api";
 import { canUseProposalDocuments } from "@/lib/billing-access";
 import { readLocalUploadFile } from "@/lib/local-upload-file";
 import { prisma } from "@/lib/prisma";
+import { proposalDocumentUpgradeResponse } from "@/lib/proposal-documents";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
   });
 
   if (!proposal) notFound();
-  if (!canUseProposalDocuments(proposal.user.subscription)) notFound();
+  if (!canUseProposalDocuments(proposal.user.subscription)) return proposalDocumentUpgradeResponse("pdf");
 
   const [portfolio, serviceImages, testimonials] = await Promise.all([
     findProposalPortfolio(proposal.userId, proposal.publicSlug),

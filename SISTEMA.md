@@ -243,7 +243,6 @@ O acesso a features pagas é verificado em `lib/billing-access.ts` com `canUsePa
 | GET | `/api/admin/metrics` | Métricas gerais |
 | GET/POST | `/api/admin/support` | Tickets de suporte |
 | POST | `/api/admin/whatsapp` | Gerenciar conexão WhatsApp |
-| POST | `/api/admin/seed-demo-proposals` | Criar propostas demo |
 | GET/POST/DELETE | `/api/admin/marketing-arts/[id]` | Gerenciar artes |
 
 ### Outros
@@ -425,7 +424,6 @@ app/api/
 ├── admin/              Endpoints exclusivos admin
 │   ├── marketing-arts/ Gerenciamento de artes
 │   ├── metrics/        Métricas gerais
-│   ├── seed-demo-proposals/
 │   ├── support/        Suporte admin
 │   ├── users/          Gestão de usuários
 │   └── whatsapp/       Conexão WhatsApp

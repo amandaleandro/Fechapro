@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { slugBase } from "@/lib/api";
 import { canUseProposalDocuments } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
+import { proposalDocumentUpgradeResponse } from "@/lib/proposal-documents";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
   });
 
   if (!proposal || proposal.status !== "accepted") notFound();
-  if (!canUseProposalDocuments(proposal.user.subscription)) notFound();
+  if (!canUseProposalDocuments(proposal.user.subscription)) return proposalDocumentUpgradeResponse("contrato");
 
   const brand = proposal.user.brandProfile;
   const businessName = brand?.businessName || proposal.user.name;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendNewSignupNotificationEmail, sendWelcomeEmail } from "@/lib/email";
 import { getClientIp, rateLimit, rateLimitError } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, setSession } from "@/lib/session";
@@ -108,5 +108,16 @@ export async function POST(request: Request) {
     metadata: { checkoutId: checkoutId || null, segment, niche },
   });
   await sendWelcomeEmail(user.email, user.name);
+
+  const planCode = (signupPayment?.plan || requestedPlan || "free") as PlanCode;
+  await sendNewSignupNotificationEmail({
+    name: user.name,
+    email: user.email,
+    planName: plans[planCode]?.name || planCode,
+    paid: Boolean(signupPayment),
+    niche,
+    segment,
+  });
+
   return NextResponse.json(session, { status: 201 });
 }

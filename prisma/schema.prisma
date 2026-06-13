@@ -17,6 +17,9 @@ model User {
   createdAt          DateTime            @default(now())
   onboardingDay1SentAt    DateTime?
   onboardingDay3SentAt    DateTime?
+  upgradeNudge1SentAt     DateTime?
+  upgradeNudge2SentAt     DateTime?
+  upgradeNudge3SentAt     DateTime?
   marketingUnsubscribedAt DateTime?
   marketingUnsubscribeToken String?       @unique
   brandProfile       BrandProfile?

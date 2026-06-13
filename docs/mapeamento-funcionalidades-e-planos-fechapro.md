@@ -138,7 +138,6 @@ Importante: o aceite cria evidências e contrato, mas não deve ser vendido como
 - Métricas administrativas de acessos e receitas.
 - Gestão das solicitações de artes.
 - Conexão do WhatsApp por QR Code.
-- Criação e remoção de propostas demonstrativas.
 
 ## 3. Definição recomendada dos quatro planos
 
