@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { sendProposalAcceptedEmail, sendProposalAcceptedToClientEmail } from "@/lib/email";
 import { proposalNotification } from "@/lib/proposal-notifications";
 import { sendProposalPushNotification } from "@/lib/push";
+import { trackConversionEvent } from "@/lib/conversion";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const ACCEPTABLE_STATUSES = ["sent", "viewed", "awaiting_response"];
@@ -17,6 +18,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
     where: { publicSlug: slug },
     select: {
       userId: true,
+      id: true,
       status: true,
       validUntil: true,
       serviceName: true,
@@ -28,7 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
       payment: true,
       included: true,
       notes: true,
-      user: { select: { email: true, name: true } },
+      user: { select: { email: true, name: true, subscription: { select: { plan: true } } } },
     },
   });
 
@@ -88,6 +90,16 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
       acceptedSnapshotHash,
       acceptedContractVersion: CONTRACT_VERSION,
     },
+  });
+  await trackConversionEvent({
+    event: "proposal_accepted",
+    userId: proposal.userId,
+    proposalId: proposal.id,
+    plan: proposal.user.subscription?.plan || null,
+    source: "public_proposal",
+    path: `/p/${slug}`,
+    context: "client_acceptance",
+    metadata: { publicSlug: slug, price: proposal.price, serviceName: proposal.serviceName },
   });
   revalidatePath(`/p/${slug}`);
 

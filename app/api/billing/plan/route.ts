@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { isAdminEmail } from "@/lib/admin";
-import { accumulatedProposalLimit, artPacks, currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
+import { artPacks, currentMonthRange, plans, publicPlans, type PlanCode } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -11,9 +11,9 @@ export async function GET() {
   const subscription = await prisma.planSubscription.upsert({
     where: { userId: session.id },
     create: isAdmin
-      ? { userId: session.id, plan: "premium_site", status: "active", provider: "admin" }
-      : { userId: session.id, plan: "start", status: "pending" },
-    update: isAdmin ? { plan: "premium_site", status: "active", provider: "admin" } : {},
+      ? { userId: session.id, plan: "premium", status: "active", provider: "admin" }
+      : { userId: session.id, plan: "essential", status: "pending" },
+    update: isAdmin ? { plan: "premium", status: "active", provider: "admin" } : {},
   });
   const { start, end } = currentMonthRange();
   const usedThisMonth = await prisma.proposalAsset.count({
@@ -40,7 +40,7 @@ export async function GET() {
       createdAt: { gte: subscription.startedAt ?? start },
     },
   });
-  const accumulatedLimit = accumulatedProposalLimit(plans[subscription.plan].proposalLimit, subscription.startedAt);
+  const accumulatedLimit = plans[subscription.plan].proposalLimit;
 
   return NextResponse.json({
     subscription,
@@ -62,7 +62,7 @@ export async function PUT(request: Request) {
   const session = await requireSession();
   const isAdmin = isAdminEmail(session.email);
   const body = (await request.json()) as { plan?: PlanCode };
-  const requestedPlan = isAdmin ? "premium_site" : body.plan;
+  const requestedPlan = isAdmin ? "premium" : body.plan;
 
   if (!requestedPlan || !plans[requestedPlan]?.public) {
     return jsonError("Plano inválido.");
@@ -107,7 +107,7 @@ export async function PUT(request: Request) {
       createdAt: { gte: subscription.startedAt ?? start },
     },
   });
-  const accumulatedLimit = accumulatedProposalLimit(plans[subscription.plan].proposalLimit, subscription.startedAt);
+  const accumulatedLimit = plans[subscription.plan].proposalLimit;
 
   return NextResponse.json({
     subscription,

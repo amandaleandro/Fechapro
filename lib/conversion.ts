@@ -9,9 +9,13 @@ export const conversionEvents = [
   "onboarding_started",
   "onboarding_completed",
   "first_proposal_created",
+  "first_proposal_link_copied",
   "public_proposal_viewed",
+  "proposal_accepted",
   "lifetime_offer_clicked",
   "checkout_started",
+  "subscription_started",
+  "subscription_canceled",
   "payment_approved",
 ] as const;
 

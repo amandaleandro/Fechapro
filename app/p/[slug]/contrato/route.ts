@@ -1,7 +1,7 @@
 import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import { notFound } from "next/navigation";
 import { slugBase } from "@/lib/api";
-import { canUseProposalDocuments } from "@/lib/billing-access";
+import { canUseProposalContracts } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
 import { proposalDocumentUpgradeResponse } from "@/lib/proposal-documents";
 
@@ -22,7 +22,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
   });
 
   if (!proposal || proposal.status !== "accepted") notFound();
-  if (!canUseProposalDocuments(proposal.user.subscription)) return proposalDocumentUpgradeResponse("contrato");
+  if (!canUseProposalContracts(proposal.user.subscription)) return proposalDocumentUpgradeResponse("contrato");
 
   const brand = proposal.user.brandProfile;
   const businessName = brand?.businessName || proposal.user.name;

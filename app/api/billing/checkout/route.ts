@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         where: { userId: session.id },
         create: {
           userId: session.id,
-          plan: "start",
+          plan: "essential",
           status: "pending",
         },
         update: {},

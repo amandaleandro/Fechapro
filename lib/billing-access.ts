@@ -22,10 +22,12 @@ export function blockedSubscriptionMessage(status: string) {
 }
 
 export function planLimits(plan: PlanCode) {
-  return plans[plan] || plans.start;
+  return plans[plan] || plans.essential;
 }
 
 const presentationPlans = new Set<PlanCode>(["premium", "premium_site", "founder_complete_site", "founder"]);
+const professionalPlans = new Set<PlanCode>(["professional", "premium", "premium_site", "founder_professional", "founder_complete_site", "founder"]);
+const premiumPlans = new Set<PlanCode>(["premium", "premium_site", "founder_complete_site", "founder"]);
 
 export function canUseProposalPresentation(subscription: SubscriptionAccessInput | null | undefined) {
   if (!subscription || !canUsePaidFeatures(subscription)) return false;
@@ -40,6 +42,18 @@ export function canUseProposalDocuments(subscription: SubscriptionAccessInput | 
   return Boolean(subscription && canUsePaidFeatures(subscription) && !isFreeProposalLinkPlan(subscription));
 }
 
+export function canUseProposalContracts(subscription: SubscriptionAccessInput | null | undefined) {
+  return Boolean(subscription && canUsePaidFeatures(subscription) && premiumPlans.has(subscription.plan));
+}
+
 export function canUseProposalPayments(subscription: SubscriptionAccessInput | null | undefined) {
-  return Boolean(subscription && canUsePaidFeatures(subscription) && !isFreeProposalLinkPlan(subscription));
+  return Boolean(subscription && canUsePaidFeatures(subscription) && premiumPlans.has(subscription.plan));
+}
+
+export function canUseProfessionalCatalog(subscription: SubscriptionAccessInput | null | undefined) {
+  return Boolean(subscription && canUsePaidFeatures(subscription) && professionalPlans.has(subscription.plan));
+}
+
+export function canUsePremiumAutomation(subscription: SubscriptionAccessInput | null | undefined) {
+  return Boolean(subscription && canUsePaidFeatures(subscription) && premiumPlans.has(subscription.plan));
 }

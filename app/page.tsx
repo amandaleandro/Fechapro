@@ -395,13 +395,13 @@ const navGroups: Array<{ id: string; label: string; icon: React.ElementType; ite
 const planAccessRank: Record<PlanCode, number> = {
   free: 0,
   start: 1,
-  essential: 2,
-  professional: 3,
-  complete: 5,
+  essential: 1,
+  professional: 2,
+  complete: 3,
   pro: 2,
-  plus: 3,
-  premium: 4,
-  premium_site: 5,
+  plus: 2,
+  premium: 3,
+  premium_site: 3,
   founder_start: 1,
   founder_essential: 2,
   founder_professional: 3,
@@ -410,12 +410,13 @@ const planAccessRank: Record<PlanCode, number> = {
 };
 
 const moduleRequirements: Partial<Record<ActiveView, PlanCode>> = {
-  services: "free",
-  brand: "free",
-  portfolio: "free",
-  testimonials: "plus",
-  arts: "start",
-  templates: "plus",
+  clients: "professional",
+  services: "professional",
+  brand: "essential",
+  portfolio: "professional",
+  testimonials: "professional",
+  arts: "premium",
+  templates: "professional",
 };
 
 const commercialModuleIds: ActiveView[] = [
@@ -1543,6 +1544,14 @@ export default function Home() {
     if (!slug) return;
     const url = `${window.location.origin}/p/${slug}`;
     navigator.clipboard.writeText(url);
+    trackConversion({
+      event: "first_proposal_link_copied",
+      plan: currentPlan,
+      source: "dashboard",
+      path: `/p/${slug}`,
+      context: "proposal_link_copy",
+      metadata: { publicSlug: slug },
+    });
     setNotice("Link da proposta copiado.");
   }
 
@@ -4437,7 +4446,7 @@ function PlansView({
           </span>
           {!isUnlimitedProposalLimit(billing.usage.proposalLimit) ? (
             <span className="mt-1 block">
-              Saldo acumulado: {billing.usage.proposalsUsedSinceSubscriptionStart || 0}/{billing.usage.accumulatedProposalLimit || billing.usage.proposalLimit} propostas
+              Limite mensal: {billing.usage.proposalsThisMonth}/{billing.usage.proposalLimit} propostas
             </span>
           ) : null}
           <span className="mt-1 block">
@@ -4447,6 +4456,11 @@ function PlansView({
           <span className="mt-1 block">
             Créditos extras de artes: {billing.usage.artCreditBalance}
           </span>
+          {["active", "trial"].includes(billing.subscription.status) ? (
+            <a className="mt-2 inline-flex text-xs font-black text-rose-700 underline" href="/cancelamento">
+              Cancelar assinatura
+            </a>
+          ) : null}
         </div>
         {billing.plans.find((plan) => plan.code === billing.subscription.plan)?.serviceEntitlements?.length ? (
           <div className="mt-3 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm text-green-900">
@@ -4468,7 +4482,7 @@ function PlansView({
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
         {billing.plans.map((plan) => {
           const active = billing.subscription.plan === plan.code && ["active", "trial"].includes(billing.subscription.status) && ["mercadopago", "admin"].includes(billing.subscription.provider || "");
-          const recommended = plan.code === "founder";
+          const recommended = plan.code === "professional";
           return (
             <article
               className={`relative grid gap-4 rounded-lg border p-4 shadow-xl shadow-slate-900/10 ${

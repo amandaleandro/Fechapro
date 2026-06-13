@@ -56,6 +56,16 @@ export async function POST(request: Request) {
           context: "subscription_preapproval",
           metadata: { providerSubscriptionId: subscription.id, reference },
         });
+        await trackConversionEvent({
+          event: "subscription_started",
+          userId,
+          plan: current.plan,
+          campaign: current.conversionCampaign,
+          source: current.conversionSource || "mercadopago_preapproval",
+          variant: current.conversionVariant,
+          context: "subscription_preapproval",
+          metadata: { providerSubscriptionId: subscription.id, reference },
+        });
       } else if (pending) {
         await prisma.planSubscription.update({
           where: { id: current.id },
@@ -82,6 +92,16 @@ export async function POST(request: Request) {
         });
         await trackConversionEvent({
           event: "payment_approved",
+          userId: signupPayment.userId,
+          plan: signupPayment.plan,
+          campaign: signupPayment.conversionCampaign,
+          source: signupPayment.conversionSource || "mercadopago_signup_preapproval",
+          variant: signupPayment.conversionVariant,
+          context: "signup_preapproval",
+          metadata: { checkoutId: signupPayment.id, providerCheckoutId: subscription.id, email: signupPayment.email },
+        });
+        await trackConversionEvent({
+          event: "subscription_started",
           userId: signupPayment.userId,
           plan: signupPayment.plan,
           campaign: signupPayment.conversionCampaign,
@@ -196,6 +216,16 @@ export async function POST(request: Request) {
         context: "subscription_payment",
         metadata: { providerPaymentId: eventId, reference, referencePlan: plan },
       });
+      await trackConversionEvent({
+        event: "subscription_started",
+        userId,
+        plan: subscription.plan,
+        campaign: subscription.conversionCampaign,
+        source: subscription.conversionSource || "mercadopago_payment",
+        variant: subscription.conversionVariant,
+        context: "subscription_payment",
+        metadata: { providerPaymentId: eventId, reference, referencePlan: plan },
+      });
     } else if (failed) {
       await prisma.planSubscription.update({
         where: { id: subscription.id },
@@ -217,6 +247,16 @@ export async function POST(request: Request) {
       });
       await trackConversionEvent({
         event: "payment_approved",
+        userId: signupPayment.userId,
+        plan: signupPayment.plan,
+        campaign: signupPayment.conversionCampaign,
+        source: signupPayment.conversionSource || "mercadopago_signup_payment",
+        variant: signupPayment.conversionVariant,
+        context: "signup_payment",
+        metadata: { checkoutId: signupPayment.id, providerPaymentId: eventId, email: signupPayment.email },
+      });
+      await trackConversionEvent({
+        event: "subscription_started",
         userId: signupPayment.userId,
         plan: signupPayment.plan,
         campaign: signupPayment.conversionCampaign,

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { after } from "next/server";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 import { canUseProposalDocuments, canUseProposalPayments, canUseProposalPresentation } from "@/lib/billing-access";
 import { prisma } from "@/lib/prisma";
@@ -175,6 +176,9 @@ export default async function PublicProposalPage({
         />
       ) : null}
       <article className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-4 sm:px-6 sm:py-8">
+        <section className="fp-proposal-app-header">
+          <Image alt="FechaPro" src="/brand/logofechapro.png" width={132} height={36} className="h-8 w-auto" priority />
+        </section>
         {query.accepted ? (
           <div className="rounded-lg border border-green-700/20 bg-green-50 p-4 text-green-800 shadow-xl shadow-slate-900/5">
             <strong>Proposta aceita com sucesso.</strong>
@@ -254,7 +258,7 @@ export default async function PublicProposalPage({
           </a>
         </nav>
 
-        <header className={`fp-proposal-hero overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
+        <header id="visao-geral" className={`fp-proposal-hero overflow-hidden text-white shadow-xl shadow-slate-900/10 ${proposalStyle.radiusClass} ${proposalStyle.headerClass}`} style={{ background: segmentStyle.headerBackground || proposalStyle.headerBackground(brandSecondaryColor, brandColor, brandAccentColor) }}>
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${segmentStyle.primary}, ${segmentStyle.accent})` }} />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_0.45fr]">
             <div>
@@ -456,7 +460,7 @@ export default async function PublicProposalPage({
           </div>
 
           <aside className="grid gap-4">
-            {paymentsEnabled ? <section className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+            {paymentsEnabled ? <section id="pagamento" className="fp-proposal-panel rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
               <p className="text-xs font-black uppercase text-blue-700">Pagamento</p>
               <h2 className="mt-1 text-2xl font-black">{proposal.paymentStatus === "paid" ? "Pagamento confirmado" : wantsPix ? "Pague com PIX" : "Pague com PIX ou cartão"}</h2>
               <p className="mt-2 leading-7 text-slate-600">
@@ -661,7 +665,7 @@ export default async function PublicProposalPage({
         ) : null}
 
         {brand?.showFaq !== false ? (
-        <section className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
+        <section id="faq" className="rounded-lg border border-black/10 bg-white p-5 shadow-xl shadow-slate-900/5">
           <p className="text-xs font-black uppercase text-blue-700">FAQ</p>
           <h2 className="mt-1 text-2xl font-black">Perguntas frequentes</h2>
           <div className="mt-4 grid gap-3">
