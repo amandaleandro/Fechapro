@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, ImageIcon, KeyRound, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, Upload, UserCog, UserPlus, XCircle } from "lucide-react";
-import { isUnlimitedProposalLimit, isUnlimitedArtLimit } from "@/lib/plans";
+import { ArrowLeft, Ban, CheckCircle2, DollarSign, Eye, HelpCircle, KeyRound, MessageCircle, PauseCircle, RefreshCcw, RotateCcw, Search, Send, ShieldCheck, UserCog, UserPlus, XCircle } from "lucide-react";
+import { isUnlimitedProposalLimit } from "@/lib/plans";
 
 type PlanCode = "free" | "start" | "essential" | "professional" | "complete" | "pro" | "plus" | "premium" | "premium_site" | "founder_start" | "founder_essential" | "founder_professional" | "founder_complete_site" | "founder";
 
@@ -12,7 +12,6 @@ type AdminPlan = {
   code: PlanCode;
   name: string;
   proposalLimit: number;
-  artLimit: number;
 };
 
 type AdminUser = {
@@ -34,12 +33,9 @@ type AdminUser = {
     proposalLimit: number;
     proposalsUsedSinceSubscriptionStart?: number;
     accumulatedProposalLimit?: number;
-    artsThisMonth: number;
-    artLimit: number;
   };
   _count: {
     proposalAssets: number;
-    marketingArtAssets: number;
     clientAssets: number;
   };
 };
@@ -83,31 +79,6 @@ type AdminWhatsAppStatus = {
   recentSends?: AdminWhatsAppSend[];
 };
 
-type AdminMarketingArt = {
-  id: string;
-  title: string;
-  format: string;
-  objective: string;
-  serviceName: string | null;
-  audience: string | null;
-  callToAction: string | null;
-  caption: string | null;
-  whatsappMessage: string | null;
-  prompt: string;
-  imageUrl: string;
-  referenceImageUrl: string | null;
-  source: string;
-  createdAt: string;
-  user: {
-    name: string;
-    email: string;
-    brandProfile: {
-      businessName: string;
-      whatsapp: string | null;
-    } | null;
-  };
-};
-
 type AdminSupportThread = {
   id: string;
   subject: string;
@@ -148,7 +119,6 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [arts, setArts] = useState<AdminMarketingArt[]>([]);
   const [supportThreads, setSupportThreads] = useState<AdminSupportThread[]>([]);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [whatsappStatus, setWhatsappStatus] = useState<AdminWhatsAppStatus | null>(null);
@@ -176,16 +146,6 @@ export default function AdminPage() {
       setError(caught instanceof Error ? caught.message : "Não foi possível carregar o painel.");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function loadArts() {
-    try {
-      const response = await fetch("/api/admin/marketing-arts", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível carregar os pedidos de arte."));
-      setArts((await response.json()) as AdminMarketingArt[]);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível carregar os pedidos de arte.");
     }
   }
 
@@ -228,7 +188,6 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadUsers();
-    loadArts();
     loadMetrics();
     loadSupportThreads();
     loadWhatsAppStatus();
@@ -286,31 +245,6 @@ export default function AdminPage() {
       setWhatsappError(caught instanceof Error ? caught.message : "Não foi possível conectar o WhatsApp.");
     } finally {
       setConnectingWhatsApp(false);
-    }
-  }
-
-  async function uploadArt(item: AdminMarketingArt, file: File, caption: string, whatsappMessage: string) {
-    setSavingId(item.id);
-    setNotice(null);
-    setError(null);
-    try {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      const uploadResponse = await fetch("/api/uploads", { method: "POST", body: uploadData });
-      if (!uploadResponse.ok) throw new Error(await readApiError(uploadResponse, "Não foi possível enviar a imagem."));
-      const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
-      const response = await fetch(`/api/admin/marketing-arts/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caption, imageUrl: uploadResult.imageUrl, whatsappMessage }),
-      });
-      if (!response.ok) throw new Error(await readApiError(response, "Não foi possível anexar a arte."));
-      setNotice(`Arte de ${item.user.name} enviada para aprovação.`);
-      await loadArts();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível anexar a arte.");
-    } finally {
-      setSavingId(null);
     }
   }
 
@@ -532,33 +466,6 @@ export default function AdminPage() {
         </section>
 
         <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase text-blue-700">Artes solicitadas</p>
-              <h2 className="text-xl font-black sm:text-2xl">Upload do agente para aprovação</h2>
-              <p className="mt-1 text-sm font-bold text-slate-600">
-                Os pedidos feitos pelo cliente em Artes de divulgação aparecem aqui. Anexe a arte pronta para enviar ao cliente aprovar.
-              </p>
-            </div>
-            <button className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm font-black" type="button" onClick={loadArts}>
-              <RefreshCcw size={15} />
-              Atualizar artes
-            </button>
-          </div>
-          {arts.length ? (
-            <div className="grid gap-3 xl:grid-cols-2">
-              {arts.map((item) => (
-                <AdminArtCard key={item.id} item={item} saving={savingId === item.id} onUpload={uploadArt} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-bold text-slate-500">
-              Nenhum pedido de arte ainda. Quando um cliente solicitar uma arte em Artes de divulgação, ela aparece aqui para upload.
-            </div>
-          )}
-        </section>
-
-        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-5 shadow-sm">
           <form className="grid gap-4 rounded-lg border border-green-700/20 bg-green-50 p-4 sm:p-5" onSubmit={createUser}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -765,17 +672,11 @@ function AdminUserRow({
               Acumulado: {user.usage.proposalsUsedSinceSubscriptionStart || 0}/{user.usage.accumulatedProposalLimit || user.usage.proposalLimit}
             </p>
           ) : null}
-          <p className="mt-1">
-            {isUnlimitedArtLimit(user.usage.artLimit)
-              ? `${user.usage.artsThisMonth} artes · ilimitado`
-              : `${user.usage.artsThisMonth}/${user.usage.artLimit} artes`}
-          </p>
         </div>
         <div className="rounded-lg bg-slate-50 p-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
           <p className="text-xs font-black uppercase tracking-wide text-slate-400">Totais</p>
           <p className="mt-1">{user._count.proposalAssets} propostas</p>
           <p>{user._count.clientAssets} clientes</p>
-          <p>{user._count.marketingArtAssets} artes</p>
         </div>
       </div>
 
@@ -818,75 +719,6 @@ function AdminUserRow({
           <QuickAction icon={XCircle} label="Cancelar" disabled={saving} onClick={() => onSave(user, plan, "canceled")} />
         </div>
       </div>
-    </article>
-  );
-}
-
-function AdminArtCard({
-  item,
-  onUpload,
-  saving,
-}: {
-  item: AdminMarketingArt;
-  onUpload: (item: AdminMarketingArt, file: File, caption: string, whatsappMessage: string) => void;
-  saving: boolean;
-}) {
-  const [file, setFile] = useState<File | null>(null);
-  const [caption, setCaption] = useState(item.caption || "");
-  const [whatsappMessage, setWhatsappMessage] = useState(item.whatsappMessage || "");
-
-  useEffect(() => {
-    setCaption(item.caption || "");
-    setWhatsappMessage(item.whatsappMessage || "");
-    setFile(null);
-  }, [item.caption, item.id, item.whatsappMessage]);
-
-  return (
-    <article className="grid gap-4 rounded-lg border border-black/10 bg-slate-50 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-black">{item.title}</p>
-          <p className="mt-1 text-xs font-bold text-slate-500">
-            {item.user.name} | {item.user.brandProfile?.businessName || item.user.email}
-          </p>
-        </div>
-        <span className={`rounded-full px-2 py-1 text-[11px] font-black uppercase ${adminArtStatusClass(item.source)}`}>
-          {adminArtStatusLabel(item.source)}
-        </span>
-      </div>
-      <div className="grid gap-2 rounded-lg bg-white p-3 text-sm leading-6 text-slate-700 ring-1 ring-slate-200">
-        <p><span className="font-black">Formato:</span> {item.format.replace("_", " ")}</p>
-        <p><span className="font-black">Serviço:</span> {item.serviceName || "Não informado"}</p>
-        <p><span className="font-black">Pedido:</span> {item.objective}</p>
-        {item.referenceImageUrl ? (
-          <a className="inline-flex items-center gap-2 text-sm font-black text-blue-700" href={item.referenceImageUrl} target="_blank" rel="noreferrer">
-            <ImageIcon size={15} />
-            Ver referência enviada
-          </a>
-        ) : null}
-      </div>
-      {item.imageUrl ? (
-        <a className="overflow-hidden rounded-lg border border-black/10 bg-white" href={item.imageUrl} target="_blank" rel="noreferrer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt={item.title} className="max-h-56 w-full object-contain" src={item.imageUrl} />
-        </a>
-      ) : null}
-      <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-        Arte pronta
-        <input accept="image/*" className="min-h-11 rounded-lg border border-black/10 bg-white p-3" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} />
-      </label>
-      <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-        Legenda
-        <textarea className="min-h-24 rounded-lg border border-black/10 bg-white p-3 outline-green-700" value={caption} onChange={(event) => setCaption(event.target.value)} />
-      </label>
-      <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-        Mensagem WhatsApp
-        <textarea className="min-h-20 rounded-lg border border-black/10 bg-white p-3 outline-green-700" value={whatsappMessage} onChange={(event) => setWhatsappMessage(event.target.value)} />
-      </label>
-      <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-60" disabled={saving || !file} type="button" onClick={() => file && onUpload(item, file, caption, whatsappMessage)}>
-        <Upload size={15} />
-        {saving ? "Salvando..." : "Salvar arte e enviar para aprovação"}
-      </button>
     </article>
   );
 }
@@ -973,20 +805,6 @@ function formatDateTime(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-}
-
-function adminArtStatusLabel(source: string) {
-  if (source === "approved") return "Aprovada";
-  if (source === "uploaded") return "Aguardando aprovação";
-  if (source === "requested") return "Solicitada";
-  return source || "Em preparo";
-}
-
-function adminArtStatusClass(source: string) {
-  if (source === "approved") return "bg-green-50 text-green-700";
-  if (source === "uploaded") return "bg-blue-50 text-blue-700";
-  if (source === "requested") return "bg-amber-50 text-amber-700";
-  return "bg-[var(--ui-bg)] text-slate-600";
 }
 
 function QuickAction({

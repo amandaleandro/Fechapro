@@ -103,13 +103,15 @@ model BrandProfile {
 }
 
 model PortfolioAsset {
-  id        String   @id @default(cuid())
-  userId    String?
-  title     String
-  category  String?
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  userId      String?
+  title       String
+  category    String?
+  description String?
+  imageUrl    String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ClientAsset {
@@ -134,6 +136,7 @@ model ServiceAsset {
   deadline  String?
   includes  String[] @default([])
   imageUrl  String?
+  active    Boolean  @default(true)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

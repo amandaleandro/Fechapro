@@ -8,14 +8,24 @@ import {
   Bell,
   BriefcaseBusiness,
   Calculator,
+  Calendar,
   CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
   Eye,
   Copy,
+  DollarSign,
   FileDown,
   FileText,
   Files,
+  Filter,
   FolderKanban,
+  GripVertical,
+  Handshake,
   ImageIcon,
+  Info,
   LayoutDashboard,
   Layers3,
   LockKeyhole,
@@ -24,15 +34,19 @@ import {
   Menu,
   MessageSquareQuote,
   Moon,
-  Palette,
   CreditCard,
+  Pencil,
   Plus,
   QrCode,
+  Quote,
   Presentation,
   RotateCcw,
+  Search,
   Settings,
   Send,
+  ShieldCheck,
   Sparkles,
+  Star,
   Sun,
   HelpCircle,
   ThumbsDown,
@@ -41,6 +55,7 @@ import {
   UserCircle,
   Users,
   X,
+  XCircle,
 } from "lucide-react";
 import { isValidDateOnly, isValidEmail, isValidHttpUrl, isValidPhone } from "@/lib/validation";
 import { trackConversion } from "@/lib/conversion-client";
@@ -106,6 +121,7 @@ type Client = {
   interestService?: string | null;
   status?: string | null;
   notes?: string | null;
+  createdAt?: string;
 };
 
 type ServiceItem = {
@@ -115,13 +131,16 @@ type ServiceItem = {
   deadline: string | null;
   includes: string[];
   imageUrl: string | null;
+  active: boolean;
 };
 
 type PortfolioItem = {
   id: string;
   title: string;
   category: string | null;
+  description?: string | null;
   imageUrl: string | null;
+  order?: number;
 };
 
 type Testimonial = {
@@ -1643,6 +1662,7 @@ export default function Home() {
               }
             }
             onNewProposal={openNewProposal}
+            onOpenPlans={() => setActiveView("plans")}
             billing={billing}
             notice={notice}
             onNotice={setNotice}
@@ -1674,7 +1694,7 @@ export default function Home() {
             ) : null}
 
             {activeView === "clients" ? <ClientsView clients={clients} currentPlan={currentPlan} onChange={setClients} /> : null}
-            {activeView === "services" ? <ServicesView currentPlan={currentPlan} services={services} onChange={setServices} /> : null}
+            {activeView === "services" ? <ServicesView currentPlan={currentPlan} proposals={proposals} services={services} onChange={setServices} /> : null}
             {activeView === "portfolio" ? <PortfolioView currentPlan={currentPlan} portfolio={portfolio} onChange={setPortfolio} /> : null}
             {activeView === "testimonials" ? (
               <TestimonialsView testimonials={testimonials} onChange={setTestimonials} />
@@ -1840,22 +1860,34 @@ function PushNotificationPanel({ onNotice }: { onNotice: (message: string | null
 
   return (
     <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-      <div>
-        <p className="text-xs font-black uppercase text-blue-700">Notificações</p>
-        <h2 className="mt-1 text-lg font-black">Alertas push de propostas</h2>
-        <p className="mt-1 text-sm font-bold text-slate-500">
-          Receba aviso quando uma proposta for visualizada, aceita, recusada ou paga.
-        </p>
+      <div className="flex items-center gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-green-50 text-green-700">
+          <Bell size={20} />
+        </span>
+        <div>
+          <p className="text-xs font-black uppercase text-blue-700">Notificações</p>
+          <h2 className="mt-1 text-lg font-black">Alertas push de propostas</h2>
+          <p className="mt-1 text-sm font-bold text-slate-500">
+            Receba aviso quando uma proposta for visualizada, aceita, recusada ou paga.
+          </p>
+        </div>
       </div>
-      <button
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={loading || permission === "granted"}
-        type="button"
-        onClick={enablePush}
-      >
-        <Bell size={18} />
-        {permission === "granted" ? "Push ativado" : loading ? "Ativando..." : "Ativar push"}
-      </button>
+      {permission === "granted" ? (
+        <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-green-50 px-4 font-black text-green-700">
+          <Bell size={18} />
+          Push ativado
+        </span>
+      ) : (
+        <button
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={loading}
+          type="button"
+          onClick={enablePush}
+        >
+          <Bell size={18} />
+          {loading ? "Ativando..." : "Ativar push"}
+        </button>
+      )}
     </section>
   );
 }
@@ -2466,6 +2498,7 @@ function DashboardView({
   brand,
   clients,
   onNewProposal,
+  onOpenPlans,
   lastSavedProposal,
   onLastSavedProposalDismiss,
   proposals,
@@ -2477,6 +2510,7 @@ function DashboardView({
   brand: BrandProfile;
   clients: Client[];
   onNewProposal: () => void;
+  onOpenPlans: () => void;
   lastSavedProposal: Proposal | null;
   onLastSavedProposalDismiss: () => void;
   proposals: Proposal[];
@@ -2488,10 +2522,10 @@ function DashboardView({
   const followUps = proposals.filter((proposal) => ["sent", "viewed", "awaiting_response"].includes(proposal.status) && daysSince(proposal.updatedAt || proposal.createdAt) >= 2).slice(0, 3);
   const isFirstProposalExperience = !proposals.length && !lastSavedProposal;
   const setupChecklist = [
-    { done: Boolean(brand.businessName && brand.whatsapp), label: "Marca e WhatsApp" },
-    { done: services.length > 0, label: "Serviço cadastrado" },
-    { done: clients.length > 0, label: "Cliente salvo" },
-    { done: proposals.length > 0, label: "Primeira proposta" },
+    { done: Boolean(brand.businessName && brand.whatsapp), label: "Marca e WhatsApp", detail: "Sua marca e contato estão prontos." },
+    { done: services.length > 0, label: "Serviço cadastrado", detail: "Seus serviços estão cadastrados." },
+    { done: clients.length > 0, label: "Cliente salvo", detail: "Cadastro de cliente ativado." },
+    { done: proposals.length > 0, label: "Primeira proposta", detail: "Você já criou sua primeira proposta." },
   ];
   const setupProgress = setupChecklist.filter((item) => item.done).length;
   const lastSavedUrl = lastSavedProposal?.publicSlug ? `${getPublicAppUrl()}/p/${lastSavedProposal.publicSlug}` : "";
@@ -2552,7 +2586,7 @@ function DashboardView({
         </section>
       ) : null}
 
-      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6">
+      <section className="grid gap-5 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
         <div>
           {isFirstProposalExperience ? (
             <p className="text-xs font-black uppercase text-blue-700">Primeira proposta</p>
@@ -2565,6 +2599,19 @@ function DashboardView({
           </p>
         </div>
 
+        <div className="relative hidden h-32 w-28 shrink-0 lg:block" aria-hidden="true">
+          <div className="absolute inset-0 rotate-3 rounded-lg border border-black/10 bg-slate-50 p-3 shadow-md shadow-slate-900/10">
+            <div className="h-2 w-3/4 rounded-full bg-slate-200" />
+            <div className="mt-2 h-2 w-full rounded-full bg-slate-200" />
+            <div className="mt-2 h-2 w-2/3 rounded-full bg-slate-200" />
+            <div className="mt-4 h-2 w-1/2 rounded-full bg-green-200" />
+          </div>
+          <span className="absolute -right-3 -top-3 grid size-9 place-items-center rounded-full bg-green-600 text-white shadow-md shadow-green-900/20">
+            <CheckCircle2 size={18} />
+          </span>
+          <Sparkles className="absolute -bottom-2 -left-2 text-amber-400" size={18} />
+        </div>
+
         <div className="grid gap-2 sm:min-w-56">
           <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onNewProposal}>
             <Plus size={18} />
@@ -2574,49 +2621,96 @@ function DashboardView({
         </div>
       </section>
 
-      <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <SectionHeading eyebrow="Configuração" title="Sua estrutura comercial" />
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
-            {setupProgress}/{setupChecklist.length} pronto
-          </span>
+      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-green-50 text-green-700">
+              <ShieldCheck size={20} />
+            </span>
+            <div>
+              <SectionHeading eyebrow="Configuração" title="Sua estrutura comercial" />
+              <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
+                Quanto mais completa sua estrutura, mais confiança sua proposta transmite ao cliente.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="grid size-14 shrink-0 place-items-center rounded-full border-4 border-green-600 text-sm font-black text-green-700">
+              {setupProgress}/{setupChecklist.length}
+            </span>
+            <div>
+              <p className="font-black text-green-700">{setupProgress === setupChecklist.length ? "Pronto!" : "Quase lá!"}</p>
+              <p className="text-sm font-bold text-slate-500">
+                {setupProgress === setupChecklist.length
+                  ? "Parabéns! Sua estrutura está completa."
+                  : `Faltam ${setupChecklist.length - setupProgress} passos para completar.`}
+              </p>
+            </div>
+          </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-4">
           {setupChecklist.map((item) => (
-            <div className={`grid grid-cols-[auto_1fr] items-center gap-2 rounded-lg border p-3 text-sm font-black ${item.done ? "border-green-700/20 bg-green-50 text-green-800" : "border-black/10 bg-slate-50 text-slate-600"}`} key={item.label}>
-              {item.done ? <CheckCircle2 size={16} /> : <HelpCircle size={16} />}
-              {item.label}
+            <div className={`grid gap-1 rounded-lg border p-3 ${item.done ? "border-green-700/20 bg-green-50" : "border-black/10 bg-slate-50"}`} key={item.label}>
+              <span className={`grid size-7 shrink-0 place-items-center rounded-full ${item.done ? "bg-green-600 text-white" : "bg-slate-200 text-slate-500"}`}>
+                {item.done ? <CheckCircle2 size={15} /> : <HelpCircle size={15} />}
+              </span>
+              <p className="text-sm font-black text-slate-800">{item.label}</p>
+              <p className="text-xs font-bold leading-5 text-slate-500">{item.detail}</p>
             </div>
           ))}
         </div>
-        <p className="text-sm font-bold leading-6 text-slate-500">
-          Quanto mais completa sua estrutura, mais confiança sua proposta transmite ao cliente.
-        </p>
       </section>
 
 
       {billing ? (
-        <section className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `Plano ${plans[billing.subscription.plan]?.name ?? billing.subscription.plan} em uso` : "Pagamento pendente"} />
-            <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-black text-green-700">
-              {hasPaidAccess
-                ? isUnlimitedProposalLimit(billing.usage.proposalLimit)
-                  ? "Propostas ilimitadas"
-                  : `${billing.usage.proposalsThisMonth}/${billing.usage.proposalLimit} propostas este mês`
-                : "Pague pelo Mercado Pago ou aguarde liberação do admin"}
-            </span>
+        <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className={`grid size-11 shrink-0 place-items-center rounded-full ${hasPaidAccess ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
+                <CreditCard size={20} />
+              </span>
+              <div>
+                <SectionHeading eyebrow="Assinatura" title={hasPaidAccess ? `Plano ${plans[billing.subscription.plan]?.name ?? billing.subscription.plan} em uso` : "Pagamento pendente"} />
+                <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
+                  {hasPaidAccess
+                    ? isUnlimitedProposalLimit(billing.usage.proposalLimit)
+                      ? "Você tem propostas ilimitadas no seu plano."
+                      : `Você já usou ${billing.usage.proposalsThisMonth} de ${billing.usage.proposalLimit} propostas este mês.`
+                    : "Finalize o pagamento para liberar todos os recursos do seu plano."}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-green-600"
-              style={{
-                width: isUnlimitedProposalLimit(billing.usage.proposalLimit)
-                  ? "100%"
-                  : `${Math.min(100, Math.round((billing.usage.proposalsThisMonth / billing.usage.proposalLimit) * 100))}%`,
-              }}
-            />
-          </div>
+
+          {hasPaidAccess ? (
+            <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-green-600"
+                style={{
+                  width: isUnlimitedProposalLimit(billing.usage.proposalLimit)
+                    ? "100%"
+                    : `${Math.min(100, Math.round((billing.usage.proposalsThisMonth / billing.usage.proposalLimit) * 100))}%`,
+                }}
+              />
+            </div>
+          ) : (
+            <button
+              className="flex items-center justify-between gap-3 rounded-lg border border-amber-700/20 bg-amber-50 p-3 text-left"
+              type="button"
+              onClick={onOpenPlans}
+            >
+              <span className="flex items-center gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
+                  <Handshake size={17} />
+                </span>
+                <span>
+                  <span className="block text-sm font-black text-amber-900">Pague pelo Mercado Pago</span>
+                  <span className="block text-xs font-bold text-amber-700">ou aguarde liberação do admin</span>
+                </span>
+              </span>
+              <ChevronRight className="shrink-0 text-amber-700" size={18} />
+            </button>
+          )}
         </section>
       ) : null}
 
@@ -2745,6 +2839,7 @@ function ProposalsView({
   const [total, setTotal] = useState(0);
   const [visibleProposals, setVisibleProposals] = useState<Proposal[]>([]);
   const [statusFilter, setStatusFilter] = useState<ProposalStatus | "all">("all");
+  const [sortOrder, setSortOrder] = useState<"recent" | "oldest" | "value_desc" | "value_asc">("recent");
   const firstVisible = total ? (page - 1) * pageSize + 1 : 0;
   const lastVisible = Math.min(page * pageSize, total);
   const selectedProposal = proposals.find((proposal) => proposal.id === selectedProposalId) || null;
@@ -2759,7 +2854,16 @@ function ProposalsView({
   const totalViews = proposals.reduce((sum, proposal) => sum + (proposal.viewCount || 0), 0);
   const whatsappClicks = proposals.reduce((sum, proposal) => sum + (proposal.whatsappClickCount || 0), 0);
   const expired = proposals.filter((proposal) => proposal.validUntil && proposal.validUntil < todayDate()).length;
-  const filteredVisibleProposals = statusFilter === "all" ? visibleProposals : visibleProposals.filter((proposal) => proposal.status === statusFilter);
+  const funnelTotal = proposalsSummary ? proposalsSummary.total : proposals.length;
+  const filteredVisibleProposals = (statusFilter === "all" ? visibleProposals : visibleProposals.filter((proposal) => proposal.status === statusFilter))
+    .slice()
+    .sort((a, b) => {
+      if (sortOrder === "value_desc") return b.price - a.price;
+      if (sortOrder === "value_asc") return a.price - b.price;
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortOrder === "oldest" ? dateA - dateB : dateB - dateA;
+    });
   const statusFilterLabel = statusFilter === "all" ? "todas" : statusConfig[statusFilter]?.label.toLowerCase() || statusFilter;
 
   useEffect(() => {
@@ -2818,36 +2922,54 @@ function ProposalsView({
             Nova proposta
           </button>
         </div>
-        <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Acompanhe quem abriu, quem está em aberto e quem já fechou. Copie o link, baixe PDF ou envie direto pelo WhatsApp.
-        </p>
+        <div className="mt-2 flex items-center justify-between gap-4">
+          <p className="max-w-2xl leading-7 text-slate-600">
+            Acompanhe quem abriu, quem está em aberto e quem já fechou. Copie o link, baixe PDF ou envie direto pelo WhatsApp.
+          </p>
+          <div className="relative hidden h-24 w-24 shrink-0 lg:block" aria-hidden="true">
+            <div className="absolute inset-0 rotate-3 rounded-lg border border-black/10 bg-slate-50 p-3 shadow-md shadow-slate-900/10">
+              <div className="h-2 w-3/4 rounded-full bg-slate-200" />
+              <div className="mt-2 h-2 w-full rounded-full bg-slate-200" />
+              <div className="mt-2 h-2 w-2/3 rounded-full bg-slate-200" />
+              <div className="mt-4 h-2 w-1/2 rounded-full bg-green-200" />
+            </div>
+            <span className="absolute -right-3 -top-3 grid size-9 place-items-center rounded-full bg-green-600 text-white shadow-md shadow-green-900/20">
+              <CheckCircle2 size={18} />
+            </span>
+            <Sparkles className="absolute -bottom-2 -left-2 text-amber-400" size={18} />
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-6">
-        <Metric active={statusFilter === "all"} label="Total" value={String(proposalsSummary ? proposalsSummary.total : proposals.length)} onClick={() => setStatusFilter("all")} />
-        <Metric active={statusFilter === "sent"} label="Enviadas" value={String(proposalsSummary ? proposalsSummary.sent : sent)} onClick={() => setStatusFilter("sent")} />
-        <Metric active={statusFilter === "viewed"} label="Visualizadas" value={String(proposalsSummary ? proposalsSummary.viewed : viewed)} onClick={() => setStatusFilter("viewed")} />
-        <Metric active={statusFilter === "awaiting_response"} label="Aguardando resposta" value={String(proposalsSummary ? proposalsSummary.awaitingResponse : awaitingResponse)} onClick={() => setStatusFilter("awaiting_response")} />
-        <Metric active={statusFilter === "accepted"} label="Aceitas" value={String(proposalsSummary ? proposalsSummary.accepted : accepted)} onClick={() => setStatusFilter("accepted")} />
-        <Metric label="Valor aceito" value={money.format(proposalsSummary ? proposalsSummary.acceptedValue : acceptedValue)} />
+        <Metric active={statusFilter === "all"} icon={<Layers3 size={16} />} cardClass="bg-emerald-50/60" iconClass="bg-emerald-100 text-emerald-700" label="Total" value={String(proposalsSummary ? proposalsSummary.total : proposals.length)} onClick={() => setStatusFilter("all")} />
+        <Metric active={statusFilter === "sent"} icon={<Send size={16} />} cardClass="bg-blue-50/60" iconClass="bg-blue-100 text-blue-700" label="Enviadas" value={String(proposalsSummary ? proposalsSummary.sent : sent)} onClick={() => setStatusFilter("sent")} />
+        <Metric active={statusFilter === "viewed"} icon={<Eye size={16} />} cardClass="bg-violet-50/60" iconClass="bg-violet-100 text-violet-700" label="Visualizadas" value={String(proposalsSummary ? proposalsSummary.viewed : viewed)} onClick={() => setStatusFilter("viewed")} />
+        <Metric active={statusFilter === "awaiting_response"} icon={<Clock size={16} />} cardClass="bg-amber-50/60" iconClass="bg-amber-100 text-amber-700" label="Aguardando resposta" value={String(proposalsSummary ? proposalsSummary.awaitingResponse : awaitingResponse)} onClick={() => setStatusFilter("awaiting_response")} />
+        <Metric active={statusFilter === "accepted"} icon={<CheckCircle2 size={16} />} cardClass="bg-green-50/60" iconClass="bg-green-100 text-green-700" label="Aceitas" value={String(proposalsSummary ? proposalsSummary.accepted : accepted)} onClick={() => setStatusFilter("accepted")} />
+        <Metric icon={<DollarSign size={16} />} cardClass="bg-green-50/60" iconClass="bg-green-100 text-green-700" label="Valor aceito" value={money.format(proposalsSummary ? proposalsSummary.acceptedValue : acceptedValue)} />
       </div>
 
-      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1fr_0.8fr]">
+      <section className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:grid-cols-[1.4fr_1fr]">
         <div>
           <SectionHeading eyebrow="Indicadores" title="Acompanhamento de vendas" />
-          <div className="mt-4 grid gap-3 sm:grid-cols-5">
-            <FunnelStep label="Enviadas" value={sent} tone="bg-amber-500" />
-            <FunnelStep label="Abertas" value={viewed} tone="bg-sky-600" />
-            <FunnelStep label="Aguardando resposta" value={awaitingResponse} tone="bg-indigo-600" />
-            <FunnelStep label="Aceitas" value={accepted} tone="bg-green-700" />
-            <FunnelStep label="Recusadas" value={declined} tone="bg-rose-700" />
+          <div className="mt-4 flex flex-wrap items-stretch gap-2 sm:flex-nowrap">
+            <FunnelStep icon={<Send size={16} />} iconClass="bg-blue-100 text-blue-700" tone="bg-blue-500" label="Enviadas" value={sent} total={funnelTotal} />
+            <ChevronRight className="hidden shrink-0 self-center text-slate-300 sm:block" size={20} />
+            <FunnelStep icon={<Eye size={16} />} iconClass="bg-emerald-100 text-emerald-700" tone="bg-emerald-500" label="Abertas" value={viewed} total={funnelTotal} />
+            <ChevronRight className="hidden shrink-0 self-center text-slate-300 sm:block" size={20} />
+            <FunnelStep icon={<Clock size={16} />} iconClass="bg-indigo-100 text-indigo-700" tone="bg-indigo-500" label="Aguardando resposta" value={awaitingResponse} total={funnelTotal} />
+            <ChevronRight className="hidden shrink-0 self-center text-slate-300 sm:block" size={20} />
+            <FunnelStep icon={<CheckCircle2 size={16} />} iconClass="bg-green-100 text-green-700" tone="bg-green-600" label="Aceitas" value={accepted} total={funnelTotal} />
+            <ChevronRight className="hidden shrink-0 self-center text-slate-300 sm:block" size={20} />
+            <FunnelStep icon={<XCircle size={16} />} iconClass="bg-rose-100 text-rose-700" tone="bg-rose-600" label="Recusadas" value={declined} total={funnelTotal} />
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <MiniStat label="Valor aceito" value={money.format(acceptedValue)} />
-          <MiniStat label="Visualizações" value={String(totalViews)} />
-          <MiniStat label="Cliques no WhatsApp" value={String(whatsappClicks)} />
-          <MiniStat label="Vencidas" value={String(expired)} />
+        <div className="grid grid-cols-2 gap-3">
+          <MiniStat icon={<DollarSign size={16} />} iconClass="bg-green-100 text-green-700" label="Valor aceito" value={money.format(acceptedValue)} />
+          <MiniStat icon={<Eye size={16} />} iconClass="bg-blue-100 text-blue-700" label="Visualizações" value={String(totalViews)} />
+          <MiniStat icon={<Send size={16} />} iconClass="bg-green-100 text-green-700" label="Cliques WhatsApp" value={String(whatsappClicks)} />
+          <MiniStat icon={<Clock size={16} />} iconClass="bg-rose-100 text-rose-700" label="Vencidas" value={String(expired)} />
         </div>
       </section>
 
@@ -2879,6 +3001,34 @@ function ProposalsView({
           />
         </Modal>
       ) : null}
+
+      <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-green-50 text-green-700">
+            <Layers3 size={16} />
+          </span>
+          <div>
+            <p className="font-black text-slate-900">Suas propostas</p>
+            <p className="text-sm font-bold text-slate-500">
+              Mostrando {firstVisible}-{lastVisible} de {total} propostas
+              {statusFilter !== "all" ? ` - filtro: ${statusFilterLabel}` : ""}
+            </p>
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm font-bold text-slate-600">
+          Ordenar por
+          <select
+            className="min-h-10 rounded-lg border border-black/10 bg-white px-3 font-bold text-slate-900"
+            value={sortOrder}
+            onChange={(event) => setSortOrder(event.target.value as typeof sortOrder)}
+          >
+            <option value="recent">Mais recentes</option>
+            <option value="oldest">Mais antigas</option>
+            <option value="value_desc">Maior valor</option>
+            <option value="value_asc">Menor valor</option>
+          </select>
+        </label>
+      </div>
 
       <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-white p-3 shadow-xl shadow-slate-900/10 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-slate-600">
@@ -3055,12 +3205,56 @@ function OnboardingView({
   );
 }
 
+const clientStatusFilterOptions: { value: ClientStatusGroup | "all"; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "lead", label: "Lead" },
+  { value: "negotiating", label: "Em negociação" },
+  { value: "won", label: "Cliente" },
+  { value: "lost", label: "Perdido" },
+];
+
 function ClientsView({ clients, currentPlan, onChange }: { clients: Client[]; currentPlan: PlanCode; onChange: (items: Client[]) => void }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", segment: "", interestService: "", status: "lead", notes: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ClientStatusGroup | "all">("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
   const freeLimitReached = currentPlan === "free" && !editingId && clients.length >= FREE_CLIENT_LIMIT;
   const resetForm = () => setForm({ name: "", email: "", phone: "", segment: "", interestService: "", status: "lead", notes: "" });
+
+  const stats = useMemo(() => {
+    const total = clients.length;
+    const leads = clients.filter((client) => clientStatusGroup(client.status) === "lead").length;
+    const negotiating = clients.filter((client) => clientStatusGroup(client.status) === "negotiating").length;
+    const won = clients.filter((client) => clientStatusGroup(client.status) === "won").length;
+    const pct = (value: number) => (total ? Math.round((value / total) * 100) : 0);
+    return { total, leads, negotiating, won, leadsPct: pct(leads), negotiatingPct: pct(negotiating), wonPct: pct(won) };
+  }, [clients]);
+
+  const filteredClients = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return clients.filter((client) => {
+      if (statusFilter !== "all" && clientStatusGroup(client.status) !== statusFilter) return false;
+      if (!query) return true;
+      return [client.name, client.email, client.phone, client.segment, client.interestService]
+        .filter(Boolean)
+        .some((field) => (field as string).toLowerCase().includes(query));
+    });
+  }, [clients, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedClients = filteredClients.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const firstVisible = filteredClients.length ? (currentPage - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(currentPage * pageSize, filteredClients.length);
+  const paginationItems = buildPaginationItems(currentPage, totalPages);
 
   async function saveClient(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -3092,6 +3286,19 @@ function ClientsView({ clients, currentPlan, onChange }: { clients: Client[]; cu
     }
   }
 
+  function startEdit(client: Client) {
+    setEditingId(client.id);
+    setForm({
+      name: client.name,
+      email: client.email || "",
+      phone: maskPhone(client.phone || ""),
+      segment: client.segment || "",
+      interestService: client.interestService || "",
+      status: client.status || "lead",
+      notes: client.notes || "",
+    });
+  }
+
   async function removeClient(id: string) {
     await apiDelete(`/api/clients/${id}`);
     onChange(clients.filter((item) => item.id !== id));
@@ -3101,7 +3308,8 @@ function ClientsView({ clients, currentPlan, onChange }: { clients: Client[]; cu
     <CrudShell
       eyebrow="Relacionamento"
       title="Clientes e contatos"
-      description="Salve contatos com interesse, status e observações. Assim você sabe exatamente quem retomar e quando."
+      description="Salve contatos com interesse, status e observações para organizar seu relacionamento e nunca perder oportunidades."
+      icon={<UserCircle size={20} />}
       contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
       form={
         <form
@@ -3113,8 +3321,10 @@ function ClientsView({ clients, currentPlan, onChange }: { clients: Client[]; cu
           <TextField label="Nome" maxLength={80} required value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
           <TextField label="E-mail" autoComplete="email" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
           <TextField label="Telefone" autoComplete="tel" maxLength={15} placeholder="(11) 99999-9999" value={form.phone} onChange={(value) => setForm({ ...form, phone: maskPhone(value) })} />
-          <TextField label="Segmento" maxLength={60} placeholder="Moda, estética, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
-          <TextField label="Serviço de interesse" maxLength={90} placeholder="Identidade visual, limpeza, manutenção..." value={form.interestService} onChange={(value) => setForm({ ...form, interestService: value })} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TextField label="Segmento" maxLength={60} placeholder="Moda, estética, arquitetura..." value={form.segment} onChange={(value) => setForm({ ...form, segment: value })} />
+            <TextField label="Serviço de interesse" maxLength={90} placeholder="Identidade visual, limpeza, manutenção..." value={form.interestService} onChange={(value) => setForm({ ...form, interestService: value })} />
+          </div>
           <label className="grid gap-2 text-sm font-extrabold text-slate-600">
             Status
             <select
@@ -3129,7 +3339,10 @@ function ClientsView({ clients, currentPlan, onChange }: { clients: Client[]; cu
               <option value="lost">Perdido</option>
             </select>
           </label>
-          <TextAreaField label="Observações" maxLength={500} rows={3} placeholder="Preferências, histórico e próximo passo." value={form.notes} onChange={(value) => setForm({ ...form, notes: value })} />
+          <div className="grid gap-1">
+            <TextAreaField label="Observações" maxLength={500} rows={3} placeholder="Preferências, histórico e próximo passo." value={form.notes} onChange={(value) => setForm({ ...form, notes: value })} />
+            <p className="text-right text-xs font-bold text-slate-400">{form.notes.length}/500</p>
+          </div>
           <SubmitButton disabled={freeLimitReached} label={editingId ? "Atualizar cliente" : "Salvar cliente"} />
           {!freeLimitReached ? <CsvImportBox<Client>
             kind="clients"
@@ -3151,29 +3364,219 @@ function ClientsView({ clients, currentPlan, onChange }: { clients: Client[]; cu
         </form>
       }
     >
-      {clients.map((client) => (
-        <ListCard
-          key={client.id}
-          title={client.name}
-          subtitle={[clientStatusLabel(client.status), client.email, client.phone, client.segment].filter(Boolean).join(" | ")}
-          detail={[client.interestService ? `Interesse: ${client.interestService}` : "", client.notes || ""].filter(Boolean).join(" - ")}
-          onEdit={() => {
-            setEditingId(client.id);
-            setForm({
-              name: client.name,
-              email: client.email || "",
-              phone: maskPhone(client.phone || ""),
-              segment: client.segment || "",
-              interestService: client.interestService || "",
-              status: client.status || "lead",
-              notes: client.notes || "",
-            });
-          }}
-          onRemove={() => removeClient(client.id)}
-        />
-      ))}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-green-50 text-green-700">
+            <Users size={20} />
+          </span>
+          <h2 className="text-xl font-black">Lista de contatos</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              className="min-h-11 w-full min-w-0 rounded-lg border border-black/10 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-green-700 sm:w-56"
+              placeholder="Buscar contato..."
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </label>
+          <div className="relative">
+            <button
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-slate-700"
+              type="button"
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              <Filter size={16} />
+              Filtros
+              <ChevronDown size={16} />
+            </button>
+            {filtersOpen ? (
+              <div className="absolute right-0 top-full z-10 mt-2 grid w-48 gap-1 rounded-lg border border-black/10 bg-white p-2 shadow-xl shadow-slate-900/10">
+                {clientStatusFilterOptions.map((option) => (
+                  <button
+                    className={`rounded-lg px-3 py-2 text-left text-sm font-bold ${statusFilter === option.value ? "bg-green-50 text-green-700" : "text-slate-600"}`}
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter(option.value);
+                      setFiltersOpen(false);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <ClientStatCard icon={Users} iconClass="bg-green-50 text-green-700" hint="100% do total" label="Total contatos" value={stats.total} />
+        <ClientStatCard icon={UserCircle} iconClass="bg-blue-50 text-blue-700" hint={`${stats.leadsPct}% do total`} label="Leads" value={stats.leads} />
+        <ClientStatCard icon={Clock} iconClass="bg-amber-50 text-amber-700" hint={`${stats.negotiatingPct}% do total`} label="Em negociação" value={stats.negotiating} />
+        <ClientStatCard icon={CheckCircle2} iconClass="bg-green-50 text-green-700" hint={`${stats.wonPct}% do total`} label="Clientes" value={stats.won} />
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead>
+            <tr className="text-xs font-black uppercase text-slate-400">
+              <th className="px-2 py-2">Contato</th>
+              <th className="px-2 py-2">Status</th>
+              <th className="px-2 py-2">Interesse / Serviço</th>
+              <th className="px-2 py-2">Adicionado em</th>
+              <th className="px-2 py-2 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-black/5">
+            {pagedClients.map((client, index) => {
+              const created = client.createdAt ? new Date(client.createdAt) : null;
+              return (
+                <tr key={client.id}>
+                  <td className="px-2 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-black ${avatarColorClass((currentPage - 1) * pageSize + index)}`}>
+                        {getInitials(client.name)}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-black text-slate-900">{client.name}</p>
+                        {client.email ? <p className="truncate text-xs font-bold text-slate-500">{client.email}</p> : null}
+                        {client.phone ? <p className="truncate text-xs font-bold text-slate-500">{client.phone}</p> : null}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-2 py-3">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black ${clientStatusBadgeClass(client.status)}`}>
+                      <span className={`size-1.5 rounded-full ${clientStatusDotClass(client.status)}`} />
+                      {clientStatusLabel(client.status)}
+                    </span>
+                  </td>
+                  <td className="px-2 py-3">
+                    <p className="font-black text-slate-800">{client.interestService || "—"}</p>
+                    <p className="text-xs font-bold text-slate-500">{client.segment || "—"}</p>
+                  </td>
+                  <td className="px-2 py-3">
+                    {created ? (
+                      <>
+                        <p className="font-bold text-slate-700">{created.toLocaleDateString("pt-BR")}</p>
+                        <p className="text-xs font-bold text-slate-400">{created.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="px-2 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <IconButton icon={Pencil} label="Editar" onClick={() => startEdit(client)} />
+                      <IconButton icon={Trash2} label="Remover" onClick={() => removeClient(client.id)} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {!pagedClients.length ? (
+              <tr>
+                <td className="px-2 py-6 text-center text-slate-500" colSpan={5}>
+                  Nenhum contato encontrado.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+
+      {filteredClients.length ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-3 text-sm font-bold text-slate-500">
+          <p>
+            Mostrando {firstVisible}–{lastVisible} de {filteredClients.length} contatos
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage <= 1}
+              type="button"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft size={16} />
+              Anterior
+            </button>
+            {paginationItems.map((item, index) =>
+              item === "..." ? (
+                <span className="px-1" key={`ellipsis-${index}`}>
+                  …
+                </span>
+              ) : (
+                <button
+                  className={`grid size-9 place-items-center rounded-lg font-black ${item === currentPage ? "bg-green-600 text-white" : "border border-black/10 text-slate-600"}`}
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                >
+                  {item}
+                </button>
+              )
+            )}
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage >= totalPages}
+              type="button"
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              Próxima
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </CrudShell>
   );
+}
+
+function ClientStatCard({ hint, icon: Icon, iconClass, label, value }: { hint: string; icon: React.ElementType; iconClass: string; label: string; value: number }) {
+  return (
+    <div className="grid gap-2 rounded-lg border border-black/10 p-3">
+      <div className="flex items-center gap-2">
+        <span className={`grid size-9 shrink-0 place-items-center rounded-full ${iconClass}`}>
+          <Icon size={16} />
+        </span>
+        <p className="text-sm font-black text-slate-600">{label}</p>
+      </div>
+      <p className="text-2xl font-black text-slate-950">{value}</p>
+      <p className="text-xs font-bold text-slate-400">{hint}</p>
+    </div>
+  );
+}
+
+type ClientStatusGroup = "lead" | "negotiating" | "won" | "lost";
+
+function clientStatusGroup(status?: string | null): ClientStatusGroup {
+  if (status === "won") return "won";
+  if (status === "lost") return "lost";
+  if (status === "proposal_sent" || status === "waiting") return "negotiating";
+  return "lead";
+}
+
+function clientStatusBadgeClass(status?: string | null) {
+  const classes: Record<ClientStatusGroup, string> = {
+    lead: "bg-blue-50 text-blue-700",
+    negotiating: "bg-amber-50 text-amber-700",
+    won: "bg-green-50 text-green-700",
+    lost: "bg-rose-50 text-rose-700",
+  };
+  return classes[clientStatusGroup(status)];
+}
+
+function clientStatusDotClass(status?: string | null) {
+  const classes: Record<ClientStatusGroup, string> = {
+    lead: "bg-blue-600",
+    negotiating: "bg-amber-600",
+    won: "bg-green-600",
+    lost: "bg-rose-600",
+  };
+  return classes[clientStatusGroup(status)];
 }
 
 function clientStatusLabel(status?: string | null) {
@@ -3187,6 +3590,31 @@ function clientStatusLabel(status?: string | null) {
   return labels[status || "lead"] || "Lead";
 }
 
+const avatarColorClasses = ["bg-blue-50 text-blue-700", "bg-rose-50 text-rose-700", "bg-green-50 text-green-700", "bg-purple-50 text-purple-700", "bg-amber-50 text-amber-700"];
+
+function avatarColorClass(index: number) {
+  return avatarColorClasses[index % avatarColorClasses.length];
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function buildPaginationItems(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
+  const items: (number | "...")[] = [1];
+  if (current > 3) items.push("...");
+  for (let page = Math.max(2, current - 1); page <= Math.min(total - 1, current + 1); page += 1) {
+    items.push(page);
+  }
+  if (current < total - 2) items.push("...");
+  items.push(total);
+  return items;
+}
+
 function maskPhone(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
   if (digits.length <= 2) return digits;
@@ -3195,11 +3623,70 @@ function maskPhone(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
-function ServicesView({ currentPlan, services, onChange }: { currentPlan: PlanCode; services: ServiceItem[]; onChange: (items: ServiceItem[]) => void }) {
-  const [form, setForm] = useState({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
+const serviceStatusFilterOptions: { value: "all" | "active" | "inactive"; label: string }[] = [
+  { value: "all", label: "Todos os serviços" },
+  { value: "active", label: "Ativos" },
+  { value: "inactive", label: "Inativos" },
+];
+
+function ServicesView({ currentPlan, proposals, services, onChange }: { currentPlan: PlanCode; proposals: Proposal[]; services: ServiceItem[]; onChange: (items: ServiceItem[]) => void }) {
+  const [form, setForm] = useState({ name: "", price: 0, deadline: "", includes: "", imageUrl: "", active: true });
+  const [file, setFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 4;
   const freeLimitReached = currentPlan === "free" && !editingId && services.length >= FREE_SERVICE_LIMIT;
+  const resetForm = () => {
+    setForm({ name: "", price: 0, deadline: "", includes: "", imageUrl: "", active: true });
+    setFile(null);
+  };
+
+  const stats = useMemo(() => {
+    const total = services.length;
+    const activeCount = services.filter((service) => service.active).length;
+    const usageCounts = new Map<string, number>();
+    for (const proposal of proposals) {
+      const key = proposal.serviceName.trim().toLowerCase();
+      if (!key) continue;
+      usageCounts.set(key, (usageCounts.get(key) || 0) + 1);
+    }
+    let mostUsed: ServiceItem | null = null;
+    let mostUsedCount = 0;
+    for (const service of services) {
+      const count = usageCounts.get(service.name.trim().toLowerCase()) || 0;
+      if (count > mostUsedCount) {
+        mostUsedCount = count;
+        mostUsed = service;
+      }
+    }
+    return { total, activeCount, mostUsedLabel: mostUsed?.name || services[0]?.name || "—" };
+  }, [services, proposals]);
+
+  const filteredServices = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return services.filter((service) => {
+      if (statusFilter === "active" && !service.active) return false;
+      if (statusFilter === "inactive" && service.active) return false;
+      if (!query) return true;
+      return [service.name, ...service.includes].filter(Boolean).some((field) => field.toLowerCase().includes(query));
+    });
+  }, [services, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredServices.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedServices = filteredServices.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const firstVisible = filteredServices.length ? (currentPage - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(currentPage * pageSize, filteredServices.length);
+  const paginationItems = buildPaginationItems(currentPage, totalPages);
 
   async function saveService(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -3212,22 +3699,47 @@ function ServicesView({ currentPlan, services, onChange }: { currentPlan: PlanCo
       setError("Informe um valor válido para o serviço.");
       return;
     }
+    if (form.imageUrl.trim() && !isValidHttpUrl(form.imageUrl.trim())) {
+      setError("Informe uma URL de imagem válida começando com http:// ou https://.");
+      return;
+    }
     if (freeLimitReached) {
       setError(`Plano grátis permite cadastrar até ${FREE_SERVICE_LIMIT} serviços.`);
       return;
     }
-    const payload = {
-      name: form.name,
-      price: form.price,
-      deadline: form.deadline,
-      imageUrl: form.imageUrl.trim() || null,
-      includes: form.includes
-        .split("\n")
-        .map((entry) => entry.trim())
-        .filter(Boolean),
-    };
 
+    setSaving(true);
     try {
+      let imageUrl = form.imageUrl.trim() || null;
+
+      if (file) {
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+        const uploadResponse = await fetch("/api/uploads", {
+          method: "POST",
+          body: uploadData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(await readApiError(uploadResponse, "Falha ao enviar imagem."));
+        }
+
+        const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
+        imageUrl = uploadResult.imageUrl;
+      }
+
+      const payload = {
+        name: form.name,
+        price: form.price,
+        deadline: form.deadline,
+        imageUrl,
+        includes: form.includes
+          .split("\n")
+          .map((entry) => entry.trim())
+          .filter(Boolean),
+        active: form.active,
+      };
+
       if (editingId) {
         const item = await apiPatch<ServiceItem>(`/api/services/${editingId}`, payload);
         onChange(services.map((service) => (service.id === editingId ? item : service)));
@@ -3236,15 +3748,46 @@ function ServicesView({ currentPlan, services, onChange }: { currentPlan: PlanCo
         const item = await apiPost<ServiceItem>("/api/services", payload);
         onChange([item, ...services]);
       }
-      setForm({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
+      resetForm();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível salvar o serviço.");
+    } finally {
+      setSaving(false);
     }
   }
 
   async function removeService(id: string) {
     await apiDelete(`/api/services/${id}`);
     onChange(services.filter((item) => item.id !== id));
+  }
+
+  async function toggleActive(service: ServiceItem) {
+    try {
+      const item = await apiPatch<ServiceItem>(`/api/services/${service.id}`, {
+        name: service.name,
+        price: service.price,
+        deadline: service.deadline,
+        imageUrl: service.imageUrl,
+        includes: service.includes,
+        active: !service.active,
+      });
+      onChange(services.map((current) => (current.id === service.id ? item : current)));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível atualizar o serviço.");
+    }
+  }
+
+  function startEdit(service: ServiceItem) {
+    setEditingId(service.id);
+    setForm({
+      name: service.name,
+      price: service.price,
+      deadline: service.deadline || "",
+      includes: service.includes.join("\n"),
+      imageUrl: service.imageUrl || "",
+      active: service.active,
+    });
+    setFile(null);
   }
 
   return (
@@ -3263,21 +3806,60 @@ function ServicesView({ currentPlan, services, onChange }: { currentPlan: PlanCo
           {currentPlan === "free" ? <LimitNotice current={services.length} limit={FREE_SERVICE_LIMIT} label="serviços" /> : null}
           <TextField label="Valor base" min={0} required step="1" type="number" value={form.price || ""} onChange={(value) => setForm({ ...form, price: Number(value || 0) })} />
           <TextField label="Prazo padrão" maxLength={80} value={form.deadline} onChange={(value) => setForm({ ...form, deadline: value })} />
-          <TextField label="URL da imagem" placeholder="Opcional: https://..." type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
+          <div className="grid gap-2">
+            <span className="text-sm font-extrabold text-slate-600">Imagem do serviço</span>
+            <label
+              className={`grid cursor-pointer place-items-center gap-1 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${isDragOver ? "border-green-600 bg-green-50" : "border-black/10 bg-slate-50"}`}
+              onDragLeave={() => setIsDragOver(false)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDragOver(true);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDragOver(false);
+                const dropped = event.dataTransfer.files?.[0];
+                if (dropped) setFile(dropped);
+              }}
+            >
+              <span className="grid size-11 place-items-center rounded-full bg-green-100 text-green-700">
+                <Upload size={20} />
+              </span>
+              {file ? (
+                <p className="text-sm font-black text-slate-700">{file.name}</p>
+              ) : form.imageUrl ? (
+                <p className="text-sm font-black text-slate-700">Imagem atual vinculada</p>
+              ) : (
+                <>
+                  <p className="text-sm font-black text-slate-700">Arraste e solte uma imagem aqui</p>
+                  <p className="text-xs font-bold text-slate-500">ou clique para escolher um arquivo</p>
+                </>
+              )}
+              <p className="text-xs font-bold text-slate-400">Formatos: JPG, PNG, WEBP ou GIF • Máx. 5MB</p>
+              <input
+                accept="image/*"
+                className="sr-only"
+                type="file"
+                onChange={(event) => setFile(event.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
+          <TextField label="URL da imagem (opcional)" placeholder="Ou cole o link de uma imagem: https://..." type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
           <TextAreaField label="Itens inclusos" maxLength={1200} value={form.includes} onChange={(value) => setForm({ ...form, includes: value })} />
+          <ToggleField checked={form.active} label="Serviço ativo" onChange={(active) => setForm({ ...form, active })} />
           {!freeLimitReached ? <CsvImportBox<ServiceItem>
             kind="services"
             sampleHeaders={["servico", "valor_base", "prazo_padrao", "itens_inclusos", "imagem_url"]}
             onImported={(created) => onChange([...created, ...services])}
           /> : null}
-          <SubmitButton disabled={freeLimitReached} label={editingId ? "Atualizar serviço" : "Salvar serviço"} />
+          <SubmitButton disabled={freeLimitReached || saving} label={saving ? "Salvando..." : editingId ? "Atualizar serviço" : "Salvar serviço"} />
           {editingId ? (
             <button
               className="min-h-11 rounded-lg border border-black/10 px-4 font-black"
               type="button"
               onClick={() => {
                 setEditingId(null);
-                setForm({ name: "", price: 0, deadline: "", includes: "", imageUrl: "" });
+                resetForm();
               }}
             >
               Cancelar edição
@@ -3286,37 +3868,263 @@ function ServicesView({ currentPlan, services, onChange }: { currentPlan: PlanCo
         </form>
       }
     >
-      {services.map((service) => (
-        <ListCard
-          key={service.id}
-          title={service.name}
-          subtitle={`${money.format(service.price)} | ${service.deadline || "Prazo a combinar"}`}
-          detail={[service.imageUrl ? "Com imagem vinculada" : "", service.includes.join(", ")].filter(Boolean).join(" | ")}
-          onEdit={() => {
-            setEditingId(service.id);
-            setForm({
-              name: service.name,
-              price: service.price,
-              deadline: service.deadline || "",
-              includes: service.includes.join("\n"),
-              imageUrl: service.imageUrl || "",
-            });
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-black">Catálogo de serviços</h2>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <ServiceStatCard icon={Layers3} iconClass="bg-blue-50 text-blue-600" label="Total de serviços" value={String(stats.total)} />
+        <ServiceStatCard icon={CheckCircle2} iconClass="bg-blue-50 text-blue-600" label="Ativos" value={String(stats.activeCount)} />
+        <ServiceStatCard icon={Star} iconClass="bg-amber-50 text-amber-500" label="Mais utilizado" value={stats.mostUsedLabel} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            className="min-h-11 w-full min-w-0 rounded-lg border border-black/10 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-green-700"
+            placeholder="Buscar serviço..."
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </label>
+        <select
+          className="min-h-11 rounded-lg border border-black/10 bg-white px-3 text-sm font-black text-slate-700 outline-green-700"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "inactive")}
+        >
+          {serviceStatusFilterOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <IconButton
+          icon={Filter}
+          label="Limpar filtros"
+          onClick={() => {
+            setSearchQuery("");
+            setStatusFilter("all");
           }}
-          onRemove={() => removeService(service.id)}
         />
-      ))}
+      </div>
+
+      <div className="grid gap-3">
+        {pagedServices.map((service) => (
+          <ServiceCard
+            key={service.id}
+            service={service}
+            onEdit={() => startEdit(service)}
+            onRemove={() => removeService(service.id)}
+            onToggleActive={() => toggleActive(service)}
+          />
+        ))}
+        {!pagedServices.length ? <p className="leading-7 text-slate-600">Nenhum serviço encontrado.</p> : null}
+      </div>
+
+      {filteredServices.length ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-3 text-sm font-bold text-slate-500">
+          <p>
+            Mostrando {firstVisible} a {lastVisible} de {filteredServices.length} serviços
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage <= 1}
+              type="button"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {paginationItems.map((item, index) =>
+              item === "..." ? (
+                <span className="px-1" key={`ellipsis-${index}`}>
+                  …
+                </span>
+              ) : (
+                <button
+                  className={`grid size-9 place-items-center rounded-lg font-black ${item === currentPage ? "bg-green-600 text-white" : "border border-black/10 text-slate-600"}`}
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                >
+                  {item}
+                </button>
+              )
+            )}
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage >= totalPages}
+              type="button"
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </CrudShell>
   );
 }
 
+function ServiceStatCard({ icon: Icon, iconClass, label, value }: { icon: React.ElementType; iconClass: string; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-black/10 p-4">
+      <span className={`grid size-11 shrink-0 place-items-center rounded-full ${iconClass}`}>
+        <Icon size={20} />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold text-slate-500">{label}</p>
+        <p className="truncate text-xl font-black text-slate-900">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function ServiceCard({
+  onEdit,
+  onRemove,
+  onToggleActive,
+  service,
+}: {
+  onEdit: () => void;
+  onRemove: () => void;
+  onToggleActive: () => void;
+  service: ServiceItem;
+}) {
+  return (
+    <article className="flex gap-3 rounded-lg border border-black/10 p-4 sm:gap-4">
+      <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-100 text-slate-400">
+        {service.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img alt="" className="h-full w-full object-cover" src={service.imageUrl} />
+        ) : (
+          <ImageIcon size={28} />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="font-black text-slate-900">{service.name}</h3>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm font-bold">
+          <span className="font-black text-green-700">{money.format(service.price)}</span>
+          <span className="text-slate-300">•</span>
+          <span className="inline-flex items-center gap-1 text-slate-500">
+            <Calendar size={14} />
+            {service.deadline || "Conforme data do evento"}
+          </span>
+        </div>
+        {service.includes.length ? <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{service.includes.join(", ")}</p> : null}
+      </div>
+      <div className="flex shrink-0 flex-col items-end justify-between gap-3">
+        <div className="flex gap-2">
+          <IconButton icon={Pencil} label="Editar" onClick={onEdit} />
+          <IconButton icon={Trash2} label="Remover" onClick={onRemove} />
+        </div>
+        <button
+          className={`rounded-full px-2.5 py-1 text-xs font-black ${service.active ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"}`}
+          type="button"
+          onClick={onToggleActive}
+        >
+          {service.active ? "Ativo" : "Inativo"}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+const portfolioCategoryColors = ["bg-green-50 text-green-700", "bg-blue-50 text-blue-700", "bg-purple-50 text-purple-700", "bg-amber-50 text-amber-700", "bg-rose-50 text-rose-700", "bg-cyan-50 text-cyan-700"];
+
+function portfolioCategoryColor(category: string | null | undefined, categories: string[]) {
+  if (!category) return "bg-slate-100 text-slate-600";
+  const index = categories.indexOf(category);
+  return portfolioCategoryColors[(index < 0 ? 0 : index) % portfolioCategoryColors.length];
+}
+
+function PortfolioStatCard({ hint, icon: Icon, iconClass, label, value }: { hint: string; icon: React.ElementType; iconClass: string; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-black/10 p-3">
+      <span className={`grid size-11 shrink-0 place-items-center rounded-full ${iconClass}`}>
+        <Icon size={20} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-slate-500">{label}</p>
+        <p className="truncate text-lg font-black text-slate-950">{value}</p>
+        <p className="text-xs font-bold text-slate-400">{hint}</p>
+      </div>
+    </div>
+  );
+}
+
 function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: PlanCode; portfolio: PortfolioItem[]; onChange: (items: PortfolioItem[]) => void }) {
-  const [form, setForm] = useState({ title: "", category: "", imageUrl: "" });
+  const [form, setForm] = useState({ title: "", category: "", description: "", imageUrl: "" });
   const [file, setFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [removeBackground, setRemoveBackground] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const pageSize = 4;
   const freeLimitReached = currentPlan === "free" && !editingId && portfolio.length >= FREE_PORTFOLIO_LIMIT;
+
+  const categories = useMemo(
+    () => Array.from(new Set(portfolio.map((item) => item.category).filter((value): value is string => Boolean(value)))),
+    [portfolio]
+  );
+
+  const stats = useMemo(() => {
+    const counts = new Map<string, number>();
+    portfolio.forEach((item) => {
+      if (item.category) counts.set(item.category, (counts.get(item.category) || 0) + 1);
+    });
+    let mostUsed: { category: string; count: number } | null = null;
+    for (const [category, count] of counts) {
+      if (!mostUsed || count > mostUsed.count) mostUsed = { category, count };
+    }
+    return { total: portfolio.length, categoriesCount: counts.size, mostUsed };
+  }, [portfolio]);
+
+  const filteredPortfolio = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return portfolio.filter((item) => {
+      if (categoryFilter !== "all" && (item.category || "") !== categoryFilter) return false;
+      if (!query) return true;
+      return [item.title, item.category, item.description].filter(Boolean).some((field) => (field as string).toLowerCase().includes(query));
+    });
+  }, [portfolio, searchQuery, categoryFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, categoryFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPortfolio.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedPortfolio = filteredPortfolio.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const firstVisible = filteredPortfolio.length ? (currentPage - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(currentPage * pageSize, filteredPortfolio.length);
+  const paginationItems = buildPaginationItems(currentPage, totalPages);
+  const canReorder = !searchQuery.trim() && categoryFilter === "all";
+
+  function resetForm() {
+    setForm({ title: "", category: "", description: "", imageUrl: "" });
+    setFile(null);
+    setRemoveBackground(false);
+  }
+
+  function startEdit(item: PortfolioItem) {
+    setEditingId(item.id);
+    setForm({
+      title: item.title,
+      category: item.category || "",
+      description: item.description || "",
+      imageUrl: item.imageUrl || "",
+    });
+    setFile(null);
+    setRemoveBackground(false);
+  }
 
   async function savePortfolioItem(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -3363,6 +4171,7 @@ function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: Plan
         body: JSON.stringify({
           title: form.title,
           category: form.category,
+          description: form.description,
           imageUrl,
         }),
       });
@@ -3378,9 +4187,7 @@ function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: Plan
       } else {
         onChange([item, ...portfolio]);
       }
-      setForm({ title: "", category: "", imageUrl: "" });
-      setFile(null);
-      setRemoveBackground(false);
+      resetForm();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível salvar o portfólio.");
     } finally {
@@ -3395,10 +4202,28 @@ function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: Plan
     onChange(portfolio.filter((entry) => entry.id !== id));
   }
 
+  async function reorderPortfolio(targetId: string) {
+    if (!dragItemId || dragItemId === targetId) return;
+    const reordered = [...portfolio];
+    const fromIndex = reordered.findIndex((item) => item.id === dragItemId);
+    const toIndex = reordered.findIndex((item) => item.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    onChange(reordered);
+    setDragItemId(null);
+    await fetch("/api/portfolio/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: reordered.map((item) => item.id) }),
+    });
+  }
+
   return (
     <CrudShell
       eyebrow="Seus trabalhos"
       title="Portfólio"
+      icon={<ImageIcon size={20} />}
       description="Mostre trabalhos anteriores dentro da proposta. Fotos e projetos reais aumentam a confiança do cliente antes do aceite."
       contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
       form={
@@ -3407,28 +4232,66 @@ function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: Plan
           onSubmit={savePortfolioItem}
         >
           {error ? <FormError message={error} /> : null}
-          <TextField label="Título" maxLength={80} required value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
+          <TextField label="Título" maxLength={80} placeholder="Ex.: Reforma Residencial" required value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
           {currentPlan === "free" ? <LimitNotice current={portfolio.length} limit={FREE_PORTFOLIO_LIMIT} label="fotos" /> : null}
-          <TextField label="Categoria" maxLength={60} value={form.category} onChange={(value) => setForm({ ...form, category: value })} />
-          <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-            Imagem
-            <input
-              accept="image/*"
-              className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
-              type="file"
-              onChange={(event) => setFile(event.target.files?.[0] || null)}
-            />
-          </label>
-          <label className="flex items-start gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-600">
-            <input
-              className="mt-1"
-              type="checkbox"
-              checked={removeBackground}
-              onChange={(event) => setRemoveBackground(event.target.checked)}
-            />
-            Remover fundo claro desta imagem
-          </label>
-          <TextField label="URL da imagem" placeholder="Opcional: https://..." type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
+          <SelectField label="Categoria" options={categories} placeholder="Selecione uma categoria" value={form.category} onChange={(value) => setForm({ ...form, category: value })} />
+          <div className="grid gap-2">
+            <span className="text-sm font-extrabold text-slate-600">Imagem</span>
+            <label
+              className={`grid cursor-pointer place-items-center gap-1 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${isDragOver ? "border-green-600 bg-green-50" : "border-black/10 bg-slate-50"}`}
+              onDragLeave={() => setIsDragOver(false)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDragOver(true);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDragOver(false);
+                const dropped = event.dataTransfer.files?.[0];
+                if (dropped) setFile(dropped);
+              }}
+            >
+              <span className="grid size-11 place-items-center rounded-full bg-green-100 text-green-700">
+                <Upload size={20} />
+              </span>
+              {file ? (
+                <p className="text-sm font-black text-slate-700">{file.name}</p>
+              ) : (
+                <>
+                  <p className="text-sm font-black text-slate-700">Arraste e solte uma imagem aqui</p>
+                  <p className="text-xs font-bold text-slate-500">ou clique para escolher um arquivo</p>
+                </>
+              )}
+              <p className="text-xs font-bold text-slate-400">Formatos: JPG, PNG, WEBP ou GIF • Máx. 5MB • Recomendado: 16:9</p>
+              <input
+                accept="image/*"
+                className="sr-only"
+                type="file"
+                onChange={(event) => setFile(event.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-slate-50 p-3">
+            <span className="flex items-center gap-2 text-sm font-bold text-slate-600">
+              Remover fundo claro desta imagem
+              <Info size={14} className="text-slate-400" />
+            </span>
+            <button
+              aria-checked={removeBackground}
+              aria-label="Remover fundo claro desta imagem"
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${removeBackground ? "bg-green-600" : "bg-slate-300"}`}
+              role="switch"
+              type="button"
+              onClick={() => setRemoveBackground((value) => !value)}
+            >
+              <span className={`inline-block size-5 rounded-full bg-white shadow transition-transform ${removeBackground ? "translate-x-5" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+          <TextField label="URL da imagem (opcional)" placeholder="https://exemplo.com/imagem.jpg" type="url" value={form.imageUrl} onChange={(value) => setForm({ ...form, imageUrl: value })} />
+          <div className="grid gap-1">
+            <TextAreaField label="Descrição do projeto (opcional)" maxLength={500} placeholder="Descreva brevemente o projeto, os desafios e os resultados alcançados..." rows={4} value={form.description} onChange={(value) => setForm({ ...form, description: value })} />
+            <p className="text-right text-xs font-bold text-slate-400">{form.description.length}/500</p>
+          </div>
           <SubmitButton disabled={freeLimitReached || saving} label={saving ? "Salvando..." : editingId ? "Atualizar item" : "Salvar item"} />
           {editingId ? (
             <button
@@ -3436,9 +4299,7 @@ function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: Plan
               type="button"
               onClick={() => {
                 setEditingId(null);
-                setForm({ title: "", category: "", imageUrl: "" });
-                setFile(null);
-                setRemoveBackground(false);
+                resetForm();
               }}
             >
               Cancelar edição
@@ -3447,49 +4308,122 @@ function PortfolioView({ currentPlan, portfolio, onChange }: { currentPlan: Plan
         </form>
       }
     >
-      <div className="grid gap-3 sm:grid-cols-2">
-        {portfolio.map((item) => (
-          <article className="overflow-hidden rounded-lg border border-black/10" key={item.id}>
-            <div className="grid min-h-36 place-items-end bg-green-600 p-4 text-white">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-black">Itens do portfólio</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              className="min-h-11 w-full min-w-0 rounded-lg border border-black/10 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-green-700 sm:w-56"
+              placeholder="Buscar itens..."
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </label>
+          <select
+            className="min-h-11 rounded-lg border border-black/10 bg-white px-3 text-sm font-bold text-slate-700 outline-green-700"
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+          >
+            <option value="all">Todas as categorias</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <PortfolioStatCard hint="Itens cadastrados" icon={Layers3} iconClass="bg-green-50 text-green-700" label="Total de itens" value={String(stats.total)} />
+        <PortfolioStatCard hint="Categorias diferentes" icon={FolderKanban} iconClass="bg-blue-50 text-blue-700" label="Categorias" value={String(stats.categoriesCount)} />
+        <PortfolioStatCard hint={stats.mostUsed ? `${stats.mostUsed.count} vezes utilizado` : "Nenhum item ainda"} icon={Star} iconClass="bg-amber-50 text-amber-700" label="Mais usado" value={stats.mostUsed ? stats.mostUsed.category : "—"} />
+      </div>
+
+      <div className="grid gap-2">
+        {pagedPortfolio.map((item) => (
+          <article
+            className={`flex items-center gap-3 rounded-lg border border-black/10 p-3 transition-opacity ${dragItemId === item.id ? "opacity-50" : ""}`}
+            draggable={canReorder}
+            key={item.id}
+            onDragOver={(event) => event.preventDefault()}
+            onDragStart={() => setDragItemId(item.id)}
+            onDrop={() => reorderPortfolio(item.id)}
+          >
+            {canReorder ? (
+              <span className="cursor-grab text-slate-300" title="Arrastar para reordenar">
+                <GripVertical size={18} />
+              </span>
+            ) : null}
+            <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-100 text-slate-400">
               {item.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img alt="" className="h-40 w-full rounded-md object-cover" src={item.imageUrl} />
+                <img alt="" className="h-full w-full object-cover" src={item.imageUrl} />
               ) : (
-                <FolderKanban size={32} />
+                <ImageIcon size={20} />
               )}
             </div>
-            <div className="grid gap-2 p-4">
-              <div>
-                <h3 className="font-black">{item.title}</h3>
-                <p className="text-sm font-bold text-slate-500">{item.category || "Sem categoria"}</p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <button
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 font-black"
-                  type="button"
-                  onClick={() => {
-                    setEditingId(item.id);
-                    setForm({
-                      title: item.title,
-                      category: item.category || "",
-                      imageUrl: item.imageUrl || "",
-                    });
-                    setFile(null);
-                    setRemoveBackground(false);
-                  }}
-                >
-                  <Settings size={16} />
-                  Editar
-                </button>
-                <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-black/10 font-black" type="button" onClick={() => removePortfolioItem(item.id)}>
-                  <Trash2 size={16} />
-                  Remover
-                </button>
-              </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-black text-slate-900">{item.title}</h3>
+              {item.category ? (
+                <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-black ${portfolioCategoryColor(item.category, categories)}`}>{item.category}</span>
+              ) : null}
+              {item.description ? <p className="mt-1 line-clamp-2 text-sm font-bold text-slate-500">{item.description}</p> : null}
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <IconButton icon={Pencil} label="Editar" onClick={() => startEdit(item)} />
+              <IconButton icon={Trash2} label="Remover" onClick={() => removePortfolioItem(item.id)} />
             </div>
           </article>
         ))}
+        {!pagedPortfolio.length ? <p className="leading-7 text-slate-600">Nenhum item encontrado.</p> : null}
       </div>
+
+      {filteredPortfolio.length ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-3 text-sm font-bold text-slate-500">
+          <p>
+            Mostrando {firstVisible}–{lastVisible} de {filteredPortfolio.length} itens
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage <= 1}
+              type="button"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft size={16} />
+              Anterior
+            </button>
+            {paginationItems.map((item, index) =>
+              item === "..." ? (
+                <span className="px-1" key={`ellipsis-${index}`}>
+                  …
+                </span>
+              ) : (
+                <button
+                  className={`grid size-9 place-items-center rounded-lg font-black ${item === currentPage ? "bg-green-600 text-white" : "border border-black/10 text-slate-600"}`}
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                >
+                  {item}
+                </button>
+              )
+            )}
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage >= totalPages}
+              type="button"
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              Próxima
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </CrudShell>
   );
 }
@@ -3504,6 +4438,33 @@ function TestimonialsView({
   const [form, setForm] = useState({ authorName: "", company: "", quote: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 4;
+
+  const stats = useMemo(() => {
+    const total = testimonials.length;
+    const withCompany = testimonials.filter((item) => item.company && item.company.trim()).length;
+    const companies = new Set(testimonials.map((item) => item.company?.trim()).filter((value): value is string => Boolean(value)));
+    return { total, withCompany, companiesCount: companies.size };
+  }, [testimonials]);
+
+  const filteredTestimonials = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return testimonials;
+    return testimonials.filter((item) => [item.authorName, item.company, item.quote].filter(Boolean).some((field) => (field as string).toLowerCase().includes(query)));
+  }, [testimonials, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTestimonials.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedTestimonials = filteredTestimonials.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const firstVisible = filteredTestimonials.length ? (currentPage - 1) * pageSize + 1 : 0;
+  const lastVisible = Math.min(currentPage * pageSize, filteredTestimonials.length);
+  const paginationItems = buildPaginationItems(currentPage, totalPages);
 
   async function saveTestimonial(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -3536,6 +4497,7 @@ function TestimonialsView({
     <CrudShell
       eyebrow="Prova social"
       title="Depoimentos"
+      icon={<MessageSquareQuote size={20} />}
       description="Depoimentos aparecem na proposta antes do cliente aceitar. Quem fala bem de você vende por você."
       contentClassName="max-h-[calc(100vh-11rem)] content-start overflow-y-auto overscroll-contain lg:sticky lg:top-32"
       form={
@@ -3546,7 +4508,10 @@ function TestimonialsView({
           {error ? <FormError message={error} /> : null}
           <TextField label="Nome do cliente" maxLength={80} required value={form.authorName} onChange={(value) => setForm({ ...form, authorName: value })} />
           <TextField label="Empresa" maxLength={80} value={form.company} onChange={(value) => setForm({ ...form, company: value })} />
-          <TextAreaField label="Depoimento" maxLength={500} required rows={4} value={form.quote} onChange={(value) => setForm({ ...form, quote: value })} />
+          <div className="grid gap-1">
+            <TextAreaField label="Depoimento" maxLength={500} required rows={4} value={form.quote} onChange={(value) => setForm({ ...form, quote: value })} />
+            <p className="text-right text-xs font-bold text-slate-400">{form.quote.length}/500</p>
+          </div>
           <SubmitButton label={editingId ? "Atualizar depoimento" : "Salvar depoimento"} />
           <CsvImportBox<Testimonial>
             kind="testimonials"
@@ -3568,24 +4533,110 @@ function TestimonialsView({
         </form>
       }
     >
-      {testimonials.map((item) => (
-        <ListCard
-          key={item.id}
-          title={item.authorName}
-          subtitle={item.company || ""}
-          detail={`"${item.quote}"`}
-          onEdit={() => {
-            setEditingId(item.id);
-            setForm({
-              authorName: item.authorName,
-              company: item.company || "",
-              quote: item.quote,
-            });
-          }}
-          onRemove={() => removeTestimonial(item.id)}
-        />
-      ))}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-black">Depoimentos cadastrados</h2>
+        <label className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            className="min-h-11 w-full min-w-0 rounded-lg border border-black/10 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-green-700 sm:w-56"
+            placeholder="Buscar depoimentos..."
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </label>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <ServiceStatCard icon={MessageSquareQuote} iconClass="bg-green-50 text-green-700" label="Total de depoimentos" value={String(stats.total)} />
+        <ServiceStatCard icon={BriefcaseBusiness} iconClass="bg-blue-50 text-blue-600" label="Com empresa vinculada" value={String(stats.withCompany)} />
+        <ServiceStatCard icon={Layers3} iconClass="bg-amber-50 text-amber-500" label="Empresas diferentes" value={String(stats.companiesCount)} />
+      </div>
+
+      <div className="grid gap-3">
+        {pagedTestimonials.map((item) => (
+          <TestimonialCard
+            key={item.id}
+            item={item}
+            onEdit={() => {
+              setEditingId(item.id);
+              setForm({
+                authorName: item.authorName,
+                company: item.company || "",
+                quote: item.quote,
+              });
+            }}
+            onRemove={() => removeTestimonial(item.id)}
+          />
+        ))}
+        {!pagedTestimonials.length ? <p className="leading-7 text-slate-600">Nenhum depoimento encontrado.</p> : null}
+      </div>
+
+      {filteredTestimonials.length ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-3 text-sm font-bold text-slate-500">
+          <p>
+            Mostrando {firstVisible}–{lastVisible} de {filteredTestimonials.length} depoimentos
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage <= 1}
+              type="button"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft size={16} />
+              Anterior
+            </button>
+            {paginationItems.map((item, index) =>
+              item === "..." ? (
+                <span className="px-1" key={`ellipsis-${index}`}>
+                  …
+                </span>
+              ) : (
+                <button
+                  className={`grid size-9 place-items-center rounded-lg font-black ${item === currentPage ? "bg-green-600 text-white" : "border border-black/10 text-slate-600"}`}
+                  key={item}
+                  type="button"
+                  onClick={() => setPage(item)}
+                >
+                  {item}
+                </button>
+              )
+            )}
+            <button
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-3 font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={currentPage >= totalPages}
+              type="button"
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              Próxima
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </CrudShell>
+  );
+}
+
+function TestimonialCard({ item, onEdit, onRemove }: { item: Testimonial; onEdit: () => void; onRemove: () => void }) {
+  return (
+    <article className="flex gap-3 rounded-lg border border-black/10 p-4 sm:gap-4">
+      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-green-50 text-green-700">
+        <Quote size={20} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-black text-slate-900">{item.authorName}</h3>
+          {item.company ? <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-600">{item.company}</span> : null}
+        </div>
+        <p className="mt-2 line-clamp-3 leading-6 text-slate-600">&ldquo;{item.quote}&rdquo;</p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <IconButton icon={Pencil} label="Editar" onClick={onEdit} />
+        <IconButton icon={Trash2} label="Remover" onClick={onRemove} />
+      </div>
+    </article>
   );
 }
 
@@ -3740,459 +4791,6 @@ function TemplatesView({
   );
 }
 
-function MarketingArtsView({
-  arts,
-  billing,
-  brand,
-  notice,
-  onApprove,
-  onCreate,
-  onNotice,
-  onRemove,
-  services,
-}: {
-  arts: MarketingArt[];
-  billing: BillingState | null;
-  brand: BrandProfile;
-  notice: string | null;
-  onCreate: (payload: {
-    title: string;
-    format: string;
-    objective: string;
-    serviceName: string;
-    audience: string;
-    callToAction: string;
-    referenceImageUrl: string | null;
-    referenceImageUrls?: string[] | null;
-    useImageAsBackground: boolean;
-  }) => Promise<MarketingArt>;
-  onApprove: (id: string) => Promise<void>;
-  onNotice: (message: string | null) => void;
-  onRemove: (id: string) => void;
-  services: ServiceItem[];
-}) {
-  const [form, setForm] = useState({
-    title: "",
-    format: "all",
-    objective: "",
-    serviceName: "",
-    audience: "",
-    callToAction: "Peça seu orçamento",
-    useImageAsBackground: false,
-  });
-  const [files, setFiles] = useState<File[]>([]);
-  const [backgroundFileIndex, setBackgroundFileIndex] = useState(0);
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedBriefId, setSelectedBriefId] = useState("");
-  const used = billing?.usage.artsThisMonth ?? 0;
-  const limit = billing?.usage.artLimit ?? 0;
-  const remaining = Math.max(0, limit - used);
-  const formatsToGenerate = form.format === "all" ? ["instagram_post", "instagram_story", "whatsapp_status"] : [form.format];
-  const selectedBrief = marketingArtBriefs.find((item) => item.id === selectedBriefId);
-  const formatOptions = [
-    { value: "all", label: "Post + Story + Status", credits: 3 },
-    { value: "instagram_post", label: "Somente post", credits: 1 },
-    { value: "instagram_story", label: "Somente story", credits: 1 },
-    { value: "whatsapp_status", label: "Somente status WhatsApp", credits: 1 },
-  ];
-  const selectedFormat = formatOptions.find((option) => option.value === form.format) || formatOptions[0];
-  const requestSummary = [
-    form.serviceName ? `Oferta: ${form.serviceName}` : null,
-    selectedBrief ? `Tipo: ${selectedBrief.label}` : null,
-    form.audience ? `Público: ${form.audience}` : null,
-    form.callToAction ? `Chamada: ${form.callToAction}` : null,
-  ].filter(Boolean);
-
-  async function requestArt(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    if (!form.objective.trim()) {
-      setError("Escreva o que você quer divulgar.");
-      return;
-    }
-    if (remaining < formatsToGenerate.length) {
-      setError(`Você precisa de ${formatsToGenerate.length} crédito(s) para solicitar essa opção.`);
-      return;
-    }
-
-    setCreating(true);
-    try {
-      const uploadedImageUrls: string[] = [];
-      for (const file of files) {
-        const uploadData = new FormData();
-        uploadData.append("file", file);
-        const uploadResponse = await fetch("/api/uploads", { method: "POST", body: uploadData });
-        if (!uploadResponse.ok) throw new Error("Falha ao enviar imagem.");
-        const uploadResult = (await uploadResponse.json()) as { imageUrl: string };
-        uploadedImageUrls.push(uploadResult.imageUrl);
-      }
-      const selectedBackgroundUrl = uploadedImageUrls[Math.min(backgroundFileIndex, Math.max(0, uploadedImageUrls.length - 1))];
-      const orderedUploadedUrls =
-        form.useImageAsBackground && selectedBackgroundUrl
-          ? [selectedBackgroundUrl, ...uploadedImageUrls.filter((url) => url !== selectedBackgroundUrl)]
-          : uploadedImageUrls;
-      const referenceImageUrls = orderedUploadedUrls.length ? orderedUploadedUrls : form.useImageAsBackground ? [] : brand.logoUrl ? [brand.logoUrl] : [];
-      const referenceImageUrl = referenceImageUrls[0] || null;
-
-      const brief = marketingArtBriefs.find((item) => item.id === selectedBriefId);
-      const finalObjective = [brief?.objective, `Pedido do cliente: ${form.objective}`].filter(Boolean).join(" ");
-      const formatNames: Record<string, string> = {
-        instagram_post: "Post",
-        instagram_story: "Story",
-        whatsapp_status: "Status",
-      };
-
-      for (const format of formatsToGenerate) {
-        await onCreate({
-          ...form,
-          format,
-          objective: finalObjective,
-          title: form.title || `${formatNames[format] || "Arte"} - ${form.objective.slice(0, 45)}`,
-          referenceImageUrl,
-          referenceImageUrls,
-        });
-      }
-      setForm({
-        title: "",
-        format: form.format,
-        objective: "",
-        serviceName: "",
-        audience: "",
-        callToAction: "Peça seu orçamento",
-        useImageAsBackground: form.useImageAsBackground,
-      });
-      setSelectedBriefId("");
-      setFiles([]);
-      setBackgroundFileIndex(0);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível solicitar a arte.");
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  return (
-    <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-      <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
-        {notice ? (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-green-700/20 bg-green-50 p-3 text-sm font-bold text-green-800">
-            <span>{notice}</span>
-            <button className="font-black" type="button" onClick={() => onNotice(null)}>
-              Fechar
-            </button>
-          </div>
-        ) : null}
-
-        <div>
-          <p className="text-xs font-black uppercase text-blue-700">Artes de divulgação</p>
-          <h2 className="text-2xl font-black">Criar arte de divulgação</h2>
-          <p className="mt-2 leading-7 text-slate-600">
-            Peça uma arte para divulgar seu serviço no Instagram ou WhatsApp. A equipe prepara e você aprova antes de baixar.
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-black text-slate-700">
-          Uso atual: {isUnlimitedArtLimit(limit) ? `${used} artes este mês, sem limite` : `${used}/${limit} artes este mês`}
-          <div className="mt-3 h-3 overflow-hidden rounded-full bg-white">
-            <div
-              className="h-full rounded-full bg-green-600"
-              style={{ width: isUnlimitedArtLimit(limit) ? "100%" : limit ? `${Math.min(100, Math.round((used / limit) * 100))}%` : "0%" }}
-            />
-          </div>
-          <p className="mt-2 text-xs font-bold text-slate-500">
-            {isUnlimitedArtLimit(limit) ? "Artes ilimitadas neste ciclo." : limit ? `${remaining} crédito(s) restantes neste ciclo.` : "Disponível a partir do plano Profissional e pacote de artes."}
-          </p>
-        </div>
-
-        <form className="grid gap-5" onSubmit={requestArt}>
-          {error ? <FormError message={error} /> : null}
-
-          <div className="grid gap-3 rounded-lg border border-black/10 bg-slate-50 p-3">
-            <div className="flex items-center gap-2">
-              <span className="grid size-7 place-items-center rounded-full bg-green-600 text-sm font-black text-white">1</span>
-              <div>
-                <h3 className="font-black text-slate-900">Pedido</h3>
-                <p className="text-xs font-bold text-slate-500">Diga onde a arte será usada e como você quer encontrá-la depois.</p>
-              </div>
-            </div>
-
-            <TextField label="Nome interno" maxLength={80} placeholder="Promocao de hoje" value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
-            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-              Formato
-              <select
-                className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-                value={form.format}
-                onChange={(event) => setForm({ ...form, format: event.target.value })}
-              >
-                {formatOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label} - {option.credits} crédito{option.credits > 1 ? "s" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-3 rounded-lg border border-black/10 bg-white p-3">
-            <div className="flex items-center gap-2">
-              <span className="grid size-7 place-items-center rounded-full bg-green-600 text-sm font-black text-white">2</span>
-              <div>
-                <h3 className="font-black text-slate-900">Campanha</h3>
-                <p className="text-xs font-bold text-slate-500">Escolha um ponto de partida e preencha os detalhes principais.</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {marketingArtBriefs.map((brief) => {
-                const active = selectedBriefId === brief.id;
-                return (
-                  <button
-                    className={`min-h-10 rounded-full border px-3 text-sm font-black ${
-                      active ? "border-green-600 bg-green-600 text-white" : "border-black/10 bg-slate-50 text-slate-700 hover:border-green-600/50"
-                    }`}
-                    key={brief.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedBriefId(brief.id);
-                      setForm({ ...form, callToAction: brief.callToAction });
-                    }}
-                  >
-                    {brief.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {selectedBrief ? (
-              <p className="rounded-lg bg-green-50 px-3 py-2 text-xs font-bold leading-5 text-green-800">
-                {selectedBrief.objective}
-              </p>
-            ) : null}
-
-            <SelectField
-              label="Serviço ou produto"
-              options={services.map((service) => service.name)}
-              placeholder="Ex: Marmita grande, manicure, site profissional"
-              value={form.serviceName}
-              onChange={(value) => setForm({ ...form, serviceName: value })}
-            />
-            <TextAreaField
-              label="Texto do pedido"
-              maxLength={400}
-              placeholder="Ex: Marmita grande com suco por R$ 22 hoje. Pedido pelo WhatsApp. Entrega até 14h."
-              required
-              rows={4}
-              value={form.objective}
-              onChange={(value) => setForm({ ...form, objective: value })}
-            />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="Cidade ou público" maxLength={120} placeholder="Uberlândia, noivas, lojas..." value={form.audience} onChange={(value) => setForm({ ...form, audience: value })} />
-              <TextField label="Chamada da arte" maxLength={80} value={form.callToAction} onChange={(value) => setForm({ ...form, callToAction: value })} />
-            </div>
-          </div>
-
-          <label className="grid gap-2 rounded-lg border border-dashed border-black/15 bg-slate-50 p-3 text-sm font-extrabold text-slate-600">
-            Referencias visuais
-            <input
-              accept="image/*"
-              className="min-h-11 rounded-lg border border-black/10 bg-white p-3 text-slate-900 outline-green-700"
-              multiple
-              type="file"
-              onChange={(event) => {
-                setFiles(Array.from(event.target.files || []));
-                setBackgroundFileIndex(0);
-              }}
-            />
-            <span className="text-xs font-bold text-slate-500">
-              Opcional. Envie fotos do produto, logo, referência visual ou imagem que deve entrar na peça.
-            </span>
-            {files.length ? (
-              <span className="text-xs font-bold text-green-700">
-                {files.length} imagem{files.length > 1 ? "s" : ""} selecionada{files.length > 1 ? "s" : ""}.
-              </span>
-            ) : null}
-          </label>
-          <label className="flex items-start gap-3 rounded-lg border border-black/10 bg-slate-50 p-3 text-sm font-bold text-slate-600">
-            <input
-              className="mt-1"
-              type="checkbox"
-              checked={form.useImageAsBackground}
-              onChange={(event) => setForm({ ...form, useImageAsBackground: event.target.checked })}
-            />
-            <span>
-              Usar a referência como fundo
-              <span className="block text-xs font-bold text-slate-500">Marque quando a foto enviada deve ser a base visual da arte.</span>
-            </span>
-          </label>
-          {form.useImageAsBackground && files.length > 1 ? (
-            <label className="grid gap-2 text-sm font-extrabold text-slate-600">
-              Qual imagem será o fundo?
-              <select
-                className="min-h-11 rounded-lg border border-black/10 bg-slate-50 p-3 text-slate-900 outline-green-700"
-                value={backgroundFileIndex}
-                onChange={(event) => setBackgroundFileIndex(Number(event.target.value))}
-              >
-                {files.map((file, index) => (
-                  <option key={`${file.name}-${index}`} value={index}>
-                    {index + 1}. {file.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-          <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-black text-slate-700">Resumo do envio</span>
-              <span className={`rounded-full px-3 py-1 text-xs font-black ${remaining >= formatsToGenerate.length ? "bg-green-100 text-green-800" : "bg-rose-100 text-rose-800"}`}>
-                {selectedFormat.credits} crédito{selectedFormat.credits > 1 ? "s" : ""}
-              </span>
-            </div>
-            <p className="mt-2 text-xs font-bold leading-5 text-slate-500">
-              {requestSummary.length ? requestSummary.join(" | ") : "Escolha o tipo, descreva a campanha e envie para a equipe preparar a arte."}
-            </p>
-          </div>
-          <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 font-black text-white shadow-lg shadow-green-900/10 disabled:opacity-60" disabled={creating || limit === 0 || remaining < formatsToGenerate.length} type="submit">
-            <Sparkles size={18} />
-            {creating ? "Enviando..." : formatsToGenerate.length > 1 ? "Enviar solicitações" : "Enviar solicitação"}
-          </button>
-        </form>
-      </aside>
-
-      <div className="grid gap-4">
-        <section className="grid gap-3 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <SectionHeading eyebrow="Acompanhamento" title="Pedidos de arte" />
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black uppercase text-blue-700">
-              {brand.businessName}
-            </span>
-          </div>
-          {arts.length ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {arts.map((art) => (
-                <article className="overflow-hidden rounded-lg border border-black/10 bg-white" key={art.id}>
-                  {art.imageUrl ? (
-                    <a href={art.imageUrl} target="_blank" rel="noreferrer">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        alt={art.title}
-                        className={`${art.format === "instagram_post" ? "aspect-square" : "aspect-[9/16]"} w-full bg-slate-100 object-cover`}
-                        src={art.imageUrl}
-                      />
-                    </a>
-                  ) : (
-                    <div className={`${art.format === "instagram_post" ? "aspect-square" : "aspect-[9/16]"} grid w-full place-items-center bg-slate-100 p-6 text-center`}>
-                      <div>
-                        <ImageIcon className="mx-auto text-blue-700" size={34} />
-                        <p className="mt-3 text-sm font-black text-slate-700">Aguardando upload da equipe</p>
-                      </div>
-                    </div>
-                  )}
-                  <div className="grid gap-3 p-4">
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h3 className="font-black">{art.title}</h3>
-                        <span className={`rounded-full px-2 py-1 text-[11px] font-black uppercase ${marketingArtStatusClass(art)}`}>
-                          {marketingArtStatusLabel(art)}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
-                        {art.serviceName || "Divulgação"} | {art.format.replace("_", " ")}
-                      </p>
-                    </div>
-                    <p className="line-clamp-2 text-sm leading-6 text-slate-600">{art.objective}</p>
-                    {art.caption || art.whatsappMessage ? (
-                      <div className="grid gap-2 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-                        {art.caption ? (
-                          <div className="grid gap-1">
-                            <div>
-                              <span className="font-black text-slate-900">Legenda: </span>
-                              {art.caption}
-                            </div>
-                            <button className="justify-self-start text-xs font-black text-blue-700" type="button" onClick={() => navigator.clipboard.writeText(art.caption || "")}>
-                              Copiar legenda
-                            </button>
-                          </div>
-                        ) : null}
-                        {art.whatsappMessage ? (
-                          <div className="grid gap-1">
-                            <div>
-                              <span className="font-black text-slate-900">WhatsApp: </span>
-                              {art.whatsappMessage}
-                            </div>
-                            <button className="justify-self-start text-xs font-black text-blue-700" type="button" onClick={() => navigator.clipboard.writeText(art.whatsappMessage || "")}>
-                              Copiar WhatsApp
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <div className="grid grid-cols-2 gap-2">
-                      {marketingArtCanDownload(art) ? (
-                        <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-slate-100 px-3 text-sm font-black text-blue-700" href={art.imageUrl} target="_blank" rel="noreferrer">
-                          <FileDown size={15} />
-                          Baixar
-                        </a>
-                      ) : art.source === "uploaded" && art.imageUrl ? (
-                        <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-black text-white" type="button" onClick={() => onApprove(art.id)}>
-                          <CheckCircle2 size={15} />
-                          Aprovar
-                        </button>
-                      ) : (
-                        <span className="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-100 px-3 text-sm font-black text-slate-500">
-                          Em preparo
-                        </span>
-                      )}
-                      <button
-                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-700/20 px-3 text-sm font-black text-rose-700"
-                        type="button"
-                        onClick={() => {
-                          if (window.confirm("Remover esta arte?")) onRemove(art.id);
-                        }}
-                      >
-                        <Trash2 size={15} />
-                        Remover
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="grid min-h-64 place-items-center rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-              <div>
-                <Palette className="mx-auto text-blue-700" size={32} />
-                <p className="mt-3 font-black">Nenhum pedido de arte ainda.</p>
-                <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
-                  Preencha o objetivo, escolha o formato e gere a primeira peça de divulgação.
-                </p>
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
-    </section>
-  );
-}
-
-function marketingArtStatusLabel(art: MarketingArt) {
-  if (marketingArtCanDownload(art)) return "Aprovada";
-  if (art.source === "uploaded") return "Aguardando aprovação";
-  if (art.source === "requested") return "Solicitada";
-  return "Em preparo";
-}
-
-function marketingArtStatusClass(art: MarketingArt) {
-  if (marketingArtCanDownload(art)) return "bg-green-50 text-green-700";
-  if (art.source === "uploaded") return "bg-blue-50 text-blue-700";
-  if (art.source === "requested") return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 text-slate-600";
-}
-
-function marketingArtCanDownload(art: MarketingArt) {
-  return Boolean(art.imageUrl && (art.source === "approved" || !["requested", "uploaded"].includes(art.source)));
-}
-
 function PlansView({
   billing,
   notice,
@@ -4203,33 +4801,12 @@ function PlansView({
   onNotice: (message: string | null) => void;
 }) {
   const [payingPlan, setPayingPlan] = useState<PlanCode | null>(null);
-  const [payingArtPack, setPayingArtPack] = useState<ArtPackCode | null>(null);
   const [paymentError, setPaymentError] = useState("");
 
   function payPlan(plan: PlanCode) {
     setPaymentError("");
     setPayingPlan(plan);
     window.location.href = `/checkout/plano/${plan}`;
-  }
-
-  async function payArtPack(artPack: ArtPackCode) {
-    setPaymentError("");
-    setPayingArtPack(artPack);
-    try {
-      const response = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ artPack }),
-      });
-      const data = (await response.json().catch(() => null)) as { error?: string; url?: string } | null;
-      if (!response.ok || !data?.url) {
-        throw new Error(data?.error || "Não foi possível abrir o pagamento.");
-      }
-      window.location.href = data.url;
-    } catch (caught) {
-      setPaymentError(caught instanceof Error ? caught.message : "Não foi possível abrir o pagamento.");
-      setPayingArtPack(null);
-    }
   }
 
   if (!billing) {
@@ -4271,13 +4848,6 @@ function PlansView({
               Limite mensal: {billing.usage.proposalsThisMonth}/{billing.usage.proposalLimit} propostas
             </span>
           ) : null}
-          <span className="mt-1 block">
-            Artes de divulgação: {billing.usage.artsThisMonth}
-            {isUnlimitedArtLimit(billing.usage.artLimit) ? " este mês, sem limite" : `/${billing.usage.artLimit} este mês`}
-          </span>
-          <span className="mt-1 block">
-            Créditos extras de artes: {billing.usage.artCreditBalance}
-          </span>
           {["active", "trial"].includes(billing.subscription.status) ? (
             <a className="mt-2 inline-flex text-xs font-black text-rose-700 underline" href="/cancelamento">
               Cancelar assinatura
@@ -4344,13 +4914,6 @@ function PlansView({
                 {!isUnlimitedProposalLimit(plan.proposalLimit) ? (
                   <span className="mt-1 block">Renova todo mês e acumula o saldo não usado</span>
                 ) : null}
-                <span className="mt-1 block">
-                  {isUnlimitedArtLimit(plan.artLimit)
-                    ? "Artes de divulgação ilimitadas"
-                    : plan.artLimit > 0
-                      ? `${plan.artLimit} artes de divulgação por mês`
-                      : "Artes de divulgação não inclusas"}
-                </span>
               </p>
               <div className="rounded-lg border border-black/10 bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-600">
                 <span className="block font-black uppercase text-slate-500">Módulos liberados</span>
@@ -4387,41 +4950,6 @@ function PlansView({
             </article>
           );
         })}
-      </div>
-
-      <div className="rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10">
-        <p className="text-xs font-black uppercase text-blue-700">Criações individuais</p>
-        <h2 className="mt-1 text-2xl font-black">Pacotes extras de artes</h2>
-        <p className="mt-2 max-w-2xl leading-7 text-slate-600">
-          Cada perfil mantém só um plano principal ativo. Se precisar criar mais artes, compre créditos individuais sem trocar sua assinatura.
-        </p>
-        <div className="mt-4 grid items-stretch gap-3 md:grid-cols-3">
-          {billing.artPacks.map((pack) => (
-            <article className="grid h-full grid-rows-[auto_auto_1fr_auto] gap-4 rounded-lg border border-black/10 bg-slate-50 p-4" key={pack.code}>
-              <div>
-                <span className="text-xs font-black uppercase text-blue-700">Pacote</span>
-                <h3 className="mt-1 text-xl font-black">{pack.name}</h3>
-                <p className="mt-1 text-lg font-black text-green-700">{pack.price}</p>
-              </div>
-              <p className="rounded-lg bg-white p-3 text-sm font-black text-slate-700">
-                {pack.credits} crédito{pack.credits > 1 ? "s" : ""} para artes de divulgação.
-              </p>
-              <ul className="list-disc pl-5 leading-7 text-slate-600">
-                {pack.features.map((feature) => (
-                  <li key={feature}>{feature}</li>
-                ))}
-              </ul>
-              <button
-                className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white disabled:opacity-65"
-                type="button"
-                disabled={payingArtPack === pack.code}
-                onClick={() => payArtPack(pack.code)}
-              >
-                {payingArtPack === pack.code ? "Abrindo pagamento..." : "Comprar créditos"}
-              </button>
-            </article>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -5074,6 +5602,7 @@ function CrudShell({
   description,
   eyebrow,
   form,
+  icon,
   title,
 }: {
   children: React.ReactNode;
@@ -5081,15 +5610,19 @@ function CrudShell({
   description: string;
   eyebrow: string;
   form: React.ReactNode;
+  icon?: React.ReactNode;
   title: string;
 }) {
   return (
     <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
       <aside className="grid gap-4 rounded-lg border border-black/10 bg-white p-4 shadow-xl shadow-slate-900/10 lg:sticky lg:top-32">
-        <div>
-          <p className="text-xs font-black uppercase text-blue-700">{eyebrow}</p>
-          <h2 className="text-2xl font-black">{title}</h2>
-          <p className="mt-2 leading-7 text-slate-600">{description}</p>
+        <div className={icon ? "flex items-start gap-3" : undefined}>
+          {icon ? <span className="grid size-11 shrink-0 place-items-center rounded-full bg-green-50 text-green-700">{icon}</span> : null}
+          <div>
+            <p className="text-xs font-black uppercase text-blue-700">{eyebrow}</p>
+            <h2 className="text-2xl font-black">{title}</h2>
+            <p className="mt-2 leading-7 text-slate-600">{description}</p>
+          </div>
         </div>
         {form}
       </aside>
@@ -5161,12 +5694,6 @@ const salesValueUpdates = [
     tag: "Caixa",
   },
   {
-    icon: Palette,
-    title: "Divulgação pronta para atrair clientes",
-    description: "Solicite artes para post, story e status, envie referências, acompanhe aprovação, copie legenda e mensagem para chamar no WhatsApp.",
-    tag: "Atração",
-  },
-  {
     icon: BriefcaseBusiness,
     title: "Marca, portfólio e prova social",
     description: "Logo, cores, contatos, chave PIX, portfólio, depoimentos e textos comerciais entram na proposta e reforçam autoridade.",
@@ -5186,11 +5713,9 @@ const upcomingFeatures = [
 
 function ProductUpdatesModal({
   onClose,
-  onOpenArts,
   onOpenBrand,
 }: {
   onClose: () => void;
-  onOpenArts: () => void;
   onOpenBrand: () => void;
 }) {
   const nextFeatureGroups = [
@@ -5289,11 +5814,8 @@ function ProductUpdatesModal({
             </div>
           </section>
 
-          <div className="grid gap-2 sm:grid-cols-3">
-            <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onOpenArts}>
-              Abrir artes
-            </button>
-            <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black text-slate-800" type="button" onClick={onOpenBrand}>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button className="min-h-11 rounded-lg bg-green-600 px-4 font-black text-white" type="button" onClick={onOpenBrand}>
               Ajustar marca
             </button>
             <button className="min-h-11 rounded-lg border border-black/10 px-4 font-black text-slate-800" type="button" onClick={onClose}>
@@ -5382,37 +5904,74 @@ function GuidedTour({
   );
 }
 
-function Metric({ active = false, label, onClick, value }: { active?: boolean; label: string; onClick?: () => void; value: string }) {
+function Metric({
+  active = false,
+  cardClass = "bg-white",
+  icon,
+  iconClass = "bg-slate-200 text-slate-600",
+  label,
+  onClick,
+  value,
+}: {
+  active?: boolean;
+  cardClass?: string;
+  icon?: React.ReactNode;
+  iconClass?: string;
+  label: string;
+  onClick?: () => void;
+  value: string;
+}) {
   const Component = onClick ? "button" : "article";
   return (
     <Component
-      className={`rounded-lg border p-4 text-left shadow-xl shadow-slate-900/10 transition ${
-        active ? "border-green-700/30 bg-green-50 text-green-950" : "border-black/10 bg-white"
-      } ${onClick ? "cursor-pointer hover:-translate-y-0.5 hover:border-green-700/30" : ""}`}
+      className={`relative overflow-hidden rounded-lg border p-4 text-left shadow-xl shadow-slate-900/10 transition ${cardClass} ${
+        active ? "border-green-700/40 ring-2 ring-green-600/30" : "border-black/10"
+      } ${onClick ? "cursor-pointer hover:-translate-y-0.5" : ""}`}
       type={onClick ? "button" : undefined}
       onClick={onClick}
     >
       <span className="text-sm font-black text-slate-500">{label}</span>
-      <strong className="mt-1 block text-2xl font-black">{value}</strong>
+      <strong className="mt-1 block text-2xl font-black text-slate-900">{value}</strong>
+      {icon ? <span className={`absolute bottom-3 right-3 grid size-9 place-items-center rounded-full ${iconClass}`}>{icon}</span> : null}
     </Component>
   );
 }
 
-function FunnelStep({ label, tone, value }: { label: string; tone: string; value: number }) {
+function FunnelStep({
+  icon,
+  iconClass,
+  label,
+  tone,
+  total,
+  value,
+}: {
+  icon: React.ReactNode;
+  iconClass: string;
+  label: string;
+  tone: string;
+  total: number;
+  value: number;
+}) {
+  const percent = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
-    <article className="rounded-lg border border-black/10 p-3">
-      <div className={`mb-3 h-2 rounded-full ${tone}`} />
-      <span className="text-xs font-black uppercase text-slate-500">{label}</span>
+    <article className="flex min-w-[7.5rem] flex-1 flex-col rounded-lg border border-black/10 p-3">
+      <div className={`mb-3 h-1 rounded-full ${tone}`} />
+      <span className={`grid size-9 place-items-center rounded-full ${iconClass}`}>{icon}</span>
+      <p className="mt-2 min-h-[2.25rem] text-xs font-black uppercase leading-tight text-slate-500">{label}</p>
       <strong className="mt-1 block text-2xl font-black">{value}</strong>
+      <span className="mt-2 inline-block w-fit rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-500">{percent}%</span>
     </article>
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({ icon, iconClass, label, value }: { icon?: React.ReactNode; iconClass?: string; label: string; value: string }) {
   return (
-    <article className="rounded-lg bg-slate-100 p-3">
-      <span className="text-xs font-black uppercase text-slate-500">{label}</span>
-      <strong className="mt-1 block text-lg font-black">{value}</strong>
+    <article className="flex items-center gap-3 overflow-hidden rounded-lg bg-slate-100 p-3">
+      {icon ? <span className={`grid size-9 shrink-0 place-items-center rounded-full ${iconClass ?? "bg-slate-200 text-slate-600"}`}>{icon}</span> : null}
+      <div className="min-w-0">
+        <span className="block truncate text-xs font-black uppercase text-slate-500">{label}</span>
+        <strong className="mt-1 block truncate text-lg font-black">{value}</strong>
+      </div>
     </article>
   );
 }
@@ -6132,36 +6691,6 @@ function ProposalCard({
           </div>
         </div>
       ) : null}
-    </article>
-  );
-}
-
-function ListCard({
-  detail,
-  onEdit,
-  onRemove,
-  subtitle,
-  title,
-}: {
-  detail?: string;
-  onEdit?: () => void;
-  onRemove: () => void;
-  subtitle: string;
-  title: string;
-}) {
-  return (
-    <article className="grid gap-3 rounded-lg border border-black/10 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-black">{title}</h3>
-          <p className="mt-1 text-sm font-bold text-slate-500">{subtitle || "Sem detalhes"}</p>
-          {detail ? <p className="mt-2 leading-6 text-slate-600">{detail}</p> : null}
-        </div>
-        <div className="flex shrink-0 gap-2">
-          {onEdit ? <IconButton label="Editar" icon={Settings} onClick={onEdit} /> : null}
-          <IconButton label="Remover" icon={Trash2} onClick={onRemove} />
-        </div>
-      </div>
     </article>
   );
 }

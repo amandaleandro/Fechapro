@@ -35,17 +35,27 @@ export const businessSegments = [
 
 export type BusinessSegment = (typeof businessSegments)[number]["value"];
 
+type TemplateService = {
+  title: string;
+  serviceName: string;
+  price: number;
+  deadline: string;
+  included: string[];
+  notes?: string;
+  payment?: string;
+};
+
+type RawTemplateService = readonly [
+  title: string,
+  serviceName: string,
+  price: number,
+  deadline: string,
+  included: string[],
+];
+
 type TemplateSeed = {
   niche: string;
-  services: Array<{
-    title: string;
-    serviceName: string;
-    price: number;
-    deadline: string;
-    included: string[];
-    notes?: string;
-    payment?: string;
-  }>;
+  services: TemplateService[];
 };
 
 const templateSeeds: TemplateSeed[] = [
@@ -707,29 +717,41 @@ const multiServiceTemplates: ProposalTemplate[] = [
 ];
 
 export const proposalTemplates: ProposalTemplate[] = [
-  ...multiServiceTemplates,
+  ...multiServiceTemplates.map((template) => ({
+    ...template,
+    segment: template.segment ?? templateSegment(template.niche),
+  })),
   ...[...templateSeeds, ...broadSegmentTemplateSeeds].flatMap((seed) =>
-  seed.services.flatMap((service, serviceIndex) =>
-    templateLevels.map((level) => {
-      const price = roundPrice(service.price * level.multiplier);
-      return {
-        id: `${slug(seed.niche)}-${slug(service.title)}-${level.id}-${serviceIndex + 1}`,
-        niche: seed.niche,
-        title: level.prefix ? `${level.prefix}: ${service.title}` : service.title,
-        serviceName: level.label === "Padrão" ? service.serviceName : `${service.serviceName} - ${level.label}`,
-        price,
-        deadline: service.deadline,
-        payment: service.payment || defaultPayment(price),
-        included: level.id === "completo" ? [...service.included, "Acompanhamento adicional", "Checklist final"] : service.included,
-        notes: `${service.notes || defaultNotes(seed.niche)} ${level.extra}`,
-      };
-    })
-  )
+    seed.services.flatMap((service, serviceIndex) =>
+      templateLevels.map((level) => {
+        const price = roundPrice(service.price * level.multiplier);
+
+        return {
+          id: `${slug(seed.niche)}-${slug(service.title)}-${level.id}-${serviceIndex + 1}`,
+          niche: seed.niche,
+          segment: templateSegment(seed.niche),
+          title: level.prefix ? `${level.prefix}: ${service.title}` : service.title,
+          serviceName:
+            level.label === "Padrão"
+              ? service.serviceName
+              : `${service.serviceName} - ${level.label}`,
+          price,
+          deadline: service.deadline,
+          payment: service.payment || defaultPayment(price),
+          included:
+            level.id === "completo"
+              ? [...service.included, "Acompanhamento adicional", "Checklist final"]
+              : service.included,
+          notes: `${service.notes || defaultNotes(seed.niche)} ${level.extra}`,
+        };
+      }),
+    ),
   ),
 ];
 
-function toService(values: Array<string | number | string[]>) {
+function toService(values: RawTemplateService | Array<string | number | string[]>): TemplateService {
   const [title, serviceName, price, deadline, included] = values;
+
   return {
     title: String(title),
     serviceName: String(serviceName),
@@ -767,7 +789,13 @@ export function findProposalTemplate(templateId?: string | null) {
   return proposalTemplates.find((template) => template.id === templateId) || null;
 }
 
-export const proposalTemplateNiches = [...new Set([...templateSeeds, ...broadSegmentTemplateSeeds].map((seed) => seed.niche))];
+export const proposalTemplateNiches = [
+  ...new Set([
+    ...multiServiceTemplates.map((template) => template.niche),
+    ...templateSeeds.map((seed) => seed.niche),
+    ...broadSegmentTemplateSeeds.map((seed) => seed.niche),
+  ]),
+];
 
 export function isBusinessSegment(value?: string | null): value is BusinessSegment {
   return businessSegments.some((segment) => segment.value === value);
@@ -775,9 +803,13 @@ export function isBusinessSegment(value?: string | null): value is BusinessSegme
 
 export function filterReadyProposalTemplates(niche?: string | null, segment?: string | null) {
   if (!niche || !isBusinessSegment(segment)) return [];
+
   const normalizedNiche = normalizeNiche(niche);
+
   return proposalTemplates.filter(
-    (template) => normalizeNiche(template.niche) === normalizedNiche && templateSegment(template.niche) === segment,
+    (template) =>
+      normalizeNiche(template.niche) === normalizedNiche &&
+      (template.segment ?? templateSegment(template.niche)) === segment,
   );
 }
 

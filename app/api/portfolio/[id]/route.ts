@@ -7,9 +7,10 @@ import { cleanOptionalString, cleanString, isValidHttpUrl } from "@/lib/validati
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
   const { id } = await context.params;
-  const body = (await request.json()) as { title?: string; category?: string | null; imageUrl?: string | null };
+  const body = (await request.json()) as { title?: string; category?: string | null; description?: string | null; imageUrl?: string | null };
   const title = cleanString(body.title);
   const category = cleanOptionalString(body.category);
+  const description = cleanOptionalString(body.description);
   const imageUrl = cleanOptionalString(body.imageUrl);
 
   if (!title) return jsonError("Título obrigatório.");
@@ -23,6 +24,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     data: {
       title,
       category,
+      description,
       imageUrl,
     },
   });

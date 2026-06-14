@@ -13,7 +13,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await requireSession();
-  const body = (await request.json()) as { name?: string; price?: number; deadline?: string; includes?: string[]; imageUrl?: string | null };
+  const body = (await request.json()) as { name?: string; price?: number; deadline?: string; includes?: string[]; imageUrl?: string | null; active?: boolean };
   const name = cleanString(body.name);
   const price = normalizePrice(body.price);
   const imageUrl = cleanOptionalString(body.imageUrl);
@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       deadline: cleanOptionalString(body.deadline),
       includes: cleanStringList(body.includes),
       imageUrl,
+      active: body.active === undefined ? true : Boolean(body.active),
     },
   });
   return NextResponse.json(item, { status: 201 });

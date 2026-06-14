@@ -35,11 +35,21 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
   const brand = proposal.user.brandProfile;
   const brandName = brand?.businessName || proposal.user.name;
   const notes = proposal.notes?.trim();
+  const introText = clampText(notes || brand?.proposalIntro || defaultIntro(proposal.serviceName, proposal.clientName), 190);
   const included = proposal.included.length ? proposal.included : ["Escopo alinhado com o cliente."];
   const slideImages = uniqueSlideImages(serviceImage, portfolio).slice(0, 4);
   const heroPhoto = slideImages[0]?.imageUrl;
   const timeline = buildSlideTimeline(proposal.deadline);
   const paymentSplit = buildPaymentSplit(proposal.payment);
+  const paymentText = clampText(proposal.payment || "Pagamento combinado entre as partes.", 120);
+  const bioText = clampText(
+    brand?.bio || `${brandName} organiza escopo, prazo, investimento e próximos passos para que ${proposal.clientName} entenda exatamente o que está contratando.`,
+    260,
+  );
+  const closingText = clampText(
+    brand?.proposalClosing || `A proposta para ${proposal.clientName} está pronta para aceite, contrato e início dos próximos passos.`,
+    180,
+  );
   const titleParts = splitTitle(proposal.serviceName);
   const contactLine = brand?.whatsapp || brand?.email || proposal.user.email;
   const cssVars = {
@@ -71,7 +81,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
               </h1>
               <span>Proposta preparada para</span>
               <h2>{proposal.clientName}</h2>
-              <p>{notes || brand?.proposalIntro || defaultIntro(proposal.serviceName, proposal.clientName)}</p>
+              <p>{introText}</p>
               <div className="fp-slide-date">
                 <IconBox>▣</IconBox>
                 <div>
@@ -121,21 +131,19 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
                 ))}
               </ol>
             </section>
-            <section className="fp-slide-reference-panel">
-              <h3>Referencias de projetos</h3>
-              <div className="fp-slide-image-row">
-                {slideImages.length ? (
-                  slideImages.map((item) => (
+            {slideImages.length ? (
+              <section className="fp-slide-reference-panel">
+                <h3>Referencias de projetos</h3>
+                <div className="fp-slide-image-row">
+                  {slideImages.map((item) => (
                     <figure key={item.id}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img alt="" src={item.imageUrl} />
                     </figure>
-                  ))
-                ) : (
-                  demoFrames(proposal.serviceName).map((item) => <figure key={item}>{item}</figure>)
-                )}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
         </Slide>
 
@@ -153,7 +161,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
                   </div>
                 ))}
               </div>
-              <p>{proposal.payment || "Pagamento combinado entre as partes."}</p>
+              <p>{paymentText}</p>
             </section>
             <section className="fp-slide-glass-panel">
               <h3>Próximos passos</h3>
@@ -189,7 +197,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
           <div className="fp-slide-proof-grid">
             <section className="fp-slide-glass-panel fp-slide-large-copy">
               <h3>O que torna esta proposta diferente</h3>
-              <p>{brand?.bio || `${brandName} organiza escopo, prazo, investimento e próximos passos para que ${proposal.clientName} entenda exatamente o que está contratando.`}</p>
+              <p>{bioText}</p>
               <div className="fp-slide-benefit-row">
                 <Benefit title="Mais confiança" text="Processo seguro e transparente." />
                 <Benefit title="Mais clareza" text="Tudo organizado para decidir." />
@@ -210,7 +218,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
               {testimonials.length ? (
                 testimonials.map((item) => (
                   <blockquote key={item.id}>
-                    <p>{item.quote}</p>
+                    <p>{clampText(item.quote, 130)}</p>
                     <cite>{item.authorName}{item.company ? `, ${item.company}` : ""}</cite>
                   </blockquote>
                 ))
@@ -229,7 +237,7 @@ export default async function ProposalSlidesPage({ params }: { params: Promise<{
               <h2>
                 Vamos transformar esta proposta em projeto aprovado?
               </h2>
-              <p>{brand?.proposalClosing || `A proposta para ${proposal.clientName} está pronta para aceite, contrato e início dos próximos passos.`}</p>
+              <p>{closingText}</p>
               <a className="fp-slide-cta" href={`/p/${proposal.publicSlug}`}>
                 Aceitar proposta
               </a>
@@ -342,6 +350,11 @@ function splitTitle(value: string) {
   return { first: `${words.slice(0, -1).join(" ")} `, last };
 }
 
+function clampText(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1).trim()}…` : normalized;
+}
+
 function buildSlideTimeline(deadline?: string | null) {
   const days = parseDeadlineDays(deadline);
   const execution = days ? Math.max(1, Math.ceil(days * 0.55)) : 15;
@@ -379,10 +392,6 @@ function buildPaymentSplit(payment?: string | null) {
     { label: "Durante o projeto", value: "50%" },
     { label: "Na entrega", value: "20%" },
   ];
-}
-
-function demoFrames(serviceName: string) {
-  return [serviceName, "Escopo", "Entrega", "Resultado"];
 }
 
 function uniqueSlideImages(serviceImage: string | null, portfolio: Awaited<ReturnType<typeof findSlidePortfolio>>) {

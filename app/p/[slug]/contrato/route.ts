@@ -83,15 +83,365 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
 
 function createContractPdf(data: ContractPdfData) {
   return new Promise<Buffer>((resolve) => {
-    const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true });
+    const doc = new PDFDocument({ size: "A4", margin: 48, bufferPages: true, autoFirstPage: false });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
 
-    drawExecutiveContractPage(doc, data);
-    drawLegalTerms(doc, data);
+    doc.addPage();
+    drawContractCoverPage(doc, data);
+    doc.addPage();
+    drawPartiesAndSummaryPage(doc, data);
+    doc.addPage();
+    drawObjectScopePage(doc, data);
+    doc.addPage();
+    drawInvestmentDeadlinePage(doc, data);
+    doc.addPage();
+    drawObligationsPage(doc, data);
+    doc.addPage();
+    drawAcceptanceAndSignaturesPage(doc, data);
     drawPageFooters(doc, data);
     doc.end();
+  });
+}
+
+function drawContractCoverPage(doc: PDFKit.PDFDocument, data: ContractPdfData) {
+  doc.rect(0, 0, PAGE.width, PAGE.height).fill(COLORS.dark);
+  doc.rect(0, 0, PAGE.width, PAGE.height).fillOpacity(0.94).fill(COLORS.dark2).fillOpacity(1);
+  drawCornerLines(doc, 0, 0, data.accentColor);
+  drawCornerLines(doc, PAGE.width, 0, data.primaryColor);
+  drawDotMatrix(doc, 500, 630, data.primaryColor, 0.52);
+
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(26).text("Fecha", 54, 64, { continued: true });
+  doc.fillColor(data.primaryColor).text("Pro");
+
+  doc.roundedRect(340, 62, 182, 28, 14).strokeColor(data.primaryColor).lineWidth(1).stroke();
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(8.5).text("CONTRATO GERADO POR ACEITE DIGITAL", 356, 72, {
+    width: 150,
+    align: "center",
+  });
+
+  doc.fillColor("#8AB6FF").font("Helvetica-Bold").fontSize(10).text("CONTRATO DE PRESTACAO DE SERVICOS", 54, 142, {
+    characterSpacing: 1.5,
+  });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(36).text("Contrato de prestacao", 54, 176, { width: 430 });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(36).text("de servicos", 54, 216, { width: 430 });
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(30).text(data.serviceName, 54, 274, {
+    width: 420,
+    height: 82,
+    ellipsis: true,
+  });
+
+  doc.fillColor("#D7E3F5").font("Helvetica").fontSize(12).text("Contrato gerado a partir da proposta aceita por:", 54, 374);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(18).text(data.acceptedBy, 54, 396, { width: 300, ellipsis: true });
+  doc.fillColor("#D7E3F5").font("Helvetica").fontSize(12).text("Contratada:", 54, 432);
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(16).text(data.businessName, 54, 454, { width: 320, ellipsis: true });
+
+  doc.roundedRect(54, 510, 486, 174, 16).fillOpacity(0.12).fill("#FFFFFF").fillOpacity(1);
+  doc.roundedRect(54, 510, 486, 174, 16).strokeColor(data.accentColor).stroke();
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(12).text("Resumo da proposta", 78, 536);
+  drawCoverSummaryRow(doc, 78, 568, "Servico", data.serviceName);
+  drawCoverSummaryRow(doc, 78, 594, "Investimento", data.total);
+  drawCoverSummaryRow(doc, 78, 620, "Prazo", data.deadline || "A combinar");
+  drawCoverSummaryRow(doc, 78, 646, "Pagamento", data.payment);
+  drawCoverSummaryRow(doc, 78, 672, "Codigo", data.proposalCode);
+
+  doc.roundedRect(54, 712, 486, 56, 12).fill("#ECFDF5");
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(11).text("Aceite digital registrado pelo contratante.", 78, 728);
+  doc.fillColor("#166534").font("Helvetica").fontSize(9).text(
+    "Este documento foi gerado automaticamente a partir da proposta aprovada no FechaPro.",
+    78,
+    748,
+    { width: 430 },
+  );
+}
+
+function drawPartiesAndSummaryPage(doc: PDFKit.PDFDocument, data: ContractPdfData) {
+  drawWhitePageHeader(doc, data, "Partes e resumo comercial", "1. PARTES CONTRATANTES");
+  infoPanel(doc, 48, 112, 236, 132, "CONTRATADA", [
+    ["Nome/Razao social", data.businessName],
+    ["E-mail", data.businessEmail || "Nao informado"],
+    ["Telefone", data.businessWhatsapp || "Nao informado"],
+  ], data);
+  infoPanel(doc, 312, 112, 236, 132, "CONTRATANTE", [
+    ["Nome/Razao social", data.acceptedBy],
+    ["CPF/CNPJ", data.acceptedDocument || "Nao informado"],
+    ["Contato", data.acceptedEmail || data.acceptedPhone || data.clientEmail || data.clientPhone || "Nao informado"],
+  ], data);
+
+  sectionTitle(doc, "2. RESUMO DA CONTRATACAO", 48, 286, data.accentColor, data.primaryColor);
+  const cards = [
+    ["Servico contratado", data.serviceName],
+    ["Investimento total", data.total],
+    ["Prazo estimado", data.deadline || "A combinar"],
+    ["Condicao de pagamento", data.payment],
+    ["Documento gerado em", data.createdAtFull],
+    ["Versao do contrato", data.acceptedContractVersion],
+  ];
+  cards.forEach(([label, value], index) => {
+    const x = 48 + (index % 2) * 258;
+    const y = 324 + Math.floor(index / 2) * 74;
+    summaryCard(doc, x, y, 240, label, value, data);
+  });
+
+  callout(doc, 48, 574, 500, "As partes reconhecem que este contrato foi gerado com base na proposta aceita digitalmente, incluindo escopo, valor, prazo, condicoes comerciais e demais registros relacionados a contratacao.", data);
+}
+
+function drawObjectScopePage(doc: PDFKit.PDFDocument, data: ContractPdfData) {
+  drawWhitePageHeader(doc, data, "Objeto e escopo contratado", "3. OBJETO DO CONTRATO");
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(11).text(
+    "O presente contrato tem por objeto a prestacao, pela Contratada ao Contratante, do servico:",
+    48,
+    112,
+    { width: 500, lineGap: 4 },
+  );
+  doc.roundedRect(48, 158, 500, 58, 10).fill("#F8FAFC").stroke(COLORS.line);
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(18).text(data.serviceName, 70, 178, {
+    width: 456,
+    ellipsis: true,
+  });
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(10.5).text(
+    "O servico sera executado conforme escopo, condicoes comerciais, prazos e demais informacoes constantes neste documento e na proposta aceita digitalmente.",
+    48,
+    246,
+    { width: 500, lineGap: 4 },
+  );
+
+  sectionTitle(doc, "4. ESCOPO CONTRATADO", 48, 322, data.accentColor, data.primaryColor);
+  checklistGrid(doc, data.included, 48, 362, data);
+
+  sectionTitle(doc, "5. ITENS NAO INCLUIDOS", 48, 552, data.accentColor, data.primaryColor);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(10.2).text(
+    "Nao estao incluidos no preco contratado quaisquer servicos, produtos, deslocamentos, taxas, licencas, despesas de terceiros, alteracoes, urgencias, refacoes ou entregas que nao estejam expressamente descritos no escopo contratado ou em termo complementar aceito pelas partes.",
+    48,
+    590,
+    { width: 500, lineGap: 4 },
+  );
+  if (data.notes) {
+    callout(doc, 48, 686, 500, `Observacoes da proposta: ${data.notes}`, data);
+  }
+}
+
+function drawInvestmentDeadlinePage(doc: PDFKit.PDFDocument, data: ContractPdfData) {
+  drawWhitePageHeader(doc, data, "Investimento, pagamento e prazo", "6. INVESTIMENTO E FORMA DE PAGAMENTO");
+  doc.roundedRect(48, 112, 500, 112, 12).fill("#F8FAFC").stroke(COLORS.line);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(10).text("Valor total", 72, 138);
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(28).text(data.total, 72, 158);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(10).text("Condicao de pagamento", 286, 138);
+  doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(13).text(data.payment, 286, 158, { width: 220, lineGap: 3 });
+
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(10.3).text(
+    "Salvo ajuste expresso em sentido diverso, os pagamentos deverao ocorrer nas datas e condicoes aceitas. A execucao podera ficar condicionada ao pagamento de sinal, entrada, parcela vencida ou valor previamente ajustado.",
+    48,
+    254,
+    { width: 500, lineGap: 4 },
+  );
+
+  drawPaymentTable(doc, data, 48, 336);
+
+  sectionTitle(doc, "7. PRAZO DE EXECUCAO", 48, 492, data.accentColor, data.primaryColor);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(10).text("Prazo estimado:", 48, 530);
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(17).text(data.deadline || "A combinar", 138, 527);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(10).text(
+    "A contagem do prazo fica condicionada ao recebimento de informacoes, documentos, materiais, acessos, aprovacoes e pagamentos necessarios ao regular andamento do trabalho. Atrasos decorrentes de pendencias do Contratante suspenderao a contagem do prazo pelo periodo correspondente e poderao exigir reprogramacao da agenda.",
+    48,
+    570,
+    { width: 500, lineGap: 4 },
+  );
+  processLine(doc, 48, 690, ["Aprovacao", "Reserva", "Informacoes", "Execucao", "Entrega"], data);
+}
+
+function drawObligationsPage(doc: PDFKit.PDFDocument, data: ContractPdfData) {
+  drawWhitePageHeader(doc, data, "Obrigacoes, alteracoes e cancelamento", "8. OBRIGACOES DA CONTRATADA");
+  let y = 112;
+  y = textBlock(doc, y, "A Contratada se obriga a executar os servicos com diligencia, boa-fe, zelo tecnico e observancia ao escopo contratado, comunicando ao Contratante fatos relevantes que possam impactar prazos, entregas ou condicoes previamente acordadas. A Contratada nao responde por resultados dependentes de atos de terceiros, plataformas externas, aprovacoes publicas, disponibilidade de sistemas ou informacoes fornecidas pelo Contratante.", data);
+  sectionTitle(doc, "9. OBRIGACOES DO CONTRATANTE", 48, y + 18, data.accentColor, data.primaryColor);
+  y = textBlock(doc, y + 56, "O Contratante se obriga a fornecer informacoes verdadeiras e completas, disponibilizar materiais, documentos e acessos necessarios, responder solicitacoes, validar etapas e efetuar os pagamentos nos prazos combinados. A falta de colaboracao, informacao, acesso, pagamento ou aprovacao podera suspender a execucao, alterar o cronograma e gerar custos adicionais quando houver retrabalho ou reserva de agenda.", data);
+  sectionTitle(doc, "10. APROVACOES, REVISOES E ACEITE DAS ENTREGAS", 48, y + 18, data.accentColor, data.primaryColor);
+  y = textBlock(doc, y + 56, "Quando o servico envolver etapas de validacao, o Contratante devera analisar as entregas em prazo razoavel ou no prazo informado pela Contratada. A ausencia de manifestacao apos solicitacao de aprovacao podera ser interpretada como concordancia operacional para continuidade do projeto, sem prejuizo de ajustes previstos no escopo contratado.", data);
+  sectionTitle(doc, "11. ALTERACOES DE ESCOPO", 48, y + 18, data.accentColor, data.primaryColor);
+  y = textBlock(doc, y + 56, "Solicitacoes nao previstas no escopo contratado, retrabalhos decorrentes de mudanca de orientacao, inclusao de novas entregas ou alteracao substancial das premissas iniciais dependerao de aceite previo da Contratada e poderao exigir proposta complementar, novo prazo e/ou cobranca adicional.", data);
+  sectionTitle(doc, "12. INADIMPLEMENTO E SUSPENSAO", 48, y + 18, data.accentColor, data.primaryColor);
+  textBlock(doc, y + 56, "O atraso no pagamento ou o descumprimento de obrigacao essencial por qualquer das partes autorizara a parte prejudicada a suspender a execucao de suas obrigacoes, exigir regularizacao, renegociar o cronograma e cobrar valores vencidos.", data);
+}
+
+function drawAcceptanceAndSignaturesPage(doc: PDFKit.PDFDocument, data: ContractPdfData) {
+  drawWhitePageHeader(doc, data, "Confidencialidade, aceite digital e assinaturas", "13. CONFIDENCIALIDADE E PROTECAO DE DADOS");
+  legalMiniCard(doc, 48, 112, "Confidencialidade e protecao de dados", "As partes comprometem-se a manter sigilo sobre informacoes comerciais, tecnicas, financeiras, estrategicas ou pessoais acessadas em razao deste contrato, utilizando-as apenas para a execucao do objeto contratado.", data);
+  legalMiniCard(doc, 306, 112, "Propriedade intelectual", "Materiais, marcas, imagens, textos, arquivos e conteudos fornecidos pelo Contratante permanecem sob sua responsabilidade quanto a titularidade, licencas e autorizacoes de uso.", data);
+  legalMiniCard(doc, 48, 236, "Cancelamento e rescisao", "O contrato podera ser encerrado por comum acordo, por conclusao do objeto ou por descumprimento relevante das obrigacoes assumidas.", data);
+  legalMiniCard(doc, 306, 236, "Boa-fe, preservacao e foro", "Este contrato sera interpretado conforme boa-fe objetiva, preservacao do negocio juridico e legislacao brasileira aplicavel.", data);
+
+  sectionTitle(doc, "17. ACEITE DIGITAL", 48, 374, data.accentColor, data.primaryColor);
+  doc.roundedRect(48, 412, 500, 106, 12).fill("#ECFDF5").stroke("#B7E8C5");
+  doc.roundedRect(48, 412, 5, 106, 2).fill(data.primaryColor);
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(11).text(`Aceite digital registrado por ${data.acceptedBy}.`, 70, 432);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(9.3).text(
+    `O aceite evidencia concordancia expressa com escopo, valor, prazo e condicoes comerciais da proposta identificada pelo codigo ${data.proposalCode}. As partes reconhecem a validade das assinaturas eletronicas e registros digitais relacionados.`,
+    70,
+    456,
+    { width: 452, lineGap: 3 },
+  );
+  doc.fillColor(COLORS.muted).font("Helvetica").fontSize(7.8).text(acceptanceEvidenceLine(data), 70, 494, {
+    width: 452,
+    ellipsis: true,
+  });
+
+  drawFinalSignatureSection(doc, data, 556);
+}
+
+function drawWhitePageHeader(doc: PDFKit.PDFDocument, data: ContractPdfData, title: string, firstSection: string) {
+  doc.rect(0, 0, PAGE.width, PAGE.height).fill("#FFFFFF");
+  doc.rect(0, 0, PAGE.width, 14).fill(COLORS.dark);
+  doc.rect(0, 14, PAGE.width, 3).fill(data.primaryColor);
+  doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(17).text(title, 48, 42);
+  doc.fillColor(COLORS.muted).font("Helvetica").fontSize(8.5).text(`Documento gerado em ${data.createdAtFull}`, 48, 65, {
+    width: 350,
+    ellipsis: true,
+  });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(10).text("Fecha", 460, 38, { continued: true });
+  doc.fillColor(data.primaryColor).text("Pro");
+  doc.rect(48, 84, 500, 1).fill(COLORS.line);
+  sectionTitle(doc, firstSection, 48, 98, data.accentColor, data.primaryColor);
+}
+
+function drawCoverSummaryRow(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {
+  doc.rect(x, y - 8, 438, 1).fillOpacity(0.16).fill("#FFFFFF").fillOpacity(1);
+  doc.fillColor("#D7E3F5").font("Helvetica").fontSize(8.8).text(label, x, y, { width: 110 });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9.2).text(value, x + 126, y, {
+    width: 300,
+    ellipsis: true,
+  });
+}
+
+function infoPanel(doc: PDFKit.PDFDocument, x: number, y: number, width: number, height: number, title: string, rows: string[][], data: ContractPdfData) {
+  doc.roundedRect(x, y, width, height, 10).fill("#F8FAFC").stroke(COLORS.line);
+  doc.circle(x + 28, y + 34, 18).fill("#F0FDF4").stroke("#BFE8CC");
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(16).text(title === "CONTRATANTE" ? "P" : "E", x + 23, y + 25);
+  doc.fillColor(data.accentColor).font("Helvetica-Bold").fontSize(9).text(title, x + 62, y + 22);
+  rows.forEach(([label, value], index) => {
+    const rowY = y + 48 + index * 22;
+    doc.fillColor(COLORS.muted).font("Helvetica-Bold").fontSize(7.6).text(label, x + 22, rowY, { width: 86 });
+    doc.fillColor(COLORS.ink).font("Helvetica").fontSize(8.4).text(value, x + 112, rowY, {
+      width: width - 128,
+      ellipsis: true,
+    });
+  });
+}
+
+function summaryCard(doc: PDFKit.PDFDocument, x: number, y: number, width: number, label: string, value: string, data: ContractPdfData) {
+  doc.roundedRect(x, y, width, 56, 8).fill("#F8FAFC").stroke(COLORS.line);
+  doc.roundedRect(x, y, 4, 56, 2).fill(data.primaryColor);
+  doc.fillColor(COLORS.muted).font("Helvetica-Bold").fontSize(7.2).text(label.toUpperCase(), x + 16, y + 12, {
+    width: width - 28,
+    ellipsis: true,
+  });
+  doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(10).text(value, x + 16, y + 29, {
+    width: width - 28,
+    height: 16,
+    ellipsis: true,
+  });
+}
+
+function callout(doc: PDFKit.PDFDocument, x: number, y: number, width: number, text: string, data: ContractPdfData) {
+  doc.roundedRect(x, y, width, 72, 10).fill("#ECFDF5").stroke("#B7E8C5");
+  doc.roundedRect(x, y, 4, 72, 2).fill(data.primaryColor);
+  doc.fillColor("#166534").font("Helvetica-Bold").fontSize(9).text("Registro do contrato", x + 18, y + 15);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(9.2).text(text, x + 18, y + 34, {
+    width: width - 36,
+    height: 28,
+    ellipsis: true,
+  });
+}
+
+function checklistGrid(doc: PDFKit.PDFDocument, items: string[], x: number, y: number, data: ContractPdfData) {
+  const visible = items.slice(0, 10);
+  visible.forEach((item, index) => {
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const cardX = x + col * 258;
+    const cardY = y + row * 34;
+    doc.roundedRect(cardX, cardY, 240, 25, 6).fill("#F8FAFC").stroke(COLORS.line);
+    doc.circle(cardX + 14, cardY + 12.5, 5).strokeColor(data.primaryColor).stroke();
+    doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(6).text("v", cardX + 11.5, cardY + 8.5);
+    doc.fillColor(COLORS.ink).font("Helvetica").fontSize(8.7).text(item, cardX + 28, cardY + 8, {
+      width: 196,
+      ellipsis: true,
+    });
+  });
+}
+
+function processLine(doc: PDFKit.PDFDocument, x: number, y: number, items: string[], data: ContractPdfData) {
+  doc.moveTo(x + 34, y + 18).lineTo(x + 466, y + 18).strokeColor(data.accentColor).lineWidth(1).stroke();
+  items.forEach((item, index) => {
+    const itemX = x + index * 108;
+    doc.circle(itemX + 34, y + 18, 13).fill(index % 2 ? data.primaryColor : data.accentColor);
+    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9).text(String(index + 1), itemX + 30.5, y + 13);
+    doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(8).text(item, itemX, y + 42, {
+      width: 68,
+      align: "center",
+      ellipsis: true,
+    });
+  });
+}
+
+function textBlock(doc: PDFKit.PDFDocument, y: number, text: string, data: ContractPdfData) {
+  doc.roundedRect(48, y, 500, 74, 8).fill("#F8FAFC").stroke(COLORS.line);
+  doc.roundedRect(48, y, 4, 74, 2).fill(data.primaryColor);
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(9.3).text(text, 66, y + 14, {
+    width: 462,
+    height: 48,
+    lineGap: 3,
+    ellipsis: true,
+  });
+  return y + 92;
+}
+
+function legalMiniCard(doc: PDFKit.PDFDocument, x: number, y: number, title: string, text: string, data: ContractPdfData) {
+  doc.roundedRect(x, y, 242, 92, 10).fill("#F8FAFC").stroke(COLORS.line);
+  doc.roundedRect(x, y, 4, 92, 2).fill(data.primaryColor);
+  doc.fillColor(data.accentColor).font("Helvetica-Bold").fontSize(8.6).text(title.toUpperCase(), x + 16, y + 14, {
+    width: 210,
+    ellipsis: true,
+  });
+  doc.fillColor(COLORS.ink).font("Helvetica").fontSize(8.4).text(text, x + 16, y + 34, {
+    width: 206,
+    height: 42,
+    lineGap: 2.5,
+    ellipsis: true,
+  });
+}
+
+function drawFinalSignatureSection(doc: PDFKit.PDFDocument, data: ContractPdfData, y: number) {
+  doc.roundedRect(48, y, 500, 170, 12).fill("#F9FBFD").stroke(COLORS.line);
+  doc.rect(298, y + 20, 1, 130).fill("#E4ECF4");
+  doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(13).text("Assinaturas", 70, y + 20);
+  doc.fillColor(COLORS.muted).font("Helvetica").fontSize(8.4).text(
+    "O aceite digital substitui assinatura manual quando registrado pelo fluxo da proposta.",
+    70,
+    y + 40,
+    { width: 430 },
+  );
+
+  signatureBox(doc, 70, y + 72, "CONTRATADA", data.businessName, `Assinado digitalmente na emissao da proposta em ${data.emittedAtFull}.`, data);
+  signatureBox(doc, 320, y + 72, "CONTRATANTE", data.acceptedBy, `Aceite digital registrado em ${data.acceptedAtFull}.`, data);
+}
+
+function signatureBox(doc: PDFKit.PDFDocument, x: number, y: number, role: string, name: string, detail: string, data: ContractPdfData) {
+  doc.fillColor(data.accentColor).font("Helvetica-Bold").fontSize(8.5).text(role, x, y);
+  doc.moveTo(x, y + 38).lineTo(x + 188, y + 38).strokeColor(COLORS.ink).lineWidth(0.7).stroke();
+  doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(9.4).text(name, x, y + 46, {
+    width: 188,
+    ellipsis: true,
+  });
+  doc.fillColor(COLORS.muted).font("Helvetica").fontSize(7.8).text(detail, x, y + 62, {
+    width: 188,
+    height: 28,
+    lineGap: 2,
+    ellipsis: true,
+  });
+  doc.fillColor(data.primaryColor).font("Helvetica-Bold").fontSize(8).text("Registro digital FechaPro", x, y + 98, {
+    width: 188,
   });
 }
 
@@ -436,17 +786,26 @@ function buildLegalClauses(data: ContractPdfData) {
 
 function drawPageFooters(doc: PDFKit.PDFDocument, data: ContractPdfData) {
   const range = doc.bufferedPageRange();
+  const totalPages = range.count;
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
     if (i === range.start) continue;
+    const previousBottomMargin = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
     doc.rect(48, 806, 499, 1).fill(COLORS.line);
     doc.fillColor("#94A3B8").font("Helvetica").fontSize(7.5).text(
       `${data.businessName} | Cod. ${data.proposalCode}`,
       48,
       816,
-      { width: 360, ellipsis: true },
+      { width: 360, height: 10, ellipsis: true, lineBreak: false },
     );
-    doc.text(`${i + 1} / ${range.count}`, 48, 816, { width: 499, align: "right" });
+    doc.text(`${i + 1} / ${totalPages}`, 48, 816, {
+      width: 499,
+      height: 10,
+      align: "right",
+      lineBreak: false,
+    });
+    doc.page.margins.bottom = previousBottomMargin;
   }
 }
 

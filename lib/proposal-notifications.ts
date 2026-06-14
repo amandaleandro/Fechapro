@@ -6,26 +6,38 @@ type ProposalNotificationInput = {
   slug: string;
 };
 
-const eventText: Record<Exclude<ProposalNotificationEvent, "viewed">, { title: string; action: string }> = {
+const eventText: Record<
+  Exclude<ProposalNotificationEvent, "viewed">,
+  {
+    title: string;
+    body: (input: ProposalNotificationInput) => string;
+  }
+> = {
   accepted: {
     title: "Proposta aprovada",
-    action: "aprovou",
+    body: (input) =>
+      `${input.clientName} aprovou a proposta de ${input.serviceName}. Agora é um bom momento para combinar os próximos passos.`,
   },
   declined: {
     title: "Proposta recusada",
-    action: "recusou",
+    body: (input) =>
+      `${input.clientName} recusou a proposta de ${input.serviceName}. Você ainda pode entrar em contato para entender o motivo e tentar recuperar essa venda.`,
   },
   paid: {
-    title: "Proposta paga",
-    action: "pagou",
+    title: "Pagamento confirmado",
+    body: (input) =>
+      `${input.clientName} realizou o pagamento da proposta de ${input.serviceName}. O serviço já pode seguir para a próxima etapa.`,
   },
 };
 
-export function proposalNotification(event: ProposalNotificationEvent, input: ProposalNotificationInput) {
+export function proposalNotification(
+  event: ProposalNotificationEvent,
+  input: ProposalNotificationInput,
+) {
   if (event === "viewed") {
     return {
-      title: `${input.clientName} abriu sua proposta`,
-      body: `Sua proposta de ${input.serviceName} foi visualizada agora. Este pode ser um bom momento para fazer um contato rapido.`,
+      title: `${input.clientName} visualizou sua proposta`,
+      body: `A proposta de ${input.serviceName} acabou de ser aberta. Esse é um ótimo momento para chamar o cliente e tirar dúvidas antes que ele esfrie.`,
       slug: input.slug,
       tag: `proposal-${input.slug}-${event}`,
     };
@@ -35,7 +47,7 @@ export function proposalNotification(event: ProposalNotificationEvent, input: Pr
 
   return {
     title: text.title,
-    body: `O cliente ${input.clientName} ${text.action} a proposta de ${input.serviceName}.`,
+    body: text.body(input),
     slug: input.slug,
     tag: `proposal-${input.slug}-${event}`,
   };

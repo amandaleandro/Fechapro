@@ -4937,3 +4937,312 @@ select:focus {
     width: 100vw !important;
   }
 }
+
+/* Proposal slides overflow guard */
+.fp-template-slide.fp-slide {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+.fp-template-header {
+  flex: 0 0 auto;
+}
+
+.fp-template-brand {
+  min-width: 0;
+}
+
+.fp-template-brand strong,
+.fp-template-pill,
+.fp-slide-final-card dd,
+.fp-slide-fact-stack dd,
+.fp-slide-contact-list p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-template-brand strong {
+  max-width: 22rem;
+}
+
+.fp-slide-hero-card {
+  flex: 1 1 auto;
+  max-height: 31.2rem;
+}
+
+.fp-slide-hero-copy {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fp-slide-hero-copy h1 {
+  display: -webkit-box;
+  font-size: clamp(2.2rem, 4.25vw, 4.15rem);
+  max-height: 12.7rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.fp-slide-hero-copy h2,
+.fp-slide-section-title h2,
+.fp-slide-final-layout h2 {
+  overflow-wrap: anywhere;
+}
+
+.fp-slide-hero-copy > p:not(.fp-slide-eyebrow),
+.fp-slide-large-copy > p,
+.fp-slide-final-layout section > p:not(.fp-slide-eyebrow),
+.fp-slide-payment-card > p,
+.fp-slide-testimonial-panel blockquote p,
+.fp-slide-testimonial-panel > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.fp-slide-hero-copy > p:not(.fp-slide-eyebrow) {
+  -webkit-line-clamp: 4;
+}
+
+.fp-slide-payment-card > p,
+.fp-slide-final-layout section > p:not(.fp-slide-eyebrow) {
+  -webkit-line-clamp: 3;
+}
+
+.fp-slide-large-copy > p {
+  -webkit-line-clamp: 6;
+}
+
+.fp-slide-testimonial-panel blockquote p,
+.fp-slide-testimonial-panel > p {
+  -webkit-line-clamp: 3;
+}
+
+.fp-slide-scope-layout {
+  grid-template-rows: minmax(8rem, auto) minmax(8rem, auto) minmax(8rem, auto);
+}
+
+.fp-slide-glass-panel,
+.fp-slide-timeline-panel,
+.fp-slide-reference-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fp-slide-check-list li,
+.fp-slide-number-list li {
+  min-width: 0;
+}
+
+.fp-slide-check-list li {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+}
+
+.fp-slide-check-list li,
+.fp-slide-number-list li,
+.fp-slide-template-timeline strong,
+.fp-slide-template-timeline small,
+.fp-slide-template-timeline em,
+.fp-slide-signatures span,
+.fp-slide-benefit-row span,
+.fp-slide-benefit-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fp-slide-check-list li {
+  white-space: nowrap;
+}
+
+.fp-slide-template-timeline li {
+  min-width: 0;
+}
+
+.fp-slide-template-timeline strong,
+.fp-slide-template-timeline small,
+.fp-slide-template-timeline em {
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.fp-slide-commercial-grid {
+  grid-template-rows: minmax(9.8rem, auto) minmax(8.4rem, auto) minmax(8.4rem, auto);
+}
+
+.fp-slide-payment-split strong {
+  display: block;
+  font-size: clamp(1.15rem, 2.4vw, 1.55rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-slide-signatures span {
+  min-height: 4.8rem;
+  white-space: nowrap;
+}
+
+.fp-slide-proof-grid {
+  grid-template-rows: minmax(13rem, auto) minmax(9rem, auto);
+}
+
+.fp-slide-benefit-row article {
+  min-width: 0;
+}
+
+.fp-slide-final-layout {
+  min-height: 25rem;
+}
+
+.fp-slide-final-layout h2 {
+  display: -webkit-box;
+  font-size: clamp(2.4rem, 4.2vw, 4rem);
+  max-height: 12.5rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.fp-slide-final-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Proposal slides fit pass - avoid bottom clipping in 16:9 */
+.fp-template-slide.fp-slide {
+  padding-bottom: 3.35rem !important;
+}
+
+.fp-template-header {
+  margin-bottom: 1.2rem;
+}
+
+.fp-template-header.compact {
+  margin-bottom: 0.95rem;
+}
+
+.fp-slide-hero-card {
+  max-height: 29.6rem;
+  min-height: 0;
+}
+
+.fp-slide-section-title h2 {
+  font-size: clamp(1.85rem, 3.45vw, 2.75rem);
+  max-width: 34rem;
+}
+
+.fp-slide-scope-layout,
+.fp-slide-commercial-grid,
+.fp-slide-proof-grid {
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+}
+
+.fp-slide-glass-panel {
+  padding: 0.95rem;
+}
+
+.fp-slide-glass-panel h3,
+.fp-slide-reference-panel h3,
+.fp-slide-timeline-panel h3 {
+  font-size: 0.92rem;
+  margin-bottom: 0.55rem;
+}
+
+.fp-slide-check-list {
+  gap: 0.45rem;
+}
+
+.fp-slide-reference-panel {
+  display: none;
+}
+
+.fp-slide-template-timeline {
+  padding-top: 0.65rem;
+}
+
+.fp-slide-template-timeline::before {
+  top: 1.6rem;
+}
+
+.fp-slide-template-timeline li span {
+  height: 1.65rem;
+  width: 1.65rem;
+}
+
+.fp-slide-template-timeline strong {
+  margin-top: 0.35rem;
+}
+
+.fp-slide-commercial-grid {
+  align-items: stretch;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+}
+
+.fp-slide-payment-card {
+  grid-column: 1 / -1;
+}
+
+.fp-slide-acceptance-card {
+  display: none !important;
+}
+
+.fp-slide-number-list,
+.fp-slide-contact-list,
+.fp-slide-fact-stack {
+  gap: 0.42rem;
+}
+
+.fp-slide-payment-split {
+  margin: 0.55rem 0;
+  padding: 0.65rem 0;
+}
+
+.fp-slide-proof-grid {
+  grid-template-columns: 1.25fr 0.85fr;
+  grid-template-rows: auto auto;
+}
+
+.fp-slide-large-copy {
+  grid-row: 1 / span 2;
+}
+
+.fp-slide-benefit-row {
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.fp-slide-benefit-row strong {
+  font-size: 0.86rem;
+}
+
+.fp-slide-benefit-row span {
+  font-size: 0.75rem;
+}
+
+.fp-slide-testimonial-panel {
+  max-height: 7.5rem;
+}
+
+.fp-slide-final-layout {
+  min-height: 22rem;
+}
+
+.fp-slide-final-layout h2 {
+  font-size: clamp(2.2rem, 3.85vw, 3.65rem);
+  max-height: 11rem;
+}
+
+.fp-slide-cta {
+  min-height: 3.45rem;
+}
+
+.fp-slide-footer {
+  bottom: 0.95rem;
+  font-size: 0.68rem;
+}

@@ -7,7 +7,7 @@ import { cleanOptionalString, cleanString, cleanStringList, isValidHttpUrl, norm
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
   const { id } = await context.params;
-  const body = (await request.json()) as { name?: string; price?: number; deadline?: string; includes?: string[]; imageUrl?: string | null };
+  const body = (await request.json()) as { name?: string; price?: number; deadline?: string; includes?: string[]; imageUrl?: string | null; active?: boolean };
   const name = cleanString(body.name);
   const price = normalizePrice(body.price);
   const imageUrl = cleanOptionalString(body.imageUrl);
@@ -25,6 +25,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       deadline: cleanOptionalString(body.deadline),
       includes: cleanStringList(body.includes),
       imageUrl,
+      active: typeof body.active === "boolean" ? body.active : undefined,
     },
   });
 
